@@ -178,6 +178,61 @@ h+='<div class="bg-gray-50 rounded-xl p-4 mt-6"><p class="text-sm text-gray-500"
 document.getElementById('p-tags').innerHTML=h;
 initSort('tags-sortable','offer_tags');});}
 
+var TG_CAT_URLS={microloans:'/zajmy',credits:'/kredity',credit_cards:'/karty/kreditnye',debit_cards:'/karty/debetovye'};
+function tUrl(t){return (TG_CAT_URLS[t.category]||'/zajmy')+'/type/'+t.slug;}
+
+function tPreview(t){
+var url=tUrl(t);
+var feat=t.features||'[]';if(typeof feat==='string')try{feat=JSON.parse(feat);}catch(x){feat=[];}
+
+var h='<div class="flex justify-between items-start mb-4"><h3 class="text-lg font-bold">Предпросмотр страницы тега</h3><div class="flex gap-2"><a href="'+url+'" target="_blank" class="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded hover:bg-blue-100">Открыть на сайте ↗</a><button onclick="cm()" class="text-gray-400 text-xl ml-2">&times;</button></div></div>';
+
+h+='<div class="text-xs text-gray-400 mb-4 font-mono bg-gray-50 rounded px-3 py-1">'+location.origin+url+'</div>';
+
+// Превью страницы
+h+='<div class="border rounded-xl overflow-hidden bg-white">';
+
+// Breadcrumb
+var catLabel=TG_CAT[t.category]||'Предложения';
+h+='<div class="px-6 pt-4 text-sm text-gray-400">Главная → '+catLabel+' → '+e(t.title)+'</div>';
+
+// H1
+h+='<div class="px-6 pt-3"><h1 class="text-2xl font-bold text-gray-900">'+(e(t.h1)||e(t.title))+'</h1></div>';
+
+// Description
+if(t.description) h+='<div class="px-6 pt-2 text-gray-600">'+e(t.description)+'</div>';
+
+// Features
+if(feat&&feat.length){
+h+='<div class="px-6 pt-4 grid grid-cols-2 md:grid-cols-4 gap-3">';
+feat.forEach(function(f){h+='<div class="bg-gray-50 rounded-xl border p-3 text-center"><span class="text-xl block mb-1">'+(f.icon||'📌')+'</span><p class="font-semibold text-xs">'+e(f.title||'')+'</p><p class="text-xs text-gray-400">'+e(f.text||'')+'</p></div>';});
+h+='</div>';}
+
+// Placeholder offers
+h+='<div class="px-6 pt-4 pb-2 text-sm text-gray-500">Предложения:</div>';
+h+='<div class="px-6 space-y-2 pb-4">';
+for(var i=0;i<3;i++){h+='<div class="bg-gray-50 rounded-lg border p-4 flex items-center gap-3"><div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-lg">🏦</div><div class="flex-1"><div class="h-3 bg-gray-200 rounded w-32 mb-2"></div><div class="h-2 bg-gray-100 rounded w-48"></div></div><div class="bg-green-500 text-white px-3 py-1.5 rounded text-xs">Оформить</div></div>';}
+h+='</div>';
+
+// SEO text
+if(t.content){
+h+='<div class="px-6 py-4 border-t"><div class="prose prose-sm text-gray-600">'+t.content.replace(/\\n/g,'<br>')+'</div></div>';}
+
+h+='</div>';
+
+// Meta
+h+='<div class="mt-4 bg-gray-50 rounded-lg p-4"><h4 class="text-xs font-semibold text-gray-500 mb-2">SEO мета-данные</h4>';
+h+='<div class="space-y-1 text-xs">';
+h+='<div><span class="text-gray-400">Title:</span> <span class="text-blue-700">'+(e(t.h1)||e(t.title))+' — Космозайм</span></div>';
+h+='<div><span class="text-gray-400">Description:</span> <span class="text-green-700">'+(e(t.meta_description)||e(t.description)||'—')+'</span></div>';
+h+='<div><span class="text-gray-400">URL:</span> <span class="font-mono text-gray-600">'+url+'</span></div>';
+h+='<div><span class="text-gray-400">Категория:</span> '+catLabel+'</div>';
+h+='<div><span class="text-gray-400">Статус:</span> '+(t.is_active?'<span class="text-green-600">Активен</span>':'<span class="text-red-500">Выключен</span>')+'</div>';
+h+='</div></div>';
+
+modal(h);
+}
+
 function tForm(t){
 var f=t||{title:'',slug:'',h1:'',description:'',meta_description:'',content:'',icon:'🏷️',category:'microloans',features:'[]',is_active:true,sort_order:0};
 var id=t?t.id:0;
