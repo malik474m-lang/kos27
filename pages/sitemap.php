@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/../data/cities.php';
 require_once __DIR__ . '/../data/glossary.php';
-require_once __DIR__ . '/../data/loan-types.php';
 
 $db = getDB();
 $offersData = $db->query("SELECT slug, updated_at FROM offers WHERE is_active = 1")->fetchAll();
 $articlesData = $db->query("SELECT slug, updated_at FROM articles WHERE is_published = 1")->fetchAll();
+
+// Теги из БД
+$allTags = $db->query("SELECT slug, category, created_at FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+
+$catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
 
 echo '<?xml version="1.0" encoding="UTF-8"?>';
 ?>
@@ -37,9 +41,11 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     <url><loc><?= SITE_URL ?>/articles/<?= e($a['slug']) ?></loc><lastmod><?= date('Y-m-d', strtotime($a['updated_at'])) ?></lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
     <?php endforeach; ?>
 
-    <!-- Типы займов -->
-    <?php foreach ($loanTypes as $lt): ?>
-    <url><loc><?= SITE_URL ?>/zajmy/type/<?= e($lt['slug']) ?></loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+    <!-- Теги (типы предложений) -->
+    <?php foreach ($allTags as $tag):
+        $tagCatUrl = $catUrls[$tag['category']] ?? '/zajmy';
+    ?>
+    <url><loc><?= SITE_URL ?><?= $tagCatUrl ?>/type/<?= e($tag['slug']) ?></loc><lastmod><?= date('Y-m-d', strtotime($tag['created_at'])) ?></lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
     <?php endforeach; ?>
 
     <!-- Займы по городам -->
