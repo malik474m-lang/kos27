@@ -36,6 +36,23 @@ function renderOfferCard(array $offer): string {
                         Без % — <?= formatDays($freeTermDays) ?>
                     </span>
                     <?php endif; ?>
+                    <?php
+                    // Теги оффера
+                    static $offerTagsCache = [];
+                    $oid = (int)$offer['id'];
+                    if (!isset($offerTagsCache[$oid])) {
+                        try {
+                            $tagStmt = getDB()->prepare("SELECT t.title, t.slug, t.icon, t.category FROM offer_tags t JOIN offer_tag_links l ON t.id = l.tag_id WHERE l.offer_id = ? AND t.is_active = 1 ORDER BY t.sort_order ASC");
+                            $tagStmt->execute([$oid]);
+                            $offerTagsCache[$oid] = $tagStmt->fetchAll();
+                        } catch (Exception $ex) { $offerTagsCache[$oid] = []; }
+                    }
+                    $catTagUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+                    foreach ($offerTagsCache[$oid] as $otag):
+                        $tagUrl = ($catTagUrls[$otag['category']] ?? '/zajmy') . '/type/' . $otag['slug'];
+                    ?>
+                    <a href="<?= $tagUrl ?>" class="inline-flex items-center gap-0.5 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"><?= $otag['icon'] ?? '🏷️' ?> <?= e($otag['title']) ?></a>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

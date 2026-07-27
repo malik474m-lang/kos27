@@ -10,10 +10,20 @@ $type = $typeStmt->fetch();
 
 if (!$type) { http_response_code(404); $pageTitle='Не найдено'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Тип предложения не найден</h1><a href="/zajmy" class="text-primary hover:underline mt-4 inline-block">← Все займы</a></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
 
-// Офферы по категории тега
-$offers = $db->prepare("SELECT * FROM offers WHERE is_active = 1 AND category = ? ORDER BY sort_order ASC");
-$offers->execute([$type['category']]);
-$offers = $offers->fetchAll();
+// Сначала пробуем загрузить ПРИВЯЗАННЫЕ офферы
+$linkedStmt = $db->prepare("SELECT o.* FROM offers o JOIN offer_tag_links l ON o.id = l.offer_id WHERE l.tag_id = ? AND o.is_active = 1 ORDER BY o.sort_order ASC");
+$linkedStmt->execute([$type['id']]);
+$offers = $linkedStmt->fetchAll();
+
+// Если привязок нет — показываем все офферы категории (fallback)
+if (!$offers) {
+    $allStmt = $db->prepare("SELECT * FROM offers WHERE is_active = 1 AND category = ? ORDER BY sort_order ASC");
+    $allStmt->execute([$type['category']]);
+    $offers = $allStmt->fetchAll();
+    $showingAll = true;
+} else {
+    $showingAll = false;
+}
 
 // Другие теги той же категории для перелинковки
 $otherTags = $db->prepare("SELECT * FROM offer_tags WHERE is_active = 1 AND category = ? AND id != ? ORDER BY sort_order ASC");
@@ -61,10 +71,8 @@ ob_start();
     </div>
     <?php endif; ?>
 
-    <!-- Счётчик -->
     <p class="text-gray-500 mb-4"><?= count($offers) ?> предложений</p>
 
-    <!-- Офферы -->
     <?php if ($offers): ?>
     <div class="grid gap-4">
         <?php foreach ($offers as $offer): echo renderOfferCard($offer); endforeach; ?>
@@ -84,7 +92,7 @@ ob_start();
     <!-- Другие теги -->
     <?php if ($otherTags): ?>
     <div class="bg-gray-50 rounded-xl p-6 mt-8">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Другие типы</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Смотрите также</h2>
         <div class="flex flex-wrap gap-2">
             <?php foreach ($otherTags as $ot): ?>
             <a href="<?= $catUrl ?>/type/<?= e($ot['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?php if ($ot['icon']): ?><span><?= $ot['icon'] ?></span><?php endif; ?><?= e($ot['title']) ?></a>

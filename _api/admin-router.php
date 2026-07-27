@@ -55,6 +55,11 @@ if (preg_match('#^/tags/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/tags-delete.php'; exit; }
 }
 
+
+// Связи офферов и тегов
+if ($adminUri === '/tag-links' && $method === 'GET') { require __DIR__ . '/admin/tag-links-get.php'; exit; }
+if ($adminUri === '/tag-links' && $method === 'POST') { require __DIR__ . '/admin/tag-links-save.php'; exit; }
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 
