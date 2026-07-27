@@ -6,6 +6,24 @@ require_once __DIR__ . '/includes/page-cache.php';
 // Гео-редирект (до любого вывода)
 require_once __DIR__ . '/includes/geo-redirect.php';
 
+// Сохраняем UTM в куки
+foreach (['utm_source','utm_medium','utm_campaign','utm_content','utm_term'] as $utm) {
+    if (!empty($_GET[$utm])) {
+        setcookie($utm, $_GET[$utm], time() + 86400 * 30, '/');
+        $_COOKIE[$utm] = $_GET[$utm];
+    }
+}
+
+// Трекинг просмотров страниц офферов (для конверсии)
+if (preg_match('#^/offer/([a-z0-9-]+)$#', $uri)) {
+    try {
+        $pvIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $pvIp = trim(explode(',', $pvIp)[0]);
+        getDB()->prepare("INSERT INTO page_views (page, ip, utm_source, utm_medium, utm_campaign) VALUES (?,?,?,?,?)")
+            ->execute([$uri, $pvIp, $_COOKIE['utm_source'] ?? null, $_COOKIE['utm_medium'] ?? null, $_COOKIE['utm_campaign'] ?? null]);
+    } catch (Exception $e) {}
+}
+
 // Кэш страниц
 if (pageCacheStart()) exit;
 
@@ -36,8 +54,21 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
     $offer->execute([$m[1]]);
     $row = $offer->fetch();
     if ($row) {
-        $db->prepare("INSERT INTO click_stats (offer_id, user_agent, referer) VALUES (?, ?, ?)")
-           ->execute([$m[1], $_SERVER['HTTP_USER_AGENT'] ?? '', $_SERVER['HTTP_REFERER'] ?? '']);
+        $clickIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $clickIp = trim(explode(',', $clickIp)[0]);
+        $db->prepare("INSERT INTO click_stats (offer_id, user_agent, referer, ip, utm_source, utm_medium, utm_campaign, utm_content, utm_term, page_from) VALUES (?,?,?,?,?,?,?,?,?,?)")
+           ->execute([
+               $m[1],
+               $_SERVER['HTTP_USER_AGENT'] ?? '',
+               $_SERVER['HTTP_REFERER'] ?? '',
+               $clickIp,
+               $_GET['utm_source'] ?? $_COOKIE['utm_source'] ?? null,
+               $_GET['utm_medium'] ?? $_COOKIE['utm_medium'] ?? null,
+               $_GET['utm_campaign'] ?? $_COOKIE['utm_campaign'] ?? null,
+               $_GET['utm_content'] ?? $_COOKIE['utm_content'] ?? null,
+               $_GET['utm_term'] ?? $_COOKIE['utm_term'] ?? null,
+               $_SERVER['HTTP_REFERER'] ?? null,
+           ]);
         header("Location: {$row['affiliate_url']}");
     } else {
         header("Location: /");

@@ -16,6 +16,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 .btn-p:hover{background:#1244af;}
 .btn-p:disabled{opacity:0.5;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 <div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Сменить пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
@@ -221,9 +222,92 @@ function gD(id){if(confirm('Удалить?'))ap('/geo-redirects/'+id,{method:'D
 
 
 /* ============ STATS ============ */
-function lS(){ap('/stats').then(s=>{let h='<h2 class="text-xl font-bold mb-6">Статистика</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.offers+'</p><p class="text-sm text-gray-500">Предложений</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.articles+'</p><p class="text-sm text-gray-500">Статей</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.reviews+'</p><p class="text-sm text-gray-500">Отзывов</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.subscribers+'</p><p class="text-sm text-gray-500">Подписчиков</p></div></div><div class="grid grid-cols-3 gap-4 mb-8"><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksToday+'</p><p class="text-xs text-gray-500">Сегодня</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksWeek+'</p><p class="text-xs text-gray-500">Неделя</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksMonth+'</p><p class="text-xs text-gray-500">Месяц</p></div></div>';
-if(s.topOffers&&s.topOffers.length){h+='<h3 class="font-semibold mb-4">Топ офферов (30 дней)</h3><div class="bg-white rounded-xl border"><table class="w-full"><thead><tr class="bg-gray-50"><th class="p-3 text-left text-sm">Оффер</th><th class="p-3 text-left text-sm">Клики</th></tr></thead><tbody>';s.topOffers.forEach(o=>{h+='<tr class="border-t"><td class="p-3">'+e(o.title)+'</td><td class="p-3 font-semibold">'+o.clicks+'</td></tr>';});h+='</tbody></table></div>';}
-document.getElementById('p-stats').innerHTML=h;});}
+var _statsPeriod=30;
+var _statsTimer=null;
+
+function lS(){
+var p=_statsPeriod;
+ap('/stats?period='+p).then(s=>{
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">📊 Аналитика</h2><div class="flex items-center gap-2">';
+h+='<select id="st-period" onchange="_statsPeriod=+this.value;lS()" class="sel-f text-sm w-auto"><option value="7"'+(p==7?' selected':'')+'>7 дней</option><option value="14"'+(p==14?' selected':'')+'>14 дней</option><option value="30"'+(p==30?' selected':'')+'>30 дней</option><option value="90"'+(p==90?' selected':'')+'>90 дней</option><option value="365"'+(p==365?' selected':'')+'>Год</option></select>';
+h+='<button onclick="lS()" class="text-sm text-blue-600 hover:underline">🔄</button></div></div>';
+
+// Realtime
+h+='<div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-5 mb-6 text-white"><div class="flex items-center justify-between"><div><p class="text-blue-100 text-sm">В реальном времени</p><div class="flex items-center gap-4 mt-1"><span class="text-3xl font-bold">'+s.last5min+'</span><span class="text-blue-200 text-sm">за 5 мин</span><span class="text-2xl font-semibold ml-4">'+s.lastHour+'</span><span class="text-blue-200 text-sm">за час</span></div></div><div class="text-right"><p class="text-blue-100 text-sm">Сегодня</p><p class="text-3xl font-bold">'+s.clicksToday+'</p></div></div></div>';
+
+// Счётчики
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+s.clicksToday+'</p><p class="text-xs text-gray-500">Сегодня</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+s.clicksWeek+'</p><p class="text-xs text-gray-500">Неделя</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+s.clicksMonth+'</p><p class="text-xs text-gray-500">Месяц</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-800">'+s.clicksTotal+'</p><p class="text-xs text-gray-500">Всего</p></div></div>';
+
+// График
+h+='<div class="bg-white rounded-xl border p-5 mb-6"><h3 class="font-semibold mb-3">Клики и просмотры по дням</h3><canvas id="st-chart" height="200"></canvas></div>';
+
+// Клики по часам
+h+='<div class="bg-white rounded-xl border p-5 mb-6"><h3 class="font-semibold mb-3">Клики по часам (сегодня)</h3><canvas id="st-hourly" height="120"></canvas></div>';
+
+// Топ офферов + конверсия
+if(s.topOffers&&s.topOffers.length){
+h+='<div class="bg-white rounded-xl border mb-6"><div class="p-4 border-b"><h3 class="font-semibold">Топ офферов за '+p+' дней</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Просмотры</th><th class="p-3 text-right">Клики</th><th class="p-3 text-right">Конверсия</th><th class="p-3 text-left w-40">Прогресс</th></tr></thead><tbody>';
+var maxC=Math.max(...s.topOffers.map(o=>o.clicks));
+s.topOffers.forEach(o=>{
+var pct=maxC>0?Math.round(o.clicks/maxC*100):0;
+var convColor=o.conversion>=10?'text-green-600':o.conversion>=5?'text-yellow-600':'text-gray-500';
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-medium">'+e(o.title)+'</td><td class="p-3 text-right text-gray-500">'+o.views+'</td><td class="p-3 text-right font-semibold">'+o.clicks+'</td><td class="p-3 text-right '+convColor+' font-semibold">'+o.conversion+'%</td><td class="p-3"><div class="bg-gray-200 rounded-full h-2"><div class="bg-blue-500 rounded-full h-2" style="width:'+pct+'%"></div></div></td></tr>';});
+h+='</tbody></table></div></div>';}
+
+// UTM-источники
+if(s.utmSources&&s.utmSources.length){
+h+='<div class="bg-white rounded-xl border mb-6"><div class="p-4 border-b"><h3 class="font-semibold">🔗 UTM-источники за '+p+' дней</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Source</th><th class="p-3 text-left">Medium</th><th class="p-3 text-left">Campaign</th><th class="p-3 text-right">Клики</th></tr></thead><tbody>';
+s.utmSources.forEach(u=>{
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">'+(e(u.utm_source)||'—')+'</span></td><td class="p-3 text-gray-600">'+(e(u.utm_medium)||'—')+'</td><td class="p-3 text-gray-600">'+(e(u.utm_campaign)||'—')+'</td><td class="p-3 text-right font-semibold">'+u.clicks+'</td></tr>';});
+h+='</tbody></table></div></div>';}
+
+// Общие счётчики контента
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.offers+'</p><p class="text-xs text-gray-500">Предложений</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.articles+'</p><p class="text-xs text-gray-500">Статей</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.reviews+'</p><p class="text-xs text-gray-500">Отзывов</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.subscribers+'</p><p class="text-xs text-gray-500">Подписчиков</p></div></div>';
+
+document.getElementById('p-stats').innerHTML=h;
+
+// Рисуем графики
+setTimeout(function(){stChart(s);stHourly(s);},100);
+
+// Автообновление каждые 30 сек
+if(_statsTimer)clearInterval(_statsTimer);
+_statsTimer=setInterval(function(){ap('/stats?period='+_statsPeriod).then(function(ns){
+document.querySelector('#p-stats .text-3xl.font-bold')&&lS();
+});},30000);
+});}
+
+function stChart(s){
+var canvas=document.getElementById('st-chart');if(!canvas)return;
+var ctx=canvas.getContext('2d');
+// Подготовка данных
+var days={};
+s.chartClicks.forEach(function(d){days[d.day]={clicks:Number(d.cnt),views:0};});
+s.chartViews.forEach(function(d){if(!days[d.day])days[d.day]={clicks:0,views:0};days[d.day].views=Number(d.cnt);});
+var labels=Object.keys(days).sort();
+var clicks=labels.map(function(d){return days[d].clicks;});
+var views=labels.map(function(d){return days[d].views;});
+var shortLabels=labels.map(function(d){var p=d.split('-');return p[2]+'.'+p[1];});
+
+if(window.stChartInst)window.stChartInst.destroy();
+window.stChartInst=new Chart(ctx,{type:'line',data:{labels:shortLabels,datasets:[{label:'Клики',data:clicks,borderColor:'#1a56db',backgroundColor:'rgba(26,86,219,0.1)',fill:true,tension:0.3,borderWidth:2,pointRadius:2},{label:'Просмотры',data:views,borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.1)',fill:true,tension:0.3,borderWidth:2,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'circle',padding:20}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{ticks:{maxTicksToShow:15}}}}});
+}
+
+function stHourly(s){
+var canvas=document.getElementById('st-hourly');if(!canvas)return;
+var ctx=canvas.getContext('2d');
+var data=new Array(24).fill(0);
+s.hourly.forEach(function(h){data[Number(h.h)]=Number(h.cnt);});
+var labels=data.map(function(_,i){return i+':00';});
+
+if(window.stHourlyInst)window.stHourlyInst.destroy();
+window.stHourlyInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Клики',data:data,backgroundColor:'rgba(26,86,219,0.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+}
+
+
 
 /* ============ SUBSCRIBERS ============ */
 function lSu(){ap('/subscribers').then(list=>{let h='<h2 class="text-xl font-bold mb-6">Подписчики ('+list.length+')</h2>';
