@@ -4,6 +4,7 @@ require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'credits' ORDER BY sort_order ASC")->fetchAll();
+\$creditTags = \$db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'credits' ORDER BY sort_order ASC")->fetchAll();
 
 $pageTitle = 'Кредиты онлайн — Сравнение банковских кредитов | Космозайм';
 $metaDescription = 'Сравните условия банковских кредитов. Низкие ставки, удобное оформление, быстрое одобрение.';

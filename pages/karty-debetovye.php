@@ -4,6 +4,7 @@ require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'debit_cards' ORDER BY sort_order ASC")->fetchAll();
+\$debitTags = \$db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'debit_cards' ORDER BY sort_order ASC")->fetchAll();
 
 $pageTitle = 'Дебетовые карты — Космозайм';
 $metaDescription = 'Сравните дебетовые карты с кэшбеком и процентом на остаток.';

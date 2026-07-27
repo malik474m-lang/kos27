@@ -45,6 +45,16 @@ if (preg_match('#^/geo-redirects/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/geo-delete.php'; exit; }
 }
 
+
+// Теги (типы предложений)
+if ($adminUri === '/tags' && $method === 'GET') { require __DIR__ . '/admin/tags-list.php'; exit; }
+if ($adminUri === '/tags' && $method === 'POST') { require __DIR__ . '/admin/tags-create.php'; exit; }
+if (preg_match('#^/tags/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/tags-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/tags-delete.php'; exit; }
+}
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 

@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../data/cities.php';
-require_once __DIR__ . '/../data/loan-types.php';
+// Теги из БД
+\$tagStmt = \$db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC");
+\$loanTypes = \$tagStmt->fetchAll();
 
 $db = getDB();
 
@@ -73,12 +75,14 @@ ob_start();
         </form>
     </div>
 
-    <!-- Типы займов -->
+    <!-- Типы займов (из БД) -->
+    <?php if ($loanTypes): ?>
     <div class="flex flex-wrap gap-2 mb-8">
         <?php foreach ($loanTypes as $lt): ?>
-        <a href="/zajmy/type/<?= $lt['slug'] ?>" class="inline-block bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?= e($lt['title']) ?></a>
+        <a href="/zajmy/type/<?= e($lt['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?php if (!empty($lt['icon'])): ?><span><?= $lt['icon'] ?></span><?php endif; ?><?= e($lt['title']) ?></a>
         <?php endforeach; ?>
     </div>
+    <?php endif; ?>
 
     <!-- Офферы -->
     <?php if ($offers): ?>

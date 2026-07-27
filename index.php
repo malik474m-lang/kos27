@@ -90,6 +90,24 @@ if (preg_match('#^/zajmy/type/([a-z0-9-]+)$#', $uri, $m)) {
     exit;
 }
 
+if (preg_match('#^/kredity/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $typeSlug = $m[1];
+    require __DIR__ . '/pages/zajmy-type.php';
+    exit;
+}
+
+if (preg_match('#^/karty/kreditnye/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $typeSlug = $m[1];
+    require __DIR__ . '/pages/zajmy-type.php';
+    exit;
+}
+
+if (preg_match('#^/karty/debetovye/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $typeSlug = $m[1];
+    require __DIR__ . '/pages/zajmy-type.php';
+    exit;
+}
+
 if (preg_match('#^/zajmy/([a-z0-9-]+)$#', $uri, $m)) {
     $citySlug = $m[1];
     require __DIR__ . '/pages/zajmy-city.php';
