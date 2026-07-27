@@ -4,7 +4,7 @@ require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'credit_cards' ORDER BY sort_order ASC")->fetchAll();
-\$cardTags = \$db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'credit_cards' ORDER BY sort_order ASC")->fetchAll();
+$cardTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'credit_cards' ORDER BY sort_order ASC")->fetchAll();
 
 $pageTitle = 'Кредитные карты онлайн — Сравнение | Космозайм';
 $metaDescription = 'Сравните кредитные карты с льготным периодом и кэшбеком.';

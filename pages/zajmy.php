@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../data/cities.php';
-// Теги из БД
-\$tagStmt = \$db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC");
-\$loanTypes = \$tagStmt->fetchAll();
 
 $db = getDB();
+
+// Теги из БД
+$tagStmt = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC");
+$loanTypes = $tagStmt->fetchAll();
 
 // Фильтры
 $fAmount = isset($_GET['amount']) ? (int)$_GET['amount'] : 0;
