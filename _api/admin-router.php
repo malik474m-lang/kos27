@@ -63,7 +63,8 @@ if ($adminUri === '/tag-links' && $method === 'POST') { require __DIR__ . '/admi
 
 // SEO-тексты для городов
 if ($adminUri === '/city-seo' && $method === 'GET') { require __DIR__ . '/admin/city-seo-list.php'; exit; }
-if ($adminUri === '/city-seo/generate' && $method === 'POST') { require __DIR__ . '/admin/city-seo-generate.php'; exit; }
+if ($adminUri === '/city-seo/clean' && $method === 'POST') { require __DIR__ . '/admin/city-seo-clean.php'; exit; }
+    if ($adminUri === '/city-seo/generate' && $method === 'POST') { require __DIR__ . '/admin/city-seo-generate.php'; exit; }
 if (preg_match('#^/city-seo/(\d+)$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     if ($method === 'PUT') { require __DIR__ . '/admin/city-seo-update.php'; exit; }

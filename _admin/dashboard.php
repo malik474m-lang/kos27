@@ -260,6 +260,7 @@ var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl fo
 h+='<select id="cs-cat" onchange="_csCat=this.value;lCS()" class="sel-f text-sm w-auto"><option value="microloans"'+(cat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(cat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(cat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(cat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select>';
 h+='<button onclick="csGen(false)" class="btn-p text-sm" id="cs-gen-btn">⚡ Шаблоны</button>';
 h+='<button onclick="csGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cs-gpt-btn">🤖 YandexGPT</button>';
+h+='<button onclick="csClean()" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Очистить</button>';
 h+='</div></div>';
 
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700">';
@@ -292,6 +293,7 @@ else alert(d.error||'Ошибка');
 lCS();
 }).catch(()=>{btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
 
+function csClean(){if(!confirm('Очистить все тексты от markdown-мусора (```html``` и пр.)?'))return;ap('/city-seo/clean',{method:'POST'}).then(d=>{if(d.success)alert('Очищено: '+d.cleaned+' из '+d.total);lCS();});}
 function csEdit(id,s){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать SEO: '+e(s.city_slug)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return csSave(event,'+id+')">'+

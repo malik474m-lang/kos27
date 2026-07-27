@@ -29,7 +29,7 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
                 'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
                 'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 8000],
                 'messages' => [
-                    ['role' => 'system', 'text' => 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском. Без таблиц, без markdown. Подзаголовки на отдельной строке.'],
+                    ['role' => 'system', 'text' => 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском языке. Подзаголовки на отдельной строке. ВАЖНО: пиши ТОЛЬКО чистый текст без форматирования. Без markdown, без тройных кавычек, без блоков кода, без звёздочек, без решёток.'],
                     ['role' => 'user', 'text' => "Напиши развёрнутую статью на тему \"$topic\". Минимум 1500 слов."],
                 ],
             ]),
@@ -41,7 +41,12 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
         $data = json_decode($response, true);
         $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
         if ($text) {
-            $content = preg_replace('/\*+/', '', $text);
+            // Убираем markdown мусор
+            $content = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
+            $content = preg_replace('/\n?```\s*$/', '', $content);
+            $content = preg_replace('/```/', '', $content);
+            $content = preg_replace('/\*\*(.+?)\*\*/', '$1', $content);
+            $content = preg_replace('/\*+/', '', $content);
             $content = preg_replace('/^#{1,6}\s*/m', '', $content);
             $content = trim($content);
             $provider = 'YandexGPT';
