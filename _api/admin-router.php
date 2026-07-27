@@ -70,6 +70,10 @@ if (preg_match('#^/city-seo/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/city-seo-delete.php'; exit; }
 }
 
+
+// Сортировка (drag-and-drop)
+if ($adminUri === '/reorder' && $method === 'POST') { require __DIR__ . '/admin/reorder.php'; exit; }
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 

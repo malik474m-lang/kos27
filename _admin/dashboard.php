@@ -17,6 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 .btn-p:disabled{opacity:0.5;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 <div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Сменить пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
@@ -61,9 +62,16 @@ const BL={any:'Любой',employed:'Работающий',unemployed:'Безр�
 
 /* ============ OFFERS ============ */
 function lO(){ap('/offers').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><button onclick="oForm()" class="btn-p">+ Добавить</button></div>';
-h+='<div class="bg-white rounded-xl shadow-sm border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3">Название</th><th class="text-left px-4 py-3">Категория</th><th class="text-left px-4 py-3">Сумма</th><th class="text-left px-4 py-3">Ставка</th><th class="text-left px-4 py-3">Рейтинг</th><th class="text-left px-4 py-3">Статус</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
-list.forEach(o=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">'+e(o.title)+'</td><td class="px-4 py-3 text-gray-600">'+(CL[o.category]||o.category)+'</td><td class="px-4 py-3 text-gray-600">'+Number(o.amount_min).toLocaleString()+' — '+Number(o.amount_max).toLocaleString()+' ₽</td><td class="px-4 py-3">'+o.rate+'%</td><td class="px-4 py-3">'+(parseFloat(o.rating)>0?'<span class="text-yellow-600">★ '+parseFloat(o.rating).toFixed(1)+' ('+o.review_count+')</span>':'—')+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Активно':'Выкл')+'</span></td><td class="px-4 py-3 text-right"><button onclick=\'oForm('+JSON.stringify(o).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="oD('+o.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
-h+='</tbody></table></div>';document.getElementById('p-offers').innerHTML=h;});}
+h+='<div class="bg-gray-50 rounded-lg p-2 mb-4 text-xs text-gray-500">💡 Перетаскивайте строки за ☰ для изменения порядка</div>';
+h+='<div id="offers-sortable" class="space-y-2">';
+list.forEach(o=>{h+='<div class="bg-white rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'"><span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
+if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"><img src="'+lg+'" class="w-full h-full object-contain p-0.5"></div>';}else{h+='<div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">🏦</div>';}
+h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(o.title)+'</p><p class="text-xs text-gray-500">'+(CL[o.category]||o.category)+' • '+o.rate+'% • '+Number(o.amount_min).toLocaleString()+'—'+Number(o.amount_max).toLocaleString()+' ₽</p></div>';
+h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
+h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
+h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></div>';});
+h+='</div>';document.getElementById('p-offers').innerHTML=h;
+initSort('offers-sortable','offers');});}
 
 function oForm(o){let f=o||{title:'',category:'microloans',amount_min:1000,amount_max:100000,term_min_days:1,term_max_days:365,psk:'0',rate:'0',free_term_days:0,logo_url:'',affiliate_url:'',borrower_category:'any',description:'',seo_keywords:'',regions:'',is_active:true,sort_order:0};let id=o?o.id:0;
 let catOpts='',borOpts='';for(let k in CL)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+CL[k]+'</option>';for(let k in BL)borOpts+='<option value="'+k+'"'+(f.borrower_category===k?' selected':'')+'>'+BL[k]+'</option>';
@@ -137,6 +145,23 @@ function rGen(){ap('/generate-review',{method:'POST'}).then(d=>{if(d.success)ale
 function rA(id,v){ap('/reviews/'+id,{method:'PUT',body:JSON.stringify({isApproved:v})}).then(()=>lR());}
 function rD(id){if(confirm('Удалить?'))ap('/reviews/'+id,{method:'DELETE'}).then(()=>lR());}
 
+/* ============ DRAG & DROP SORT ============ */
+function initSort(containerId, tableName){
+var el=document.getElementById(containerId);
+if(!el||!window.Sortable)return;
+new Sortable(el,{
+handle:'.drag-handle',
+animation:200,
+ghostClass:'opacity-30',
+onEnd:function(){
+var ids=Array.from(el.children).map(function(c){return Number(c.dataset.id);}).filter(Boolean);
+ap('/reorder',{method:'POST',body:JSON.stringify({table:tableName,ids:ids})}).then(function(d){
+if(!d.success)alert('Ошибка сортировки');
+});
+}
+});
+}
+
 /* ============ TAGS ============ */
 var TG_CAT={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
 function lT(){ap('/tags').then(tags=>{
@@ -148,7 +173,8 @@ tags.forEach(t=>{
 h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xl">'+e(t.icon||'🏷️')+'</td><td class="px-4 py-3 font-medium">'+e(t.title)+'</td><td class="px-4 py-3 text-gray-500 font-mono text-xs">'+e(t.slug)+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 bg-gray-100 rounded text-xs">'+(TG_CAT[t.category]||t.category)+'</span></td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(t.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(t.is_active?'Активен':'Выкл')+'</span></td><td class="px-4 py-3 text-gray-500">'+t.sort_order+'</td><td class="px-4 py-3 text-right"><button onclick=\'tForm('+JSON.stringify(t).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="tD('+t.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
 h+='</tbody></table></div>';}
 h+='<div class="bg-gray-50 rounded-xl p-4 mt-6"><p class="text-sm text-gray-500">💡 Теги отображаются как кнопки-фильтры на страницах предложений и создают отдельные SEO-страницы <code>/zajmy/type/slug</code></p></div>';
-document.getElementById('p-tags').innerHTML=h;});}
+document.getElementById('p-tags').innerHTML=h;
+initSort('tags-sortable','offer_tags');});}
 
 function tForm(t){
 var f=t||{title:'',slug:'',h1:'',description:'',meta_description:'',content:'',icon:'🏷️',category:'microloans',features:'[]',is_active:true,sort_order:0};
