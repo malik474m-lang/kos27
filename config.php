@@ -149,8 +149,52 @@ function slugify(string $text): string {
 // Сессия для админки
 function startAdminSession(): void {
     if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([
+            'lifetime' => 86400,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Strict',
+        ]);
         session_start();
     }
+}
+
+function getClientIp(): string {
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    return trim(explode(',', $ip)[0]);
+}
+
+function isIpBlocked(string $ip): bool {
+    try {
+        $db = getDB();
+        // Больше 10 неудачных попыток за 15 минут — блок
+        $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM admin_login_log WHERE ip = ? AND success = 0 AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)");
+        $stmt->execute([$ip]);
+        return (int)$stmt->fetch()['cnt'] >= 10;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+function checkIpWhitelist(string $ip): bool {
+    try {
+        $db = getDB();
+        $count = $db->query("SELECT COUNT(*) as cnt FROM admin_ip_whitelist")->fetch()['cnt'];
+        if ((int)$count === 0) return true; // Пустой список = доступ всем
+        $stmt = $db->prepare("SELECT id FROM admin_ip_whitelist WHERE ip = ?");
+        $stmt->execute([$ip]);
+        return (bool)$stmt->fetch();
+    } catch (Exception $e) {
+        return true; // Если таблицы нет — пропускаем
+    }
+}
+
+function logLoginAttempt(string $username, string $ip, bool $success): void {
+    try {
+        $db = getDB();
+        $db->prepare("INSERT INTO admin_login_log (username, ip, user_agent, success) VALUES (?, ?, ?, ?)")
+           ->execute([$username, $ip, $_SERVER['HTTP_USER_AGENT'] ?? '', $success ? 1 : 0]);
+    } catch (Exception $e) {}
 }
 
 function isAdmin(): bool {
@@ -169,4 +213,16 @@ function requireAdmin(): void {
         header('Location: /admin/login');
         exit;
     }
+}
+
+function requireAdminWithIpCheck(): void {
+    $ip = getClientIp();
+    if (!checkIpWhitelist($ip)) {
+        http_response_code(403);
+        echo str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/')
+            ? json_encode(['error' => 'IP не в белом списке'])
+            : 'Доступ запрещён';
+        exit;
+    }
+    requireAdmin();
 }

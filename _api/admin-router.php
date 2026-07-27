@@ -74,6 +74,10 @@ if (preg_match('#^/city-seo/(\d+)$#', $adminUri, $m)) {
 // Сортировка (drag-and-drop)
 if ($adminUri === '/reorder' && $method === 'POST') { require __DIR__ . '/admin/reorder.php'; exit; }
 
+
+// Безопасность
+if (str_starts_with($adminUri, '/security')) { require __DIR__ . '/admin/security.php'; exit; }
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 
