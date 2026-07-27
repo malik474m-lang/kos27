@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../data/cities.php';
+require_once __DIR__ . '/../includes/city-seo.php';
 
 $city = findCityBySlug($citySlug);
 if (!$city) { http_response_code(404); $pageTitle='Город не найден'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Город не найден</h1></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
@@ -9,8 +10,9 @@ $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC")->fetchAll();
 $year = date('Y');
 
-$pageTitle = "Займы в {$city['prep']} — Взять микрозайм онлайн на карту [$year] | Космозайм";
-$metaDescription = "Займы в {$city['prep']} на карту онлайн. Быстрое одобрение, выдача за 15 минут. Сравните " . count($offers) . " предложений от МФО.";
+$citySeoMeta = getCitySeoText($city, 'microloans');
+$pageTitle = ($citySeoMeta['seo_h1'] ?? '') ?: "Займы в {$city['prep']} — Взять микрозайм онлайн на карту [$year] | Космозайм";
+$metaDescription = ($citySeoMeta['meta_description'] ?? '') ?: "Займы в {$city['prep']} на карту онлайн. Сравните " . count($offers) . " предложений от МФО.";
 $metaKeywords = "займ в {$city['prep']}, микрозайм {$city['name']}, деньги в долг {$city['name']}, займ на карту {$city['name']}";
 
 // Соседние города для перелинковки
@@ -43,20 +45,11 @@ ob_start();
         <?php foreach ($offers as $offer): echo renderOfferCard($offer); endforeach; ?>
     </div>
 
-    <!-- SEO текст -->
+    <!-- SEO текст (из БД) -->
+    <?php $citySeo = getOrGenerateCitySeo($city, 'microloans'); ?>
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Как получить займ в <?= e($city['prep']) ?> в <?= $year ?> году?</h2>
         <div class="prose prose-sm text-gray-600 max-w-none">
-            <p>Жители города <?= e($city['name']) ?> (<?= e($city['region']) ?>) могут получить микрозайм онлайн, не выходя из дома. Современные МФО работают круглосуточно и выдают деньги на карту любого банка РФ за несколько минут.</p>
-            <h3 class="text-lg font-semibold text-gray-900 mt-4">Требования к заёмщикам в <?= e($city['prep']) ?>:</h3>
-            <ul>
-                <li>Возраст от 18 лет</li>
-                <li>Гражданство РФ и регистрация в <?= e($city['prep']) ?> или <?= e($city['region']) ?></li>
-                <li>Действующий паспорт</li>
-                <li>Банковская карта для получения денег</li>
-            </ul>
-            <h3 class="text-lg font-semibold text-gray-900 mt-4">Популярные суммы займов в <?= e($city['prep']) ?>:</h3>
-            <p>Чаще всего жители <?= e($city['name']) ?> берут займы на сумму от 5 000 до 30 000 рублей на срок до 30 дней. Для постоянных клиентов доступны суммы до 100 000 рублей.</p>
+            <?= $citySeo['seo_text'] ?>
         </div>
     </div>
 
