@@ -6,6 +6,7 @@ function renderOfferCard(array $offer): string {
     $rating = (float)($offer['rating'] ?? 0);
     $reviewCount = (int)($offer['review_count'] ?? 0);
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
+    static $favoritesScriptRendered = false;
     
     ob_start();
     ?>
@@ -80,15 +81,69 @@ function renderOfferCard(array $offer): string {
         <p class="text-sm text-gray-600 mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
         <?php endif; ?>
 
-        <div class="mt-5 flex items-center justify-between">
-            <a href="/offer/<?= e($offer['slug']) ?>" class="text-primary hover:underline text-sm font-medium">Подробнее →</a>
+        <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="/offer/<?= e($offer['slug']) ?>" class="text-primary hover:underline text-sm font-medium">Подробнее →</a>
+                <button type="button"
+                        class="offer-fav-btn inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-pink-300 hover:bg-pink-50 hover:text-pink-600"
+                        data-offer-id="<?= (int)$offer['id'] ?>"
+                        data-offer-title="<?= e($offer['title']) ?>"
+                        aria-label="Добавить в избранное">
+                    <span class="offer-fav-icon">🤍</span>
+                    <span class="offer-fav-text">В избранное</span>
+                </button>
+            </div>
             <a href="/click/<?= (int)$offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
-               class="inline-flex items-center space-x-2 bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-sm">
+               class="inline-flex items-center justify-center space-x-2 bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-sm">
                 <span>Оформить</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>
         </div>
     </article>
+    <?php if (!$favoritesScriptRendered): $favoritesScriptRendered = true; ?>
+    <script>
+    function getFavoriteOfferIds() {
+        try { return JSON.parse(localStorage.getItem('kosmozaim_favorites') || '[]'); }
+        catch (e) { return []; }
+    }
+    function setFavoriteOfferIds(ids) {
+        localStorage.setItem('kosmozaim_favorites', JSON.stringify(ids));
+        syncOfferFavoriteButtons();
+        window.dispatchEvent(new CustomEvent('favorites:changed', { detail: { ids: ids } }));
+    }
+    function toggleOfferFavorite(id) {
+        id = Number(id);
+        var ids = getFavoriteOfferIds();
+        if (ids.includes(id)) ids = ids.filter(function(x){ return x !== id; });
+        else ids.push(id);
+        setFavoriteOfferIds(ids);
+    }
+    function syncOfferFavoriteButtons() {
+        var ids = getFavoriteOfferIds();
+        document.querySelectorAll('.offer-fav-btn').forEach(function(btn) {
+            var id = Number(btn.dataset.offerId || 0);
+            var active = ids.includes(id);
+            btn.classList.toggle('border-pink-300', active);
+            btn.classList.toggle('bg-pink-50', active);
+            btn.classList.toggle('text-pink-600', active);
+            var icon = btn.querySelector('.offer-fav-icon');
+            var text = btn.querySelector('.offer-fav-text');
+            if (icon) icon.textContent = active ? '❤️' : '🤍';
+            if (text) text.textContent = active ? 'В избранном' : 'В избранное';
+            btn.setAttribute('aria-label', active ? 'Убрать из избранного' : 'Добавить в избранное');
+        });
+    }
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.offer-fav-btn');
+        if (!btn) return;
+        e.preventDefault();
+        toggleOfferFavorite(btn.dataset.offerId);
+    });
+    document.addEventListener('DOMContentLoaded', syncOfferFavoriteButtons);
+    window.addEventListener('storage', syncOfferFavoriteButtons);
+    window.addEventListener('favorites:changed', syncOfferFavoriteButtons);
+    </script>
+    <?php endif; ?>
     <?php
     return ob_get_clean();
 }
