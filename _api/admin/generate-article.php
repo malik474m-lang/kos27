@@ -1,0 +1,419 @@
+<?php
+// Базовый список тем
+$baseTopics = [
+    ['category' => 'займы', 'themes' => [
+        'Как получить займ без отказа','Первый займ без процентов: условия и подводные камни',
+        'Как улучшить шансы на одобрение займа','Что делать при просрочке микрозайма',
+        'Рефинансирование займов: когда это выгодно','Займы для пенсионеров: особенности и условия',
+        'Займы студентам: как получить деньги на учёбу','Безопасность при оформлении онлайн-займа',
+        'Как выбрать надёжную МФО','Новые правила выдачи микрозаймов в России',
+        'Займы на карту мгновенно: как это работает','Чем отличается займ от кредита',
+        'Займ срочно: где получить деньги за 15 минут','Займы без проверки кредитной истории',
+        'Займы на Qiwi кошелёк: как получить','Займы на Юмани: условия и особенности',
+        'Займы с 18 лет: где оформить','Займы без отказа с плохой кредитной историей',
+        'Топ-10 МФО с моментальным одобрением','Как избежать долговой ямы при микрозаймах',
+        'Займы наличными: где ещё можно получить','Ночные займы: кто выдаёт круглосуточно',
+        'Займы по паспорту без справок','Что такое пролонгация займа и когда она выгодна',
+        'Займы самозанятым: как оформить без 2-НДФЛ','Как закрыть микрозайм досрочно без переплаты',
+        'Можно ли взять займ без работы','Займы с автоматическим одобрением: миф или реальность',
+        'Какие документы нужны для получения займа','Займы без звонков работодателю',
+        'Почему отказывают в займе и что делать','Займы в выходные и праздники',
+        'Сколько займов можно взять одновременно','Займы без фото и СНИЛС',
+        'Как рассчитать переплату по займу','Правила безопасного оформления займа онлайн',
+    ]],
+    ['category' => 'кредиты', 'themes' => [
+        'Потребительский кредит vs кредитная карта: что выбрать','Как снизить процентную ставку по кредиту',
+        'Досрочное погашение кредита: плюсы и минусы','Кредитная история: как проверить и улучшить',
+        'Кредит под залог недвижимости: условия и риски','Автокредит или потребительский кредит на авто',
+        'Кредитные каникулы: кому положены и как оформить','Страхование кредита: обязательно или нет',
+        'Рефинансирование кредита: пошаговая инструкция','Кредит для самозанятых: особенности получения',
+        'Как получить кредит с плохой кредитной историей','Ипотека в 2026 году: ставки и программы',
+        'Образовательный кредит: условия и господдержка','Кредит на ремонт: где выгоднее',
+        'Кредит для ИП: какие банки одобряют','Как выбрать банк для кредита: чек-лист',
+        'Кредит без обеспечения: условия и ограничения','Что такое кредитный рейтинг и как его повысить',
+        'Семейный кредит: программы и льготы','Кредит на покупку земельного участка',
+    ]],
+    ['category' => 'карты', 'themes' => [
+        'Лучшие кредитные карты с кэшбеком','Как пользоваться льготным периодом без процентов',
+        'Дебетовые карты с процентом на остаток','Виртуальные карты: безопасность онлайн-покупок',
+        'Карты с бесплатным обслуживанием: сравнение','Премиальные карты: стоят ли они своих денег',
+        'Как защитить банковскую карту от мошенников','Кэшбек vs бонусы: что выгоднее',
+        'Карты для путешественников: лучшие варианты','Детская банковская карта: с какого возраста',
+        'Карты с доставкой на дом: обзор предложений','Как правильно закрыть кредитную карту',
+        'Рассрочка по карте vs потребительский кредит','Мультивалютные карты: когда они нужны',
+        'Цифровые карты: плюсы и минусы','Карты с повышенным кэшбеком на АЗС',
+    ]],
+];
+
+$db = getDB();
+
+// МФО — офферы из БД
+$offers = $db->query("SELECT id, title FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+$mfoThemes = [];
+foreach ($offers as $o) $mfoThemes[] = $o['title'];
+if ($mfoThemes) $baseTopics[] = ['category' => 'мфо', 'themes' => $mfoThemes];
+
+// Категория БАНКИ — офферы credits/credit_cards/debit_cards + крупные банки
+$bankOffers = $db->query("SELECT title FROM offers WHERE is_active = 1 AND category IN ('credits','credit_cards','debit_cards') ORDER BY sort_order ASC")->fetchAll(PDO::FETCH_COLUMN);
+$bankThemes = array_merge($bankOffers, [
+    'Сбербанк','Тинькофф Банк','Альфа-Банк','ВТБ','Газпромбанк',
+    'Совкомбанк','Россельхозбанк','Промсвязьбанк','Райффайзен Банк','Открытие',
+    'Почта Банк','Хоум Кредит Банк','МТС Банк','Ренессанс Кредит','Банк Уралсиб',
+    'Росбанк','Банк Санкт-Петербург','Ак Барс Банк','Синара Банк','Банк ДОМ.РФ',
+]);
+$bankThemes = array_unique($bankThemes);
+$baseTopics[] = ['category' => 'банки', 'themes' => $bankThemes];
+
+// Загружаем темы сгенерированные ранее через AI
+$generatedFile = __DIR__ . '/../../data/generated-topics.json';
+$generatedTopics = file_exists($generatedFile) ? json_decode(file_get_contents($generatedFile), true) : [];
+if ($generatedTopics) {
+    foreach ($baseTopics as &$group) {
+        if (isset($generatedTopics[$group['category']])) {
+            $group['themes'] = array_merge($group['themes'], $generatedTopics[$group['category']]);
+            $group['themes'] = array_unique($group['themes']);
+        }
+    }
+    unset($group);
+}
+
+// Фильтруем использованные
+$existingTitles = $db->query("SELECT LOWER(title) as t FROM articles")->fetchAll(PDO::FETCH_COLUMN);
+
+$topicsList = [];
+foreach ($baseTopics as $group) {
+    $available = [];
+    foreach ($group['themes'] as $theme) {
+        $themeLower = mb_strtolower($theme);
+        $found = false;
+        foreach ($existingTitles as $existing) {
+            if ($existing === $themeLower || str_contains($existing, $themeLower) || str_contains($themeLower, $existing)) {
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) $available[] = $theme;
+    }
+
+    $topicsList[] = [
+        'category' => $group['category'],
+        'themes' => $available,
+        'total' => count($group['themes']),
+        'used' => count($group['themes']) - count($available),
+    ];
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+// GET — список тем
+if ($method === 'GET') {
+    echo json_encode([
+        'topics' => $topicsList,
+        'aiStatus' => [
+            'yandexGPT' => !empty(YANDEX_GPT_API_KEY),
+            'gigaChat' => false,
+            'yandexART' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
+        ],
+    ]);
+    exit;
+}
+
+// POST
+$data = json_decode(file_get_contents('php://input'), true);
+$requestedTopic = $data['topic'] ?? '';
+$requestedCategory = $data['category'] ?? '';
+
+// === Генерация НОВЫХ тем через AI если все использованы ===
+if ($data['action'] ?? '' === 'generate-topics') {
+    $cat = $requestedCategory ?: 'займы';
+    $newTopics = generateNewTopics($cat, $existingTitles);
+    if ($newTopics) {
+        // Сохраняем
+        if (!isset($generatedTopics[$cat])) $generatedTopics[$cat] = [];
+        $generatedTopics[$cat] = array_merge($generatedTopics[$cat], $newTopics);
+        $generatedTopics[$cat] = array_unique($generatedTopics[$cat]);
+        file_put_contents($generatedFile, json_encode($generatedTopics, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        echo json_encode(['success' => true, 'topics' => $newTopics]);
+    } else {
+        echo json_encode(['error' => 'Не удалось сгенерировать темы']);
+    }
+    exit;
+}
+
+// Выбор темы
+if ($requestedTopic) {
+    $selectedTopic = $requestedTopic;
+    $selectedCategory = $requestedCategory ?: 'займы';
+} elseif ($requestedCategory) {
+    $catTopics = null;
+    foreach ($topicsList as $tg) {
+        if ($tg['category'] === $requestedCategory && !empty($tg['themes'])) {
+            $catTopics = $tg['themes'];
+            break;
+        }
+    }
+    // Если темы кончились — генерируем новые на лету
+    if (!$catTopics) {
+        $newTopics = generateNewTopics($requestedCategory, $existingTitles);
+        if ($newTopics) {
+            if (!isset($generatedTopics[$requestedCategory])) $generatedTopics[$requestedCategory] = [];
+            $generatedTopics[$requestedCategory] = array_merge($generatedTopics[$requestedCategory], $newTopics);
+            file_put_contents($generatedFile, json_encode($generatedTopics, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            $catTopics = $newTopics;
+        }
+    }
+    if (!$catTopics) {
+        echo json_encode(['error' => 'Не удалось найти или сгенерировать тему. Введите свою тему вручную.']);
+        exit;
+    }
+    $selectedTopic = $catTopics[array_rand($catTopics)];
+    $selectedCategory = $requestedCategory;
+} else {
+    $availableGroups = array_filter($topicsList, fn($g) => !empty($g['themes']));
+    if (empty($availableGroups)) {
+        // Генерируем для случайной категории
+        $cats = ['займы', 'кредиты', 'карты'];
+        $cat = $cats[array_rand($cats)];
+        $newTopics = generateNewTopics($cat, $existingTitles);
+        if ($newTopics) {
+            $selectedTopic = $newTopics[array_rand($newTopics)];
+            $selectedCategory = $cat;
+        } else {
+            echo json_encode(['error' => 'Все темы использованы. Введите свою тему.']);
+            exit;
+        }
+    } else {
+        $group = $availableGroups[array_rand($availableGroups)];
+        $selectedCategory = $group['category'];
+        $selectedTopic = $group['themes'][array_rand($group['themes'])];
+    }
+}
+
+$content = null;
+$aiProvider = 'шаблон';
+$coverImage = '';
+$isMFO = ($selectedCategory === 'мфо');
+$isBank = ($selectedCategory === 'банки');
+
+if ($isBank) {
+    $systemPrompt = "Ты — опытный финансовый журналист и банковский эксперт для сайта Космозайм (kosmozaim.ru).
+Пиши развёрнутые обзорные статьи о конкретных банках минимум 1500 слов на русском.
+
+Структура статьи:
+1. Введение — что за банк, история, позиция на рынке
+2. Общая информация — полное юридическое название, год основания, генеральная лицензия ЦБ РФ (номер), рейтинг надёжности
+3. Юридический адрес головного офиса, телефон горячей линии, email
+4. Основные продукты для физических лиц — вклады, кредиты, кредитные карты, дебетовые карты, ипотека
+5. Условия кредитования — ставки, суммы, сроки, требования к заёмщикам
+6. Кредитные и дебетовые карты — лучшие предложения, кэшбек, льготный период
+7. Онлайн-банкинг и мобильное приложение — функционал, удобство
+8. Сеть отделений и банкоматов — география присутствия
+9. Преимущества и недостатки банка — честный обзор
+10. Заключение — кому подойдёт этот банк
+
+НЕ указывай ссылку на сайт банка. В конце упомяни сайт Космозайм для сравнения предложений.
+Без таблиц, без markdown, без звёздочек. Подзаголовки на отдельной строке.
+Используй реальные данные если знаешь.";
+
+    $userPrompt = "Напиши развёрнутую обзорную статью о банке \"$selectedTopic\". Минимум 1500 слов. Обязательно укажи: генеральную лицензию ЦБ, юридический адрес, телефон горячей линии, условия кредитования, лучшие карты, преимущества и недостатки. Без ссылки на сайт банка. Без таблиц, без markdown.";
+
+    $artPrompt = "Нарисуй какой сейчас логотип банка $selectedTopic, на белом фоне, чистый логотип компании, без дополнительных элементов";
+} elseif ($isMFO) {
+    $systemPrompt = "Ты — опытный финансовый журналист и эксперт по микрофинансовым организациям для сайта Космозайм (kosmozaim.ru).
+Пиши развёрнутые обзорные статьи о конкретных МФО минимум 1500 слов на русском.
+
+Структура статьи:
+1. Заголовок и краткое введение — что за организация
+2. Общая информация о компании — год основания, юридическое название, лицензия ЦБ РФ (номер из реестра), организационно-правовая форма (МФК или МКК)
+3. Юридический адрес и контактные данные — адрес офиса, телефон горячей линии, email поддержки
+4. Условия займов — суммы, сроки, ставки, ПСК, первый займ без процентов (если есть)
+5. Как оформить займ — пошаговая инструкция
+6. Требования к заёмщикам — возраст, документы, кредитная история
+7. Способы получения и возврата денег — карта, электронный кошелёк, наличные
+8. Преимущества и недостатки — честный обзор
+9. Отзывы заёмщиков — общая тональность отзывов
+10. Заключение — рекомендации, для кого подойдёт
+
+НЕ указывай ссылку на сайт организации. В конце упомяни сайт Космозайм для сравнения предложений.
+Без таблиц, без markdown, без звёздочек. Подзаголовки на отдельной строке.";
+
+    $userPrompt = "Напиши развёрнутую обзорную статью о микрофинансовой организации \"$selectedTopic\". Минимум 1500 слов. Обязательно укажи: лицензию ЦБ, юридический адрес, телефон горячей линии, условия займов, пошаговую инструкцию оформления, преимущества и недостатки. Без ссылки на сайт организации.";
+    $artPrompt = "Нарисуй какой сейчас логотип МФО $selectedTopic, на белом фоне, чистый логотип компании, без дополнительных элементов";
+} else {
+    $systemPrompt = "Ты — опытный финансовый журналист для сайта Космозайм (kosmozaim.ru).
+Пиши развёрнутые статьи минимум 1500 слов на русском.
+Используй подзаголовки. Добавляй факты и примеры.
+Упоминай законодательство РФ. В конце упомяни сайт Космозайм.
+Без таблиц, без markdown, без звёздочек. Подзаголовки на отдельной строке.";
+
+    $userPrompt = "Напиши развёрнутую статью на тему \"$selectedTopic\". Минимум 1500 слов. Без таблиц, без markdown. Практические советы для России.";
+    $artPrompt = "Профессиональная иллюстрация: $selectedTopic. Финансовая тема, современный стиль, яркие цвета, без текста.";
+}
+
+// Генерация текста
+if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
+    $ctx = stream_context_create(['http' => [
+        'method' => 'POST',
+        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
+        'content' => json_encode([
+            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
+            'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 8000],
+            'messages' => [
+                ['role' => 'system', 'text' => $systemPrompt],
+                ['role' => 'user', 'text' => $userPrompt],
+            ],
+        ]),
+        'timeout' => 120,
+    ]]);
+    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, $ctx);
+    if ($response) {
+        $result = json_decode($response, true);
+        $text = $result['result']['alternatives'][0]['message']['text'] ?? null;
+        if ($text) { $content = $text; $aiProvider = 'YandexGPT'; }
+    }
+}
+
+if ($content) {
+    $content = preg_replace('/^#{1,6}\s*/m', '', $content);
+    $content = preg_replace('/\*+/', '', $content);
+    $content = preg_replace('/`/', '', $content);
+    $content = preg_replace('/^[\s]*[-•+]\s+/m', '', $content);
+    $content = preg_replace('/\n{3,}/', "\n\n", $content);
+    $content = trim($content);
+}
+
+if (!$content) {
+    $content = $isBank
+        ? "$selectedTopic — обзор банка\n\n$selectedTopic — один из банков России.\n\nНа сайте Космозайм сравните банковские продукты."
+        : ($isMFO
+        ? "$selectedTopic — обзор микрофинансовой организации\n\n$selectedTopic — МФО, предоставляющая займы онлайн.\n\nНа сайте Космозайм вы можете сравнить условия разных организаций."
+        : "$selectedTopic\n\nОбращайте внимание на ставку и ПСК.\n\nНа сайте Космозайм сравните условия и выберите лучшее предложение.");
+}
+
+// Генерация картинки
+if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
+    $artCtx = stream_context_create(['http' => [
+        'method' => 'POST',
+        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY,
+        'content' => json_encode([
+            'modelUri' => 'art://' . YANDEX_FOLDER_ID . '/yandex-art/latest',
+            'generationOptions' => ['seed' => mt_rand(1, 999999), 'aspectRatio' => ['widthRatio' => '16', 'heightRatio' => '9']],
+            'messages' => [['weight' => '1', 'text' => $artPrompt]],
+        ]),
+        'timeout' => 30,
+    ]]);
+    $artResponse = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/imageGenerationAsync', false, $artCtx);
+    if ($artResponse) {
+        $artData = json_decode($artResponse, true);
+        $opId = $artData['id'] ?? null;
+        if ($opId) {
+            for ($i = 0; $i < 12; $i++) {
+                sleep(5);
+                $checkCtx = stream_context_create(['http' => ['header' => "Authorization: Api-Key " . YANDEX_GPT_API_KEY, 'timeout' => 10]]);
+                $checkResponse = @file_get_contents("https://operation.api.cloud.yandex.net:443/operations/$opId", false, $checkCtx);
+                if (!$checkResponse) continue;
+                $checkData = json_decode($checkResponse, true);
+                if (($checkData['done'] ?? false) && !empty($checkData['response']['image'])) {
+                    $imageData = base64_decode($checkData['response']['image']);
+                    $fileName = 'article-' . time() . '.jpeg';
+                    $dirPath = __DIR__ . '/../../images/articles';
+                    if (!is_dir($dirPath)) @mkdir($dirPath, 0755, true);
+                    file_put_contents("$dirPath/$fileName", $imageData);
+                    $coverImage = "/images/articles/$fileName";
+                    break;
+                }
+                if (($checkData['done'] ?? false) && !empty($checkData['error'])) break;
+            }
+        }
+    }
+}
+
+// Мета
+$paragraphs = array_filter(explode("\n\n", $content));
+$excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : mb_substr($content, 0, 200) . '...';
+$slug = slugify($selectedTopic) . '-' . time();
+
+if ($isBank) {
+    $metaTitle = $selectedTopic . ' — обзор банка, кредиты, карты | ' . SITE_NAME;
+    $metaDescription = 'Обзор банка ' . $selectedTopic . ': кредиты, карты, вклады, лицензия ЦБ, контакты.';
+} elseif ($isMFO) {
+    $metaTitle = $selectedTopic . ' — обзор, условия, отзывы | ' . SITE_NAME;
+    $metaDescription = 'Обзор ' . $selectedTopic . ': условия займов, лицензия ЦБ, контакты, преимущества и недостатки.';
+} else {
+    $metaTitle = $selectedTopic . ' | ' . SITE_NAME;
+    $metaDescription = mb_substr($excerpt, 0, 155);
+}
+
+$db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published) VALUES (?,?,?,?,?,?,?,0)")
+   ->execute([$selectedTopic, $slug, $excerpt, $content, $metaTitle, $metaDescription, $coverImage]);
+
+$newArticle = $db->query("SELECT * FROM articles ORDER BY id DESC LIMIT 1")->fetch();
+
+echo json_encode([
+    'success' => true,
+    'article' => $newArticle,
+    'aiProvider' => $aiProvider,
+    'hasImage' => !empty($coverImage),
+    'category' => $selectedCategory,
+]);
+
+// ============================================================
+// Функция генерации новых тем через YandexGPT
+// ============================================================
+function generateNewTopics(string $category, array $existingTitles): array {
+    if (!YANDEX_GPT_API_KEY || !YANDEX_FOLDER_ID) return [];
+
+    $catDescriptions = [
+        'займы' => 'микрозаймы, МФО, займы онлайн, займы на карту в России',
+        'кредиты' => 'банковские кредиты, ипотека, потребительские кредиты, автокредиты в России',
+        'карты' => 'банковские карты, кредитные карты, дебетовые карты, кэшбек в России',
+        'банки' => 'российские банки, обзоры банков, банковские продукты, вклады, кредиты, карты банков России',
+    ];
+    $catDesc = $catDescriptions[$category] ?? 'финансовые продукты в России';
+
+    $existingList = implode("\n", array_slice($existingTitles, 0, 30));
+
+    $ctx = stream_context_create(['http' => [
+        'method' => 'POST',
+        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
+        'content' => json_encode([
+            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt-lite/latest',
+            'completionOptions' => ['stream' => false, 'temperature' => 0.8, 'maxTokens' => 1000],
+            'messages' => [
+                ['role' => 'system', 'text' => "Ты генератор тем для финансового блога. Предлагай уникальные, интересные темы для статей."],
+                ['role' => 'user', 'text' => "Придумай 10 новых уникальных тем для статей про $catDesc.\n\nЭти темы уже использованы, НЕ повторяй их:\n$existingList\n\nВыведи только список тем, по одной на строку, без нумерации, без пояснений."],
+            ],
+        ]),
+        'timeout' => 30,
+    ]]);
+
+    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, $ctx);
+    if (!$response) return [];
+
+    $data = json_decode($response, true);
+    $text = $data['result']['alternatives'][0]['message']['text'] ?? '';
+    if (!$text) return [];
+
+    $lines = array_filter(array_map('trim', explode("\n", $text)));
+    $topics = [];
+    foreach ($lines as $line) {
+        // Убираем нумерацию и лишние символы
+        $line = preg_replace('/^\d+[\.\)]\s*/', '', $line);
+        $line = preg_replace('/^[-–—•]\s*/', '', $line);
+        $line = trim($line, ' "«»');
+        if (mb_strlen($line) > 10 && mb_strlen($line) < 150) {
+            // Проверяем что не дубль
+            $lineLower = mb_strtolower($line);
+            $isDupe = false;
+            foreach ($existingTitles as $et) {
+                if (str_contains($et, $lineLower) || str_contains($lineLower, $et)) {
+                    $isDupe = true;
+                    break;
+                }
+            }
+            if (!$isDupe) $topics[] = $line;
+        }
+    }
+
+    return array_slice($topics, 0, 10);
+}

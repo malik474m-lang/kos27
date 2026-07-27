@@ -1,0 +1,68 @@
+<?php
+$adminUri = substr($apiUri, 6); // убираем /admin
+$method = $_SERVER['REQUEST_METHOD'];
+
+// Логин не требует авторизации
+if ($adminUri === '/login' && $method === 'POST') { require __DIR__ . '/admin/login.php'; exit; }
+if ($adminUri === '/logout' && $method === 'POST') { require __DIR__ . '/admin/logout.php'; exit; }
+if ($adminUri === '/check') { require __DIR__ . '/admin/check.php'; exit; }
+
+// Всё остальное — только для авторизованных
+requireAdmin();
+
+// Офферы
+if ($adminUri === '/offers' && $method === 'GET') { require __DIR__ . '/admin/offers-list.php'; exit; }
+if ($adminUri === '/offers' && $method === 'POST') { require __DIR__ . '/admin/offers-create.php'; exit; }
+if (preg_match('#^/offers/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/offers-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/offers-delete.php'; exit; }
+}
+
+// Статьи
+if ($adminUri === '/articles' && $method === 'GET') { require __DIR__ . '/admin/articles-list.php'; exit; }
+if ($adminUri === '/articles' && $method === 'POST') { require __DIR__ . '/admin/articles-create.php'; exit; }
+if (preg_match('#^/articles/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/articles-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/articles-delete.php'; exit; }
+}
+
+// Отзывы
+if ($adminUri === '/reviews' && $method === 'GET') { require __DIR__ . '/admin/reviews-list.php'; exit; }
+if (preg_match('#^/reviews/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/reviews-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/reviews-delete.php'; exit; }
+}
+
+// Гео-редиректы
+if ($adminUri === '/geo-redirects' && $method === 'GET') { require __DIR__ . '/admin/geo-list.php'; exit; }
+if ($adminUri === '/geo-redirects' && $method === 'POST') { require __DIR__ . '/admin/geo-create.php'; exit; }
+if (preg_match('#^/geo-redirects/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/geo-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/geo-delete.php'; exit; }
+}
+
+// Статистика
+if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
+
+// Подписчики
+if ($adminUri === '/subscribers') { require __DIR__ . '/admin/subscribers.php'; exit; }
+
+// Настройки сайта
+if ($adminUri === '/settings') { require __DIR__ . '/admin/settings.php'; exit; }
+
+// Планировщик
+if ($adminUri === '/scheduler') { require __DIR__ . '/admin/scheduler.php'; exit; }
+
+// Смена пароля
+if ($adminUri === '/change-password' && $method === 'POST') { require __DIR__ . '/admin/change-password.php'; exit; }
+
+// Генерация
+if ($adminUri === '/generate-article') { require __DIR__ . '/admin/generate-article.php'; exit; }
+if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . '/admin/generate-review.php'; exit; }
+
+http_response_code(404);
+echo json_encode(['error' => 'Not found']);

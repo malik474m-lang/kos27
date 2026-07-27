@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Админ-панель — Космозайм</title>
+<script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#1a56db','primary-dark':'#1244af',accent:'#059669',danger:'#dc2626'}}}}</script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;}
+.input-f{width:100%;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.875rem;}
+.input-f:focus{outline:none;ring:2px solid #1a56db;}
+.sel-f{width:100%;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.5rem 0.75rem;background:white;font-size:0.875rem;}
+.btn-p{background:#1a56db;color:white;padding:0.5rem 1.5rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;}
+.btn-p:hover{background:#1244af;}
+.btn-p:disabled{opacity:0.5;}
+</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Сменить пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
+<div class="bg-white shadow-sm border-b"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-4 overflow-x-auto">
+<button onclick="sw('settings')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="settings">⚙️ Настройки</button>
+<button onclick="sw('offers')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="offers">📋 Предложения</button>
+<button onclick="sw('articles')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="articles">📰 Статьи</button>
+<button onclick="sw('reviews')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="reviews">⭐ Отзывы</button>
+<button onclick="sw('geo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="geo">🌍 Гео-редиректы</button>
+<button onclick="sw('stats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="stats">📊 Статистика</button>
+<button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
+<button onclick="sw('scheduler')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="scheduler">⏰ Планировщик</button>
+<button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
+</div></div></div>
+<div class="max-w-7xl mx-auto px-4 py-8">
+<div id="p-settings" class="tp hidden"></div>
+<div id="p-offers" class="tp"></div>
+<div id="p-articles" class="tp hidden"></div>
+<div id="p-reviews" class="tp hidden"></div>
+<div id="p-geo" class="tp hidden"></div>
+<div id="p-stats" class="tp hidden"></div>
+<div id="p-subs" class="tp hidden"></div>
+<div id="p-scheduler" class="tp hidden"></div>
+<div id="p-backup" class="tp hidden"></div>
+</div>
+<div id="M"></div>
+<script>
+const A='/api/admin';
+function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
+function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});({settings:lSet,offers:lO,articles:lA,reviews:lR,geo:lG,stats:lS,subs:lSu,scheduler:lSch,backup:lB})[t]?.();}
+function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
+function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
+function modal(h){document.getElementById('M').innerHTML='<div class="modal-bg" onclick="if(event.target===this)cm()"><div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl">'+h+'</div></div>';}
+function cm(){document.getElementById('M').innerHTML='';}
+const CL={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
+const BL={any:'Любой',employed:'Работающий',unemployed:'Безработный',pensioner:'Пенсионер',student:'Студент',self_employed:'Самозанятый'};
+
+/* ============ OFFERS ============ */
+function lO(){ap('/offers').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><button onclick="oForm()" class="btn-p">+ Добавить</button></div>';
+h+='<div class="bg-white rounded-xl shadow-sm border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3">Название</th><th class="text-left px-4 py-3">Категория</th><th class="text-left px-4 py-3">Сумма</th><th class="text-left px-4 py-3">Ставка</th><th class="text-left px-4 py-3">Рейтинг</th><th class="text-left px-4 py-3">Статус</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
+list.forEach(o=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">'+e(o.title)+'</td><td class="px-4 py-3 text-gray-600">'+(CL[o.category]||o.category)+'</td><td class="px-4 py-3 text-gray-600">'+Number(o.amount_min).toLocaleString()+' — '+Number(o.amount_max).toLocaleString()+' ₽</td><td class="px-4 py-3">'+o.rate+'%</td><td class="px-4 py-3">'+(parseFloat(o.rating)>0?'<span class="text-yellow-600">★ '+parseFloat(o.rating).toFixed(1)+' ('+o.review_count+')</span>':'—')+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Активно':'Выкл')+'</span></td><td class="px-4 py-3 text-right"><button onclick=\'oForm('+JSON.stringify(o).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="oD('+o.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
+h+='</tbody></table></div>';document.getElementById('p-offers').innerHTML=h;});}
+
+function oForm(o){let f=o||{title:'',category:'microloans',amount_min:1000,amount_max:100000,term_min_days:1,term_max_days:365,psk:'0',rate:'0',free_term_days:0,logo_url:'',affiliate_url:'',borrower_category:'any',description:'',seo_keywords:'',regions:'',is_active:true,sort_order:0};let id=o?o.id:0;
+let catOpts='',borOpts='';for(let k in CL)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+CL[k]+'</option>';for(let k in BL)borOpts+='<option value="'+k+'"'+(f.borrower_category===k?' selected':'')+'>'+BL[k]+'</option>';
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать':'Новое предложение')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>'+
+'<form onsubmit="return oS(event,'+id+')"><div class="grid grid-cols-2 gap-3">'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Название *</label><input id="of-t" class="input-f" value="'+e(f.title)+'" required></div>'+
+'<div><label class="block text-xs font-medium mb-1">Категория</label><select id="of-c" class="sel-f">'+catOpts+'</select></div>'+
+'<div><label class="block text-xs font-medium mb-1">Заёмщик</label><select id="of-b" class="sel-f">'+borOpts+'</select></div>'+
+'<div><label class="block text-xs font-medium mb-1">Сумма от</label><input id="of-am1" type="number" class="input-f" value="'+f.amount_min+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Сумма до</label><input id="of-am2" type="number" class="input-f" value="'+f.amount_max+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Срок от (дн)</label><input id="of-t1" type="number" class="input-f" value="'+f.term_min_days+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Срок до (дн)</label><input id="of-t2" type="number" class="input-f" value="'+f.term_max_days+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">ПСК %</label><input id="of-psk" type="number" step="0.01" class="input-f" value="'+f.psk+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Ставка %</label><input id="of-r" type="number" step="0.01" class="input-f" value="'+f.rate+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Без % (дн)</label><input id="of-fr" type="number" class="input-f" value="'+f.free_term_days+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="of-so" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><input id="of-lo" class="input-f" value="'+e(f.logo_url||'')+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
+'<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
+
+function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value};ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lO();});return false;}
+function oD(id){if(confirm('Удалить?'))ap('/offers/'+id,{method:'DELETE'}).then(()=>lO());}
+
+/* ============ ARTICLES ============ */
+let aTopics=[],aAi={};
+function lA(){ap('/generate-article').then(d=>{aTopics=d.topics||[];aAi=d.aiStatus||{};});
+ap('/articles').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Статьи ('+list.length+')</h2><div class="flex gap-2"><button onclick="aGen()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🤖 Автогенерация</button><button onclick="aForm()" class="btn-p">+ Добавить</button></div></div>';
+h+='<div class="bg-white rounded-xl shadow-sm border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3">Заголовок</th><th class="text-left px-4 py-3">Дата</th><th class="text-left px-4 py-3">Статус</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
+list.forEach(a=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">'+e(a.title)+'</td><td class="px-4 py-3 text-gray-500">'+new Date(a.created_at).toLocaleDateString('ru-RU')+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(a.is_published?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+'">'+(a.is_published?'Опубликовано':'Черновик')+'</span></td><td class="px-4 py-3 text-right space-x-2"><a href="/articles/'+e(a.slug)+'" target="_blank" class="text-gray-400 hover:text-gray-600">👁</a> <button onclick=\'aForm('+JSON.stringify(a).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm">Ред.</button> <button onclick="aToggle('+a.id+','+(!a.is_published)+')" class="text-blue-500 hover:underline text-sm">'+(a.is_published?'Скрыть':'Опубл.')+'</button> <button onclick="aD('+a.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
+h+='</tbody></table></div>';document.getElementById('p-articles').innerHTML=h;});}
+
+function aGen(){let cats='<option value="">Случайная</option>';aTopics.forEach(t=>{var avail=t.themes?t.themes.length:0;var total=t.total||avail;var used=t.used||0;var label=t.category.charAt(0).toUpperCase()+t.category.slice(1);if(avail>0)cats+='<option value="'+t.category+'">'+label+' ('+avail+' из '+total+' доступно)</option>';else cats+='<option value="'+t.category+'">'+label+' — темы закончились, AI создаст новые</option>';});
+let badges=(aAi.yandexGPT?'<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded ml-2">YandexGPT</span>':'')+(aAi.yandexART?'<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded ml-1">YandexART</span>':'');
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🤖 Автогенерация'+badges+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Категория</label><select id="ag-c" class="sel-f" onchange="agUpd()">'+cats+'</select></div><div><label class="block text-sm font-medium mb-1">Тема из списка</label><select id="ag-t" class="sel-f"><option value="">Случайная</option></select></div><div><label class="block text-sm font-medium mb-1">Или своя тема</label><input id="ag-cu" class="input-f" placeholder="Введите свою тему"></div><div class="bg-blue-50 p-3 rounded-lg text-sm text-blue-700"><p class="font-medium mb-1">ℹ️ Как работает:</p><p class="text-xs">Текст: '+(aAi.yandexGPT?'YandexGPT':'шаблон')+' • Картинка: '+(aAi.yandexART?'YandexART':'нет')+' • Черновик • До 90 сек</p><p class="text-xs mt-1">🏦 МФО — обзор организации • Если темы закончились — AI сгенерирует новые автоматически</p></div><div class="bg-green-50 p-3 rounded-lg text-sm"><button type="button" onclick="agNewTopics()" id="ag-newtopics" class="text-green-800 font-semibold hover:underline">🔄 Сгенерировать 10 новых тем через AI</button><span id="ag-newtopics-status" class="ml-2 text-green-600"></span></div></div><div class="flex justify-end gap-3 mt-6"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="agDo()" id="ag-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold">🚀 Сгенерировать</button></div>');}
+
+
+
+function agUpd(){let c=document.getElementById('ag-c').value,s=document.getElementById('ag-t');s.innerHTML='<option value="">Случайная</option>';if(c){let g=aTopics.find(t=>t.category===c);if(g)g.themes.forEach(th=>{s.innerHTML+='<option value="'+th+'">'+th+'</option>';});}}
+
+function agDo(){let cu=document.getElementById('ag-cu').value.trim(),tp=cu||document.getElementById('ag-t').value,ct=document.getElementById('ag-c').value,b=document.getElementById('ag-btn');b.disabled=true;b.textContent='⏳ Генерация...';
+ap('/generate-article',{method:'POST',body:JSON.stringify({topic:tp||null,category:ct||null})}).then(d=>{cm();if(d.success){let im=d.hasImage?'\n📷 Обложка: YandexART':'\n📷 Без обложки';alert('Статья "'+d.article.title+'" создана!\n🤖 '+d.aiProvider+im);}else alert('Ошибка: '+(d.error||''));lA();}).catch(()=>{alert('Ошибка');b.disabled=false;b.textContent='🚀 Сгенерировать';});}
+
+function aForm(a){let f=a||{title:'',excerpt:'',content:'',meta_title:'',meta_description:'',cover_image:'',is_published:false};let id=a?a.id:0;
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать статью':'Новая статья')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><form onsubmit="return aS(event,'+id+')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Заголовок *</label><input id="af-t" class="input-f" value="'+e(f.title)+'" required></div><div><label class="block text-xs font-medium mb-1">Краткое описание</label><textarea id="af-ex" class="input-f" rows="2">'+e(f.excerpt||'')+'</textarea></div><div><label class="block text-xs font-medium mb-1">Содержание *</label><textarea id="af-co" class="input-f" rows="10" required>'+e(f.content)+'</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Meta Title</label><input id="af-mt" class="input-f" value="'+e(f.meta_title||'')+'"></div><div><label class="block text-xs font-medium mb-1">Обложка URL</label><input id="af-ci" class="input-f" value="'+e(f.cover_image||'')+'"></div></div><div><label class="block text-xs font-medium mb-1">Meta Description</label><textarea id="af-md" class="input-f" rows="2">'+e(f.meta_description||'')+'</textarea></div><div><label class="flex items-center gap-2"><input type="checkbox" id="af-pu" '+(f.is_published?'checked':'')+' class="w-4 h-4"><span class="text-sm">Опубликовать</span></label></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
+
+function aS(ev,id){ev.preventDefault();let d={title:document.getElementById('af-t').value,excerpt:document.getElementById('af-ex').value,content:document.getElementById('af-co').value,metaTitle:document.getElementById('af-mt').value,metaDescription:document.getElementById('af-md').value,coverImage:document.getElementById('af-ci').value,isPublished:document.getElementById('af-pu').checked};ap(id?'/articles/'+id:'/articles',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lA();});return false;}
+function aToggle(id,v){ap('/articles/'+id,{method:'PUT',body:JSON.stringify({isPublished:v})}).then(()=>lA());}
+function aD(id){if(confirm('Удалить?'))ap('/articles/'+id,{method:'DELETE'}).then(()=>lA());}
+
+/* ============ REVIEWS ============ */
+function lR(){ap('/reviews').then(list=>{let pend=list.filter(r=>!r.is_approved).length;let h='<div class="flex justify-between mb-6"><div class="flex items-center gap-4"><h2 class="text-xl font-bold">Отзывы ('+list.length+')</h2>'+(pend?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-sm">'+pend+' на модерации</span>':'')+'</div><button onclick="rGen()" class="btn-p">🤖 Сгенерировать</button></div><div class="space-y-3">';
+list.forEach(r=>{let st='';for(let i=1;i<=5;i++)st+='<span class="'+(i<=r.rating?'text-yellow-400':'text-gray-300')+'">★</span>';
+h+='<div class="bg-white rounded-xl border p-4 '+(r.is_approved?'':'border-yellow-200 bg-yellow-50/50')+'"><div class="flex justify-between"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><span class="font-semibold">'+e(r.author_name)+'</span><span>'+st+'</span><span class="text-xs text-gray-400">'+new Date(r.created_at).toLocaleDateString('ru-RU')+'</span></div><p class="text-sm text-gray-500">'+e(r.offer_title||'—')+'</p><p class="text-gray-700 mt-1">'+e(r.comment)+'</p></div><div class="flex flex-col gap-1 ml-4">'+(r.is_approved?'<button onclick="rA('+r.id+',false)" class="text-sm bg-gray-100 px-3 py-1 rounded">Скрыть</button>':'<button onclick="rA('+r.id+',true)" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded">✓ Одобрить</button>')+'<button onclick="rD('+r.id+')" class="text-sm text-red-500">Удалить</button></div></div></div>';});
+h+='</div>';document.getElementById('p-reviews').innerHTML=h;});}
+function rGen(){ap('/generate-review',{method:'POST'}).then(d=>{if(d.success)alert(d.review.name+' → '+d.review.offer+' ('+d.review.rating+'/5)');lR();});}
+function rA(id,v){ap('/reviews/'+id,{method:'PUT',body:JSON.stringify({isApproved:v})}).then(()=>lR());}
+function rD(id){if(confirm('Удалить?'))ap('/reviews/'+id,{method:'DELETE'}).then(()=>lR());}
+
+/* ============ GEO ============ */
+function lG(){ap('/geo-redirects').then(rules=>{let w=rules.find(r=>r.country_code==='*');let exc=rules.filter(r=>r.country_code!=='*'&&(!r.redirect_url||!r.redirect_url.trim()));let sp=rules.filter(r=>r.country_code!=='*'&&r.redirect_url&&r.redirect_url.trim());
+let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Гео-редиректы</h2><button onclick="gF()" class="btn-p">+ Добавить</button></div><div id="gfm" class="hidden bg-gray-50 rounded-lg p-6 mb-6"><div class="grid grid-cols-3 gap-4 mb-4"><div><label class="block text-xs font-medium mb-1">Код (* = все)</label><input id="g-cc" class="input-f" placeholder="*"></div><div><label class="block text-xs font-medium mb-1">Название</label><input id="g-cn" class="input-f" placeholder="Все страны"></div><div><label class="block text-xs font-medium mb-1">URL (пусто = исключение)</label><input id="g-url" class="input-f" placeholder="https://..."></div></div><button onclick="gSv()" class="btn-p">Сохранить</button></div>';
+if(w){h+='<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex justify-between items-center"><div>🌍 <strong>Все страны</strong> → <a href="'+e(w.redirect_url)+'" target="_blank" class="text-blue-600 hover:underline">'+e(w.redirect_url)+'</a> <span class="text-xs text-gray-500">(исключ: '+exc.length+')</span></div><div class="flex gap-2"><button onclick="gTg('+w.id+','+(!w.is_active)+')" class="text-sm '+(w.is_active?'text-green-600':'text-gray-400')+'">'+(w.is_active?'Активен':'Выкл')+'</button><button onclick="gD('+w.id+')" class="text-red-500 text-sm">Удалить</button></div></div>';}
+if(exc.length){h+='<h3 class="text-sm font-semibold text-gray-500 uppercase mb-2 mt-4">🛡️ Исключения</h3><div class="space-y-2 mb-4">';exc.forEach(r=>{h+='<div class="bg-white rounded-lg border p-3 flex justify-between"><span>'+e(r.country_name||r.country_code)+' ('+r.country_code+')</span><div><button onclick="gTg('+r.id+','+(!r.is_active)+')" class="text-sm mr-2 '+(r.is_active?'text-green-600':'text-gray-400')+'">'+(r.is_active?'Вкл':'Выкл')+'</button><button onclick="gD('+r.id+')" class="text-red-500 text-sm">Удалить</button></div></div>';});h+='</div>';}
+if(sp.length){h+='<h3 class="text-sm font-semibold text-gray-500 uppercase mb-2 mt-4">🎯 Конкретные страны</h3><div class="space-y-2">';sp.forEach(r=>{h+='<div class="bg-white rounded-lg border p-3 flex justify-between"><span>'+e(r.country_name||r.country_code)+' → <a href="'+e(r.redirect_url)+'" target="_blank" class="text-blue-600">'+e(r.redirect_url)+'</a></span><div><button onclick="gTg('+r.id+','+(!r.is_active)+')" class="text-sm mr-2 '+(r.is_active?'text-green-600':'text-gray-400')+'">'+(r.is_active?'Вкл':'Выкл')+'</button><button onclick="gD('+r.id+')" class="text-red-500 text-sm">Удалить</button></div></div>';});h+='</div>';}
+if(!rules.length)h+='<p class="text-gray-500 text-center py-8">Нет правил</p>';
+document.getElementById('p-geo').innerHTML=h;});}
+function gF(){document.getElementById('gfm')?.classList.toggle('hidden');}
+function gSv(){ap('/geo-redirects',{method:'POST',body:JSON.stringify({countryCode:document.getElementById('g-cc').value,countryName:document.getElementById('g-cn').value,redirectUrl:document.getElementById('g-url').value,isActive:true})}).then(()=>lG());}
+function gTg(id,v){ap('/geo-redirects/'+id,{method:'PUT',body:JSON.stringify({isActive:v})}).then(()=>lG());}
+function gD(id){if(confirm('Удалить?'))ap('/geo-redirects/'+id,{method:'DELETE'}).then(()=>lG());}
+
+/* ============ STATS ============ */
+function lS(){ap('/stats').then(s=>{let h='<h2 class="text-xl font-bold mb-6">Статистика</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.offers+'</p><p class="text-sm text-gray-500">Предложений</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.articles+'</p><p class="text-sm text-gray-500">Статей</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.reviews+'</p><p class="text-sm text-gray-500">Отзывов</p></div><div class="bg-white rounded-xl border p-5 text-center"><p class="text-3xl font-bold text-blue-600">'+s.subscribers+'</p><p class="text-sm text-gray-500">Подписчиков</p></div></div><div class="grid grid-cols-3 gap-4 mb-8"><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksToday+'</p><p class="text-xs text-gray-500">Сегодня</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksWeek+'</p><p class="text-xs text-gray-500">Неделя</p></div><div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+s.clicksMonth+'</p><p class="text-xs text-gray-500">Месяц</p></div></div>';
+if(s.topOffers&&s.topOffers.length){h+='<h3 class="font-semibold mb-4">Топ офферов (30 дней)</h3><div class="bg-white rounded-xl border"><table class="w-full"><thead><tr class="bg-gray-50"><th class="p-3 text-left text-sm">Оффер</th><th class="p-3 text-left text-sm">Клики</th></tr></thead><tbody>';s.topOffers.forEach(o=>{h+='<tr class="border-t"><td class="p-3">'+e(o.title)+'</td><td class="p-3 font-semibold">'+o.clicks+'</td></tr>';});h+='</tbody></table></div>';}
+document.getElementById('p-stats').innerHTML=h;});}
+
+/* ============ SUBSCRIBERS ============ */
+function lSu(){ap('/subscribers').then(list=>{let h='<h2 class="text-xl font-bold mb-6">Подписчики ('+list.length+')</h2>';
+if(!list.length){h+='<p class="text-gray-500 text-center py-8">Нет подписчиков</p>';}else{
+h+='<div class="bg-white rounded-xl border"><table class="w-full"><thead><tr class="bg-gray-50"><th class="p-3 text-left text-sm">Email</th><th class="p-3 text-left text-sm">Дата</th><th class="p-3 text-left text-sm">Статус</th></tr></thead><tbody>';
+list.forEach(s=>{h+='<tr class="border-t"><td class="p-3">'+e(s.email)+'</td><td class="p-3 text-sm text-gray-500">'+new Date(s.subscribed_at).toLocaleDateString('ru-RU')+'</td><td class="p-3"><span class="px-2 py-1 rounded-full text-xs '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Активен':'Отписан')+'</span></td></tr>';});
+h+='</tbody></table></div>';}
+document.getElementById('p-subs').innerHTML=h;});}
+
+sw('offers');
+
+
+/* ============ BACKUP ============ */
+function lB(){ap2('/admin/backup').then(d=>{
+let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">💾 Резервные копии</h2><button onclick="bCreate()" class="btn-p" id="b-create-btn">+ Создать бэкап</button></div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"><p class="text-blue-700 text-sm"><strong>ℹ️ Бэкап включает:</strong> базу данных, PHP-файлы, изображения, конфиги. При восстановлении .env и config.php НЕ перезаписываются (безопасность).</p></div>';
+if(!d.backups||!d.backups.length){h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Бэкапов пока нет</p></div>';}
+else{h+='<div class="bg-white rounded-xl shadow-sm border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3">Файл</th><th class="text-left px-4 py-3">Размер</th><th class="text-left px-4 py-3">Дата</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
+d.backups.forEach(b=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">'+b.name+'</td><td class="px-4 py-3 text-gray-600">'+b.sizeHuman+'</td><td class="px-4 py-3 text-gray-600">'+b.date+'</td><td class="px-4 py-3 text-right space-x-2"><a href="/admin/backup?action=download&name='+encodeURIComponent(b.name)+'" class="text-blue-600 hover:underline text-sm">⬇️ Скачать</a> <button onclick="bRestore(\''+b.name+'\')" class="text-green-600 hover:underline text-sm">♻️ Восстановить</button> <button onclick="bDelete(\''+b.name+'\')" class="text-red-500 hover:underline text-sm">🗑 Удалить</button></td></tr>';});
+h+='</tbody></table></div>';}
+document.getElementById('p-backup').innerHTML=h;});}
+
+function ap2(u,o){return fetch(u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
+
+function bCreate(){
+let btn=document.getElementById('b-create-btn');
+btn.disabled=true;btn.textContent='⏳ Создание...';
+ap2('/admin/backup?action=create',{method:'POST'}).then(d=>{
+btn.disabled=false;btn.textContent='+ Создать бэкап';
+if(d.success){alert('✅ Бэкап создан: '+d.backup+' ('+d.size+')');lB();}
+else alert('❌ Ошибка: '+(d.error||''));
+}).catch(()=>{btn.disabled=false;btn.textContent='+ Создать бэкап';alert('Ошибка');});}
+
+function bRestore(name){
+if(!confirm('⚠️ Восстановить из бэкапа "'+name+'"?\n\nБаза данных будет перезаписана!\nФайлы кода будут заменены.\n\nПродолжить?'))return;
+ap2('/admin/backup?action=restore&name='+encodeURIComponent(name),{method:'POST'}).then(d=>{
+if(d.success){alert('✅ '+(d.message||'Восстановлено')+(d.warnings?' (с предупреждениями)':''));location.reload();}
+else alert('❌ '+(d.error||'Ошибка'));
+}).catch(()=>alert('Ошибка'));}
+
+function bDelete(name){
+if(!confirm('Удалить бэкап "'+name+'"?'))return;
+ap2('/admin/backup?name='+encodeURIComponent(name),{method:'DELETE'}).then(d=>{
+if(d.success)lB();else alert(d.error||'Ошибка');
+}).catch(()=>alert('Ошибка'));}
+
+
+
+/* ============ CHANGE PASSWORD ============ */
+function showChangePw(){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔑 Смена пароля</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>'+
+'<form onsubmit="return changePw(event)"><div class="space-y-4">'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">Текущий пароль</label><input type="password" id="pw-old" class="input-f" required></div>'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">Новый пароль</label><input type="password" id="pw-new" class="input-f" required minlength="6"></div>'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">Повторите новый пароль</label><input type="password" id="pw-confirm" class="input-f" required minlength="6"></div>'+
+'<div id="pw-err" class="hidden text-red-600 text-sm"></div>'+
+'</div><div class="flex justify-end gap-3 mt-6"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" id="pw-btn" class="btn-p">Сохранить</button></div></form>');}
+
+function changePw(ev){ev.preventDefault();
+var o=document.getElementById('pw-old').value;
+var n=document.getElementById('pw-new').value;
+var c=document.getElementById('pw-confirm').value;
+var err=document.getElementById('pw-err');
+err.className='hidden';
+if(n!==c){err.textContent='Пароли не совпадают';err.className='text-red-600 text-sm';return false;}
+if(n.length<6){err.textContent='Минимум 6 символов';err.className='text-red-600 text-sm';return false;}
+var btn=document.getElementById('pw-btn');btn.disabled=true;btn.textContent='Сохранение...';
+ap('/change-password',{method:'POST',body:JSON.stringify({currentPassword:o,newPassword:n})}).then(d=>{
+btn.disabled=false;btn.textContent='Сохранить';
+if(d.success){cm();alert('✅ '+(d.message||'Пароль изменён'));}
+else{err.textContent=d.error||'Ошибка';err.className='text-red-600 text-sm';}
+}).catch(()=>{btn.disabled=false;btn.textContent='Сохранить';err.textContent='Ошибка соединения';err.className='text-red-600 text-sm';});
+return false;}
+
+
+
+/* ============ SCHEDULER ============ */
+var schSettings={};
+function lSch(){ap('/scheduler').then(d=>{
+schSettings=d.settings||{};
+var st=d.stats||{};
+var h='<h2 class="text-xl font-bold mb-6">⏰ Планировщик автогенерации</h2>';
+
+// Статистика
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+st.reviews_today+'</p><p class="text-xs text-gray-500">Отзывов сегодня</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+st.articles_today+'</p><p class="text-xs text-gray-500">Статей сегодня</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-lg font-bold">'+st.last_review+'</p><p class="text-xs text-gray-500">Посл. отзыв</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-lg font-bold">'+st.last_article+'</p><p class="text-xs text-gray-500">Посл. статья</p></div>';
+h+='</div>';
+
+// Форма настроек
+h+='<form onsubmit="return schSave(event)" class="grid md:grid-cols-2 gap-6">';
+
+// Отзывы
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">⭐ Автогенерация отзывов</h3>';
+h+='<div class="mb-4"><label class="flex items-center gap-2"><input type="checkbox" id="sch-rev-en" '+(schSettings.reviews_enabled?'checked':'')+' class="w-4 h-4"><span class="font-medium">Включено</span></label></div>';
+h+='<div class="mb-4"><label class="block text-sm font-medium mb-1">Отзывов в сутки</label><input type="number" id="sch-rev-cnt" class="input-f" min="0" max="50" value="'+(schSettings.reviews_per_day||5)+'"></div>';
+h+='<div class="grid grid-cols-2 gap-3">';
+h+='<div><label class="block text-sm font-medium mb-1">Начало (час)</label><input type="number" id="sch-rev-sh" class="input-f" min="0" max="23" value="'+(schSettings.review_start_hour||6)+'"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Конец (час)</label><input type="number" id="sch-rev-eh" class="input-f" min="0" max="23" value="'+(schSettings.review_end_hour||22)+'"></div>';
+h+='</div>';
+h+='<p class="text-xs text-gray-500 mt-2">⚡ Отзывы НЕ будут создаваться с '+formatHour(schSettings.review_end_hour||22)+' до '+formatHour(schSettings.review_start_hour||6)+'</p>';
+h+='</div>';
+
+// Статьи
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">📰 Автогенерация статей</h3>';
+h+='<div class="mb-4"><label class="flex items-center gap-2"><input type="checkbox" id="sch-art-en" '+(schSettings.articles_enabled?'checked':'')+' class="w-4 h-4"><span class="font-medium">Включено</span></label></div>';
+h+='<div class="mb-4"><label class="block text-sm font-medium mb-1">Статей в сутки</label><input type="number" id="sch-art-cnt" class="input-f" min="0" max="10" value="'+(schSettings.articles_per_day||1)+'"></div>';
+h+='<div class="grid grid-cols-2 gap-3">';
+h+='<div><label class="block text-sm font-medium mb-1">Начало (час)</label><input type="number" id="sch-art-sh" class="input-f" min="0" max="23" value="'+(schSettings.article_start_hour||8)+'"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Конец (час)</label><input type="number" id="sch-art-eh" class="input-f" min="0" max="23" value="'+(schSettings.article_end_hour||20)+'"></div>';
+h+='</div>';
+h+='<p class="text-xs text-gray-500 mt-2">⚡ Статьи НЕ будут создаваться с '+formatHour(schSettings.article_end_hour||20)+' до '+formatHour(schSettings.article_start_hour||8)+'</p>';
+h+='</div>';
+
+h+='</form>';
+
+// Кнопки
+h+='<div class="flex gap-3 mt-6">';
+h+='<button onclick="schSave()" class="btn-p">💾 Сохранить настройки</button>';
+h+='<button onclick="schReset()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">🔄 Сбросить счётчики</button>';
+h+='<button onclick="schTestReview()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">⭐ Тест: отзыв</button>';
+h+='</div>';
+
+// Инфо
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"><p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Система автоматически создаёт контент при каждом посещении сайта, если прошло достаточно времени. Отзывы равномерно распределяются в указанном временном окне. Часовой пояс: Москва.</p></div>';
+
+document.getElementById('p-scheduler').innerHTML=h;
+});}
+
+function formatHour(h){return (h<10?'0':'')+h+':00';}
+
+function schSave(ev){if(ev)ev.preventDefault();
+var data={
+reviews_enabled:document.getElementById('sch-rev-en').checked,
+reviews_per_day:parseInt(document.getElementById('sch-rev-cnt').value)||0,
+review_start_hour:parseInt(document.getElementById('sch-rev-sh').value)||0,
+review_end_hour:parseInt(document.getElementById('sch-rev-eh').value)||23,
+articles_enabled:document.getElementById('sch-art-en').checked,
+articles_per_day:parseInt(document.getElementById('sch-art-cnt').value)||0,
+article_start_hour:parseInt(document.getElementById('sch-art-sh').value)||0,
+article_end_hour:parseInt(document.getElementById('sch-art-eh').value)||23
+};
+ap('/scheduler',{method:'POST',body:JSON.stringify(data)}).then(d=>{
+if(d.success)alert('✅ Настройки сохранены');else alert('❌ '+(d.error||'Ошибка'));
+lSch();
+});return false;}
+
+function schReset(){if(!confirm('Сбросить счётчики за сегодня?'))return;
+ap('/scheduler',{method:'DELETE'}).then(d=>{alert(d.message||'Готово');lSch();});}
+
+function schTestReview(){
+ap('/generate-review',{method:'POST'}).then(d=>{
+if(d.success)alert('✅ Отзыв создан:\n'+d.review.name+' → '+d.review.offer+'\n⭐ '+d.review.rating+'/5\n\n'+d.review.comment);
+else alert('❌ '+(d.error||'Ошибка'));
+lSch();
+});}
+
+
+
+/* ============ SETTINGS ============ */
+var siteSettings={};
+function lSet(){ap('/settings').then(d=>{
+siteSettings=d.settings||{};
+var h='<h2 class="text-xl font-bold mb-6">⚙️ Настройки сайта</h2>';
+h+='<form onsubmit="return setSave(event)" class="space-y-6">';
+
+// Основные
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">🌐 Основные настройки</h3>';
+h+='<div class="grid md:grid-cols-2 gap-4">';
+h+='<div><label class="block text-sm font-medium mb-1">Название сайта</label><input type="text" id="set-name" class="input-f" value="'+e(siteSettings.site_name||'Космозайм')+'" placeholder="Космозайм"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">URL сайта</label><input type="url" id="set-url" class="input-f" value="'+e(siteSettings.site_url||'')+'" placeholder="https://example.com"></div>';
+h+='</div>';
+
+// Логотип
+h+='<div class="mt-4"><label class="block text-sm font-medium mb-2">Логотип сайта</label>';
+h+='<div class="flex items-center gap-4">';
+if(siteSettings.site_logo){
+h+='<div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border"><img src="'+siteSettings.site_logo+'" class="max-w-full max-h-full object-contain"></div>';
+}else{
+h+='<div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border text-2xl">🚀</div>';
+}
+h+='<div><input type="file" id="set-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="text-sm" onchange="setUploadLogo(this)"><p class="text-xs text-gray-500 mt-1">PNG, JPG, SVG или WebP. Рекомендуемый размер: <strong>200×60 px</strong> (или пропорционально). Макс. 2 МБ.</p></div>';
+h+='</div></div>';
+h+='</div>';
+
+// YandexGPT
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">🤖 Yandex GPT (генерация текстов и картинок)</h3>';
+h+='<div class="grid md:grid-cols-2 gap-4">';
+h+='<div><label class="block text-sm font-medium mb-1">API Key</label><input type="text" id="set-gpt-key" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_gpt_api_key_masked||siteSettings.yandex_gpt_api_key||'')+'" placeholder="AQVN..."></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input type="text" id="set-folder" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_folder_id||'')+'" placeholder="b1g..."></div>';
+h+='</div>';
+h+='<p class="text-xs text-gray-500 mt-2">Получить ключи: <a href="https://console.cloud.yandex.ru/" target="_blank" class="text-blue-600 hover:underline">console.cloud.yandex.ru</a> → Сервисные аккаунты → API-ключи</p>';
+h+='</div>';
+
+// Analytics
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">📊 Аналитика</h3>';
+h+='<div class="grid md:grid-cols-2 gap-4">';
+h+='<div><label class="block text-sm font-medium mb-1">Яндекс.Метрика ID</label><input type="text" id="set-metrika" class="input-f" value="'+e(siteSettings.yandex_metrika_id||'')+'" placeholder="12345678"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Google Analytics ID</label><input type="text" id="set-ga" class="input-f" value="'+e(siteSettings.google_analytics_id||'')+'" placeholder="G-XXXXXXXXXX"></div>';
+h+='</div>';
+h+='<p class="text-xs text-gray-500 mt-2">Коды счётчиков автоматически добавятся на все страницы сайта</p>';
+h+='</div>';
+
+h+='<div class="flex gap-3"><button type="submit" class="btn-p">💾 Сохранить настройки</button></div>';
+h+='</form>';
+
+// Подсказка
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6"><p class="text-yellow-800 text-sm"><strong>⚠️ Важно:</strong> После изменения настроек рекомендуется сбросить кэш страниц (кнопка в шапке). Изменение API-ключей вступает в силу сразу.</p></div>';
+
+document.getElementById('p-settings').innerHTML=h;
+});}
+
+function setSave(ev){if(ev)ev.preventDefault();
+var data={
+site_name:document.getElementById('set-name').value,
+site_url:document.getElementById('set-url').value,
+yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
+yandex_folder_id:document.getElementById('set-folder').value,
+yandex_metrika_id:document.getElementById('set-metrika').value,
+google_analytics_id:document.getElementById('set-ga').value
+};
+ap('/settings',{method:'POST',body:JSON.stringify(data)}).then(d=>{
+if(d.success){alert('✅ Настройки сохранены!\n\nРекомендуем сбросить кэш страниц.');lSet();}
+else alert('❌ '+(d.error||'Ошибка'));
+});return false;}
+
+function setUploadLogo(input){
+if(!input.files||!input.files[0])return;
+var file=input.files[0];
+if(file.size>2*1024*1024){alert('Файл слишком большой (макс. 2 МБ)');return;}
+var fd=new FormData();
+fd.append('logo',file);
+fetch(A+'/settings',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+if(d.success){alert('✅ Логотип загружен');lSet();}
+else alert('❌ '+(d.error||'Ошибка'));
+}).catch(()=>alert('Ошибка загрузки'));}
+
+
+
+function agNewTopics(){
+var cat=document.getElementById('ag-c').value||'займы';
+var btn=document.getElementById('ag-newtopics');
+var st=document.getElementById('ag-newtopics-status');
+btn.textContent='⏳ Генерация...';btn.disabled=true;
+st.textContent='';
+ap('/generate-article',{method:'POST',body:JSON.stringify({action:'generate-topics',category:cat})}).then(d=>{
+btn.textContent='🔄 Сгенерировать 10 новых тем через AI';btn.disabled=false;
+if(d.success&&d.topics){
+st.textContent='✅ Добавлено '+d.topics.length+' тем!';
+// Обновляем список тем
+aTopics=[];cm();setTimeout(()=>{aGen();},200);
+}else{st.textContent='❌ '+(d.error||'Ошибка');}
+}).catch(()=>{btn.textContent='🔄 Сгенерировать новые темы';btn.disabled=false;st.textContent='❌ Ошибка';});}
+
+</script>
+</body>
+</html>
