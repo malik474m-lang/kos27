@@ -11,7 +11,7 @@ $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'm
 $year = date('Y');
 
 $citySeoMeta = getCitySeoText($city, 'microloans');
-$pageTitle = ($citySeoMeta['seo_h1'] ?? '') ?: "Займы в {$city['prep']} — Взять микрозайм онлайн на карту [$year] | Космозайм";
+$pageTitle = ($citySeoMeta['seo_h1'] ?? '') ?: "Займы в {$city['prep']} — Взять микрозайм онлайн на карту | Космозайм";
 $metaDescription = ($citySeoMeta['meta_description'] ?? '') ?: "Займы в {$city['prep']} на карту онлайн. Сравните " . count($offers) . " предложений от МФО.";
 $metaKeywords = "займ в {$city['prep']}, микрозайм {$city['name']}, деньги в долг {$city['name']}, займ на карту {$city['name']}";
 
