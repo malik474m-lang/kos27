@@ -47,6 +47,8 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <?php endif; ?>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
     <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
     <script>
     tailwind.config = {

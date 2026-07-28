@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/minify.php';
+
 // Кэширование готовых HTML-страниц
 // Ускоряет повторные запросы в 10-50 раз — не ходим в MySQL
 
@@ -41,7 +43,11 @@ function pageCacheEnd(): void {
     global $PAGE_CACHE_DIR, $PAGE_CACHE_KEY;
     if (!$PAGE_CACHE_KEY) return;
 
-    $html = ob_get_flush();
+    $html = ob_get_clean();
+    if ($html) {
+        $html = minifyHtmlOutput($html);
+        echo $html;
+    }
     if ($html && strlen($html) > 100) {
         $cacheFile = "$PAGE_CACHE_DIR/$PAGE_CACHE_KEY.html";
         @file_put_contents($cacheFile, $html);

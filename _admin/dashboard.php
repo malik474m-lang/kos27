@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../includes/minify.php';
+ob_start('minifyHtmlOutput');
+?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
