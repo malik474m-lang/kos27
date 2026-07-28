@@ -41,11 +41,19 @@ $topCities = [
             <div>
                 <h3 class="text-white font-semibold mb-4">Инструменты</h3>
                 <ul class="space-y-2">
-                    <li><a href="/calculator" class="hover:text-white transition-colors text-sm">Калькулятор займа</a></li>
-                    <li><a href="/compare" class="hover:text-white transition-colors text-sm">Сравнение предложений</a></li>
-                    <li><a href="/articles" class="hover:text-white transition-colors text-sm">Полезные статьи</a></li>
-                    <li><a href="/faq" class="hover:text-white transition-colors text-sm">Частые вопросы</a></li>
-                    <li><a href="/glossary" class="hover:text-white transition-colors text-sm">Глоссарий терминов</a></li>
+                    <?php
+                    $footerNavCats = array_filter(getCategories(), function($c) {
+                        return $c['show_in_footer'] && !$c['parent_id'] && in_array($c['slug'], ['compare','calculator','articles','faq','glossary','novye-mfo']);
+                    });
+                    foreach (array_merge(getFooterCategories(), []) as $fnc):
+                        // Уже выведены в "Продукты"
+                    endforeach;
+                    $toolSlugs = ['compare','calculator','articles','faq','glossary','novye-mfo'];
+                    foreach (getCategories() as $navC):
+                        if (!$navC['show_in_footer'] || !in_array($navC['slug'], $toolSlugs)) continue;
+                    ?>
+                    <li><a href="/<?= e($navC['slug']) ?>" class="hover:text-white transition-colors text-sm"><?= e($navC['name']) ?></a></li>
+                    <?php endforeach; ?>
                 </ul>
             </div>
             <div>

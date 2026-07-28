@@ -37,9 +37,7 @@ $headerCats = getHeaderCategories();
                 <a href="<?= getCategoryUrl($hc) ?>" class="text-gray-700 hover:text-blue-600 font-medium transition-colors"><?= e($hc['name']) ?></a>
                     <?php endif; ?>
                 <?php endforeach; ?>
-                <a href="/compare" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Сравнение</a>
-                <a href="/calculator" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Калькулятор</a>
-                <a href="/articles" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Статьи</a>
+
                 <a href="/favorites" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Избранное">❤️</a>
                 <?php if (isLoggedIn()): ?>
                 <a href="/cabinet" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Кабинет">👤</a>
@@ -64,9 +62,7 @@ $headerCats = getHeaderCategories();
             <?php foreach (getSubcategories((int)$hc['id']) as $sub): ?>
             <a href="<?= getCategoryUrl($sub) ?>" class="block py-2 pl-4 text-gray-600 hover:text-blue-600 text-sm"><?= e($sub['name']) ?></a>
             <?php endforeach; endforeach; ?>
-            <a href="/compare" class="block py-2 text-gray-700 hover:text-blue-600 font-medium">Сравнение</a>
-            <a href="/calculator" class="block py-2 text-gray-700 hover:text-blue-600 font-medium">Калькулятор</a>
-            <a href="/articles" class="block py-2 text-gray-700 hover:text-blue-600 font-medium">Статьи</a>
+
         </nav>
     </div>
 </header>
