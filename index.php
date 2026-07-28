@@ -93,6 +93,7 @@ $routes = [
     '/privacy' => 'privacy',
     '/terms' => 'terms',
     '/disclaimer' => 'disclaimer',
+    '/unsubscribe' => 'unsubscribe',
     '/sitemap.xml' => 'sitemap',
     '/robots.txt' => 'robots',
 ];

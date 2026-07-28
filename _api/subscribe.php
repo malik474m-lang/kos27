@@ -16,5 +16,6 @@ if ($check->fetch()) {
     exit;
 }
 
-$db->prepare("INSERT INTO subscribers (email) VALUES (?)")->execute([$email]);
+$token = md5($email . time() . mt_rand());
+$db->prepare("INSERT INTO subscribers (email, unsubscribe_token) VALUES (?, ?)")->execute([$email, $token]);
 echo json_encode(['success' => true]);

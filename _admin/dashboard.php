@@ -433,13 +433,70 @@ window.stHourlyInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{lab
 
 
 
-/* ============ SUBSCRIBERS ============ */
-function lSu(){ap('/subscribers').then(list=>{let h='<h2 class="text-xl font-bold mb-6">Подписчики ('+list.length+')</h2>';
-if(!list.length){h+='<p class="text-gray-500 text-center py-8">Нет подписчиков</p>';}else{
-h+='<div class="bg-white rounded-xl border"><table class="w-full"><thead><tr class="bg-gray-50"><th class="p-3 text-left text-sm">Email</th><th class="p-3 text-left text-sm">Дата</th><th class="p-3 text-left text-sm">Статус</th></tr></thead><tbody>';
-list.forEach(s=>{h+='<tr class="border-t"><td class="p-3">'+e(s.email)+'</td><td class="p-3 text-sm text-gray-500">'+new Date(s.subscribed_at).toLocaleDateString('ru-RU')+'</td><td class="p-3"><span class="px-2 py-1 rounded-full text-xs '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Активен':'Отписан')+'</span></td></tr>';});
-h+='</tbody></table></div>';}
+/* ============ SUBSCRIBERS & NEWSLETTERS ============ */
+function lSu(){
+Promise.all([ap('/subscribers'),ap('/newsletters')]).then(([subs,nls])=>{
+var active=subs.filter(s=>s.is_active);
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">📬 Подписчики и рассылки</h2><div class="flex gap-2"><span class="text-sm text-gray-500 mt-1">Активных: <strong>'+active.length+'</strong> из '+subs.length+'</span></div></div>';
+
+// Рассылки
+h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">✉️ Рассылки</h3><button onclick="nlForm()" class="btn-p text-sm">+ Создать рассылку</button></div>';
+if(nls.length){
+h+='<div class="space-y-3">';
+nls.forEach(n=>{
+var st={draft:'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">Черновик</span>',sending:'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">Отправка...</span>',sent:'<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">Отправлено</span>',failed:'<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">Ошибка</span>'};
+h+='<div class="bg-gray-50 rounded-lg border p-4"><div class="flex items-center justify-between mb-2"><div class="flex-1 min-w-0"><p class="font-semibold text-sm text-gray-900">'+e(n.subject||'Без темы')+'</p><p class="text-xs text-gray-400">'+new Date(n.created_at).toLocaleString('ru-RU')+(n.sent_at?' • Отправлено: '+new Date(n.sent_at).toLocaleString('ru-RU'):'')+'</p></div><div class="flex items-center gap-2">'+((st[n.status]||''))+'</div></div>';
+h+='<div class="flex items-center gap-2 mt-2">';
+if(n.status==='sent')h+='<span class="text-xs text-gray-500">✅ '+n.sent_count+' доставлено'+(n.failed_count>0?' / ❌ '+n.failed_count+' ошибок':'')+'</span>';
+if(n.status==='draft'){h+='<button onclick="nlForm('+JSON.stringify(n).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-xs">Ред.</button>';h+='<button onclick="nlSend('+n.id+')" class="text-green-600 hover:underline text-xs">📤 Отправить</button>';}
+h+='<button onclick="nlPreview('+JSON.stringify(n).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-purple-600 hover:underline text-xs">Превью</button>';
+h+='<button onclick="nlDel('+n.id+')" class="text-red-500 hover:underline text-xs">Удалить</button>';
+h+='</div></div>';});
+h+='</div>';
+}else{h+='<p class="text-gray-500 text-sm">Нет рассылок. Создайте первую!</p>';}
+h+='</div>';
+
+// Подписчики
+h+='<div class="bg-white rounded-xl border shadow-sm"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">👥 Подписчики ('+subs.length+')</h3></div>';
+if(subs.length){
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Email</th><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
+subs.forEach(s=>{
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-mono text-xs">'+e(s.email)+'</td><td class="p-3 text-xs text-gray-500">'+new Date(s.subscribed_at).toLocaleDateString('ru-RU')+'</td><td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Активен':'Отписан')+'</span></td>';
+h+='<td class="p-3 text-right space-x-2">';
+h+='<button onclick="subToggle('+s.id+','+(s.is_active?0:1)+')" class="text-blue-600 hover:underline text-xs">'+(s.is_active?'Отключить':'Включить')+'</button>';
+h+='<button onclick="subDel('+s.id+',\''+e(s.email)+'\')" class="text-red-500 hover:underline text-xs">Удалить</button>';
+h+='</td></tr>';});
+h+='</tbody></table></div>';
+}else{h+='<p class="p-4 text-gray-500 text-sm">Нет подписчиков</p>';}
+h+='</div>';
+
 document.getElementById('p-subs').innerHTML=h;});}
+
+// Форма рассылки
+function nlForm(n){
+var f=n||{subject:'',body_html:''};var id=n?n.id:0;
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать рассылку':'Новая рассылка')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return nlSave(event,'+id+')">'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Тема письма *</label><input id="nl-subj" class="input-f" value="'+e(f.subject||'')+'" required placeholder="Лучшие предложения недели"></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Содержание (HTML)</label><textarea id="nl-body" class="input-f font-mono text-xs" rows="14" placeholder="<h2>Заголовок</h2>\n<p>Текст письма...</p>">'+e(f.body_html||'')+'</textarea></div>'+
+'<div class="bg-gray-50 rounded-lg p-3 mb-4 text-xs text-gray-500">💡 Ссылка для отписки добавляется автоматически в конце каждого письма. Отправка с адреса info@kosmozaim.ru</div>'+
+'<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить черновик</button></div></form>');
+}
+function nlSave(ev,id){ev.preventDefault();
+var d={subject:document.getElementById('nl-subj').value,bodyHtml:document.getElementById('nl-body').value};
+ap(id?'/newsletters/'+id:'/newsletters',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lSu();});return false;}
+function nlSend(id){if(!confirm('Отправить рассылку всем активным подписчикам?'))return;
+ap('/newsletters/'+id+'/send',{method:'POST'}).then(d=>{
+if(d.success)alert('Отправлено: '+d.sent+' из '+d.total+(d.failed?' (ошибок: '+d.failed+')':''));
+else alert(d.error||'Ошибка');lSu();});}
+function nlPreview(n){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Превью: '+e(n.subject)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<div class="border rounded-xl p-6 bg-white" style="max-width:600px;margin:0 auto;font-family:-apple-system,sans-serif">'+n.body_html+'<br><hr style="border:none;border-top:1px solid #eee;margin:24px 0"><p style="font-size:12px;color:#999;text-align:center">Вы получили это письмо от Космозайм.<br><a href="#" style="color:#999">Отписаться от рассылки</a></p></div>');}
+function nlDel(id){if(confirm('Удалить рассылку?'))ap('/newsletters/'+id,{method:'DELETE'}).then(()=>lSu());}
+function subToggle(id,v){ap('/subscribers/'+id,{method:'PUT',body:JSON.stringify({isActive:!!v})}).then(()=>lSu());}
+function subDel(id,email){if(confirm('Удалить подписчика '+email+'?'))ap('/subscribers/'+id,{method:'DELETE'}).then(()=>lSu());}
+
+
 
 sw('offers');
 

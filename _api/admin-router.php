@@ -79,6 +79,27 @@ if ($adminUri === '/reorder' && $method === 'POST') { require __DIR__ . '/admin/
 // Безопасность
 if (str_starts_with($adminUri, '/security')) { require __DIR__ . '/admin/security.php'; exit; }
 
+
+// Рассылки
+if ($adminUri === '/newsletters' && $method === 'GET') { require __DIR__ . '/admin/newsletter-list.php'; exit; }
+if ($adminUri === '/newsletters' && $method === 'POST') { require __DIR__ . '/admin/newsletter-create.php'; exit; }
+if (preg_match('#^/newsletters/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/newsletter-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/newsletter-delete.php'; exit; }
+}
+if (preg_match('#^/newsletters/(\d+)/send$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    require __DIR__ . '/admin/newsletter-send.php'; exit;
+}
+
+// Управление подписчиками
+if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/subscriber-toggle.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/subscriber-delete.php'; exit; }
+}
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 
