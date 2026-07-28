@@ -104,11 +104,9 @@ function renderOfferCard(array $offer): string {
         <?php endif; ?>
 
         <?php
-        $extraFields = [];
-        if (!empty($offer['extra_fields'])) {
-            $extraFields = json_decode($offer['extra_fields'], true) ?: [];
-            $visibleFields = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
-            if ($visibleFields):
+        $extraFields = !empty($offer['extra_fields']) ? (json_decode($offer['extra_fields'], true) ?: []) : [];
+        $visibleFields = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
+        if ($visibleFields):
         ?>
         <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 <?= $fieldCards ? 'pt-4 border-t border-gray-100' : '' ?>">
             <?php foreach ($visibleFields as $ef): ?>
@@ -118,7 +116,7 @@ function renderOfferCard(array $offer): string {
             </div>
             <?php endforeach; ?>
         </div>
-        <?php endif; endif; ?>
+        <?php endif; ?>
 
         <?php if (!empty($offer['description'])): ?>
         <p class="text-sm text-gray-600 mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
