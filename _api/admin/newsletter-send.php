@@ -71,17 +71,35 @@ foreach ($subs as $sub) {
 
     // Собираем письмо
     $body = $newsletter['body_html'];
-    // Вставляем блок офферов (если в теле есть placeholder {{offers}} или в конце)
+    // Вставляем блок офферов
     if (str_contains($body, '{{offers}}')) {
         $body = str_replace('{{offers}}', $offersBlock, $body);
     } else {
         $body .= $offersBlock;
     }
 
+    // Трекинг кликов — заменяем все ссылки на трекинговые
+    $nlId = (int)$newsletter['id'];
+    $subId = (int)$sub['id'];
+    $body = preg_replace_callback(
+        '/<a\s([^>]*?)href=["\'](https?:\/\/[^"\'>]+)["\']([^>]*?)>/i',
+        function($m) use ($nlId, $subId) {
+            $url = $m[2];
+            // Не трекаем ссылку отписки
+            if (str_contains($url, 'unsubscribe')) return $m[0];
+            $trackUrl = SITE_URL . '/api/nl-click?n=' . $nlId . '&s=' . $subId . '&url=' . urlencode($url);
+            return '<a ' . $m[1] . 'href="' . $trackUrl . '"' . $m[3] . '>';
+        },
+        $body
+    );
+
     $body .= '<br><hr style="border:none;border-top:1px solid #eee;margin:24px 0">';
     $body .= '<p style="font-size:12px;color:#999;text-align:center">';
     $body .= 'Вы получили это письмо, потому что подписались на рассылку ' . e(SITE_NAME) . '.<br>';
     $body .= '<a href="' . $unsubLink . '" style="color:#999">Отписаться от рассылки</a></p>';
+
+    // Трекинг-пиксель открытия (в конце body)
+    $body .= '<img src="' . SITE_URL . '/api/nl-open?n=' . $nlId . '&s=' . $subId . '" width="1" height="1" style="display:none" alt="">';
 
     $fullHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
         . '<body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#333;margin:0;padding:0;background:#f9fafb">'

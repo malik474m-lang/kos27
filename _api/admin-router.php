@@ -93,6 +93,10 @@ if (preg_match('#^/newsletters/(\d+)/send$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     require __DIR__ . '/admin/newsletter-send.php'; exit;
 }
+if (preg_match('#^/newsletters/(\d+)/stats$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    require __DIR__ . '/admin/newsletter-stats.php'; exit;
+}
 
 // Управление подписчиками
 if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
