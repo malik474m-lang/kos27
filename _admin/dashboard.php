@@ -448,6 +448,41 @@ window.stHourlyInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{lab
 
 /* ============ CONVERSIONS / POSTBACK ============ */
 var _convPeriod=30;
+function loadPbProfiles(){
+fetch(A+'/postback-profiles?action=list').then(r=>r.json()).then(profiles=>{
+var el=document.getElementById('pb-profiles-list');if(!el)return;
+var base=location.origin+'/api/postback';
+var params='click_id={click_id}&status={status}&payout={payout}&ip={ip}&offer_id={offer_id}&transaction_id={transaction_id}&aff_sub={aff_sub}&goal_id={goal_id}';
+var h='';
+if(!profiles.length){
+h+='<div class="bg-blue-50 rounded-lg p-3 mb-3"><p class="text-xs text-blue-700 mb-1 font-semibold">Универсальный URL (без привязки к партнёрке):</p><div class="bg-white rounded p-2 font-mono text-xs text-gray-800 break-all select-all border">'+base+'?'+params+'</div></div>';
+} else {
+profiles.forEach(pr=>{
+var url=base+'?source='+encodeURIComponent(pr.name)+'&'+params;
+h+='<div class="bg-gray-50 rounded-lg p-3 mb-3 border"><div class="flex items-center justify-between mb-2"><span class="font-semibold text-sm text-gray-900">'+e(pr.name)+'</span><button onclick="pbProfileDel('+pr.id+',\''+e(pr.name).replace(/'/g,"\\'")+'\''+')" class="text-red-400 hover:text-red-600 text-xs">Удалить</button></div>';
+if(pr.notes)h+='<p class="text-xs text-gray-500 mb-2">'+e(pr.notes)+'</p>';
+h+='<div class="bg-white rounded p-2 font-mono text-xs text-gray-800 break-all select-all border">'+url+'</div></div>';
+});
+// Универсальный URL
+h+='<div class="bg-blue-50 rounded-lg p-3 mt-3"><p class="text-xs text-blue-700 mb-1 font-semibold">Универсальный URL (без привязки):</p><div class="bg-white rounded p-2 font-mono text-xs text-gray-800 break-all select-all border">'+base+'?'+params+'</div></div>';
+}
+el.innerHTML=h;
+});}
+
+function pbProfileForm(){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Добавить партнёрку</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return pbProfileSave(event)">'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Название партнёрки *</label><input id="pb-name" class="input-f" required placeholder="Admitad, ActionPay, ..."></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Slug (латиница, авто)</label><input id="pb-slug" class="input-f" placeholder="admitad"></div>'+
+'<div class="mb-4"><label class="block text-xs font-medium mb-1">Заметки</label><textarea id="pb-notes" class="input-f" rows="2" placeholder="Где вставить postback URL, особенности..."></textarea></div>'+
+'<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Добавить</button></div></form>');
+}
+function pbProfileSave(ev){ev.preventDefault();
+fetch(A+'/postback-profiles?action=create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+name:document.getElementById('pb-name').value,slug:document.getElementById('pb-slug').value,notes:document.getElementById('pb-notes').value
+})}).then(r=>r.json()).then(d=>{if(d.error){alert(d.error);return;}cm();lConv();});return false;}
+function pbProfileDel(id,name){if(confirm('Удалить профиль '+name+'?'))fetch(A+'/postback-profiles?action=delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).then(()=>lConv());}
+
 function lConv(){
 var p=_convPeriod;
 ap('/postback?period='+p).then(d=>{
@@ -463,8 +498,9 @@ h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl f
 h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+Number(s.total_payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</p><p class="text-xs text-gray-500">Доход</p></div>';
 h+='</div>';
 
-// Postback URL подсказка
-h+='<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6"><h4 class="font-semibold text-blue-800 text-sm mb-2">🔗 Postback URL для leads.su</h4><p class="text-xs text-blue-700 mb-2">Скопируйте и вставьте в <strong>Инструменты → Глобальный postback</strong> в leads.su:</p><div class="bg-white rounded-lg p-3 font-mono text-xs text-gray-800 break-all select-all border">'+location.origin+'/api/postback?click_id={click_id}&status={status}&payout={payout}&ip={ip}&offer_id={offer_id}&transaction_id={transaction_id}&aff_sub={aff_sub}&goal_id={goal_id}</div></div>';
+// Postback профили
+h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">🔗 Postback URL-ы для партнёрок</h3><button onclick="pbProfileForm()" class="btn-p text-sm">+ Добавить партнёрку</button></div><div id="pb-profiles-list"><p class="text-xs text-gray-400">Загрузка...</p></div></div>';
+loadPbProfiles();
 
 // По офферам
 if(d.byOffer&&d.byOffer.length){
@@ -476,10 +512,10 @@ h+='</tbody></table></div></div>';}
 
 // Список конверсий
 if(d.conversions&&d.conversions.length){
-h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h3 class="font-semibold">Последние конверсии</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Оффер</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Выплата</th><th class="p-3 text-left">IP конверсии</th><th class="p-3 text-left text-xs">Click ID</th></tr></thead><tbody>';
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h3 class="font-semibold">Последние конверсии</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Оффер</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Выплата</th><th class="p-3 text-left">IP конверсии</th><th class="p-3 text-left">Источник</th><th class="p-3 text-left text-xs">Click ID</th></tr></thead><tbody>';
 d.conversions.forEach(c=>{
 var stBadge=c.status==='approved'?'bg-green-100 text-green-700':c.status==='rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700';
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 text-xs text-gray-500 whitespace-nowrap">'+new Date(c.created_at).toLocaleString('ru-RU')+'</td><td class="p-3 font-medium text-sm">'+e(c.offer_title||c.external_offer_id||'—')+'</td><td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+stBadge+'">'+e(c.status)+'</span></td><td class="p-3 text-right font-semibold">'+Number(c.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td><td class="p-3 font-mono text-xs text-gray-500">'+(e(c.ip)||'—')+'</td><td class="p-3 font-mono text-xs text-gray-400">'+(e(c.click_id||c.aff_sub||'—').substring(0,16))+'</td></tr>';});
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 text-xs text-gray-500 whitespace-nowrap">'+new Date(c.created_at).toLocaleString('ru-RU')+'</td><td class="p-3 font-medium text-sm">'+e(c.offer_title||c.external_offer_id||'—')+'</td><td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+stBadge+'">'+e(c.status)+'</span></td><td class="p-3 text-right font-semibold">'+Number(c.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td><td class="p-3 font-mono text-xs text-gray-500">'+(e(c.ip)||'—')+'</td><td class="p-3 text-xs">'+(c.source?'<span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded">'+e(c.source)+'</span>':'<span class="text-gray-300">—</span>')+'</td><td class="p-3 font-mono text-xs text-gray-400">'+(e(c.click_id||c.aff_sub||'—').substring(0,16))+'</td></tr>';});
 h+='</tbody></table></div></div>';
 }else{h+='<div class="bg-white rounded-xl border p-8 text-center text-gray-500"><p>Конверсий пока нет. Настройте Postback URL в leads.su.</p></div>';}
 

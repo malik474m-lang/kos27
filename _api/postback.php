@@ -37,7 +37,18 @@ $affSub = $_GET['aff_sub'] ?? $_GET['aff_sub1'] ?? $_GET['sub1'] ?? null;
 $affSub2 = $_GET['aff_sub2'] ?? $_GET['sub2'] ?? null;
 $affSub3 = $_GET['aff_sub3'] ?? $_GET['sub3'] ?? null;
 $goalId = $_GET['goal_id'] ?? $_GET['goal'] ?? null;
+$source = $_GET['source'] ?? null;
 $rawQuery = $_SERVER['QUERY_STRING'] ?? '';
+
+// Если передан profile (slug партнёрки) — подтягиваем название
+if (!$source && isset($_GET['profile'])) {
+    try {
+        $profStmt = getDB()->prepare("SELECT name FROM postback_profiles WHERE slug = ? AND is_active = 1 LIMIT 1");
+        $profStmt->execute([$_GET['profile']]);
+        $prof = $profStmt->fetch();
+        if ($prof) $source = $prof['name'];
+    } catch (Exception $e) {}
+}
 
 // Нормализуем статус
 $statusMap = [
@@ -114,8 +125,8 @@ try {
         $existing = $db->prepare("SELECT id FROM postback_conversions WHERE transaction_id = ? LIMIT 1");
         $existing->execute([$transactionId]);
         if ($existing->fetch()) {
-            $db->prepare("UPDATE postback_conversions SET click_id = COALESCE(?, click_id), offer_id = COALESCE(?, offer_id), external_offer_id = COALESCE(?, external_offer_id), status = ?, payout = ?, ip = COALESCE(?, ip), aff_sub = COALESCE(?, aff_sub), aff_sub2 = COALESCE(?, aff_sub2), aff_sub3 = COALESCE(?, aff_sub3), goal_id = COALESCE(?, goal_id), raw_query = ? WHERE transaction_id = ?")
-               ->execute([$clickId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery, $transactionId]);
+            $db->prepare("UPDATE postback_conversions SET click_id = COALESCE(?, click_id), offer_id = COALESCE(?, offer_id), external_offer_id = COALESCE(?, external_offer_id), status = ?, payout = ?, ip = COALESCE(?, ip), aff_sub = COALESCE(?, aff_sub), aff_sub2 = COALESCE(?, aff_sub2), aff_sub3 = COALESCE(?, aff_sub3), goal_id = COALESCE(?, goal_id), raw_query = ?, source = COALESCE(?, source) WHERE transaction_id = ?")
+               ->execute([$clickId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery, $source, $transactionId]);
             syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
             echo json_encode(['ok' => true, 'action' => 'updated_by_transaction', 'status' => $normalizedStatus]);
             exit;
@@ -134,8 +145,8 @@ try {
 
 // Сохраняем
 try {
-    $db->prepare("INSERT INTO postback_conversions (click_id, transaction_id, offer_id, external_offer_id, status, payout, ip, aff_sub, aff_sub2, aff_sub3, goal_id, raw_query) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-       ->execute([$clickId, $transactionId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery]);
+    $db->prepare("INSERT INTO postback_conversions (click_id, transaction_id, offer_id, external_offer_id, status, payout, ip, aff_sub, aff_sub2, aff_sub3, goal_id, raw_query, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+       ->execute([$clickId, $transactionId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery, $source]);
 
     syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
 
@@ -146,6 +157,7 @@ try {
         'offer_id' => $internalOfferId,
         'click_id' => $clickId,
         'transaction_id' => $transactionId,
+        'source' => $source,
     ]);
 } catch (Exception $e) {
     http_response_code(500);
