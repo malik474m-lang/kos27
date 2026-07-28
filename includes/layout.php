@@ -136,22 +136,55 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         var popup = document.getElementById('best-offer-popup');
         var overlay = document.getElementById('best-offer-popup-overlay');
         if(!popup || !overlay) return;
-        var closedKey = 'best_offer_popup_closed';
-        var shownKey = 'best_offer_popup_shown_session';
-        if(localStorage.getItem(closedKey)==='1') return;
-        if(sessionStorage.getItem(shownKey)==='1') return;
+
+        var closeKey = 'best_offer_popup_closed_v2';
+        var shownKey = 'best_offer_popup_shown_session_v2';
+        var forceShow = location.search.indexOf('showBestOffer=1') !== -1;
+
+        function isTemporarilyClosed(){
+            if(forceShow) return false;
+            try {
+                var until = parseInt(localStorage.getItem(closeKey) || '0', 10);
+                return until && until > Date.now();
+            } catch(e){ return false; }
+        }
+
+        function adjustPopupOffset(){
+            var cookie = document.getElementById('cookie-consent');
+            if(cookie && cookie.style.display !== 'none') {
+                popup.style.bottom = '120px';
+            } else {
+                popup.style.bottom = '20px';
+            }
+        }
+
+        if(isTemporarilyClosed()) return;
+        if(!forceShow && sessionStorage.getItem(shownKey)==='1') return;
+
         function showBestOfferPopup(){
+            adjustPopupOffset();
             popup.style.display='block';
             overlay.style.display='block';
             sessionStorage.setItem(shownKey,'1');
         }
+
         window.hideBestOfferPopup = function(persist){
             popup.style.display='none';
             overlay.style.display='none';
-            if(persist) localStorage.setItem(closedKey,'1');
+            if(persist) {
+                try { localStorage.setItem(closeKey, String(Date.now() + 24*60*60*1000)); } catch(e){}
+            }
         };
+
         overlay.addEventListener('click', function(){ hideBestOfferPopup(false); });
-        setTimeout(showBestOfferPopup, 30000);
+        window.addEventListener('resize', adjustPopupOffset);
+        window.addEventListener('storage', adjustPopupOffset);
+
+        if(forceShow) {
+            showBestOfferPopup();
+        } else {
+            setTimeout(showBestOfferPopup, 30000);
+        }
     })();
     </script>
     <?php endif; ?>
