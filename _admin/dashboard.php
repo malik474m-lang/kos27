@@ -96,7 +96,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<form onsubmit="return oS(event,'+id+')"><div class="grid grid-cols-2 gap-3">'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Название *</label><input id="of-t" class="input-f" value="'+e(f.title)+'" required></div>'+
 '<div><label class="block text-xs font-medium mb-1">Категория</label><select id="of-c" class="sel-f">'+catOpts+'</select></div>'+
-'<div><label class="block text-xs font-medium mb-1">Заёмщик</label><select id="of-b" class="sel-f">'+borOpts+'</select></div>'+
+'<div id="of-borrower-wrap"><label class="block text-xs font-medium mb-1">Заёмщик</label><select id="of-b" class="sel-f">'+borOpts+'</select></div>'+
 '<div><label class="block text-xs font-medium mb-1">Сумма от</label><input id="of-am1" type="number" class="input-f" value="'+f.amount_min+'"></div>'+
 '<div><label class="block text-xs font-medium mb-1">Сумма до</label><input id="of-am2" type="number" class="input-f" value="'+f.amount_max+'"></div>'+
 '<div><label class="block text-xs font-medium mb-1">Срок от (дн)</label><input id="of-t1" type="number" class="input-f" value="'+f.term_min_days+'"></div>'+
@@ -109,10 +109,13 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">🏷️ Теги</label><div id="of-tags-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
+// Инициализируем видимость стандартных полей
+ofInitDisplayFields(f);
+
 // Инициализируем дополнительные поля
 var ef=[];try{ef=JSON.parse(f.extra_fields||'[]');}catch(x){}
 if(!ef.length)ef=[{label:'Льготный период',value:'',visible:true},{label:'Кэшбэк/мес.',value:'',visible:false},{label:'Годовое обслуживание',value:'',visible:false},{label:'Баллы/мес.',value:'',visible:false},{label:'Бонусы',value:'',visible:false},{label:'Выпуск карты',value:'',visible:false},{label:'Обслуживание',value:'',visible:false}];
@@ -125,6 +128,45 @@ var linArr=linked.map(Number);
 box.innerHTML=allTags.filter(t=>t.category===f.category||!id).map(t=>'<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer '+(linArr.includes(Number(t.id))?'bg-blue-50 border-blue-300':'bg-white border-gray-200')+' hover:border-blue-400"><input type="checkbox" class="of-tag-cb w-3.5 h-3.5" value="'+t.id+'"'+(linArr.includes(Number(t.id))?' checked':'')+'> '+(t.icon||'🏷️')+' '+e(t.title)+'</label>').join('');
 if(!allTags.length)box.innerHTML='<span class="text-xs text-gray-400">Нет тегов. Создайте на вкладке 🏷️ Теги</span>';
 });}
+
+function ofDefaultDisplayFields(category, freeTermDays){
+return {
+amount: ['microloans','credits','credit_cards'].includes(category),
+term: ['microloans','credits'].includes(category),
+rate: ['microloans','credits','credit_cards'].includes(category),
+psk: ['microloans','credits','credit_cards'].includes(category),
+free_term: Number(freeTermDays||0) > 0,
+borrower: ['microloans','credits'].includes(category)
+};
+}
+function ofInitDisplayFields(f){
+var cfg=ofDefaultDisplayFields(f.category||'microloans', f.free_term_days||0);
+try{if(f.display_fields){var parsed=JSON.parse(f.display_fields); if(parsed && typeof parsed==='object') cfg=Object.assign(cfg, parsed);}}catch(e){}
+var box=document.getElementById('of-display-fields'); if(!box) return;
+var labels={amount:'Сумма/лимит',term:'Срок',rate:'Ставка',psk:'ПСК',free_term:'Льготный период',borrower:'Заёмщик'};
+box.innerHTML=Object.keys(labels).map(function(k){
+var checked=cfg[k]?'checked':'';
+var hidden=(k==='borrower' && !['microloans','credits'].includes(f.category))?' style="display:none"':'';
+return '<label class="flex items-center gap-2" data-display-key="'+k+'"'+hidden+'><input type="checkbox" class="of-df w-4 h-4" data-key="'+k+'" '+checked+'><span>'+labels[k]+'</span></label>';
+}).join('');
+var borrowerWrap=document.getElementById('of-borrower-wrap');
+if(borrowerWrap) borrowerWrap.style.display=['microloans','credits'].includes(f.category)?'block':'none';
+var catSel=document.getElementById('of-c');
+if(catSel&&!catSel.dataset.boundDisplay){
+catSel.dataset.boundDisplay='1';
+catSel.addEventListener('change',function(){
+var category=this.value;
+var borrower=document.getElementById('of-borrower-wrap');
+if(borrower) borrower.style.display=['microloans','credits'].includes(category)?'block':'none';
+document.querySelectorAll('[data-display-key="borrower"]').forEach(function(el){el.style.display=['microloans','credits'].includes(category)?'flex':'none';});
+});
+}
+}
+function ofCollectDisplayFields(){
+var out={};
+document.querySelectorAll('.of-df').forEach(function(cb){ out[cb.dataset.key]=cb.checked; });
+return JSON.stringify(out);
+}
 
 function ofRenderExtraFields(fields){
 var box=document.getElementById('of-extra-fields');if(!box)return;
@@ -151,7 +193,7 @@ if(label)fields.push({label:label,value:value,visible:visible});
 return JSON.stringify(fields);
 }
 
-function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value,extraFields:ofCollectExtraFields()};ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{
+function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value,extraFields:ofCollectExtraFields(),displayFields:ofCollectDisplayFields()};ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{
 var oid=id||r.id;
 var tagIds=Array.from(document.querySelectorAll('.of-tag-cb:checked')).map(x=>Number(x.value));
 return ap('/tag-links',{method:'POST',body:JSON.stringify({offerId:oid,tagIds:tagIds})});

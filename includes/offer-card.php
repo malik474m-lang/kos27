@@ -1,19 +1,50 @@
 <?php
 // Компонент карточки оффера
-// Переменная: $offer (массив из БД)
 function renderOfferCard(array $offer): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
     $rating = (float)($offer['rating'] ?? 0);
     $reviewCount = (int)($offer['review_count'] ?? 0);
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
-    // A/B тест кнопки
+
     require_once __DIR__ . '/ab-test.php';
     $abVar = getAbVariant();
     $btnLabel = $abVar ? $abVar['label'] : 'Оформить';
     $btnColor = $abVar ? $abVar['color'] : '#059669';
-    $btnHover = $abVar ? $abVar['color'] . 'dd' : '#047857';
     $abVid = $abVar ? (int)$abVar['id'] : 0;
-    
+
+    // Видимость стандартных полей
+    $defaultsByCategory = [
+        'microloans' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>($freeTermDays>0),'borrower'=>true],
+        'credits' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>false,'borrower'=>true],
+        'credit_cards' => ['amount'=>true,'term'=>false,'rate'=>true,'psk'=>true,'free_term'=>($freeTermDays>0),'borrower'=>false],
+        'debit_cards' => ['amount'=>false,'term'=>false,'rate'=>false,'psk'=>false,'free_term'=>false,'borrower'=>false],
+    ];
+    $displayFields = $defaultsByCategory[$offer['category']] ?? ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>($freeTermDays>0),'borrower'=>false];
+    if (!empty($offer['display_fields'])) {
+        $decoded = json_decode($offer['display_fields'], true);
+        if (is_array($decoded)) $displayFields = array_merge($displayFields, $decoded);
+    }
+
+    $fieldCards = [];
+    if (!empty($displayFields['amount'])) {
+        $amountLabel = in_array($offer['category'], ['credit_cards']) ? 'Лимит' : 'Сумма';
+        $fieldCards[] = ['label' => $amountLabel, 'value' => formatMoney($offer['amount_min']) . ' — ' . formatMoney($offer['amount_max'])];
+    }
+    if (!empty($displayFields['term'])) {
+        $fieldCards[] = ['label' => 'Срок', 'value' => formatDays($offer['term_min_days']) . ' — ' . formatDays($offer['term_max_days'])];
+    }
+    if (!empty($displayFields['rate'])) {
+        $rateLabel = $offer['category'] === 'credits' ? 'Ставка годовая' : 'Ставка';
+        $fieldCards[] = ['label' => $rateLabel, 'value' => 'от ' . $offer['rate'] . '%'];
+    }
+    if (!empty($displayFields['psk'])) {
+        $fieldCards[] = ['label' => 'ПСК', 'value' => $offer['psk'] . '%'];
+    }
+    if (!empty($displayFields['borrower']) && !empty($offer['borrower_category']) && $offer['borrower_category'] !== 'any') {
+        $borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
+        $fieldCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
+    }
+
     ob_start();
     ?>
     <article class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
@@ -33,18 +64,15 @@ function renderOfferCard(array $offer): string {
                     <?php if ($rating > 0): ?>
                     <span class="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 text-xs font-semibold px-2 py-0.5 rounded">
                         ★ <?= number_format($rating, 1) ?>
-                        <?php if ($reviewCount > 0): ?>
-                        <span class="text-yellow-500 font-normal">(<?= $reviewCount ?>)</span>
-                        <?php endif; ?>
+                        <?php if ($reviewCount > 0): ?><span class="text-yellow-500 font-normal">(<?= $reviewCount ?>)</span><?php endif; ?>
                     </span>
                     <?php endif; ?>
-                    <?php if ($freeTermDays > 0): ?>
+                    <?php if ($freeTermDays > 0 && !empty($displayFields['free_term'])): ?>
                     <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
-                        Без % — <?= formatDays($freeTermDays) ?>
+                        Льготный период — <?= formatDays($freeTermDays) ?>
                     </span>
                     <?php endif; ?>
                     <?php
-                    // Теги оффера
                     static $offerTagsCache = [];
                     $oid = (int)$offer['id'];
                     if (!isset($offerTagsCache[$oid])) {
@@ -64,34 +92,25 @@ function renderOfferCard(array $offer): string {
             </div>
         </div>
 
+        <?php if ($fieldCards): ?>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
+            <?php foreach ($fieldCards as $fc): ?>
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Сумма</p>
-                <p class="text-sm font-semibold text-gray-900 mt-0.5"><?= formatMoney($offer['amount_min']) ?> — <?= formatMoney($offer['amount_max']) ?></p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide"><?= e($fc['label']) ?></p>
+                <p class="text-sm font-semibold text-gray-900 mt-0.5"><?= e($fc['value']) ?></p>
             </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Срок</p>
-                <p class="text-sm font-semibold text-gray-900 mt-0.5"><?= formatDays($offer['term_min_days']) ?> — <?= formatDays($offer['term_max_days']) ?></p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Ставка</p>
-                <p class="text-sm font-semibold text-gray-900 mt-0.5">от <?= e($offer['rate']) ?>%</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide">ПСК</p>
-                <p class="text-sm font-semibold text-gray-900 mt-0.5"><?= e($offer['psk']) ?>%</p>
-            </div>
+            <?php endforeach; ?>
         </div>
+        <?php endif; ?>
 
         <?php
-        // Дополнительные поля (extra_fields JSON)
         $extraFields = [];
         if (!empty($offer['extra_fields'])) {
             $extraFields = json_decode($offer['extra_fields'], true) ?: [];
             $visibleFields = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
             if ($visibleFields):
         ?>
-        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 pt-4 border-t border-gray-100">
+        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 <?= $fieldCards ? 'pt-4 border-t border-gray-100' : '' ?>">
             <?php foreach ($visibleFields as $ef): ?>
             <div>
                 <p class="text-xs text-gray-400"><?= e($ef['label']) ?></p>
@@ -125,6 +144,50 @@ function renderOfferCard(array $offer): string {
             </a>
         </div>
     </article>
+    <?php if (!isset($GLOBALS['favorites_script_rendered']) || !$GLOBALS['favorites_script_rendered']): $GLOBALS['favorites_script_rendered'] = true; ?>
+    <script>
+    function getFavoriteOfferIds() {
+        try { return JSON.parse(localStorage.getItem('kosmozaim_favorites') || '[]'); }
+        catch (e) { return []; }
+    }
+    function setFavoriteOfferIds(ids) {
+        localStorage.setItem('kosmozaim_favorites', JSON.stringify(ids));
+        syncOfferFavoriteButtons();
+        window.dispatchEvent(new CustomEvent('favorites:changed', { detail: { ids: ids } }));
+    }
+    function toggleOfferFavorite(id) {
+        id = Number(id);
+        var ids = getFavoriteOfferIds();
+        if (ids.includes(id)) ids = ids.filter(function(x){ return x !== id; });
+        else ids.push(id);
+        setFavoriteOfferIds(ids);
+    }
+    function syncOfferFavoriteButtons() {
+        var ids = getFavoriteOfferIds();
+        document.querySelectorAll('.offer-fav-btn').forEach(function(btn) {
+            var id = Number(btn.dataset.offerId || 0);
+            var active = ids.includes(id);
+            btn.classList.toggle('border-pink-300', active);
+            btn.classList.toggle('bg-pink-50', active);
+            btn.classList.toggle('text-pink-600', active);
+            var icon = btn.querySelector('.offer-fav-icon');
+            var text = btn.querySelector('.offer-fav-text');
+            if (icon) icon.textContent = active ? '❤️' : '🤍';
+            if (text) text.textContent = active ? 'В избранном' : 'В избранное';
+            btn.setAttribute('aria-label', active ? 'Убрать из избранного' : 'Добавить в избранное');
+        });
+    }
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.offer-fav-btn');
+        if (!btn) return;
+        e.preventDefault();
+        toggleOfferFavorite(btn.dataset.offerId);
+    });
+    document.addEventListener('DOMContentLoaded', syncOfferFavoriteButtons);
+    window.addEventListener('storage', syncOfferFavoriteButtons);
+    window.addEventListener('favorites:changed', syncOfferFavoriteButtons);
+    </script>
+    <?php endif; ?>
     <?php
     return ob_get_clean();
 }

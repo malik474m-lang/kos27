@@ -63,6 +63,16 @@ $metaDescription = $offer['description'] ?: "Оформите {$offer['title']} 
 $rating = (float)$offer['rating'];
 $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
 
+$displayDefaults = [
+    'microloans' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>true],
+    'credits' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>false,'borrower'=>true],
+    'credit_cards' => ['amount'=>true,'term'=>false,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>false],
+    'debit_cards' => ['amount'=>false,'term'=>false,'rate'=>false,'psk'=>false,'free_term'=>false,'borrower'=>false],
+];
+$displayFields = $displayDefaults[$offer['category']] ?? ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>false];
+if (!empty($offer['display_fields'])) { $tmp = json_decode($offer['display_fields'], true); if (is_array($tmp)) $displayFields = array_merge($displayFields, $tmp); }
+$borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
+
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -92,24 +102,33 @@ ob_start();
             </div>
         </div>
 
+        <?php
+        $mainCards = [];
+        if (!empty($displayFields['amount'])) {
+            $mainCards[] = ['label' => in_array($offer['category'], ['credit_cards']) ? 'Лимит' : 'Сумма', 'value' => formatMoney($offer['amount_min']) . ' — ' . formatMoney($offer['amount_max'])];
+        }
+        if (!empty($displayFields['term'])) {
+            $mainCards[] = ['label' => 'Срок', 'value' => formatDays($offer['term_min_days']) . ' — ' . formatDays($offer['term_max_days'])];
+        }
+        if (!empty($displayFields['rate'])) {
+            $mainCards[] = ['label' => $offer['category'] === 'credits' ? 'Ставка годовая' : 'Ставка', 'value' => 'от ' . $offer['rate'] . '%'];
+        }
+        if (!empty($displayFields['psk'])) {
+            $mainCards[] = ['label' => 'ПСК', 'value' => $offer['psk'] . '%'];
+        }
+        if (!empty($displayFields['borrower']) && !empty($offer['borrower_category']) && $offer['borrower_category'] !== 'any') {
+            $mainCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
+        }
+        if ($mainCards): ?>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+            <?php foreach ($mainCards as $card): ?>
             <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase">Сумма</p>
-                <p class="text-lg font-bold text-gray-900"><?= formatMoney($offer['amount_min']) ?> — <?= formatMoney($offer['amount_max']) ?></p>
+                <p class="text-xs text-gray-500 uppercase"><?= e($card['label']) ?></p>
+                <p class="text-lg font-bold text-gray-900"><?= e($card['value']) ?></p>
             </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase">Срок</p>
-                <p class="text-lg font-bold text-gray-900"><?= formatDays($offer['term_min_days']) ?> — <?= formatDays($offer['term_max_days']) ?></p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase">Ставка</p>
-                <p class="text-lg font-bold text-gray-900">от <?= e($offer['rate']) ?>%</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase">ПСК</p>
-                <p class="text-lg font-bold text-gray-900"><?= e($offer['psk']) ?>%</p>
-            </div>
+            <?php endforeach; ?>
         </div>
+        <?php endif; ?>
 
         <?php
         // Дополнительные поля
@@ -127,7 +146,7 @@ ob_start();
         </div>
         <?php endif; ?>
 
-        <?php if ($offer['free_term_days'] > 0): ?>
+        <?php if ($offer['free_term_days'] > 0 && !empty($displayFields['free_term'])): ?>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p class="text-green-800 font-semibold">🎉 Без процентов — <?= formatDays($offer['free_term_days']) ?></p>
         </div>
