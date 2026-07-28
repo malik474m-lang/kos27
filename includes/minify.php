@@ -1,17 +1,14 @@
 <?php
 /**
  * Безопасная минификация HTML/CSS для PHP-сайта.
- * JS не агрессивно не трогаем, чтобы не ломать inline-скрипты.
+ * Содержимое script/pre/textarea/code защищается от изменения.
+ * Общий JS вынесен в /assets/site.min.js, сторонние библиотеки уже *.min.js.
  */
 
 function minifyCssContent(string $css): string {
-    // Убираем CSS-комментарии
     $css = preg_replace('!\/\*.*?\*\/!s', '', $css);
-    // Схлопываем пробелы
     $css = preg_replace('/\s+/', ' ', $css);
-    // Убираем пробелы вокруг символов
     $css = preg_replace('/\s*([{}:;,>])\s*/', '$1', $css);
-    // ;} -> }
     $css = str_replace(';}', '}', $css);
     return trim($css);
 }
@@ -21,18 +18,27 @@ function minifyHtmlOutput(string $html): string {
         return $html;
     }
 
-    // Минифицируем только содержимое style-блоков
+    // Сначала минифицируем CSS. Затем raw-блоки защищаем плейсхолдерами.
     $html = preg_replace_callback('/<style\b([^>]*)>(.*?)<\/style>/is', function($m) {
         return '<style' . $m[1] . '>' . minifyCssContent($m[2]) . '</style>';
     }, $html);
 
-    // Удаляем HTML-комментарии, кроме условных IE и JSON-LD/markup-safe зон
-    $html = preg_replace('/<!--(?!\s*\[if|\s*<!|\s*JSON-LD)(?!.*?application\/ld\+json)(.*?)-->/is', '', $html);
+    $protected = [];
+    $html = preg_replace_callback('/<(script|pre|textarea|code)\b[^>]*>.*?<\/\1>/is', function($m) use (&$protected) {
+        $key = '___KOSMO_RAW_BLOCK_' . count($protected) . '___';
+        $protected[$key] = $m[0];
+        return $key;
+    }, $html);
 
-    // Убираем пробелы между тегами
+    // Удаляем обычные HTML-комментарии, условные комментарии сохраняем.
+    $html = preg_replace('/<!--(?!\s*\[if|\s*<!)(.*?)-->/is', '', $html);
     $html = preg_replace('/>\s+</', '><', $html);
-    // Схлопываем множественные пробелы в обычном HTML
     $html = preg_replace('/[ \t]{2,}/', ' ', $html);
+    $html = trim($html);
 
-    return trim($html);
+    if ($protected) {
+        $html = strtr($html, $protected);
+    }
+
+    return $html;
 }

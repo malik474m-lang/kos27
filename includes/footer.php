@@ -82,19 +82,3 @@ $topCities = [
     </div>
 </footer>
 
-<script>
-function handleSubscribe(e) {
-    e.preventDefault();
-    const email = e.target.email.value;
-    if(document.getElementById('hp-sub').value){alert('Ошибка');return false;}
-    fetch('/api/subscribe', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email})
-    }).then(r => r.json()).then(d => {
-        if (d.success) { alert('Вы подписаны!'); e.target.reset(); }
-        else alert(d.error || 'Ошибка');
-    }).catch(() => alert('Ошибка'));
-    return false;
-}
-</script>

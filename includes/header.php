@@ -56,8 +56,3 @@
     </div>
 </header>
 
-<script>
-fetch('/api/geo').then(r=>r.json()).then(d=>{
-    if(d.city) document.getElementById('geo-city').textContent='📍 '+d.city;
-}).catch(()=>{});
-</script>

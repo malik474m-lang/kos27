@@ -67,40 +67,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         }
     }
     </script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .gradient-hero { background: linear-gradient(135deg, #1a56db 0%, #7e3af2 100%); }
-        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-
-        /* Типографика для SEO-текстов, статей, описаний */
-        .prose h2 { font-size: 1.5rem; font-weight: 700; color: #111827; margin-top: 1.75rem; margin-bottom: 0.75rem; line-height: 1.3; }
-        .prose h3 { font-size: 1.25rem; font-weight: 600; color: #111827; margin-top: 1.5rem; margin-bottom: 0.5rem; line-height: 1.4; }
-        .prose h4 { font-size: 1.1rem; font-weight: 600; color: #1f2937; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-        .prose p { margin-bottom: 1rem; line-height: 1.7; }
-        .prose ul, .prose ol { margin-bottom: 1rem; padding-left: 1.5rem; }
-        .prose ul { list-style-type: disc; }
-        .prose ol { list-style-type: decimal; }
-        .prose li { margin-bottom: 0.35rem; line-height: 1.6; }
-        .prose li::marker { color: #6b7280; }
-        .prose a { color: #1a56db; text-decoration: underline; }
-        .prose a:hover { color: #1244af; }
-        .prose strong { font-weight: 600; color: #111827; }
-        .prose blockquote { border-left: 4px solid #e5e7eb; padding-left: 1rem; margin: 1rem 0; color: #6b7280; font-style: italic; }
-        .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-        .prose th, .prose td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
-        .prose th { background: #f9fafb; font-weight: 600; }
-        .prose img { border-radius: 0.5rem; margin: 1rem 0; }
-        .prose-sm h2 { font-size: 1.3rem; }
-        .prose-sm h3 { font-size: 1.15rem; }
-        .prose-sm p { margin-bottom: 0.75rem; font-size: 0.938rem; }
-        .prose-sm li { font-size: 0.938rem; }
-        .prose-lg h2 { font-size: 1.75rem; }
-        .prose-lg h3 { font-size: 1.4rem; }
-        .prose-lg p { font-size: 1.1rem; }
-    </style>
+    <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
 
     <!-- JSON-LD SEO разметка -->
     <?= renderJsonLd(...$jsonLdSchemas) ?>
@@ -123,18 +90,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
             <button onclick="acceptCookies()" style="background:#3b82f6;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">Принять</button>
         </div>
     </div>
-    <script>
-    (function(){
-        if(localStorage.getItem('cookie_consent')==='1')return;
-        var el=document.getElementById('cookie-consent');
-        if(el)el.style.display='block';
-    })();
-    function acceptCookies(){
-        localStorage.setItem('cookie_consent','1');
-        var el=document.getElementById('cookie-consent');
-        if(el)el.style.display='none';
-    }
-    </script>
+    <script src="/assets/site.min.js?v=20260728" defer></script>
 </body>
 </html>
 <?php pageCacheEnd(); ?>

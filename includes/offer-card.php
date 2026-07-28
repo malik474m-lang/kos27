@@ -6,7 +6,6 @@ function renderOfferCard(array $offer): string {
     $rating = (float)($offer['rating'] ?? 0);
     $reviewCount = (int)($offer['review_count'] ?? 0);
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
-    static $favoritesScriptRendered = false;
     // A/B тест кнопки
     require_once __DIR__ . '/ab-test.php';
     $abVar = getAbVariant();
@@ -108,50 +107,6 @@ function renderOfferCard(array $offer): string {
             </a>
         </div>
     </article>
-    <?php if (!$favoritesScriptRendered): $favoritesScriptRendered = true; ?>
-    <script>
-    function getFavoriteOfferIds() {
-        try { return JSON.parse(localStorage.getItem('kosmozaim_favorites') || '[]'); }
-        catch (e) { return []; }
-    }
-    function setFavoriteOfferIds(ids) {
-        localStorage.setItem('kosmozaim_favorites', JSON.stringify(ids));
-        syncOfferFavoriteButtons();
-        window.dispatchEvent(new CustomEvent('favorites:changed', { detail: { ids: ids } }));
-    }
-    function toggleOfferFavorite(id) {
-        id = Number(id);
-        var ids = getFavoriteOfferIds();
-        if (ids.includes(id)) ids = ids.filter(function(x){ return x !== id; });
-        else ids.push(id);
-        setFavoriteOfferIds(ids);
-    }
-    function syncOfferFavoriteButtons() {
-        var ids = getFavoriteOfferIds();
-        document.querySelectorAll('.offer-fav-btn').forEach(function(btn) {
-            var id = Number(btn.dataset.offerId || 0);
-            var active = ids.includes(id);
-            btn.classList.toggle('border-pink-300', active);
-            btn.classList.toggle('bg-pink-50', active);
-            btn.classList.toggle('text-pink-600', active);
-            var icon = btn.querySelector('.offer-fav-icon');
-            var text = btn.querySelector('.offer-fav-text');
-            if (icon) icon.textContent = active ? '❤️' : '🤍';
-            if (text) text.textContent = active ? 'В избранном' : 'В избранное';
-            btn.setAttribute('aria-label', active ? 'Убрать из избранного' : 'Добавить в избранное');
-        });
-    }
-    document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.offer-fav-btn');
-        if (!btn) return;
-        e.preventDefault();
-        toggleOfferFavorite(btn.dataset.offerId);
-    });
-    document.addEventListener('DOMContentLoaded', syncOfferFavoriteButtons);
-    window.addEventListener('storage', syncOfferFavoriteButtons);
-    window.addEventListener('favorites:changed', syncOfferFavoriteButtons);
-    </script>
-    <?php endif; ?>
     <?php
     return ob_get_clean();
 }
