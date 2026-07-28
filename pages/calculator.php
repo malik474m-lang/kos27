@@ -152,7 +152,7 @@ function filterOffers(amount, term) {
     matched.forEach(function(o) {
         var logo = o.logo_url || '';
         if (logo.indexOf('/public/') === 0) logo = logo.substring(7);
-        var logoHtml = logo ? '<img src="' + logo + '" alt="' + o.title + '" class="w-full h-full object-contain p-0.5">' : '<span class="text-xl">🏦</span>';
+        var logoHtml = logo ? '<img src="' + logo + '" alt="' + o.title + '" class="w-full h-full object-contain p-0.5" loading="lazy" decoding="async">' : '<span class="text-xl">🏦</span>';
         var cats = {microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
         var freeHtml = o.free_term_days > 0 ? '<div><span class="text-green-600 font-semibold">Без % ' + fmtDays(o.free_term_days) + '</span></div>' : '';
 

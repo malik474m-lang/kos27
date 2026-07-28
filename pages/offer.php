@@ -55,7 +55,7 @@ ob_start();
         <div class="flex items-center gap-6 mb-6">
             <div class="w-20 h-20 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
                 <?php if ($logo): ?>
-                <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="w-full h-full object-contain p-2">
+                <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="w-full h-full object-contain p-2" decoding="async" fetchpriority="high">
                 <?php else: ?>
                 <span class="text-4xl">🏦</span>
                 <?php endif; ?>

@@ -109,7 +109,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
             <div style="display:flex;gap:14px;align-items:flex-start">
                 <div style="width:60px;height:60px;border-radius:14px;background:#f8fafc;border:1px solid #eef2f7;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
                     <?php if ($popupLogo): ?>
-                    <img src="<?= e($popupLogo) ?>" alt="<?= e($bestOfferPopup['title']) ?>" style="width:100%;height:100%;object-fit:contain;padding:6px" loading="lazy">
+                    <img src="<?= e($popupLogo) ?>" alt="<?= e($bestOfferPopup['title']) ?>" style="width:100%;height:100%;object-fit:contain;padding:6px" loading="lazy" decoding="async">
                     <?php else: ?>
                     <span style="font-size:30px">🏦</span>
                     <?php endif; ?>
@@ -198,7 +198,17 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
             <button onclick="acceptCookies()" style="background:#3b82f6;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">Принять</button>
         </div>
     </div>
-    <script src="/assets/site.min.js?v=20260728" defer></script>
+    <script>
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('img:not([loading])').forEach(function(img){
+    var inHeader = !!img.closest('header');
+    var inHero = !!img.closest('.gradient-hero');
+    if(!inHeader && !inHero){ img.setAttribute('loading','lazy'); }
+    if(!img.hasAttribute('decoding')) img.setAttribute('decoding','async');
+  });
+});
+</script>
+<script src="/assets/site.min.js?v=20260728" defer></script>
 </body>
 </html>
 <?php pageCacheEnd(); ?>

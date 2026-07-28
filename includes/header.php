@@ -4,7 +4,7 @@
             <div class="flex items-center gap-3">
                 <a href="/" class="flex items-center space-x-2">
                     <?php if (defined('SITE_LOGO') && SITE_LOGO): ?>
-                    <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-10 max-w-[160px] object-contain">
+                    <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-10 max-w-[160px] object-contain" decoding="async" fetchpriority="high">
                     <?php else: ?>
                     <span class="text-2xl">🚀</span>
                     <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"><?= e(SITE_NAME) ?></span>

@@ -110,7 +110,7 @@ function cmpRender() {
     sel.forEach(function(o) {
         var logo = o.logo_url || '';
         if (logo.indexOf('/public/') === 0) logo = logo.substring(7);
-        var logoHtml = logo ? '<img src="' + logo + '" alt="" class="w-full h-full object-contain p-1">' : '<span class="text-xl">🏦</span>';
+        var logoHtml = logo ? '<img src="' + logo + '" alt="" class="w-full h-full object-contain p-1" loading="lazy" decoding="async">' : '<span class="text-xl">🏦</span>';
         h += '<th class="p-4 text-center min-w-[150px]"><div class="flex flex-col items-center gap-2"><div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">' + logoHtml + '</div><span class="font-bold text-gray-900 text-sm">' + o.title + '</span><button onclick="cmpToggle(' + o.id + ')" class="text-xs text-gray-400 hover:text-red-500">✕ Убрать</button></div></th>';
     });
     h += '</tr></thead><tbody>';

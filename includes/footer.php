@@ -19,7 +19,7 @@ $topCities = [
                 <a href="/" class="flex items-center space-x-2 mb-4">
                     <?php if (defined('SITE_LOGO') && SITE_LOGO): ?>
                     <span class="inline-flex items-center rounded-xl bg-white px-3 py-2 shadow-sm">
-                        <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-8 max-w-[140px] object-contain">
+                        <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async">
                     </span>
                     <?php else: ?>
                     <span class="text-2xl">🚀</span>
