@@ -100,12 +100,153 @@ ob_start();
         <div class="prose max-w-none text-gray-700 mb-6"><?= safeAutoLink($offer['description'], 5) ?></div>
         <?php endif; ?>
 
+
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
            class="inline-flex items-center space-x-2 bg-accent text-white px-8 py-4 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-lg">
             <span>Оформить заявку</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </a>
     </div>
+
+    <?php if (in_array($offer['category'], ['microloans','credits','credit_cards'])):
+        $calcAmount = max((int)$offer['amount_min'], min((int)$offer['amount_max'], (int)round(((int)$offer['amount_min'] + (int)$offer['amount_max']) / 2)));
+        $calcTerm = max((int)$offer['term_min_days'], min((int)$offer['term_max_days'], (int)round(((int)$offer['term_min_days'] + (int)$offer['term_max_days']) / 2)));
+        $calcRate = (float)$offer['rate'];
+        $calcFree = (int)$offer['free_term_days'];
+        $amountLabel = match($offer['category']) {
+            'credits' => 'Сумма кредита',
+            'credit_cards' => 'Кредитный лимит',
+            default => 'Сумма займа',
+        };
+        $termLabel = match($offer['category']) {
+            'credits' => 'Срок (дней)',
+            'credit_cards' => 'Срок использования (дней)',
+            default => 'Срок (дней)',
+        };
+        $calcTitle = match($offer['category']) {
+            'credits' => 'Предварительный расчёт по условиям кредита',
+            'credit_cards' => 'Предварительный расчёт по условиям лимита',
+            default => 'Предварительный расчёт по условиям займа',
+        };
+    ?>
+    <div class="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+        <div class="flex items-center justify-between gap-4 flex-wrap mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900"><?= $calcTitle ?></h2>
+                <p class="text-sm text-gray-500 mt-1">Калькулятор считает сумму по параметрам именно этого предложения.</p>
+            </div>
+            <?php if ($calcFree > 0): ?>
+            <span class="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">0% до <?= formatDays($calcFree) ?></span>
+            <?php endif; ?>
+        </div>
+
+        <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-start">
+            <div class="space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700"><?= $amountLabel ?></label>
+                        <span id="offer-calc-amount-val" class="text-lg font-bold text-primary"><?= formatMoney($calcAmount) ?></span>
+                    </div>
+                    <input type="range" id="offer-calc-amount" min="<?= (int)$offer['amount_min'] ?>" max="<?= (int)$offer['amount_max'] ?>" step="1000" value="<?= $calcAmount ?>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="offerCalcUpdate()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1"><span><?= formatMoney((int)$offer['amount_min']) ?></span><span><?= formatMoney((int)$offer['amount_max']) ?></span></div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700"><?= $termLabel ?></label>
+                        <span id="offer-calc-term-val" class="text-lg font-bold text-primary"><?= formatDays($calcTerm) ?></span>
+                    </div>
+                    <input type="range" id="offer-calc-term" min="<?= (int)$offer['term_min_days'] ?>" max="<?= (int)$offer['term_max_days'] ?>" step="1" value="<?= $calcTerm ?>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="offerCalcUpdate()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1"><span><?= formatDays((int)$offer['term_min_days']) ?></span><span><?= formatDays((int)$offer['term_max_days']) ?></span></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Ставка</p>
+                        <p class="mt-1 font-semibold text-gray-900">от <?= e($offer['rate']) ?>%</p>
+                    </div>
+                    <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">ПСК</p>
+                        <p class="mt-1 font-semibold text-gray-900"><?= e($offer['psk']) ?>%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-gray-50 border border-gray-100 p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Результат расчёта</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Сумма к возврату</p>
+                        <p id="offer-calc-total" class="text-3xl font-bold text-gray-900"><?= formatMoney($calcAmount) ?></p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Переплата</p>
+                        <p id="offer-calc-overpay" class="text-xl font-bold text-red-600">0 ₽</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Эффективная ставка</p>
+                        <p id="offer-calc-effective-rate" class="text-lg font-semibold text-gray-900"><?= e($offer['rate']) ?>%</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Комментарий</p>
+                        <p id="offer-calc-note" class="text-sm text-gray-600">Предварительный расчёт по открытым параметрам оффера.</p>
+                    </div>
+                </div>
+                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors">Оформить по этим условиям</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function offerCalcMoney(n){return Math.round(n).toLocaleString('ru-RU') + ' ₽';}
+    function offerCalcDays(d){
+        d = Number(d);
+        if(d <= 0) return '0 дней';
+        if(d === 1) return '1 день';
+        if(d < 5) return d + ' дня';
+        return d + ' дней';
+    }
+    function offerCalcUpdate(){
+        var amount = parseInt(document.getElementById('offer-calc-amount').value || '0', 10);
+        var term = parseInt(document.getElementById('offer-calc-term').value || '0', 10);
+        var rate = <?= json_encode($calcRate) ?>;
+        var freeDays = <?= json_encode($calcFree) ?>;
+        var category = <?= json_encode($offer['category']) ?>;
+
+        var effectiveRate = rate;
+        var interest = 0;
+        var note = 'Предварительный расчёт по открытым параметрам оффера.';
+
+        if (freeDays > 0 && term <= freeDays) {
+            effectiveRate = 0;
+            note = 'В пределах льготного периода проценты не начисляются.';
+        }
+
+        if (category === 'credits') {
+            // Условно считаем rate как годовую ставку для кредитов
+            interest = amount * (effectiveRate / 100) * (term / 365);
+            note = effectiveRate === 0 ? note : 'Расчёт ориентировочный: для кредитов использована простая годовая ставка без учёта графика платежей.';
+        } else {
+            // Для займов и карточек используем дневную модель
+            interest = amount * (effectiveRate / 100) * term;
+            if (category === 'credit_cards' && effectiveRate !== 0) {
+                note = 'Расчёт ориентировочный: для лимита карты использована упрощённая модель начисления процентов.';
+            }
+        }
+
+        var total = amount + interest;
+
+        document.getElementById('offer-calc-amount-val').textContent = offerCalcMoney(amount);
+        document.getElementById('offer-calc-term-val').textContent = offerCalcDays(term);
+        document.getElementById('offer-calc-total').textContent = offerCalcMoney(total);
+        document.getElementById('offer-calc-overpay').textContent = offerCalcMoney(interest);
+        document.getElementById('offer-calc-effective-rate').textContent = effectiveRate.toLocaleString('ru-RU') + '%';
+        document.getElementById('offer-calc-note').textContent = note;
+    }
+    offerCalcUpdate();
+    </script>
+    <?php endif; ?>
+
 
     <!-- Отзывы -->
     <?php if ($offerReviews): ?>
