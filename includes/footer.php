@@ -31,10 +31,11 @@ $topCities = [
             <div>
                 <h3 class="text-white font-semibold mb-4">Продукты</h3>
                 <ul class="space-y-2">
-                    <li><a href="/zajmy" class="hover:text-white transition-colors text-sm">Займы онлайн</a></li>
-                    <li><a href="/kredity" class="hover:text-white transition-colors text-sm">Кредиты</a></li>
-                    <li><a href="/karty/kreditnye" class="hover:text-white transition-colors text-sm">Кредитные карты</a></li>
-                    <li><a href="/karty/debetovye" class="hover:text-white transition-colors text-sm">Дебетовые карты</a></li>
+                        <?php require_once __DIR__ . '/categories.php'; foreach (getFooterCategories() as $fc): ?>
+                    <li><a href="<?= getCategoryUrl($fc) ?>" class="hover:text-white transition-colors text-sm"><?= e($fc['name']) ?></a></li>
+                    <?php foreach (getSubcategories((int)$fc['id']) as $fsc): ?>
+                    <li><a href="<?= getCategoryUrl($fsc) ?>" class="hover:text-white transition-colors text-sm pl-2">— <?= e($fsc['name']) ?></a></li>
+                    <?php endforeach; endforeach; ?>
                 </ul>
             </div>
             <div>

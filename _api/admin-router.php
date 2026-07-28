@@ -121,6 +121,15 @@ if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
     require __DIR__ . '/admin/ab-reset.php'; exit;
 }
 
+// Категории
+if ($adminUri === '/categories' && $method === 'GET') { require __DIR__ . '/admin/categories-list.php'; exit; }
+if ($adminUri === '/categories' && $method === 'POST') { require __DIR__ . '/admin/categories-save.php'; exit; }
+if (preg_match('#^/categories/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { $data = json_decode(file_get_contents('php://input'), true); $data['id'] = $itemId; $_POST = $data; require __DIR__ . '/admin/categories-save.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/categories-delete.php'; exit; }
+}
+
 // Пользователи
 if ($adminUri === '/users' && $method === 'GET') { require __DIR__ . '/admin/users-list.php'; exit; }
 

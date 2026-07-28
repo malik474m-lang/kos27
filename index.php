@@ -201,6 +201,15 @@ if (preg_match('#^/glossary/([a-z0-9-]+)$#', $uri, $m)) {
     exit;
 }
 
+// Динамическая категория из БД
+require_once __DIR__ . '/includes/categories.php';
+$catSlug = ltrim($uri, '/');
+$dynCat = findCategoryBySlug($catSlug);
+if ($dynCat && $dynCat['is_active']) {
+    require __DIR__ . '/pages/category.php';
+    exit;
+}
+
 // 404
 http_response_code(404);
 $pageTitle = 'Страница не найдена';
