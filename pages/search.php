@@ -17,6 +17,7 @@ $pageTitle = $q ? "Поиск: $q — Космозайм" : 'Поиск — Ко
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Поиск</nav>
     <h1 class="text-3xl font-bold text-gray-900 mb-6">Поиск предложений</h1>
     <form method="GET" action="/search" class="flex gap-2 mb-8">
         <input type="text" name="q" value="<?= e($q) ?>" placeholder="Поиск..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary" autofocus>
@@ -34,5 +35,9 @@ ob_start();
     <?php endif; ?>
 </section>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Поиск','url'=>'/search']]),
+];
+$canonicalUrl = SITE_URL . '/search';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

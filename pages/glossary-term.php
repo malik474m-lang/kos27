@@ -17,5 +17,9 @@ ob_start();
     </div>
 </section>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Глоссарий','url'=>'/glossary'],['name'=>$term['term'],'url'=>'/glossary/'.$term['slug']]]),
+];
+$canonicalUrl = SITE_URL . '/glossary/' . $term['slug'];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

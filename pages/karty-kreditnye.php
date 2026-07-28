@@ -28,5 +28,9 @@ ob_start();
     </div>
 </div>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Кредитные карты','url'=>'/karty/kreditnye']]),
+];
+$canonicalUrl = SITE_URL . '/karty/kreditnye';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

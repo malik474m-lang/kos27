@@ -3,6 +3,7 @@ $pageTitle = 'Избранное — Космозайм';
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Избранное</nav>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">❤️ Избранное</h1>
     <div id="favorites-list">
         <p class="text-gray-500 text-center py-12">Загрузка...</p>
@@ -49,5 +50,9 @@ window.addEventListener('favorites:changed', renderFavorites);
 window.addEventListener('storage', renderFavorites);
 </script>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Избранное','url'=>'/favorites']]),
+];
+$canonicalUrl = SITE_URL . '/favorites';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

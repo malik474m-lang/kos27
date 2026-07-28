@@ -3,6 +3,7 @@ $pageTitle = 'Пользовательское соглашение — Косм
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Пользовательское соглашение</nav>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Пользовательское соглашение</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p>Используя сайт <?= SITE_NAME ?>, вы соглашаетесь с настоящими условиями.</p>
@@ -17,5 +18,9 @@ ob_start();
     </div>
 </section>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Пользовательское соглашение','url'=>'/terms']]),
+];
+$canonicalUrl = SITE_URL . '/terms';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

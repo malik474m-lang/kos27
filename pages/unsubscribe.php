@@ -22,11 +22,16 @@ if ($token) {
 ob_start();
 ?>
 <section class="max-w-xl mx-auto px-4 py-24 text-center">
+    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Отписка от рассылки</nav>
     <span class="text-5xl block mb-4">📬</span>
     <h1 class="text-2xl font-bold text-gray-900 mb-4">Отписка от рассылки</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 text-gray-600"><?= $message ?></div>
     <a href="/" class="inline-block mt-6 text-primary hover:underline">← На главную</a>
 </section>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Отписка от рассылки','url'=>'/unsubscribe']]),
+];
+$canonicalUrl = SITE_URL . '/unsubscribe';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

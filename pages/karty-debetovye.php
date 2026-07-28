@@ -19,7 +19,6 @@ ob_start();
         <?php foreach ($offers as $offer): echo renderOfferCard($offer); endforeach; ?>
     </div>
 
-    <!-- Перелинковка -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-8">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Дебетовые карты — как выбрать</h2>
         <div class="prose prose-sm text-gray-600 max-w-none">
@@ -45,5 +44,9 @@ ob_start();
 
 </section>
 <?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Дебетовые карты','url'=>'/karty/debetovye']]),
+];
+$canonicalUrl = SITE_URL . '/karty/debetovye';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';
