@@ -162,7 +162,7 @@ function filterOffers(amount, term) {
             '<div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-sm">' + o.title + '</h3><p class="text-xs text-gray-500">' + (cats[o.category] || o.category) + '</p></div>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-2 text-sm mb-3">' +
-            '<div><span class="text-gray-500">Ставка:</span> <span class="font-semibold">от ' + o.rate + '%</span></div>' +
+            '<div><span class="text-gray-500">Ставка:</span> <span class="font-semibold">от ' + o.rate + '% ' + ((o.rate_unit==='year')?'в год':'в день') + '</span></div>' +
             '<div><span class="text-gray-500">ПСК:</span> <span class="font-semibold">' + o.psk + '%</span></div>' +
             '<div><span class="text-gray-500">Сумма:</span> <span class="font-semibold">до ' + fmt(o.amount_max) + '</span></div>' +
             freeHtml +

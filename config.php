@@ -133,6 +133,20 @@ function normalizeMediaUrl(?string $url): string {
     return $url;
 }
 
+function getRateUnit(array $offer): string {
+    $unit = $offer['rate_unit'] ?? 'day';
+    return in_array($unit, ['day', 'year'], true) ? $unit : 'day';
+}
+
+function getRateUnitLabel(array $offer): string {
+    return getRateUnit($offer) === 'year' ? 'в год' : 'в день';
+}
+
+function formatRateDisplay(array $offer, bool $withFrom = true): string {
+    $prefix = $withFrom ? 'от ' : '';
+    return $prefix . ($offer['rate'] ?? '0') . '% ' . getRateUnitLabel($offer);
+}
+
 function slugify(string $text): string {
     $map = [
         'а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'yo','ж'=>'zh',

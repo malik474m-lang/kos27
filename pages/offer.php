@@ -111,7 +111,7 @@ ob_start();
             $mainCards[] = ['label' => 'Срок', 'value' => formatDays($offer['term_min_days']) . ' — ' . formatDays($offer['term_max_days'])];
         }
         if (!empty($displayFields['rate'])) {
-            $mainCards[] = ['label' => $offer['category'] === 'credits' ? 'Ставка годовая' : 'Ставка', 'value' => 'от ' . $offer['rate'] . '%'];
+            $mainCards[] = ['label' => $offer['category'] === 'credits' ? 'Ставка годовая' : 'Ставка', 'value' => formatRateDisplay($offer)];
         }
         if (!empty($displayFields['psk'])) {
             $mainCards[] = ['label' => 'ПСК', 'value' => $offer['psk'] . '%'];
@@ -219,7 +219,7 @@ ob_start();
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
                         <p class="text-xs uppercase tracking-wide text-gray-500">Ставка</p>
-                        <p class="mt-1 font-semibold text-gray-900">от <?= e($offer['rate']) ?>%</p>
+                        <p class="mt-1 font-semibold text-gray-900"><?= e(formatRateDisplay($offer)) ?></p>
                     </div>
                     <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
                         <p class="text-xs uppercase tracking-wide text-gray-500">ПСК</p>
@@ -241,7 +241,7 @@ ob_start();
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-wide text-gray-500">Эффективная ставка</p>
-                        <p id="offer-calc-effective-rate" class="text-lg font-semibold text-gray-900"><?= e($offer['rate']) ?>%</p>
+                        <p id="offer-calc-effective-rate" class="text-lg font-semibold text-gray-900"><?= e(formatRateDisplay($offer, false)) ?></p>
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-wide text-gray-500">Комментарий</p>
@@ -266,6 +266,7 @@ ob_start();
         var amount = parseInt(document.getElementById('offer-calc-amount').value || '0', 10);
         var term = parseInt(document.getElementById('offer-calc-term').value || '0', 10);
         var rate = <?= json_encode($calcRate) ?>;
+        var rateUnit = <?= json_encode(getRateUnit($offer)) ?>;
         var freeDays = <?= json_encode($calcFree) ?>;
         var category = <?= json_encode($offer['category']) ?>;
 
@@ -278,12 +279,10 @@ ob_start();
             note = 'В пределах льготного периода проценты не начисляются.';
         }
 
-        if (category === 'credits') {
-            // Условно считаем rate как годовую ставку для кредитов
+        if (rateUnit === 'year') {
             interest = amount * (effectiveRate / 100) * (term / 365);
-            note = effectiveRate === 0 ? note : 'Расчёт ориентировочный: для кредитов использована простая годовая ставка без учёта графика платежей.';
+            note = effectiveRate === 0 ? note : 'Расчёт ориентировочный: ставка указана в год, используется упрощённая годовая модель без графика платежей.';
         } else {
-            // Для займов и карточек используем дневную модель
             interest = amount * (effectiveRate / 100) * term;
             if (category === 'credit_cards' && effectiveRate !== 0) {
                 note = 'Расчёт ориентировочный: для лимита карты использована упрощённая модель начисления процентов.';
@@ -296,7 +295,7 @@ ob_start();
         document.getElementById('offer-calc-term-val').textContent = offerCalcDays(term);
         document.getElementById('offer-calc-total').textContent = offerCalcMoney(total);
         document.getElementById('offer-calc-overpay').textContent = offerCalcMoney(interest);
-        document.getElementById('offer-calc-effective-rate').textContent = effectiveRate.toLocaleString('ru-RU') + '%';
+        document.getElementById('offer-calc-effective-rate').textContent = effectiveRate.toLocaleString('ru-RU') + '% ' + (rateUnit === 'year' ? 'в год' : 'в день');
         document.getElementById('offer-calc-note').textContent = note;
     }
     offerCalcUpdate();

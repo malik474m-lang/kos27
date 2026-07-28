@@ -35,7 +35,7 @@ function renderOfferCard(array $offer): string {
     }
     if (!empty($displayFields['rate'])) {
         $rateLabel = $offer['category'] === 'credits' ? 'Ставка годовая' : 'Ставка';
-        $fieldCards[] = ['label' => $rateLabel, 'value' => 'от ' . $offer['rate'] . '%'];
+        $fieldCards[] = ['label' => $rateLabel, 'value' => formatRateDisplay($offer)];
     }
     if (!empty($displayFields['psk'])) {
         $fieldCards[] = ['label' => 'ПСК', 'value' => $offer['psk'] . '%'];

@@ -132,7 +132,7 @@ function cmpRender() {
 
     // Ставка
     h += '<tr class="border-b"><td class="p-4 bg-gray-50 font-medium text-gray-600">Ставка</td>';
-    sel.forEach(function(o) { h += '<td class="p-4 text-center font-semibold text-blue-600">от ' + o.rate + '%</td>'; });
+    sel.forEach(function(o) { var unit=(o.rate_unit==='year'?'в год':'в день'); h += '<td class="p-4 text-center font-semibold text-blue-600">от ' + o.rate + '% ' + unit + '</td>'; });
     h += '</tr>';
 
     // ПСК

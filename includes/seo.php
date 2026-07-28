@@ -50,7 +50,7 @@ function jsonLdOffer(array $offer, array $reviews = []): string {
             'availability' => 'https://schema.org/InStock',
             'url' => SITE_URL . '/offer/' . $offer['slug'],
         ],
-        'interestRate' => ['@type' => 'QuantitativeValue', 'value' => $offer['rate'], 'unitText' => 'percent per day'],
+        'interestRate' => ['@type' => 'QuantitativeValue', 'value' => $offer['rate'], 'unitText' => (getRateUnit($offer) === 'year' ? 'percent per year' : 'percent per day')],
         'amount' => ['@type' => 'MonetaryAmount', 'minValue' => $offer['amount_min'], 'maxValue' => $offer['amount_max'], 'currency' => 'RUB'],
     ];
 
