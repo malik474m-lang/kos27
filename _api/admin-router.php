@@ -121,6 +121,9 @@ if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
     require __DIR__ . '/admin/ab-reset.php'; exit;
 }
 
+// Пользователи
+if ($adminUri === '/users' && $method === 'GET') { require __DIR__ . '/admin/users-list.php'; exit; }
+
 // Postback конверсии
 if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/postback-list.php'; exit; }
 

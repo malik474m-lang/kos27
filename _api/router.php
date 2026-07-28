@@ -13,6 +13,12 @@ if ($apiUri === '/reviews' && $_SERVER['REQUEST_METHOD'] === 'POST') { require _
 if ($apiUri === '/nl-open') { require __DIR__ . '/nl-open.php'; exit; }
 if ($apiUri === '/nl-click') { require __DIR__ . '/nl-click.php'; exit; }
 if ($apiUri === '/postback') { require __DIR__ . '/postback.php'; exit; }
+// User API
+if (str_starts_with($apiUri, '/user/')) {
+    $userAction = substr($apiUri, 6);
+    $userFile = __DIR__ . '/user/' . basename($userAction) . '.php';
+    if (file_exists($userFile)) { require $userFile; exit; }
+}
 if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 

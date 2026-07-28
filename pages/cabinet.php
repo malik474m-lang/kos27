@@ -1,0 +1,65 @@
+<?php
+require_once __DIR__ . '/../includes/user-auth.php';
+$user = getUser();
+if (!$user) { header('Location: /login'); exit; }
+
+$pageTitle = 'Личный кабинет — ' . SITE_NAME;
+ob_start();
+?>
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Личный кабинет</nav>
+
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Личный кабинет</h1>
+            <p class="text-gray-500 text-sm mt-1" id="cab-email"></p>
+        </div>
+        <button onclick="fetch('/api/user/logout',{method:'POST'}).then(()=>location.href='/')" class="text-sm text-gray-500 hover:text-red-500">Выйти →</button>
+    </div>
+
+    <div id="cab-content"><p class="text-gray-500 text-center py-12">Загрузка...</p></div>
+</section>
+
+<script>
+function normLogo(u){if(!u)return'';if(u.indexOf('/public/')===0)return u.substring(7);return u;}
+function fmtDate(d){try{return new Date(d).toLocaleString('ru-RU');}catch(e){return d;}}
+function loadCabinet(){
+    fetch('/api/user/profile').then(r=>{if(r.status===401){location.href='/login';return;}return r.json();}).then(d=>{
+        if(!d)return;
+        var p=d.profile||{};
+        var apps=d.applications||[];
+        document.getElementById('cab-email').textContent=p.email||'';
+
+        var h='<div class="grid sm:grid-cols-3 gap-4 mb-8">';
+        h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-blue-600">'+apps.length+'</p><p class="text-xs text-gray-500">Заявок</p></div>';
+        var approved=apps.filter(a=>a.status==='approved').length;
+        var rejected=apps.filter(a=>a.status==='rejected').length;
+        h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-green-600">'+approved+'</p><p class="text-xs text-gray-500">Одобрено</p></div>';
+        h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-red-600">'+rejected+'</p><p class="text-xs text-gray-500">Отклонено</p></div>';
+        h+='</div>';
+
+        if(apps.length){
+            h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h2 class="font-bold text-gray-900">Мои заявки</h2></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Предложение</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+            apps.forEach(function(a){
+                var stBadge=a.status==='approved'?'bg-green-100 text-green-700':a.status==='rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700';
+                var stLabel=a.status==='approved'?'Одобрено':a.status==='rejected'?'Отклонено':'На рассмотрении';
+                var logo=normLogo(a.logo_url);
+                h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 text-xs text-gray-500 whitespace-nowrap">'+fmtDate(a.created_at)+'</td>';
+                h+='<td class="p-3"><div class="flex items-center gap-2">';
+                if(logo)h+='<img src="'+logo+'" class="w-6 h-6 rounded object-contain" loading="lazy">';
+                h+='<a href="/offer/'+(a.offer_slug||'')+'" class="font-medium text-primary hover:underline">'+(a.offer_title||'—')+'</a></div></td>';
+                h+='<td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+stBadge+'">'+stLabel+'</span></td></tr>';
+            });
+            h+='</tbody></table></div></div>';
+        } else {
+            h+='<div class="bg-white rounded-xl border p-8 text-center"><p class="text-gray-500">У вас пока нет заявок</p><a href="/zajmy" class="inline-block mt-4 bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-dark">Смотреть предложения</a></div>';
+        }
+        document.getElementById('cab-content').innerHTML=h;
+    }).catch(function(){document.getElementById('cab-content').innerHTML='<p class="text-red-500 text-center">Ошибка загрузки</p>';});
+}
+loadCabinet();
+</script>
+<?php
+$jsonLdSchemas = [jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Личный кабинет','url'=>'/cabinet']])];
+$content = ob_get_clean();
+require __DIR__ . '/../includes/layout.php';

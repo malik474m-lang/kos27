@@ -75,6 +75,16 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
                $_SERVER['HTTP_REFERER'] ?? null,
                $abVarId,
            ]);
+        // Записываем заявку пользователя (если залогинен)
+        require_once __DIR__ . '/includes/user-auth.php';
+        $userId = getUserId();
+        if ($userId) {
+            try {
+                $db->prepare("INSERT INTO user_applications (user_id, offer_id, click_stat_id, ip) VALUES (?,?,?,?)")
+                   ->execute([$userId, $m[1], $lastClickId ?? null, $clickIp]);
+            } catch (Exception $e) {}
+        }
+
         // Добавляем aff_sub (наш click_stats.id) в affiliate URL для postback
         $lastClickId = $db->lastInsertId();
         $affUrl = $row['affiliate_url'];
@@ -101,6 +111,9 @@ $routes = [
     '/faq' => 'faq',
     '/glossary' => 'glossary',
     '/favorites' => 'favorites',
+    '/register' => 'register',
+    '/login' => 'user-login',
+    '/cabinet' => 'cabinet',
     '/search' => 'search',
     '/privacy' => 'privacy',
     '/terms' => 'terms',

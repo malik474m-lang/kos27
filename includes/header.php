@@ -31,6 +31,11 @@
                 <a href="/articles" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Статьи</a>
                 <a href="/faq" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">FAQ</a>
                 <a href="/favorites" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Избранное">❤️</a>
+                <?php require_once __DIR__ . '/user-auth.php'; if (isLoggedIn()): ?>
+                <a href="/cabinet" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Кабинет">👤</a>
+                <?php else: ?>
+                <a href="/login" class="text-gray-700 hover:text-blue-600 font-medium transition-colors text-sm">Войти</a>
+                <?php endif; ?>
             </nav>
 
             <div class="flex items-center space-x-2">
