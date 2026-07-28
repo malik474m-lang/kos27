@@ -86,6 +86,7 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
 $routes = [
     '/' => 'home',
     '/zajmy' => 'zajmy',
+    '/novye-mfo' => 'novye-mfo',
     '/kredity' => 'kredity',
     '/karty/kreditnye' => 'karty-kreditnye',
     '/karty/debetovye' => 'karty-debetovye',

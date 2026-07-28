@@ -17,6 +17,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     <!-- Основные -->
     <url><loc><?= SITE_URL ?>/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
     <url><loc><?= SITE_URL ?>/zajmy</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+    <url><loc><?= SITE_URL ?>/novye-mfo</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
     <url><loc><?= SITE_URL ?>/kredity</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
     <url><loc><?= SITE_URL ?>/karty/kreditnye</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
     <url><loc><?= SITE_URL ?>/karty/debetovye</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
