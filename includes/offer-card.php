@@ -7,6 +7,13 @@ function renderOfferCard(array $offer): string {
     $reviewCount = (int)($offer['review_count'] ?? 0);
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
     static $favoritesScriptRendered = false;
+    // A/B тест кнопки
+    require_once __DIR__ . '/ab-test.php';
+    $abVar = getAbVariant();
+    $btnLabel = $abVar ? $abVar['label'] : 'Оформить';
+    $btnColor = $abVar ? $abVar['color'] : '#059669';
+    $btnHover = $abVar ? $abVar['color'] . 'dd' : '#047857';
+    $abVid = $abVar ? (int)$abVar['id'] : 0;
     
     ob_start();
     ?>
@@ -93,9 +100,10 @@ function renderOfferCard(array $offer): string {
                     <span class="offer-fav-text">В избранное</span>
                 </button>
             </div>
-            <a href="/click/<?= (int)$offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
-               class="inline-flex items-center justify-center space-x-2 bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-sm">
-                <span>Оформить</span>
+            <a href="/click/<?= (int)$offer['id'] ?>?ab=<?= $abVid ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+               style="background:<?= e($btnColor) ?>"
+               class="inline-flex items-center justify-center space-x-2 text-white px-6 py-3 rounded-lg font-semibold transition-all text-sm hover:opacity-90 hover:shadow-lg">
+                <span><?= e($btnLabel) ?></span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>
         </div>

@@ -105,6 +105,20 @@ if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/subscriber-delete.php'; exit; }
 }
 
+
+// A/B тесты
+if ($adminUri === '/ab-tests' && $method === 'GET') { require __DIR__ . '/admin/ab-list.php'; exit; }
+if ($adminUri === '/ab-tests' && $method === 'POST') { require __DIR__ . '/admin/ab-create.php'; exit; }
+if (preg_match('#^/ab-tests/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/ab-toggle.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/ab-delete.php'; exit; }
+}
+if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    require __DIR__ . '/admin/ab-reset.php'; exit;
+}
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 

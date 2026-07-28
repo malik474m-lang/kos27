@@ -56,7 +56,12 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
     if ($row) {
         $clickIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
         $clickIp = trim(explode(',', $clickIp)[0]);
-        $db->prepare("INSERT INTO click_stats (offer_id, user_agent, referer, ip, utm_source, utm_medium, utm_campaign, utm_content, utm_term, page_from) VALUES (?,?,?,?,?,?,?,?,?,?)")
+        $abVarId = isset($_GET['ab']) ? (int)$_GET['ab'] : null;
+        // Считаем клик для A/B варианта
+        if ($abVarId) {
+            try { $db->prepare("UPDATE ab_variants SET clicks = clicks + 1 WHERE id = ?")->execute([$abVarId]); } catch (Exception $e) {}
+        }
+        $db->prepare("INSERT INTO click_stats (offer_id, user_agent, referer, ip, utm_source, utm_medium, utm_campaign, utm_content, utm_term, page_from, ab_variant_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
            ->execute([
                $m[1],
                $_SERVER['HTTP_USER_AGENT'] ?? '',
@@ -68,6 +73,7 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
                $_GET['utm_content'] ?? $_COOKIE['utm_content'] ?? null,
                $_GET['utm_term'] ?? $_COOKIE['utm_term'] ?? null,
                $_SERVER['HTTP_REFERER'] ?? null,
+               $abVarId,
            ]);
         header("Location: {$row['affiliate_url']}");
     } else {
