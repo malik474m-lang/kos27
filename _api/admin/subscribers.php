@@ -1,3 +1,4 @@
 <?php
+if (apiCacheStart('admin_subscribers', 20)) exit;
 $db = getDB();
-echo json_encode($db->query("SELECT * FROM subscribers ORDER BY subscribed_at DESC")->fetchAll());
+apiCacheEnd($db->query("SELECT * FROM subscribers ORDER BY subscribed_at DESC")->fetchAll());

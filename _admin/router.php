@@ -35,6 +35,15 @@ if (isset($_SESSION['admin_login_time']) && (time() - $_SESSION['admin_login_tim
 }
 
 // API-подобные эндпоинты
+
+if ($adminPath === '/clear-api-cache') {
+    header('Content-Type: application/json');
+    require_once __DIR__ . '/../includes/api-cache.php';
+    $count = apiCacheClear();
+    echo json_encode(['success' => true, 'cleared' => $count]);
+    exit;
+}
+
 if ($adminPath === '/clear-cache') {
     header('Content-Type: application/json');
     require_once __DIR__ . '/../includes/page-cache.php';

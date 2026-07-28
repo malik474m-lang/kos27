@@ -1,4 +1,5 @@
 <?php
+if (apiCacheStart('admin_abtests', 30)) exit;
 $db = getDB();
 $tests = $db->query("SELECT * FROM ab_tests ORDER BY created_at DESC")->fetchAll();
 foreach ($tests as &$t) {
@@ -6,4 +7,5 @@ foreach ($tests as &$t) {
     $vars->execute([$t['id']]);
     $t['variants'] = $vars->fetchAll();
 }
-echo json_encode($tests);
+unset($t);
+apiCacheEnd($tests);

@@ -1,4 +1,6 @@
 <?php
+if (apiCacheStart('admin_newsletter_stats', 20)) exit;
+
 $db = getDB();
 $nlId = (int)($m[1] ?? $_GET['id'] ?? 0);
 
@@ -14,17 +16,15 @@ $uniqueClicks = $db->prepare("SELECT COUNT(DISTINCT subscriber_id) as cnt FROM n
 $uniqueClicks->execute([$nlId]);
 $uniqueClickCount = (int)$uniqueClicks->fetch()['cnt'];
 
-// Топ ссылок
 $topLinks = $db->prepare("SELECT url, COUNT(*) as cnt FROM newsletter_events WHERE newsletter_id = ? AND event_type = 'click' AND url IS NOT NULL GROUP BY url ORDER BY cnt DESC LIMIT 10");
 $topLinks->execute([$nlId]);
 $topLinksData = $topLinks->fetchAll();
 
-// Получаем рассылку для расчёта %
 $nl = $db->prepare("SELECT sent_count FROM newsletters WHERE id = ?");
 $nl->execute([$nlId]);
 $sentCount = (int)($nl->fetch()['sent_count'] ?? 0);
 
-echo json_encode([
+$newsletterStatsPayload = [
     'opens' => $openCount,
     'clicks' => $clickCount,
     'uniqueClicks' => $uniqueClickCount,
@@ -32,4 +32,6 @@ echo json_encode([
     'openRate' => $sentCount > 0 ? round(($openCount / $sentCount) * 100, 1) : 0,
     'clickRate' => $sentCount > 0 ? round(($uniqueClickCount / $sentCount) * 100, 1) : 0,
     'topLinks' => $topLinksData,
-]);
+];
+
+apiCacheEnd($newsletterStatsPayload);

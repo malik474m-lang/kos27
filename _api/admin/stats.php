@@ -1,4 +1,6 @@
 <?php
+if (apiCacheStart('admin_stats', 20)) exit;
+
 $db = getDB();
 $period = $_GET['period'] ?? '30';
 $period = max(1, min(365, (int)$period));
@@ -25,7 +27,6 @@ $topOffers = $db->query("
     ORDER BY clicks DESC LIMIT 20
 ")->fetchAll();
 
-// Конверсия
 foreach ($topOffers as &$o) {
     $o['views'] = (int)$o['views'];
     $o['clicks'] = (int)$o['clicks'];
@@ -33,7 +34,6 @@ foreach ($topOffers as &$o) {
 }
 unset($o);
 
-// График кликов по дням
 $chartClicks = $db->prepare("
     SELECT DATE(clicked_at) as day, COUNT(*) as cnt
     FROM click_stats
@@ -44,7 +44,6 @@ $chartClicks = $db->prepare("
 $chartClicks->execute([$period]);
 $chartData = $chartClicks->fetchAll();
 
-// График просмотров по дням (если таблица есть)
 $chartViews = [];
 try {
     $pvStmt = $db->prepare("
@@ -58,7 +57,6 @@ try {
     $chartViews = $pvStmt->fetchAll();
 } catch (Exception $e) {}
 
-// UTM-источники
 $utmSources = $db->prepare("
     SELECT utm_source, utm_medium, utm_campaign, COUNT(*) as clicks
     FROM click_stats
@@ -70,7 +68,6 @@ $utmSources = $db->prepare("
 $utmSources->execute([$period]);
 $utmData = $utmSources->fetchAll();
 
-// Клики по часам (сегодня)
 $hourly = $db->query("
     SELECT HOUR(clicked_at) as h, COUNT(*) as cnt
     FROM click_stats
@@ -79,11 +76,10 @@ $hourly = $db->query("
     ORDER BY h ASC
 ")->fetchAll();
 
-// Клики за последний час (realtime)
 $lastHour = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE clicked_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)")->fetch()['cnt'];
 $last5min = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE clicked_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)")->fetch()['cnt'];
 
-echo json_encode([
+$statsPayload = [
     'offers' => (int)$offers,
     'articles' => (int)$articles,
     'reviews' => (int)$reviews,
@@ -100,4 +96,6 @@ echo json_encode([
     'lastHour' => (int)$lastHour,
     'last5min' => (int)$last5min,
     'period' => $period,
-]);
+];
+
+apiCacheEnd($statsPayload);

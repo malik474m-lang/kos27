@@ -1,3 +1,4 @@
 <?php
+if (apiCacheStart('admin_geo', 60)) exit;
 $db = getDB();
-echo json_encode($db->query("SELECT * FROM geo_redirects ORDER BY created_at DESC")->fetchAll());
+apiCacheEnd($db->query("SELECT * FROM geo_redirects ORDER BY created_at DESC")->fetchAll());

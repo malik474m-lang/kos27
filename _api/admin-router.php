@@ -1,6 +1,8 @@
 <?php
+require_once __DIR__ . '/../includes/api-cache.php';
 $adminUri = substr($apiUri, 6); // убираем /admin
 $method = $_SERVER['REQUEST_METHOD'];
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { register_shutdown_function('apiCacheClear'); }
 
 // Логин не требует авторизации
 if ($adminUri === '/login' && $method === 'POST') { require __DIR__ . '/admin/login.php'; exit; }

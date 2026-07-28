@@ -1,7 +1,9 @@
 <?php
+require_once __DIR__ . '/../includes/api-cache.php';
 header('Content-Type: application/json; charset=UTF-8');
 
 $apiUri = substr($uri, 4); // убираем /api
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { register_shutdown_function('apiCacheClear'); }
 
 // Публичные API
 if ($apiUri === '/health') { echo json_encode(['ok' => true]); exit; }

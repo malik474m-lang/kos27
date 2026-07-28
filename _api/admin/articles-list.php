@@ -1,3 +1,4 @@
 <?php
+if (apiCacheStart('admin_articles', 30)) exit;
 $db = getDB();
-echo json_encode($db->query("SELECT * FROM articles ORDER BY created_at DESC")->fetchAll());
+apiCacheEnd($db->query("SELECT * FROM articles ORDER BY created_at DESC")->fetchAll());
