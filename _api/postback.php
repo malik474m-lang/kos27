@@ -60,6 +60,33 @@ $statusMap = [
 ];
 $normalizedStatus = $statusMap[strtolower((string)$status)] ?? strtolower((string)$status);
 
+
+// Синхронизация статуса в user_applications
+function syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus) {
+    if (!$affSub) return;
+    try {
+        // aff_sub = click_stats.id → ищем user_application по click_stat_id
+        $stmt = $db->prepare("UPDATE user_applications SET status = ? WHERE click_stat_id = ?");
+        $stmt->execute([$normalizedStatus, (int)$affSub]);
+        if ($stmt->rowCount() > 0) return;
+
+        // Fallback: ищем по offer_id + привязанному user через click_stats
+        if ($internalOfferId) {
+            $clickUser = $db->prepare("
+                SELECT ua.id FROM user_applications ua
+                JOIN click_stats cs ON ua.click_stat_id = cs.id
+                WHERE cs.id = ? AND ua.offer_id = ?
+                LIMIT 1
+            ");
+            $clickUser->execute([(int)$affSub, $internalOfferId]);
+            $row = $clickUser->fetch();
+            if ($row) {
+                $db->prepare("UPDATE user_applications SET status = ? WHERE id = ?")->execute([$normalizedStatus, $row['id']]);
+            }
+        }
+    } catch (Exception $e) {}
+}
+
 // Пробуем найти наш offer_id по aff_sub (click_stats.id)
 $internalOfferId = null;
 $db = null;
@@ -89,6 +116,7 @@ try {
         if ($existing->fetch()) {
             $db->prepare("UPDATE postback_conversions SET click_id = COALESCE(?, click_id), offer_id = COALESCE(?, offer_id), external_offer_id = COALESCE(?, external_offer_id), status = ?, payout = ?, ip = COALESCE(?, ip), aff_sub = COALESCE(?, aff_sub), aff_sub2 = COALESCE(?, aff_sub2), aff_sub3 = COALESCE(?, aff_sub3), goal_id = COALESCE(?, goal_id), raw_query = ? WHERE transaction_id = ?")
                ->execute([$clickId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery, $transactionId]);
+            syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
             echo json_encode(['ok' => true, 'action' => 'updated_by_transaction', 'status' => $normalizedStatus]);
             exit;
         }
@@ -108,6 +136,8 @@ try {
 try {
     $db->prepare("INSERT INTO postback_conversions (click_id, transaction_id, offer_id, external_offer_id, status, payout, ip, aff_sub, aff_sub2, aff_sub3, goal_id, raw_query) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
        ->execute([$clickId, $transactionId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery]);
+
+    syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
 
     echo json_encode([
         'ok' => true,
