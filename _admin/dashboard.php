@@ -477,11 +477,34 @@ function nlForm(n){
 var f=n||{subject:'',body_html:''};var id=n?n.id:0;
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать рассылку':'Новая рассылка')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return nlSave(event,'+id+')">'+
-'<div class="mb-3"><label class="block text-xs font-medium mb-1">Тема письма *</label><input id="nl-subj" class="input-f" value="'+e(f.subject||'')+'" required placeholder="Лучшие предложения недели"></div>'+
-'<div class="mb-3"><label class="block text-xs font-medium mb-1">Содержание (HTML)</label><textarea id="nl-body" class="input-f font-mono text-xs" rows="14" placeholder="<h2>Заголовок</h2>\n<p>Текст письма...</p>">'+e(f.body_html||'')+'</textarea></div>'+
-'<div class="bg-gray-50 rounded-lg p-3 mb-4 text-xs text-gray-500">💡 Ссылка для отписки добавляется автоматически в конце каждого письма. Отправка с адреса info@kosmozaim.ru</div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Тема письма *</label><div class="flex gap-2"><input id="nl-subj" class="input-f flex-1" value="'+e(f.subject||'')+'" required placeholder="Лучшие предложения недели"><button type="button" onclick="nlGenTopics()" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap" id="nl-topics-btn">🤖 Темы</button></div></div>'+
+'<div id="nl-topics-list" class="hidden mb-3"></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Содержание (HTML)</label><div class="flex gap-2 mb-2"><button type="button" onclick="nlGenBody()" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-700" id="nl-genbody-btn">🤖 Сгенерировать текст</button><button type="button" onclick="nlPreviewInline()" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300">👁 Превью</button></div><textarea id="nl-body" class="input-f font-mono text-xs" rows="14" placeholder="<h2>Заголовок</h2>\n<p>Текст письма...</p>">'+e(f.body_html||'')+'</textarea><div id="nl-preview-box" class="hidden mt-2 border rounded-lg p-4 bg-white"></div></div>'+
+'<div class="bg-gray-50 rounded-lg p-3 mb-4 text-xs text-gray-500">💡 Ссылка отписки добавляется автоматически. Отправка с info@kosmozaim.ru</div>'+
 '<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить черновик</button></div></form>');
 }
+function nlGenTopics(){
+var btn=document.getElementById('nl-topics-btn');btn.disabled=true;btn.textContent='⏳...';
+ap('/newsletter-generate',{method:'POST',body:JSON.stringify({action:'topics'})}).then(d=>{
+btn.disabled=false;btn.textContent='🤖 Темы';
+if(d.error){alert(d.error);return;}
+var box=document.getElementById('nl-topics-list');box.classList.remove('hidden');
+box.innerHTML='<p class="text-xs text-gray-500 mb-2">Выберите тему:</p><div class="flex flex-wrap gap-2">'+d.topics.map(t=>'<button type="button" onclick="document.getElementById(\'nl-subj\').value=this.textContent;document.getElementById(\'nl-topics-list\').classList.add(\'hidden\')" class="bg-purple-50 border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-xs hover:bg-purple-100 text-left">'+e(t)+'</button>').join('')+'</div>';
+}).catch(()=>{btn.disabled=false;btn.textContent='🤖 Темы';alert('Ошибка');});}
+function nlGenBody(){
+var subj=document.getElementById('nl-subj').value.trim();
+if(!subj){alert('Сначала укажите тему письма');return;}
+var btn=document.getElementById('nl-genbody-btn');btn.disabled=true;btn.textContent='⏳ Генерация...';
+ap('/newsletter-generate',{method:'POST',body:JSON.stringify({action:'body',subject:subj})}).then(d=>{
+btn.disabled=false;btn.textContent='🤖 Сгенерировать текст';
+if(d.error){alert(d.error);return;}
+document.getElementById('nl-body').value=d.html;
+}).catch(()=>{btn.disabled=false;btn.textContent='🤖 Сгенерировать текст';alert('Ошибка');});}
+function nlPreviewInline(){
+var box=document.getElementById('nl-preview-box');
+var body=document.getElementById('nl-body').value;
+if(box.classList.contains('hidden')){box.classList.remove('hidden');box.innerHTML=body;}
+else{box.classList.add('hidden');}}
 function nlSave(ev,id){ev.preventDefault();
 var d={subject:document.getElementById('nl-subj').value,bodyHtml:document.getElementById('nl-body').value};
 ap(id?'/newsletters/'+id:'/newsletters',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lSu();});return false;}

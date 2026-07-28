@@ -82,7 +82,8 @@ if (str_starts_with($adminUri, '/security')) { require __DIR__ . '/admin/securit
 
 // Рассылки
 if ($adminUri === '/newsletters' && $method === 'GET') { require __DIR__ . '/admin/newsletter-list.php'; exit; }
-if ($adminUri === '/newsletters' && $method === 'POST') { require __DIR__ . '/admin/newsletter-create.php'; exit; }
+if ($adminUri === '/newsletter-generate' && $method === 'POST') { require __DIR__ . '/admin/newsletter-generate.php'; exit; }
+    if ($adminUri === '/newsletters' && $method === 'POST') { require __DIR__ . '/admin/newsletter-create.php'; exit; }
 if (preg_match('#^/newsletters/(\d+)$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     if ($method === 'PUT') { require __DIR__ . '/admin/newsletter-update.php'; exit; }
