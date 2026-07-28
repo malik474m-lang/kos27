@@ -22,10 +22,32 @@ function getSubcategories(int $parentId): array {
 }
 
 function findCategoryBySlug(string $slug): ?array {
-    foreach (getCategories(false) as $c) { if ($c['slug'] === $slug) return $c; }
+    foreach (getCategories(false) as $c) {
+        if ($c['slug'] === $slug) return $c;
+    }
     return null;
 }
 
+function getCategoryRoutePathBySlug(string $slug): string {
+    return match ($slug) {
+        'zajmy' => '/zajmy',
+        'kredity' => '/kredity',
+        'karty-kreditnye' => '/karty/kreditnye',
+        'karty-debetovye' => '/karty/debetovye',
+        default => '/' . ltrim($slug, '/'),
+    };
+}
+
+function getCategoryOfferKeyBySlug(string $slug): string {
+    return match ($slug) {
+        'zajmy' => 'microloans',
+        'kredity' => 'credits',
+        'karty-kreditnye' => 'credit_cards',
+        'karty-debetovye' => 'debit_cards',
+        default => $slug,
+    };
+}
+
 function getCategoryUrl(array $cat): string {
-    return '/' . $cat['slug'];
+    return getCategoryRoutePathBySlug($cat['slug']);
 }

@@ -18,7 +18,7 @@ ob_start();
     <?php if ($cardTags): ?>
     <div class="flex flex-wrap gap-2 mb-6">
         <?php foreach ($cardTags as $lt): ?>
-        <a href="/karty-kreditnye/type/<?= e($lt['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?php if (!empty($lt['icon'])): ?><span><?= $lt['icon'] ?></span><?php endif; ?><?= e($lt['title']) ?></a>
+        <a href="/karty/kreditnye/type/<?= e($lt['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?php if (!empty($lt['icon'])): ?><span><?= $lt['icon'] ?></span><?php endif; ?><?= e($lt['title']) ?></a>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>

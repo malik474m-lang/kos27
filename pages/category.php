@@ -6,13 +6,14 @@ $cat = findCategoryBySlug($catSlug);
 if (!$cat || !$cat['is_active']) { http_response_code(404); $pageTitle='Категория не найдена'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Категория не найдена</h1><a href="/" class="text-primary hover:underline mt-4 inline-block">На главную</a></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
 
 $db = getDB();
+$offerCategoryKey = getCategoryOfferKeyBySlug($cat['slug']);
 $offers = $db->prepare("SELECT * FROM offers WHERE is_active = 1 AND category = ? ORDER BY sort_order ASC");
-$offers->execute([$cat['slug']]);
+$offers->execute([$offerCategoryKey]);
 $offersList = $offers->fetchAll();
 
 // Теги этой категории
 $tags = $db->prepare("SELECT * FROM offer_tags WHERE is_active = 1 AND category = ? ORDER BY sort_order ASC");
-$tags->execute([$cat['slug']]);
+$tags->execute([$offerCategoryKey]);
 $catTags = $tags->fetchAll();
 
 // Подкатегории
