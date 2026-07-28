@@ -4,7 +4,7 @@
 $API_CACHE_DIR = __DIR__ . '/../data/api_cache';
 $API_CACHE_FILE = null;
 
-function apiCacheStart(string $namespace, int $ttl = 60): bool {
+function apiCacheStart(string $namespace, int $ttl = 60, string $vary = ''): bool {
     global $API_CACHE_DIR, $API_CACHE_FILE;
 
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return false;
@@ -12,7 +12,7 @@ function apiCacheStart(string $namespace, int $ttl = 60): bool {
 
     if (!is_dir($API_CACHE_DIR)) @mkdir($API_CACHE_DIR, 0755, true);
 
-    $key = md5($namespace . '|' . ($_SERVER['REQUEST_URI'] ?? ''));
+    $key = md5($namespace . '|' . $vary . '|' . ($_SERVER['REQUEST_URI'] ?? ''));
     $API_CACHE_FILE = $API_CACHE_DIR . '/' . $namespace . '_' . $key . '.json';
 
     if (file_exists($API_CACHE_FILE) && (time() - filemtime($API_CACHE_FILE)) < $ttl) {

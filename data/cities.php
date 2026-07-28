@@ -50,3 +50,30 @@ function findCityBySlug(string $slug): ?array {
     }
     return null;
 }
+
+function normalizeCityName(string $name): string {
+    $name = mb_strtolower(trim($name));
+    $map = [
+        'ё' => 'е',
+        '–' => '-',
+        '—' => '-',
+    ];
+    $name = strtr($name, $map);
+    $name = preg_replace('/\s+/', ' ', $name);
+    return $name;
+}
+
+function findCityByName(string $name): ?array {
+    global $cities;
+    $normalized = normalizeCityName($name);
+    foreach ($cities as $c) {
+        if (normalizeCityName($c['name']) === $normalized) return $c;
+    }
+    // Частичные совпадения для дефисов/сокращений
+    foreach ($cities as $c) {
+        if (str_contains($normalized, normalizeCityName($c['name'])) || str_contains(normalizeCityName($c['name']), $normalized)) {
+            return $c;
+        }
+    }
+    return null;
+}
