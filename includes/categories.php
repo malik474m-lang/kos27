@@ -51,3 +51,9 @@ function getCategoryOfferKeyBySlug(string $slug): string {
 function getCategoryUrl(array $cat): string {
     return getCategoryRoutePathBySlug($cat['slug']);
 }
+
+function getFooterCategoriesBySection(string $section = 'products'): array {
+    return array_values(array_filter(getCategories(), function($c) use ($section) {
+        return $c['show_in_footer'] && !$c['parent_id'] && (($c['footer_section'] ?? 'products') === $section);
+    }));
+}

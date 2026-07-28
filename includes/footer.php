@@ -31,7 +31,7 @@ $topCities = [
             <div>
                 <h3 class="text-white font-semibold mb-4">Продукты</h3>
                 <ul class="space-y-2">
-                        <?php require_once __DIR__ . '/categories.php'; foreach (getFooterCategories() as $fc): ?>
+                    <?php require_once __DIR__ . '/categories.php'; foreach (getFooterCategoriesBySection('products') as $fc): ?>
                     <li><a href="<?= getCategoryUrl($fc) ?>" class="hover:text-white transition-colors text-sm"><?= e($fc['name']) ?></a></li>
                     <?php foreach (getSubcategories((int)$fc['id']) as $fsc): ?>
                     <li><a href="<?= getCategoryUrl($fsc) ?>" class="hover:text-white transition-colors text-sm pl-2">— <?= e($fsc['name']) ?></a></li>
@@ -41,18 +41,8 @@ $topCities = [
             <div>
                 <h3 class="text-white font-semibold mb-4">Инструменты</h3>
                 <ul class="space-y-2">
-                    <?php
-                    $footerNavCats = array_filter(getCategories(), function($c) {
-                        return $c['show_in_footer'] && !$c['parent_id'] && in_array($c['slug'], ['compare','calculator','articles','faq','glossary','novye-mfo']);
-                    });
-                    foreach (array_merge(getFooterCategories(), []) as $fnc):
-                        // Уже выведены в "Продукты"
-                    endforeach;
-                    $toolSlugs = ['compare','calculator','articles','faq','glossary','novye-mfo'];
-                    foreach (getCategories() as $navC):
-                        if (!$navC['show_in_footer'] || !in_array($navC['slug'], $toolSlugs)) continue;
-                    ?>
-                    <li><a href="/<?= e($navC['slug']) ?>" class="hover:text-white transition-colors text-sm"><?= e($navC['name']) ?></a></li>
+                    <?php foreach (getFooterCategoriesBySection('tools') as $navC): ?>
+                    <li><a href="<?= getCategoryUrl($navC) ?>" class="hover:text-white transition-colors text-sm"><?= e($navC['name']) ?></a></li>
                     <?php endforeach; ?>
                 </ul>
             </div>

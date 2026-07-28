@@ -255,24 +255,25 @@ if(!d.success)alert('Ошибка сортировки');
 /* ============ CATEGORIES ============ */
 function lCats(){ap('/categories').then(cats=>{
 var h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">📂 Категории и подкатегории</h2><button onclick="catForm()" class="btn-p text-sm">+ Добавить</button></div>';
-h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700">Перетаскивайте категории и подкатегории за ☰. Порядок сохраняется автоматически. Для подкатегорий выбирается родитель, а дальше можно менять порядок перетаскиванием внутри группы.</div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700">Перетаскивайте за ☰. Верхний блок влияет на порядок категорий. Ниже можно отдельно упорядочить, что показывать в футере в разделах «Продукты» и «Инструменты».</div>';
 
-var parents=cats.filter(c=>!c.parent_id).sort((a,b)=>(a.sort_order-b.sort_order)|| (a.id-b.id));
-var children=cats.filter(c=>c.parent_id).sort((a,b)=>(a.sort_order-b.sort_order)|| (a.id-b.id));
+var parents=cats.filter(c=>!c.parent_id).sort((a,b)=>(a.sort_order-b.sort_order)||(a.id-b.id));
+var children=cats.filter(c=>c.parent_id).sort((a,b)=>(a.sort_order-b.sort_order)||(a.id-b.id));
 
 if(!cats.length){h+='<p class="text-gray-500 text-center py-8">Нет категорий</p>';}
 else{
-h+='<div id="cats-parent-sortable" class="space-y-3">';
+// Общий список категорий
+h+='<div class="bg-white rounded-xl border p-4 mb-6"><h3 class="font-semibold text-gray-900 mb-3">Все категории</h3><div id="cats-parent-sortable" class="space-y-3">';
 parents.forEach(c=>{
 var subs=children.filter(s=>Number(s.parent_id)===Number(c.id));
-h+='<div class="bg-white rounded-xl border p-4" data-id="'+c.id+'" data-parent-id="">';
+h+='<div class="bg-white rounded-xl border p-4" data-id="'+c.id+'" data-parent-id="" data-footer-section="'+(c.footer_section||'products')+'">';
 h+='<div class="flex items-center gap-3">';
 h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
 h+='<span class="text-xl">'+(c.icon||'📁')+'</span>';
 h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(c.name)+'</p><p class="text-xs text-gray-500 font-mono">/'+e(c.slug)+'</p></div>';
 h+='<div class="flex items-center gap-2 text-xs flex-wrap">';
 h+=(c.show_in_header?'<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded">Шапка</span>':'');
-h+=(c.show_in_footer?'<span class="bg-green-50 text-green-600 px-2 py-0.5 rounded">Футер</span>':'');
+h+=(c.show_in_footer?'<span class="bg-green-50 text-green-600 px-2 py-0.5 rounded">Футер:'+((c.footer_section||'products')==='tools'?'Инструменты':'Продукты')+'</span>':'');
 h+='<span class="'+(c.is_active?'text-green-600':'text-gray-400')+'">'+(c.is_active?'Вкл':'Выкл')+'</span>';
 h+='<a href="/'+e(c.slug)+'" target="_blank" class="text-gray-400 hover:text-blue-600">👁</a>';
 h+='<button onclick="catForm('+JSON.stringify(c).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline">Ред.</button>';
@@ -281,40 +282,56 @@ h+='</div></div>';
 if(subs.length){
 h+='<div class="ml-8 mt-3 space-y-2 border-l-2 border-gray-100 pl-4 cats-child-sortable" data-parent-id="'+c.id+'">';
 subs.forEach(s=>{
-h+='<div class="flex items-center gap-2 text-sm bg-gray-50 rounded-lg border p-3" data-id="'+s.id+'" data-parent-id="'+c.id+'">';
+h+='<div class="flex items-center gap-2 text-sm bg-gray-50 rounded-lg border p-3" data-id="'+s.id+'" data-parent-id="'+c.id+'" data-footer-section="'+(s.footer_section||'products')+'">';
 h+='<span class="text-gray-300 cursor-grab drag-handle text-base">☰</span>';
 h+='<span>'+(s.icon||'📄')+'</span><span class="font-medium">'+e(s.name)+'</span><span class="text-gray-400 font-mono text-xs">/'+e(s.slug)+'</span>';
 h+=(s.show_in_header?'<span class="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-xs">Шапка</span>':'');
-h+=(s.show_in_footer?'<span class="bg-green-50 text-green-600 px-1.5 py-0.5 rounded text-xs">Футер</span>':'');
+h+=(s.show_in_footer?'<span class="bg-green-50 text-green-600 px-1.5 py-0.5 rounded text-xs">Футер:'+((s.footer_section||'products')==='tools'?'Инстр.':'Прод.')+'</span>':'');
 h+='<a href="/'+e(s.slug)+'" target="_blank" class="text-gray-400 hover:text-blue-600 text-xs">👁</a>';
 h+='<button onclick="catForm('+JSON.stringify(s).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-xs">Ред.</button>';
 h+='<button onclick="catDel('+s.id+')" class="text-red-500 hover:underline text-xs">Уд.</button>';
 h+='</div>';});
 h+='</div>';}
 h+='</div>';});
-h+='</div>';}
+h+='</div></div>';
+
+// Футер: Продукты
+var footerProducts=parents.filter(c=>c.show_in_footer && (c.footer_section||'products')==='products');
+h+='<div class="bg-white rounded-xl border p-4 mb-6"><h3 class="font-semibold text-gray-900 mb-3">Футер → Продукты</h3><div id="footer-products-sortable" class="space-y-2">';
+footerProducts.forEach(c=>{h+='<div class="flex items-center gap-3 bg-gray-50 rounded-lg border p-3" data-id="'+c.id+'" data-parent-id="" data-footer-section="products"><span class="text-gray-300 cursor-grab drag-handle text-base">☰</span><span>'+(c.icon||'📁')+'</span><span class="font-medium">'+e(c.name)+'</span><span class="text-gray-400 font-mono text-xs">/'+e(c.slug)+'</span></div>';});
+h+='</div></div>';
+
+// Футер: Инструменты
+var footerTools=parents.filter(c=>c.show_in_footer && (c.footer_section||'products')==='tools');
+h+='<div class="bg-white rounded-xl border p-4 mb-6"><h3 class="font-semibold text-gray-900 mb-3">Футер → Инструменты</h3><div id="footer-tools-sortable" class="space-y-2">';
+footerTools.forEach(c=>{h+='<div class="flex items-center gap-3 bg-gray-50 rounded-lg border p-3" data-id="'+c.id+'" data-parent-id="" data-footer-section="tools"><span class="text-gray-300 cursor-grab drag-handle text-base">☰</span><span>'+(c.icon||'🧰')+'</span><span class="font-medium">'+e(c.name)+'</span><span class="text-gray-400 font-mono text-xs">/'+e(c.slug)+'</span></div>';});
+h+='</div></div>';
+}
 document.getElementById('p-cats').innerHTML=h;
 initCategorySort();});}
 
 function initCategorySort(){
 var parentEl=document.getElementById('cats-parent-sortable');
-if(parentEl&&window.Sortable){
-  new Sortable(parentEl,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort});
-}
-document.querySelectorAll('.cats-child-sortable').forEach(function(el){
-  if(window.Sortable){
-    new Sortable(el,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort});
-  }
-});
+if(parentEl&&window.Sortable){ new Sortable(parentEl,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort}); }
+document.querySelectorAll('.cats-child-sortable').forEach(function(el){ if(window.Sortable){ new Sortable(el,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort}); }});
+var fp=document.getElementById('footer-products-sortable'); if(fp&&window.Sortable){ new Sortable(fp,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort}); }
+var ft=document.getElementById('footer-tools-sortable'); if(ft&&window.Sortable){ new Sortable(ft,{handle:'.drag-handle',animation:200,ghostClass:'opacity-30',onEnd:saveCategorySort}); }
 }
 
 function saveCategorySort(){
 var items=[];
 document.querySelectorAll('#cats-parent-sortable > [data-id]').forEach(function(parent){
-  items.push({id:Number(parent.dataset.id), parent_id:null});
+  items.push({id:Number(parent.dataset.id), parent_id:null, footer_section:parent.dataset.footerSection||'products'});
   parent.querySelectorAll('.cats-child-sortable > [data-id]').forEach(function(child){
-    items.push({id:Number(child.dataset.id), parent_id:Number(child.dataset.parentId||parent.querySelector('.cats-child-sortable')?.dataset.parentId||parent.dataset.id)});
+    items.push({id:Number(child.dataset.id), parent_id:Number(child.dataset.parentId||parent.dataset.id), footer_section:child.dataset.footerSection||'products'});
   });
+});
+// Отдельно обновляем порядок в футере по группам
+(document.querySelectorAll('#footer-products-sortable > [data-id]')||[]).forEach(function(el, idx){
+  items.push({id:Number(el.dataset.id), parent_id:null, footer_section:'products', sort_hint:idx});
+});
+(document.querySelectorAll('#footer-tools-sortable > [data-id]')||[]).forEach(function(el, idx){
+  items.push({id:Number(el.dataset.id), parent_id:null, footer_section:'tools', sort_hint:idx});
 });
 ap('/categories/reorder',{method:'POST',body:JSON.stringify({items:items})}).then(function(r){if(!r.success)alert(r.error||'Ошибка сортировки');});
 }
@@ -339,13 +356,13 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="cat-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO-текст (HTML)</label><textarea id="cat-seo" class="input-f text-xs" rows="4">'+e(f.seo_text||'')+'</textarea></div>'+
 '<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-header" '+(f.show_in_header?'checked':'')+' class="w-4 h-4"><span class="text-sm">В шапке</span></label></div>'+
-'<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-footer" '+(f.show_in_footer?'checked':'')+' class="w-4 h-4"><span class="text-sm">В футере</span></label></div>'+
+'<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-footer" '+(f.show_in_footer?'checked':'')+' class="w-4 h-4"><span class="text-sm">В футере</span></label></div>'+'<div><label class="block text-xs font-medium mb-1">Раздел футера</label><select id="cat-footer-section" class="sel-f"><option value="products"'+((f.footer_section||'products')==='products'?' selected':'')+'>Продукты</option><option value="tools"'+((f.footer_section||'products')==='tools'?' selected':'')+'>Инструменты</option></select></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="cat-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активна</span></label></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
 });}
 
 function catSave(ev,id){ev.preventDefault();
-var d={id:id,name:document.getElementById('cat-name').value,slug:document.getElementById('cat-slug').value,icon:document.getElementById('cat-icon').value,h1:document.getElementById('cat-h1').value,description:document.getElementById('cat-desc').value,metaTitle:document.getElementById('cat-mt').value,metaDescription:document.getElementById('cat-md').value,seoText:document.getElementById('cat-seo').value,parentId:document.getElementById('cat-parent').value||null,showInHeader:document.getElementById('cat-header').checked,showInFooter:document.getElementById('cat-footer').checked,isActive:document.getElementById('cat-active').checked};
+var d={id:id,name:document.getElementById('cat-name').value,slug:document.getElementById('cat-slug').value,icon:document.getElementById('cat-icon').value,h1:document.getElementById('cat-h1').value,description:document.getElementById('cat-desc').value,metaTitle:document.getElementById('cat-mt').value,metaDescription:document.getElementById('cat-md').value,seoText:document.getElementById('cat-seo').value,parentId:document.getElementById('cat-parent').value||null,showInHeader:document.getElementById('cat-header').checked,showInFooter:document.getElementById('cat-footer').checked,footerSection:document.getElementById('cat-footer-section').value,isActive:document.getElementById('cat-active').checked};
 ap(id?'/categories/'+id:'/categories',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{if(r.error){alert(r.error);return;}cm();lCats();});return false;}
 
 function catDel(id){if(confirm('Удалить категорию?'))ap('/categories/'+id,{method:'DELETE'}).then(()=>lCats());}
