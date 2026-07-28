@@ -17,9 +17,30 @@ if (!$offer) {
     return;
 }
 
-// Похожие предложения
-$similar = $db->prepare("SELECT * FROM offers WHERE is_active = 1 AND category = ? AND id != ? ORDER BY sort_order ASC LIMIT 4");
-$similar->execute([$offer['category'], $offer['id']]);
+// Похожие предложения — по категории, сумме и близости ставки
+$similar = $db->prepare("
+    SELECT *,
+        (CASE
+            WHEN amount_min <= ? AND amount_max >= ? THEN 100
+            WHEN amount_min <= ? AND amount_max >= ? THEN 70
+            WHEN amount_min <= ? AND amount_max >= ? THEN 40
+            ELSE 0
+        END) AS amount_match_score,
+        ABS(CAST(rate AS DECIMAL(10,2)) - CAST(? AS DECIMAL(10,2))) AS rate_diff
+    FROM offers
+    WHERE is_active = 1 AND category = ? AND id != ?
+    ORDER BY amount_match_score DESC, rate_diff ASC, review_count DESC, rating DESC, sort_order ASC
+    LIMIT 4
+");
+$similar->execute([
+    $offer['amount_min'], $offer['amount_min'],
+    $offer['amount_max'], $offer['amount_max'],
+    (int)round(((int)$offer['amount_min'] + (int)$offer['amount_max']) / 2),
+    (int)round(((int)$offer['amount_min'] + (int)$offer['amount_max']) / 2),
+    $offer['rate'],
+    $offer['category'],
+    $offer['id']
+]);
 $similarOffers = $similar->fetchAll();
 
 // Отзывы
@@ -366,7 +387,7 @@ ob_start();
     <!-- Похожие -->
     <?php if ($similarOffers): ?>
     <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Похожие предложения</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Похожие предложения по сумме и ставке</h2>
         <div class="grid gap-4">
             <?php foreach ($similarOffers as $sim): echo renderOfferCard($sim); endforeach; ?>
         </div>
