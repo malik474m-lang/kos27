@@ -78,6 +78,13 @@ foreach ($subs as $sub) {
         $body .= $offersBlock;
     }
 
+    // Бренд-баннер в начале письма
+    $brandImageUrl = SITE_URL . '/images/kosmo-rassil.jpg';
+    $brandHeader = '<div style="margin:-24px -24px 24px -24px;text-align:center;background:#f8fafc">'
+        . '<img src="' . $brandImageUrl . '" alt="' . e(SITE_NAME) . '" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin:0 auto">'
+        . '</div>';
+    $body = $brandHeader . $body;
+
     // Трекинг кликов — заменяем все ссылки на трекинговые
     $nlId = (int)$newsletter['id'];
     $subId = (int)$sub['id'];
