@@ -111,6 +111,22 @@ ob_start();
             </div>
         </div>
 
+        <?php
+        // Дополнительные поля
+        $extraFields = !empty($offer['extra_fields']) ? (json_decode($offer['extra_fields'], true) ?: []) : [];
+        $visibleExtra = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
+        if ($visibleExtra):
+        ?>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <?php foreach ($visibleExtra as $ef): ?>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase"><?= e($ef['label']) ?></p>
+                <p class="text-lg font-bold text-gray-900"><?= e($ef['value']) ?></p>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <?php if ($offer['free_term_days'] > 0): ?>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p class="text-green-800 font-semibold">🎉 Без процентов — <?= formatDays($offer['free_term_days']) ?></p>
