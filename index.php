@@ -6,6 +6,10 @@ require_once __DIR__ . '/includes/page-cache.php';
 // Гео-редирект (до любого вывода)
 require_once __DIR__ . '/includes/geo-redirect.php';
 
+// Роутинг
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = rtrim($uri, '/') ?: '/';
+
 // Сохраняем UTM в куки
 foreach (['utm_source','utm_medium','utm_campaign','utm_content','utm_term'] as $utm) {
     if (!empty($_GET[$utm])) {
@@ -30,10 +34,6 @@ if (pageCacheStart()) exit;
 // Авто-расписание генерации отзывов/статей
 require_once __DIR__ . '/includes/auto-scheduler.php';
 checkAutoScheduler();
-
-// Роутинг
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = rtrim($uri, '/') ?: '/';
 
 // API роуты
 if (str_starts_with($uri, '/api/')) {
