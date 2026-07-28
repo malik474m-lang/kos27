@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `postback_conversions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `click_id` varchar(255) DEFAULT NULL,
+  `transaction_id` varchar(255) DEFAULT NULL,
+  `offer_id` int(11) DEFAULT NULL COMMENT 'ID оффера в нашей системе',
+  `external_offer_id` varchar(100) DEFAULT NULL COMMENT 'ID оффера в leads.su',
+  `status` varchar(50) NOT NULL COMMENT 'approved/rejected/pending/hold',
+  `payout` decimal(10,2) DEFAULT 0,
+  `ip` varchar(45) DEFAULT NULL COMMENT 'IP пользователя совершившего конверсию',
+  `aff_sub` varchar(500) DEFAULT NULL COMMENT 'SubID (наш click_stat id)',
+  `aff_sub2` varchar(500) DEFAULT NULL,
+  `aff_sub3` varchar(500) DEFAULT NULL,
+  `goal_id` varchar(100) DEFAULT NULL,
+  `raw_query` text DEFAULT NULL COMMENT 'Полная query строка запроса',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_click_id` (`click_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_offer_id` (`offer_id`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

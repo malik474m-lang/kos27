@@ -75,7 +75,12 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
                $_SERVER['HTTP_REFERER'] ?? null,
                $abVarId,
            ]);
-        header("Location: {$row['affiliate_url']}");
+        // Добавляем aff_sub (наш click_stats.id) в affiliate URL для postback
+        $lastClickId = $db->lastInsertId();
+        $affUrl = $row['affiliate_url'];
+        $separator = str_contains($affUrl, '?') ? '&' : '?';
+        $affUrl .= $separator . 'aff_sub=' . $lastClickId;
+        header("Location: {$affUrl}");
     } else {
         header("Location: /");
     }

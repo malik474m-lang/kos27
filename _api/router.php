@@ -12,6 +12,7 @@ if ($apiUri === '/offers') { require __DIR__ . '/offers.php'; exit; }
 if ($apiUri === '/reviews' && $_SERVER['REQUEST_METHOD'] === 'POST') { require __DIR__ . '/reviews.php'; exit; }
 if ($apiUri === '/nl-open') { require __DIR__ . '/nl-open.php'; exit; }
 if ($apiUri === '/nl-click') { require __DIR__ . '/nl-click.php'; exit; }
+if ($apiUri === '/postback') { require __DIR__ . '/postback.php'; exit; }
 if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 
