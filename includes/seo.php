@@ -29,24 +29,59 @@ function jsonLdWebsite(): string {
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
-function jsonLdOffer(array $offer): string {
-    return json_encode([
+function jsonLdOffer(array $offer, array $reviews = []): string {
+    $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
+    $image = $logo ? (str_starts_with($logo, 'http') ? $logo : SITE_URL . $logo) : SITE_URL . '/favicon.svg';
+
+    $data = [
         '@context' => 'https://schema.org',
         '@type' => 'FinancialProduct',
+        '@id' => SITE_URL . '/offer/' . $offer['slug'],
+        'url' => SITE_URL . '/offer/' . $offer['slug'],
         'name' => $offer['title'],
+        'image' => $image,
         'description' => $offer['description'] ?: "Финансовое предложение от {$offer['title']}",
+        'brand' => ['@type' => 'Brand', 'name' => $offer['title']],
         'provider' => ['@type' => 'FinancialService', 'name' => $offer['title']],
-        'offers' => ['@type' => 'Offer', 'priceCurrency' => 'RUB', 'price' => '0', 'availability' => 'https://schema.org/InStock'],
+        'offers' => [
+            '@type' => 'Offer',
+            'priceCurrency' => 'RUB',
+            'price' => '0',
+            'availability' => 'https://schema.org/InStock',
+            'url' => SITE_URL . '/offer/' . $offer['slug'],
+        ],
         'interestRate' => ['@type' => 'QuantitativeValue', 'value' => $offer['rate'], 'unitText' => 'percent per day'],
         'amount' => ['@type' => 'MonetaryAmount', 'minValue' => $offer['amount_min'], 'maxValue' => $offer['amount_max'], 'currency' => 'RUB'],
-        'aggregateRating' => (float)$offer['rating'] > 0 ? [
+    ];
+
+    if ((float)$offer['rating'] > 0 && (int)$offer['review_count'] > 0) {
+        $data['aggregateRating'] = [
             '@type' => 'AggregateRating',
-            'ratingValue' => number_format((float)$offer['rating'], 1),
+            'ratingValue' => number_format((float)$offer['rating'], 1, '.', ''),
             'reviewCount' => (int)$offer['review_count'],
             'bestRating' => '5',
             'worstRating' => '1',
-        ] : null,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        ];
+    }
+
+    if ($reviews) {
+        $data['review'] = array_map(function($review) {
+            return [
+                '@type' => 'Review',
+                'author' => ['@type' => 'Person', 'name' => $review['author_name'] ?: 'Пользователь'],
+                'reviewBody' => $review['comment'] ?: '',
+                'datePublished' => !empty($review['created_at']) ? date('c', strtotime($review['created_at'])) : date('c'),
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => (int)($review['rating'] ?? 5),
+                    'bestRating' => '5',
+                    'worstRating' => '1',
+                ],
+            ];
+        }, array_slice($reviews, 0, 10));
+    }
+
+    return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
 function jsonLdArticle(array $article): string {

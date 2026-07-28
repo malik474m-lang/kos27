@@ -113,13 +113,18 @@ ob_start();
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Отзывы о <?= e($offer['title']) ?></h2>
         <div class="space-y-4">
             <?php foreach ($offerReviews as $rev): ?>
-            <div class="bg-white rounded-xl border border-gray-100 p-5">
+            <div class="bg-white rounded-xl border border-gray-100 p-5" itemprop="review" itemscope itemtype="https://schema.org/Review">
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="font-semibold text-gray-900"><?= e($rev['author_name']) ?></span>
-                    <div class="flex text-yellow-400"><?php for($i=1;$i<=5;$i++): ?><span class="<?= $i <= $rev['rating'] ? '' : 'text-gray-300' ?>">★</span><?php endfor; ?></div>
-                    <span class="text-xs text-gray-400"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></span>
+                    <span class="font-semibold text-gray-900" itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name"><?= e($rev['author_name']) ?></span></span>
+                    <div class="flex text-yellow-400" itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating">
+                        <meta itemprop="bestRating" content="5">
+                        <meta itemprop="worstRating" content="1">
+                        <meta itemprop="ratingValue" content="<?= (int)$rev['rating'] ?>">
+                        <?php for($i=1;$i<=5;$i++): ?><span class="<?= $i <= $rev['rating'] ? '' : 'text-gray-300' ?>">★</span><?php endfor; ?>
+                    </div>
+                    <time class="text-xs text-gray-400" itemprop="datePublished" datetime="<?= date('c', strtotime($rev['created_at'])) ?>"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></time>
                 </div>
-                <p class="text-gray-700"><?= e($rev['comment']) ?></p>
+                <p class="text-gray-700" itemprop="reviewBody"><?= e($rev['comment']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -262,7 +267,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdOffer($offer),
+    jsonLdOffer($offer, $offerReviews),
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$catLabel,'url'=>$catUrl],['name'=>$offer['title'],'url'=>'/offer/'.$offer['slug']]]),
 ];
 $canonicalUrl = SITE_URL . '/offer/' . $offer['slug'];
