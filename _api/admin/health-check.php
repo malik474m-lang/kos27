@@ -18,11 +18,11 @@ $noTags = array_filter($allOffers, fn($o) => !in_array($o['id'], $offersWithTags
 $clickedOffers = $db->query("SELECT DISTINCT offer_id FROM click_stats WHERE clicked_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchAll(PDO::FETCH_COLUMN);
 $noClicks = array_filter($allOffers, fn($o) => !in_array($o['id'], $clickedOffers));
 
-if ($noLogo) { $checks[] = ['level'=>'error','msg'=>count($noLogo).' оффер(ов) без логотипа','items'=>array_map(fn($o)=>$o['title'],$noLogo)]; $score -= 5; }
-if ($noAffUrl) { $checks[] = ['level'=>'error','msg'=>count($noAffUrl).' оффер(ов) без партнёрской ссылки','items'=>array_map(fn($o)=>$o['title'],$noAffUrl)]; $score -= 10; }
-if ($noTags) { $checks[] = ['level'=>'warning','msg'=>count($noTags).' оффер(ов) без тегов','items'=>array_map(fn($o)=>$o['title'],$noTags)]; $score -= 3; }
-if ($noDesc) { $checks[] = ['level'=>'warning','msg'=>count($noDesc).' оффер(ов) без описания','items'=>array_map(fn($o)=>$o['title'],$noDesc)]; $score -= 2; }
-if ($noClicks) { $checks[] = ['level'=>'warning','msg'=>count($noClicks).' оффер(ов) без кликов за 30 дней','items'=>array_map(fn($o)=>$o['title'],$noClicks)]; $score -= 2; }
+if ($noLogo) { $checks[] = ['level'=>'error','msg'=>count($noLogo).' оффер(ов) без логотипа','items'=>array_map(fn($o)=>$o['title'],$noLogo),'fixTab'=>'offers']; $score -= 5; }
+if ($noAffUrl) { $checks[] = ['level'=>'error','msg'=>count($noAffUrl).' оффер(ов) без партнёрской ссылки','items'=>array_map(fn($o)=>$o['title'],$noAffUrl),'fixTab'=>'offers']; $score -= 10; }
+if ($noTags) { $checks[] = ['level'=>'warning','msg'=>count($noTags).' оффер(ов) без тегов','items'=>array_map(fn($o)=>$o['title'],$noTags),'fixTab'=>'offers']; $score -= 3; }
+if ($noDesc) { $checks[] = ['level'=>'warning','msg'=>count($noDesc).' оффер(ов) без описания','items'=>array_map(fn($o)=>$o['title'],$noDesc),'fixTab'=>'offers']; $score -= 2; }
+if ($noClicks) { $checks[] = ['level'=>'warning','msg'=>count($noClicks).' оффер(ов) без кликов за 30 дней','items'=>array_map(fn($o)=>$o['title'],$noClicks),'fixTab'=>'offers']; $score -= 2; }
 if (!$noLogo && !$noAffUrl) { $checks[] = ['level'=>'ok','msg'=>'Все офферы имеют логотип и ссылку']; }
 
 // Проверенные битые партнёрские ссылки
@@ -33,6 +33,7 @@ try {
             'level' => 'error',
             'msg' => count($badLinks) . ' проблемных партнёрских ссылок',
             'items' => array_map(fn($r) => $r['title'] . ' (HTTP ' . $r['http_code'] . ')', $badLinks),
+            'fixTab' => 'links',
         ];
         $score -= min(15, count($badLinks) * 3);
     } else {
@@ -52,10 +53,10 @@ $noSearchQ = array_filter($allTags, fn($t) => empty(trim($t['search_queries'] ??
 $noTagContent = array_filter($allTags, fn($t) => empty(trim($t['content'] ?? '')));
 $noTagMeta = array_filter($allTags, fn($t) => empty(trim($t['meta_description'] ?? '')));
 
-if ($emptyTags) { $checks[] = ['level'=>'error','msg'=>count($emptyTags).' тег(ов) без привязанных офферов','items'=>array_map(fn($t)=>$t['title'],$emptyTags)]; $score -= 5; }
-if ($noSearchQ) { $checks[] = ['level'=>'warning','msg'=>count($noSearchQ).' тег(ов) без поисковых запросов (перелинковка слабая)','items'=>array_map(fn($t)=>$t['title'],$noSearchQ)]; $score -= 3; }
-if ($noTagContent) { $checks[] = ['level'=>'warning','msg'=>count($noTagContent).' тег(ов) без SEO-текста','items'=>array_map(fn($t)=>$t['title'],$noTagContent)]; $score -= 2; }
-if ($noTagMeta) { $checks[] = ['level'=>'warning','msg'=>count($noTagMeta).' тег(ов) без meta description','items'=>array_map(fn($t)=>$t['title'],$noTagMeta)]; $score -= 1; }
+if ($emptyTags) { $checks[] = ['level'=>'error','msg'=>count($emptyTags).' тег(ов) без привязанных офферов','items'=>array_map(fn($t)=>$t['title'],$emptyTags),'fixTab'=>'tags']; $score -= 5; }
+if ($noSearchQ) { $checks[] = ['level'=>'warning','msg'=>count($noSearchQ).' тег(ов) без поисковых запросов (перелинковка слабая)','items'=>array_map(fn($t)=>$t['title'],$noSearchQ),'fixTab'=>'tags']; $score -= 3; }
+if ($noTagContent) { $checks[] = ['level'=>'warning','msg'=>count($noTagContent).' тег(ов) без SEO-текста','items'=>array_map(fn($t)=>$t['title'],$noTagContent),'fixTab'=>'tags']; $score -= 2; }
+if ($noTagMeta) { $checks[] = ['level'=>'warning','msg'=>count($noTagMeta).' тег(ов) без meta description','items'=>array_map(fn($t)=>$t['title'],$noTagMeta),'fixTab'=>'tags']; $score -= 1; }
 if (!$emptyTags) { $checks[] = ['level'=>'ok','msg'=>'Все теги имеют привязанные офферы']; }
 
 // === СТАТЬИ ===
@@ -65,14 +66,14 @@ $noCoverArticles = (int)$db->query("SELECT COUNT(*) FROM articles WHERE is_publi
 
 if ($articleCount < 5) { $checks[] = ['level'=>'warning','msg'=>"Мало статей: $articleCount (рекомендуется от 10)"]; $score -= 3; }
 else { $checks[] = ['level'=>'ok','msg'=>"Статей: $articleCount"]; }
-if ($noMetaArticles) { $checks[] = ['level'=>'warning','msg'=>"$noMetaArticles статей без meta description"]; $score -= 2; }
-if ($noCoverArticles) { $checks[] = ['level'=>'warning','msg'=>"$noCoverArticles статей без обложки"]; $score -= 1; }
+if ($noMetaArticles) { $checks[] = ['level'=>'warning','msg'=>"$noMetaArticles статей без meta description",'fixTab'=>'articles']; $score -= 2; }
+if ($noCoverArticles) { $checks[] = ['level'=>'warning','msg'=>"$noCoverArticles статей без обложки",'fixTab'=>'articles']; $score -= 1; }
 
 // === SEO ГОРОДОВ ===
 $totalCities = 41;
 $seoCount = (int)$db->query("SELECT COUNT(DISTINCT city_slug) FROM city_seo_texts")->fetchColumn();
 $missingCitySeo = $totalCities - $seoCount;
-if ($missingCitySeo > 0) { $checks[] = ['level'=>'warning','msg'=>"$missingCitySeo городов без SEO-текста"]; $score -= min(5, $missingCitySeo); }
+if ($missingCitySeo > 0) { $checks[] = ['level'=>'warning','msg'=>"$missingCitySeo городов без SEO-текста",'fixTab'=>'cityseo']; $score -= min(5, $missingCitySeo); }
 else { $checks[] = ['level'=>'ok','msg'=>'SEO-тексты для всех городов сгенерированы']; }
 
 // === ОТЗЫВЫ ===
@@ -102,7 +103,7 @@ try {
     }
 
     if ($emptyCats) {
-        $checks[] = ['level'=>'warning','msg'=>count($emptyCats).' категорий без офферов','items'=>$emptyCats];
+        $checks[] = ['level'=>'warning','msg'=>count($emptyCats).' категорий без офферов','items'=>$emptyCats,'fixTab'=>'cats'];
         $score -= 2;
     } else {
         $checks[] = ['level'=>'ok','msg'=>'Категории наполнены офферами или используются как родительские'];
@@ -131,7 +132,7 @@ else { $checks[] = ['level'=>'ok','msg'=>'Все колонки БД актуа�
 try {
     $brokenLinks = $db->query("SELECT COUNT(*) FROM (SELECT offer_id, MAX(id) as max_id FROM offer_link_checks GROUP BY offer_id) x JOIN offer_link_checks lc ON lc.id = x.max_id WHERE lc.is_ok = 0")->fetchColumn();
     $uncheckedLinks = $db->query("SELECT COUNT(*) FROM offers o WHERE o.is_active = 1 AND NOT EXISTS (SELECT 1 FROM offer_link_checks lc WHERE lc.offer_id = o.id)")->fetchColumn();
-    if ((int)$brokenLinks > 0) { $checks[] = ['level'=>'warning','msg'=>(int)$brokenLinks.' партнёрских ссылок битые или неактуальные']; $score -= 4; }
+    if ((int)$brokenLinks > 0) { $checks[] = ['level'=>'warning','msg'=>(int)$brokenLinks.' партнёрских ссылок битые или неактуальные','fixTab'=>'links']; $score -= 4; }
     else { $checks[] = ['level'=>'ok','msg'=>'Битых партнёрских ссылок не найдено']; }
     if ((int)$uncheckedLinks > 0) { $checks[] = ['level'=>'info','msg'=>(int)$uncheckedLinks.' ссылок ещё не проверялись']; }
 } catch (Exception $e) {}
@@ -150,7 +151,7 @@ $checks[] = ['level'=>'info','msg'=>'API cache: ' . count($apiCacheFiles) . ' ф
 // === БЕЗОПАСНОСТЬ ===
 $adminUser = $db->query("SELECT password_hash FROM admin_users WHERE username = 'admin' LIMIT 1")->fetch();
 if ($adminUser && password_verify('admin123', $adminUser['password_hash'])) {
-    $checks[] = ['level'=>'error','msg'=>'Стандартный пароль admin123 не сменён!']; $score -= 10;
+    $checks[] = ['level'=>'error','msg'=>'Стандартный пароль admin123 не сменён!','fixTab'=>'security']; $score -= 10;
 } else {
     $checks[] = ['level'=>'ok','msg'=>'Пароль администратора изменён'];
 }
