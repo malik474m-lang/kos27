@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/sticky-cta.php';
 require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
@@ -40,4 +41,12 @@ $jsonLdSchemas = [
 ];
 $canonicalUrl = SITE_URL . '/karty/kreditnye';
 $content = ob_get_clean();
+$content .= renderStickyCta([
+    'id' => 'list-sticky-cta',
+    'href' => '/karty/kreditnye',
+    'label' => 'Смотреть кредитные карты',
+    'sub' => 'Подберите карту с льготным периодом',
+    'variant' => 'primary',
+    'external' => false,
+]);
 require __DIR__ . '/../includes/layout.php';

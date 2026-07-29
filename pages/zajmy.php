@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/sticky-cta.php';
 require_once __DIR__ . '/../includes/recommendation.php';
 require_once __DIR__ . '/../data/cities.php';
 
@@ -131,4 +132,12 @@ $jsonLdSchemas = [
 ];
 $canonicalUrl = SITE_URL . '/zajmy';
 $content = ob_get_clean();
+$content .= renderStickyCta([
+    'id' => 'list-sticky-cta',
+    'href' => '/calculator',
+    'label' => 'Подобрать займ',
+    'sub' => 'Фильтр и калькулятор по вашим параметрам',
+    'variant' => 'primary',
+    'external' => false,
+]);
 require __DIR__ . '/../includes/layout.php';

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/sticky-cta.php';
 require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
@@ -35,4 +36,12 @@ $jsonLdSchemas = [
 ];
 $canonicalUrl = SITE_URL . '/kredity';
 $content = ob_get_clean();
+$content .= renderStickyCta([
+    'id' => 'list-sticky-cta',
+    'href' => '/kredity',
+    'label' => 'Смотреть кредиты',
+    'sub' => 'Сравните условия банков за пару минут',
+    'variant' => 'primary',
+    'external' => false,
+]);
 require __DIR__ . '/../includes/layout.php';

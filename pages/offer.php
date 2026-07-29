@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
+require_once __DIR__ . '/../includes/sticky-cta.php';
 
 $db = getDB();
 $stmt = $db->prepare("SELECT * FROM offers WHERE slug = ? AND is_active = 1 LIMIT 1");
@@ -469,4 +470,12 @@ $jsonLdSchemas = [
 $canonicalUrl = SITE_URL . '/offer/' . $offer['slug'];
 $ogImage = normalizeMediaUrl($offer['logo_url'] ?? '');
 $content = ob_get_clean();
+$content .= renderStickyCta([
+    'id' => 'offer-sticky-cta',
+    'href' => '/click/' . $offer['id'],
+    'label' => 'Оформить заявку',
+    'sub' => $offer['title'],
+    'variant' => 'accent',
+    'external' => true,
+]);
 require __DIR__ . '/../includes/layout.php';
