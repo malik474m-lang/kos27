@@ -46,7 +46,7 @@ function getTagLinks(): array {
     $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
     try {
         $db = getDB();
-        $tags = $db->query("SELECT title, slug, category, h1 FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+        $tags = $db->query("SELECT title, slug, category, h1, search_queries FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
         foreach ($tags as $tag) {
             $catUrl = $catUrls[$tag['category']] ?? '/zajmy';
             $url = $catUrl . '/type/' . $tag['slug'];
@@ -66,6 +66,21 @@ function getTagLinks(): array {
             // Из H1 если отличается от title
             if ($tag['h1'] && $tag['h1'] !== $title) {
                 $links[] = ['phrase' => $tag['h1'], 'url' => $url, 'title' => $title];
+            }
+            // Поисковые запросы / фразы для перелинковки
+            if (!empty($tag['search_queries'])) {
+                $queries = preg_split('/
+||
+/', (string)$tag['search_queries']);
+                foreach ($queries as $q) {
+                    $q = trim($q);
+                    if (mb_strlen($q) < 3) continue;
+                    $links[] = ['phrase' => $q, 'url' => $url, 'title' => $title];
+                    $ql = mb_strtolower($q);
+                    if ($ql !== $q) {
+                        $links[] = ['phrase' => $ql, 'url' => $url, 'title' => $title];
+                    }
+                }
             }
             // Строчная версия
             $lower = mb_strtolower($title);

@@ -418,7 +418,7 @@ h+='<div><span class="text-gray-400">Статус:</span> '+(t.is_active?'<span 
 modal(h);}
 
 function tForm(t){
-var f=t||{title:'',slug:'',h1:'',description:'',meta_description:'',content:'',icon:'🏷️',category:'microloans',features:'[]',is_active:true,sort_order:0};
+var f=t||{title:'',slug:'',h1:'',description:'',meta_description:'',content:'',icon:'🏷️',category:'microloans',features:'[]',search_queries:'',is_active:true,sort_order:0};
 var id=t?t.id:0;
 var catOpts='';for(var k in TG_CAT)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+TG_CAT[k]+'</option>';
 var feat=f.features||'[]';if(typeof feat==='string')try{feat=JSON.parse(feat);}catch(e){feat=[];}
@@ -432,7 +432,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">H1 заголовок</label><input id="tg-h1" class="input-f" value="'+e(f.h1||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Короткое описание</label><input id="tg-desc" class="input-f" value="'+e(f.description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-meta" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="3">'+e(f.content||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="3">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="4" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><textarea id="tg-feat" class="input-f font-mono text-xs" rows="3">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
@@ -449,7 +449,7 @@ if(!filtered.length)box.innerHTML='<span class="text-xs text-gray-400">Нет п
 
 function tS(ev,id){ev.preventDefault();
 var feat='[]';try{feat=document.getElementById('tg-feat').value;JSON.parse(feat);}catch(e){alert('Неверный JSON в фичах');return false;}
-var body={title:document.getElementById('tg-title').value,slug:document.getElementById('tg-slug').value,h1:document.getElementById('tg-h1').value,description:document.getElementById('tg-desc').value,metaDescription:document.getElementById('tg-meta').value,content:document.getElementById('tg-content').value,icon:document.getElementById('tg-icon').value,category:document.getElementById('tg-cat').value,features:feat,isActive:document.getElementById('tg-active').checked,sortOrder:parseInt(document.getElementById('tg-sort').value)||0};
+var body={title:document.getElementById('tg-title').value,slug:document.getElementById('tg-slug').value,h1:document.getElementById('tg-h1').value,description:document.getElementById('tg-desc').value,metaDescription:document.getElementById('tg-meta').value,content:document.getElementById('tg-content').value,searchQueries:document.getElementById('tg-queries').value,icon:document.getElementById('tg-icon').value,category:document.getElementById('tg-cat').value,features:feat,isActive:document.getElementById('tg-active').checked,sortOrder:parseInt(document.getElementById('tg-sort').value)||0};
 var url=id?'/tags/'+id:'/tags';var method=id?'PUT':'POST';
 ap(url,{method:method,body:JSON.stringify(body)}).then(d=>{if(d.error){alert(d.error);return;}
 var tid=id||d.id;
