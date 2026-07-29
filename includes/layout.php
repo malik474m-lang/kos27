@@ -110,6 +110,14 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         .prose-lg h2 { font-size:1.75rem; }
         .prose-lg h3 { font-size:1.4rem; }
         .prose-lg p { font-size:1.1rem; }
+        .offer-card-box{background:#fff;border:1px solid #f1f5f9;border-radius:1rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+        .offer-card-logo{background:#f8fafc;border:1px solid #eef2f7}
+        .offer-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+        .offer-card-grid p{word-break:break-word}
+        .offer-card-desc{line-height:1.6}
+        .offer-card-actions a,.offer-card-actions button{min-height:44px}
+        @media(min-width:640px){.offer-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+        @media(max-width:639px){.offer-card-box{padding:1rem}.offer-card-grid{gap:.75rem}.offer-card-actions{gap:.75rem}}
 
         /* Глобальный fallback для страницы оффера */
         .offer-page-wrap{max-width:80rem;margin:0 auto;padding:2rem 1rem}

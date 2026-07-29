@@ -47,9 +47,9 @@ function renderOfferCard(array $offer): string {
 
     ob_start();
     ?>
-    <article class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+    <article class="offer-card-box bg-white rounded-xl shadow-sm border border-gray-100 p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
+        <div class="offer-card-head flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="offer-card-logo flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                 <?php if ($logo): ?>
                 <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="w-full h-full object-contain p-1" loading="lazy">
                 <?php else: ?>
@@ -93,7 +93,7 @@ function renderOfferCard(array $offer): string {
         </div>
 
         <?php if ($fieldCards): ?>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
+        <div class="offer-card-grid grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
             <?php foreach ($fieldCards as $fc): ?>
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wide"><?= e($fc['label']) ?></p>
@@ -119,10 +119,10 @@ function renderOfferCard(array $offer): string {
         <?php endif; ?>
 
         <?php if (!empty($offer['description'])): ?>
-        <p class="text-sm text-gray-600 mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
+        <p class="offer-card-desc text-sm text-gray-600 mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
         <?php endif; ?>
 
-        <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="offer-card-actions mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex items-center gap-4 flex-wrap">
                 <a href="/offer/<?= e($offer['slug']) ?>" class="text-primary hover:underline text-sm font-medium">Подробнее →</a>
                 <button type="button"
