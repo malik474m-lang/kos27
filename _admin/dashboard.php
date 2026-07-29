@@ -775,13 +775,19 @@ var pct=Math.round((s.value/maxVal)*100)||0;
 h+='<div><div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700">'+s.label+'</span><span class="font-bold text-gray-900">'+s.value.toLocaleString('ru-RU')+'</span></div><div class="bg-gray-200 rounded-full h-4"><div class="'+s.color+' rounded-full h-4 transition-all" style="width:'+Math.max(pct,1)+'%"></div></div></div>';
 });
 h+='</div>';
-h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">';
-h+='<div class="bg-blue-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+t.ctr+'%</p><p class="text-xs text-gray-500">CTR</p><p class="text-xs text-gray-400">просм → клик</p></div>';
-h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-green-600">'+t.cr+'%</p><p class="text-xs text-gray-500">CR</p><p class="text-xs text-gray-400">клик → одобр.</p></div>';
-h+='<div class="bg-yellow-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-yellow-600">'+t.approval_rate+'%</p><p class="text-xs text-gray-500">Approval</p><p class="text-xs text-gray-400">одобр. / решений</p></div>';
-h+='<div class="bg-purple-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-purple-600">'+Number(t.epc||0).toFixed(2)+' ₽</p><p class="text-xs text-gray-500">EPC</p><p class="text-xs text-gray-400">доход / клик</p></div>';
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">';
+h+='<div class="bg-blue-50 rounded-xl p-3 text-center min-w-0"><p class="text-2xl font-bold text-blue-600 break-words">'+t.ctr+'%</p><p class="text-xs text-gray-500">CTR</p></div>';
+h+='<div class="bg-green-50 rounded-xl p-3 text-center min-w-0"><p class="text-2xl font-bold text-green-600 break-words">'+t.cr+'%</p><p class="text-xs text-gray-500">CR</p></div>';
+h+='<div class="bg-yellow-50 rounded-xl p-3 text-center min-w-0"><p class="text-2xl font-bold text-yellow-600 break-words">'+t.approval_rate+'%</p><p class="text-xs text-gray-500">Approval</p></div>';
+h+='<div class="bg-purple-50 rounded-xl p-3 text-center min-w-0"><p class="text-2xl font-bold text-purple-600 break-words">'+Number(t.epc||0).toFixed(2)+' ₽</p><p class="text-xs text-gray-500">EPC</p></div>';
 h+='</div>';
-h+='<div class="mt-4 text-right"><span class="text-sm font-semibold text-green-700">Доход: '+Number(t.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</span></div>';
+h+='<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-xs text-gray-500">';
+h+='<div class="rounded-xl bg-gray-50 p-3">CTR — просмотры → клики</div>';
+h+='<div class="rounded-xl bg-gray-50 p-3">CR — клики → одобрения</div>';
+h+='<div class="rounded-xl bg-gray-50 p-3">Approval — одобрено / все решения</div>';
+h+='<div class="rounded-xl bg-gray-50 p-3">EPC — доход / клик</div>';
+h+='</div>';
+h+='<div class="mt-4 rounded-xl bg-green-50 p-4 text-center"><span class="text-sm font-semibold text-green-700">Доход: '+Number(t.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</span></div>';
 h+='</div>';
 
 // Карточки по офферам
