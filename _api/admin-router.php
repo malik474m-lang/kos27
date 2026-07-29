@@ -101,6 +101,11 @@ if (preg_match('#^/newsletters/(\d+)/stats$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     require __DIR__ . '/admin/newsletter-stats.php'; exit;
 }
+if (preg_match('#^/newsletters/(\d+)/test$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    require __DIR__ . '/admin/newsletter-test.php'; exit;
+}
+}
 
 // Управление подписчиками
 if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
@@ -181,6 +186,8 @@ if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . 
 if ($adminUri === '/batch-generate' && $method === 'POST') { require __DIR__ . '/admin/batch-generate.php'; exit; }
 // История изменений
 if ($adminUri === '/audit-log') { require __DIR__ . '/admin/audit-log.php'; exit; }
+// Лог отправки рассылок
+if ($adminUri === '/newsletter-send-log') { require __DIR__ . '/admin/newsletter-send-log.php'; exit; }
 // Финансовая аналитика
 if ($adminUri === '/analytics') { require __DIR__ . '/admin/analytics.php'; exit; }
 

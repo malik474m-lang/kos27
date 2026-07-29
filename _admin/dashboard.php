@@ -1194,7 +1194,7 @@ var active=subs.filter(s=>s.is_active);
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">📬 Подписчики и рассылки</h2><div class="flex gap-2"><span class="text-sm text-gray-500 mt-1">Активных: <strong>'+active.length+'</strong> из '+subs.length+'</span></div></div>';
 
 // Рассылки
-h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">✉️ Рассылки</h3><button onclick="nlForm()" class="btn-p text-sm">+ Создать рассылку</button></div>';
+h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">✉️ Рассылки</h3><div class="flex gap-2"><button onclick="nlSendLog()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">📋 Лог</button><button onclick="nlForm()" class="btn-p text-sm">+ Создать</button></div></div>';
 if(nls.length){
 h+='<div class="space-y-3">';
 nls.forEach(n=>{
@@ -1204,6 +1204,7 @@ h+='<div class="flex items-center gap-2 mt-2">';
 if(n.status==='sent')h+='<span class="text-xs text-gray-500">✅ '+n.sent_count+' доставлено'+(n.failed_count>0?' / ❌ '+n.failed_count+' ошибок':'')+'</span>';
 if(n.status==='sent')h+='<button onclick="nlStats('+n.id+')" class="text-blue-600 hover:underline text-xs">📊 Стат</button>';
 if(n.status==='draft'){h+='<button onclick="nlForm('+JSON.stringify(n).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-xs">Ред.</button>';h+='<button onclick="nlSend('+n.id+')" class="text-green-600 hover:underline text-xs">📤 Отправить</button>';}
+h+='<button onclick="nlTest('+n.id+')" class="text-orange-600 hover:underline text-xs">🧪 Тест</button>';
 h+='<button onclick="nlPreview('+JSON.stringify(n).replace(/\x27/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-purple-600 hover:underline text-xs">Превью</button>';
 h+='<button onclick="nlDel('+n.id+')" class="text-red-500 hover:underline text-xs">Удалить</button>';
 h+='</div></div>';});
@@ -1277,6 +1278,61 @@ body=body.replace(/\{\{offers\}\}/g, offersPlaceholder);
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Превью: '+e(n.subject)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<div class="border rounded-xl p-6 bg-white" style="max-width:600px;margin:0 auto;font-family:-apple-system,sans-serif">'+body+'<br><hr style="border:none;border-top:1px solid #eee;margin:24px 0"><p style="font-size:12px;color:#999;text-align:center">Вы получили это письмо от Космозайм.<br><a href="#" style="color:#999">Отписаться от рассылки</a></p></div>');}
 function nlDel(id){if(confirm('Удалить рассылку?'))ap('/newsletters/'+id,{method:'DELETE'}).then(()=>lSu());}
+function nlTest(id){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Тестовая отправка</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Email для тестового письма</label><input id="nl-test-email" class="input-f" type="email" placeholder="ваш@email.ru" required></div>'+
+'<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700"><p>⚠️ Письмо будет отправлено с пометкой <strong>[ТЕСТ]</strong> в теме и баннером внутри. Ссылки НЕ трекаются.</p></div>'+
+'<div class="flex justify-end gap-3"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="nlTestSend('+id+')" id="nl-test-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">🚀 Отправить тест</button></div></div>');
+}
+function nlTestSend(id){
+var email=document.getElementById('nl-test-email').value.trim();
+if(!email){alert('Введите email');return;}
+var btn=document.getElementById('nl-test-btn');
+btn.disabled=true;btn.textContent='⏳ Отправка...';
+ap('/newsletters/'+id+'/test',{method:'POST',body:JSON.stringify({email:email})}).then(function(d){
+btn.disabled=false;btn.textContent='🚀 Отправить тест';
+if(d.success){alert('✅ '+(d.message||'Отправлено'));cm();}
+else alert('❌ '+(d.error||'Ошибка'));
+}).catch(function(){btn.disabled=false;btn.textContent='🚀 Отправить тест';alert('Ошибка соединения');});}
+function nlSendLog(nlId){
+var url='/newsletter-send-log';
+if(nlId)url+='?newsletter_id='+nlId;
+ap(url).then(function(d){
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📋 Лог отправки рассылок</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
+var s=d.stats||{};
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">';
+h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-blue-600">'+(s.total_sends||0)+'</p><p class="text-xs text-gray-500">Всего</p></div>';
+h+='<div class="bg-green-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-green-600">'+(s.total_sent||0)+'</p><p class="text-xs text-gray-500">Доставлено</p></div>';
+h+='<div class="bg-red-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-red-600">'+(s.total_failed||0)+'</p><p class="text-xs text-gray-500">Ошибок</p></div>';
+h+='<div class="bg-orange-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-orange-600">'+(s.total_test||0)+'</p><p class="text-xs text-gray-500">Тестовых</p></div>';
+h+='</div>';
+h+='<div class="max-h-96 overflow-y-auto"><table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Дата</th>';
+h+='<th class="px-3 py-2 text-left">Рассылка</th>';
+h+='<th class="px-3 py-2 text-left">Email</th>';
+h+='<th class="px-3 py-2 text-left">Статус</th>';
+h+='</tr></thead><tbody>';
+if(!d.logs||!d.logs.length){
+h+='<tr><td colspan="4" class="px-3 py-6 text-center text-gray-400">Нет записей</td></tr>';
+}else{
+d.logs.forEach(function(l){
+var dt=new Date(l.sent_at);
+var dtStr=dt.toLocaleDateString('ru-RU')+' '+dt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+var badge=l.status==='sent'?'<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">✅ OK</span>':
+'<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs" title="'+e(l.error_message||'')+'">❌ Ошибка</span>';
+var testBadge=l.is_test==1?' <span class="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded text-xs">тест</span>':';
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 text-gray-500 whitespace-nowrap text-xs">'+dtStr+'</td>';
+h+='<td class="px-3 py-2 text-xs truncate max-w-40">'+e(l.newsletter_subject||'#'+l.newsletter_id)+'</td>';
+h+='<td class="px-3 py-2 font-mono text-xs">'+e(l.email)+testBadge+'</td>';
+h+='<td class="px-3 py-2">'+badge+'</td>';
+h+='</tr>';
+});
+}
+h+='</tbody></table></div>';
+if(d.total>100)h+='<p class="text-xs text-gray-400 mt-2 text-center">Показано 100 из '+d.total+'</p>';
+modal(h);
+}).catch(function(err){alert('Ошибка: '+err.message);});}
 function nlStats(id){
 ap('/newsletters/'+id+'/stats').then(d=>{
 var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📊 Статистика рассылки</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
