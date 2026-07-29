@@ -784,25 +784,58 @@ h+='</div>';
 h+='<div class="mt-4 text-right"><span class="text-sm font-semibold text-green-700">Доход: '+Number(t.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</span></div>';
 h+='</div>';
 
-// Таблица по офферам
+// Карточки по офферам
 var items=d.funnel||[];
 if(items.length){
-h+='<div class="bg-white rounded-2xl border shadow-sm overflow-hidden"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div style="max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch"><table class="text-sm" style="min-width:980px;width:100%;table-layout:auto"><thead class="bg-gray-50"><tr><th class="p-3 text-left" style="min-width:240px">Оффер</th><th class="p-3 text-right whitespace-nowrap">Просм.</th><th class="p-3 text-right whitespace-nowrap">Клики</th><th class="p-3 text-right whitespace-nowrap">CTR</th><th class="p-3 text-right text-green-700 whitespace-nowrap">Одобр.</th><th class="p-3 text-right text-red-600 whitespace-nowrap">Откл.</th><th class="p-3 text-right whitespace-nowrap">CR</th><th class="p-3 text-right whitespace-nowrap">Approval</th><th class="p-3 text-right whitespace-nowrap">EPC</th><th class="p-3 text-right font-semibold whitespace-nowrap">Доход</th></tr></thead><tbody>';
+h+='<div class="space-y-4">';
 items.forEach(function(o){
-var rowClass=o.clicks===0?'bg-gray-50 text-gray-400':'';
-h+='<tr class="border-t hover:bg-gray-50 '+rowClass+'"><td class="p-3 font-medium" style="min-width:240px;max-width:240px"><div style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(o.title)+'">'+e(o.title)+'</div></td>';
-h+='<td class="p-3 text-right whitespace-nowrap">'+o.views+'</td>';
-h+='<td class="p-3 text-right whitespace-nowrap font-semibold">'+o.clicks+'</td>';
-h+='<td class="p-3 text-right whitespace-nowrap '+(o.ctr>=5?'text-blue-600':'text-gray-500')+'">'+o.ctr+'%</td>';
-h+='<td class="p-3 text-right whitespace-nowrap text-green-600 font-semibold">'+o.approved+'</td>';
-h+='<td class="p-3 text-right whitespace-nowrap text-red-500">'+o.rejected+'</td>';
-h+='<td class="p-3 text-right whitespace-nowrap '+(o.cr>=3?'text-green-600':'text-gray-500')+'">'+o.cr+'%</td>';
-h+='<td class="p-3 text-right whitespace-nowrap '+(o.approval_rate>=50?'text-green-600':o.approval_rate>0?'text-yellow-600':'text-gray-400')+'">'+o.approval_rate+'%</td>';
-h+='<td class="p-3 text-right whitespace-nowrap '+(o.epc>0?'text-purple-600':'text-gray-400')+'">'+Number(o.epc).toFixed(2)+'</td>';
-h+='<td class="p-3 text-right whitespace-nowrap font-semibold '+(o.payout>0?'text-green-700':'text-gray-400')+'">'+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td>';
-h+='</tr>';
+var muted=o.clicks===0?' opacity-70':'';
+var ctrClass=o.ctr>=5?'text-blue-600':'text-gray-500';
+var crClass=o.cr>=3?'text-green-600':'text-gray-500';
+var apprClass=o.approval_rate>=50?'text-green-600':(o.approval_rate>0?'text-yellow-600':'text-gray-400');
+var epcClass=o.epc>0?'text-purple-600':'text-gray-400';
+var payoutClass=o.payout>0?'text-green-700':'text-gray-400';
+
+h+='<div class="bg-white rounded-2xl border shadow-sm p-5'+muted+'">';
+h+='<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">';
+
+h+='<div class="min-w-0 flex-1">';
+h+='<h3 class="text-lg font-bold text-gray-900 truncate" title="'+e(o.title)+'">'+e(o.title)+'</h3>';
+h+='<p class="text-xs text-gray-500 mt-1">'+(CL[o.category]||o.category)+'</p>';
+h+='<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">';
+h+='<div class="rounded-xl bg-gray-50 p-3"><p class="text-[11px] uppercase tracking-wide text-gray-400">Просмотры</p><p class="mt-1 text-lg font-bold text-gray-800">'+o.views+'</p></div>';
+h+='<div class="rounded-xl bg-gray-50 p-3"><p class="text-[11px] uppercase tracking-wide text-gray-400">Клики</p><p class="mt-1 text-lg font-bold text-gray-800">'+o.clicks+'</p></div>';
+h+='<div class="rounded-xl bg-gray-50 p-3"><p class="text-[11px] uppercase tracking-wide text-gray-400">Одобрено</p><p class="mt-1 text-lg font-bold text-green-600">'+o.approved+'</p></div>';
+h+='<div class="rounded-xl bg-gray-50 p-3"><p class="text-[11px] uppercase tracking-wide text-gray-400">Отклонено</p><p class="mt-1 text-lg font-bold text-red-500">'+o.rejected+'</p></div>';
+h+='<div class="rounded-xl bg-gray-50 p-3"><p class="text-[11px] uppercase tracking-wide text-gray-400">В ожидании</p><p class="mt-1 text-lg font-bold text-yellow-600">'+o.pending+'</p></div>';
+h+='</div>';
+h+='</div>';
+
+h+='<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-3 lg:min-w-[140px]">';
+h+='<div class="rounded-xl bg-blue-50 p-3 text-center"><p class="text-[11px] uppercase tracking-wide text-blue-400">CTR</p><p class="mt-1 text-lg font-bold '+ctrClass+'">'+o.ctr+'%</p></div>';
+h+='<div class="rounded-xl bg-green-50 p-3 text-center"><p class="text-[11px] uppercase tracking-wide text-green-400">CR</p><p class="mt-1 text-lg font-bold '+crClass+'">'+o.cr+'%</p></div>';
+h+='<div class="rounded-xl bg-yellow-50 p-3 text-center"><p class="text-[11px] uppercase tracking-wide text-yellow-500">Approval</p><p class="mt-1 text-lg font-bold '+apprClass+'">'+o.approval_rate+'%</p></div>';
+h+='<div class="rounded-xl bg-purple-50 p-3 text-center"><p class="text-[11px] uppercase tracking-wide text-purple-400">EPC</p><p class="mt-1 text-lg font-bold '+epcClass+'">'+Number(o.epc).toFixed(2)+' ₽</p></div>';
+h+='</div>';
+
+h+='</div>';
+
+h+='<div class="mt-4">';
+h+='<div class="flex justify-between text-xs text-gray-500 mb-2"><span>Просмотры → Клики → Одобрено</span><span class="font-semibold '+payoutClass+'">Доход: '+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</span></div>';
+var views=Math.max(Number(o.views||0),1);
+var clickW=Math.max(8, Math.min(100, Math.round((Number(o.clicks||0)/views)*100)));
+var apprBase=Math.max(Number(o.clicks||0),1);
+var apprW=Math.max(8, Math.min(100, Math.round((Number(o.approved||0)/apprBase)*100)));
+h+='<div class="space-y-2">';
+h+='<div class="w-full bg-gray-200 rounded-full h-3"><div class="bg-blue-500 rounded-full h-3" style="width:100%"></div></div>';
+h+='<div class="w-full bg-gray-200 rounded-full h-3"><div class="bg-indigo-500 rounded-full h-3" style="width:'+clickW+'%"></div></div>';
+h+='<div class="w-full bg-gray-200 rounded-full h-3"><div class="bg-green-500 rounded-full h-3" style="width:'+apprW+'%"></div></div>';
+h+='</div>';
+h+='</div>';
+
+h+='</div>';
 });
-h+='</tbody></table></div></div>';
+h+='</div>';
 }
 
 document.getElementById('p-funnel').innerHTML=h;});}
