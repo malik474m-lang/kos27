@@ -53,27 +53,29 @@ $noSearchQ = array_filter($allTags, fn($t) => empty(trim($t['search_queries'] ??
 $noTagContent = array_filter($allTags, fn($t) => empty(trim($t['content'] ?? '')));
 $noTagMeta = array_filter($allTags, fn($t) => empty(trim($t['meta_description'] ?? '')));
 
-if ($emptyTags) { $checks[] = ['level'=>'error','msg'=>count($emptyTags).' тег(ов) без привязанных офферов','items'=>array_map(fn($t)=>$t['title'],$emptyTags),'fixTab'=>'tags']; $score -= 5; }
-if ($noSearchQ) { $checks[] = ['level'=>'warning','msg'=>count($noSearchQ).' тег(ов) без поисковых запросов (перелинковка слабая)','items'=>array_map(fn($t)=>$t['title'],$noSearchQ),'fixTab'=>'tags']; $score -= 3; }
-if ($noTagContent) { $checks[] = ['level'=>'warning','msg'=>count($noTagContent).' тег(ов) без SEO-текста','items'=>array_map(fn($t)=>$t['title'],$noTagContent),'fixTab'=>'tags']; $score -= 2; }
-if ($noTagMeta) { $checks[] = ['level'=>'warning','msg'=>count($noTagMeta).' тег(ов) без meta description','items'=>array_map(fn($t)=>$t['title'],$noTagMeta),'fixTab'=>'tags']; $score -= 1; }
+if ($emptyTags) { $checks[] = ['level'=>'error','msg'=>count($emptyTags).' тег(ов) без привязанных офферов','items'=>array_map(fn($t)=>['id'=>$t['id'],'title'=>$t['title']],$emptyTags),'fixTab'=>'tags','fixItemType'=>'tag','fixFirstId'=>(int)array_values($emptyTags)[0]['id']]; $score -= 5; }
+if ($noSearchQ) { $checks[] = ['level'=>'warning','msg'=>count($noSearchQ).' тег(ов) без поисковых запросов (перелинковка слабая)','items'=>array_map(fn($t)=>['id'=>$t['id'],'title'=>$t['title']],$noSearchQ),'fixTab'=>'tags','fixItemType'=>'tag','fixFirstId'=>(int)array_values($noSearchQ)[0]['id']]; $score -= 3; }
+if ($noTagContent) { $checks[] = ['level'=>'warning','msg'=>count($noTagContent).' тег(ов) без SEO-текста','items'=>array_map(fn($t)=>['id'=>$t['id'],'title'=>$t['title']],$noTagContent),'fixTab'=>'tags','fixItemType'=>'tag','fixFirstId'=>(int)array_values($noTagContent)[0]['id']]; $score -= 2; }
+if ($noTagMeta) { $checks[] = ['level'=>'warning','msg'=>count($noTagMeta).' тег(ов) без meta description','items'=>array_map(fn($t)=>['id'=>$t['id'],'title'=>$t['title']],$noTagMeta),'fixTab'=>'tags','fixItemType'=>'tag','fixFirstId'=>(int)array_values($noTagMeta)[0]['id']]; $score -= 1; }
 if (!$emptyTags) { $checks[] = ['level'=>'ok','msg'=>'Все теги имеют привязанные офферы']; }
 
 // === СТАТЬИ ===
 $articleCount = (int)$db->query("SELECT COUNT(*) FROM articles WHERE is_published = 1")->fetchColumn();
-$noMetaArticles = (int)$db->query("SELECT COUNT(*) FROM articles WHERE is_published = 1 AND (meta_description IS NULL OR meta_description = '')")->fetchColumn();
-$noCoverArticles = (int)$db->query("SELECT COUNT(*) FROM articles WHERE is_published = 1 AND (cover_image IS NULL OR cover_image = '')")->fetchColumn();
+$noMetaArticlesList = $db->query("SELECT id, title FROM articles WHERE is_published = 1 AND (meta_description IS NULL OR meta_description = '')")->fetchAll();
+$noMetaArticles = count($noMetaArticlesList);
+$noCoverArticlesList = $db->query("SELECT id, title FROM articles WHERE is_published = 1 AND (cover_image IS NULL OR cover_image = '')")->fetchAll();
+$noCoverArticles = count($noCoverArticlesList);
 
 if ($articleCount < 5) { $checks[] = ['level'=>'warning','msg'=>"Мало статей: $articleCount (рекомендуется от 10)"]; $score -= 3; }
 else { $checks[] = ['level'=>'ok','msg'=>"Статей: $articleCount"]; }
-if ($noMetaArticles) { $checks[] = ['level'=>'warning','msg'=>"$noMetaArticles статей без meta description",'fixTab'=>'articles']; $score -= 2; }
-if ($noCoverArticles) { $checks[] = ['level'=>'warning','msg'=>"$noCoverArticles статей без обложки",'fixTab'=>'articles']; $score -= 1; }
+if ($noMetaArticles) { $checks[] = ['level'=>'warning','msg'=>"$noMetaArticles статей без meta description",'items'=>array_map(fn($a)=>['id'=>$a['id'],'title'=>$a['title']],$noMetaArticlesList),'fixTab'=>'articles','fixItemType'=>'article','fixFirstId'=>(int)$noMetaArticlesList[0]['id']]; $score -= 2; }
+if ($noCoverArticles) { $checks[] = ['level'=>'warning','msg'=>"$noCoverArticles статей без обложки",'items'=>array_map(fn($a)=>['id'=>$a['id'],'title'=>$a['title']],$noCoverArticlesList),'fixTab'=>'articles','fixItemType'=>'article','fixFirstId'=>(int)$noCoverArticlesList[0]['id']]; $score -= 1; }
 
 // === SEO ГОРОДОВ ===
 $totalCities = 41;
 $seoCount = (int)$db->query("SELECT COUNT(DISTINCT city_slug) FROM city_seo_texts")->fetchColumn();
 $missingCitySeo = $totalCities - $seoCount;
-if ($missingCitySeo > 0) { $checks[] = ['level'=>'warning','msg'=>"$missingCitySeo городов без SEO-текста",'fixTab'=>'cityseo']; $score -= min(5, $missingCitySeo); }
+if ($missingCitySeo > 0) { $checks[] = ['level'=>'warning','msg'=>"$missingCitySeo городов без SEO-текста",'fixTab'=>'cityseo','fixItemType'=>'cityseo']; $score -= min(5, $missingCitySeo); }
 else { $checks[] = ['level'=>'ok','msg'=>'SEO-тексты для всех городов сгенерированы']; }
 
 // === ОТЗЫВЫ ===

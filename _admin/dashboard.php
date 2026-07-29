@@ -2309,18 +2309,51 @@ function secUnblock(ip){secAp('unblock-ip',{method:'POST',body:JSON.stringify({i
 function secClearLog(){if(confirm('Удалить записи старше 30 дней?'))secAp('clear-log',{method:'POST'}).then(()=>lSec());}
 
 function goHealthFix(tab, itemType, itemId){
+  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
   if(itemType==='offer' && itemId){
     sw('offers');
-    try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
     setTimeout(function(){
-      fetch(A+'/offers/'+itemId).then(function(r){ return r.json(); }).then(function(row){
+      fetch(A+'/offers/'+itemId).then(function(r){return r.json();}).then(function(row){
         if(row && !row.error) oForm(row);
       }).catch(function(){});
-    }, 50);
+    }, 100);
+    return;
+  }
+  if(itemType==='tag' && itemId){
+    sw('tags');
+    setTimeout(function(){
+      ap('/tags').then(function(list){
+        var tag=(list||[]).find(function(t){return String(t.id)===String(itemId);});
+        if(tag) tForm(tag);
+      });
+    }, 100);
+    return;
+  }
+  if(itemType==='article' && itemId){
+    sw('articles');
+    setTimeout(function(){
+      ap('/articles').then(function(list){
+        var art=(list||[]).find(function(a){return String(a.id)===String(itemId);});
+        if(art) aForm(art);
+      });
+    }, 100);
+    return;
+  }
+  if(itemType==='category' && itemId){
+    sw('cats');
+    setTimeout(function(){
+      ap('/categories').then(function(list){
+        var cat=(list||[]).find(function(c){return String(c.id)===String(itemId);});
+        if(cat) catForm(cat);
+      });
+    }, 100);
+    return;
+  }
+  if(itemType==='cityseo'){
+    sw('cityseo');
     return;
   }
   sw(tab);
-  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
 }
 
 /* ============ HEALTH CHECK ============ */
