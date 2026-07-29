@@ -109,7 +109,7 @@ function lO(){ap('/offers').then(list=>{
 let state=getOffersUiState();
 let currentFilter=state.filter||'all';
 let currentSearch=state.search||'';
-let h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Сортировка отдельно внутри каждой категории</p></div><div class="flex flex-wrap gap-2"><button onclick="oForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
+let h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Сортировка отдельно внутри каждой категории</p></div><div class="flex flex-wrap gap-2"><button onclick="bulkToggle(\'offers\')" id="bulk-offers-toggle" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать</button><button onclick="oForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
 
 h+='<div class="bg-white rounded-xl border p-4 mb-6"><div class="grid sm:grid-cols-[1fr_220px_auto] gap-3 items-end">';
 h+='<div><label class="block text-xs font-medium text-gray-500 mb-1">Поиск по названию</label><input id="offers-search" class="input-f" placeholder="Например, Вебзайм" value="'+e(currentSearch)+'" oninput="applyOffersFilters()"></div>';
@@ -152,7 +152,7 @@ orderedKeys.forEach(function(key){
   h+='<div id="offers-sortable-'+key+'" class="space-y-2">';
   items.forEach(function(o){
     h+='<div class="bg-gray-50 rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'">';
-    h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
+    h+='<input type="checkbox" class="bulk-cb bulk-offers-cb w-4 h-4 hidden" data-id="'+o.id+'" onclick="event.stopPropagation();bulkUpdate(\'offers\')">';h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
     if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border"><img src="'+lg+'" class="w-full h-full object-contain p-0.5" loading="lazy"></div>';}else{h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border">🏦</div>';}
     h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(o.title)+'</p><p class="text-xs text-gray-500">'+(CL[o.category]||o.category)+' • '+o.rate+'% '+((o.rate_unit==='year')?'в год':'в день')+' • '+Number(o.amount_min).toLocaleString()+'—'+Number(o.amount_max).toLocaleString()+' ₽</p></div>';
     h+='<div class="text-right text-xs text-gray-500 min-w-[86px]"><div>30 дн: <strong>'+Number(o.clicks_30d||0)+'</strong></div><div>всего: <strong>'+Number(o.clicks_total||0)+'</strong></div></div>';
@@ -326,9 +326,9 @@ function oD(id){if(confirm('Удалить?'))ap('/offers/'+id,{method:'DELETE'}
 /* ============ ARTICLES ============ */
 let aTopics=[],aAi={};
 function lA(){ap('/generate-article').then(d=>{aTopics=d.topics||[];aAi=d.aiStatus||{};});
-ap('/articles').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Статьи ('+list.length+')</h2><div class="flex gap-2"><button onclick="aGen()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🤖 Автогенерация</button><button onclick="aForm()" class="btn-p">+ Добавить</button></div></div>';
-h+='<div class="bg-white rounded-xl shadow-sm border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3">Заголовок</th><th class="text-left px-4 py-3">Дата</th><th class="text-left px-4 py-3">Статус</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
-list.forEach(a=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">'+e(a.title)+'</td><td class="px-4 py-3 text-gray-500">'+new Date(a.created_at).toLocaleDateString('ru-RU')+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(a.is_published?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+'">'+(a.is_published?'Опубликовано':'Черновик')+'</span></td><td class="px-4 py-3 text-right space-x-2"><a href="/articles/'+e(a.slug)+'" target="_blank" class="text-gray-400 hover:text-gray-600">👁</a> <button onclick=\'aForm('+JSON.stringify(a).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm">Ред.</button> <button onclick="aToggle('+a.id+','+(!a.is_published)+')" class="text-blue-500 hover:underline text-sm">'+(a.is_published?'Скрыть':'Опубл.')+'</button> <button onclick="aD('+a.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
+ap('/articles').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Статьи ('+list.length+')</h2><div class="flex gap-2"><button onclick="bulkToggle(\'articles\')" id="bulk-articles-toggle" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать</button><button onclick="aGen()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🤖 Автогенерация</button><button onclick="aForm()" class="btn-p">+ Добавить</button></div></div>';
+h+='<div class="bg-white rounded-xl shadow-sm border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="px-4 py-3 w-8"></th><th class="text-left px-4 py-3">Заголовок</th><th class="text-left px-4 py-3">Дата</th><th class="text-left px-4 py-3">Статус</th><th class="text-right px-4 py-3">Действия</th></tr></thead><tbody>';
+list.forEach(a=>{h+='<tr class="border-b hover:bg-gray-50"><td class="px-4 py-1"><input type="checkbox" class="bulk-cb bulk-articles-cb w-4 h-4 hidden" data-id="'+a.id+'" onclick="event.stopPropagation();bulkUpdate(\'articles\')"></td><td class="px-4 py-3 font-medium">'+e(a.title)+'</td><td class="px-4 py-3 text-gray-500">'+new Date(a.created_at).toLocaleDateString('ru-RU')+'</td><td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(a.is_published?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+'">'+(a.is_published?'Опубликовано':'Черновик')+'</span></td><td class="px-4 py-3 text-right space-x-2"><a href="/articles/'+e(a.slug)+'" target="_blank" class="text-gray-400 hover:text-gray-600">👁</a> <button onclick=\'aForm('+JSON.stringify(a).replace(/\x27/g,"&#39;")+')\' class="text-blue-600 hover:underline text-sm">Ред.</button> <button onclick="aToggle('+a.id+','+(!a.is_published)+')" class="text-blue-500 hover:underline text-sm">'+(a.is_published?'Скрыть':'Опубл.')+'</button> <button onclick="aD('+a.id+')" class="text-red-500 hover:underline text-sm">Удалить</button></td></tr>';});
 h+='</tbody></table></div>';document.getElementById('p-articles').innerHTML=h;});}
 
 function aGen(){let cats='<option value="">Случайная</option>';aTopics.forEach(t=>{var avail=t.themes?t.themes.length:0;var total=t.total||avail;var used=t.used||0;var label=t.category.charAt(0).toUpperCase()+t.category.slice(1);if(avail>0)cats+='<option value="'+t.category+'">'+label+' ('+avail+' из '+total+' доступно)</option>';else cats+='<option value="'+t.category+'">'+label+' — темы закончились, AI создаст новые</option>';});
@@ -536,14 +536,14 @@ var TG_CAT_URLS={microloans:'/zajmy',credits:'/kredity',credit_cards:'/karty/kre
 function tUrl(t){return (TG_CAT_URLS[t.category]||'/zajmy')+'/type/'+t.slug;}
 
 function lT(){ap('/tags').then(tags=>{
-var h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">🏷️ Теги / Типы предложений ('+tags.length+')</h2><button onclick="tForm()" class="btn-p">+ Добавить</button></div>';
+var h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">🏷️ Теги / Типы предложений ('+tags.length+')</h2><div class="flex gap-2"><button onclick="bulkToggle(\'tags\')" id="bulk-tags-toggle" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать</button><button onclick="tForm()" class="btn-p">+ Добавить</button></div></div>';
 if(!tags.length){h+='<p class="text-gray-500 text-center py-8">Нет тегов. Добавьте первый!</p>';}
 else{
 h+='<div class="bg-gray-50 rounded-lg p-2 mb-4 text-xs text-gray-500">💡 Перетаскивайте за ☰ для изменения порядка</div>';
 h+='<div id="tags-sortable" class="space-y-2">';
 tags.forEach(t=>{
 h+='<div class="bg-white rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+t.id+'">';
-h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
+h+='<input type="checkbox" class="bulk-cb bulk-tags-cb w-4 h-4 hidden" data-id="'+t.id+'" onclick="event.stopPropagation();bulkUpdate(\'tags\')">';h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
 h+='<span class="text-xl">'+(t.icon||'🏷️')+'</span>';
 h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(t.title)+'</p><p class="text-xs text-gray-500">'+(TG_CAT[t.category]||t.category)+' • <span class="font-mono">'+e(t.slug)+'</span></p></div>';
 h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(t.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(t.is_active?'Вкл':'Выкл')+'</span>';
@@ -1549,6 +1549,150 @@ lSch();
 });}
 
 
+
+
+/* ============ BULK ACTIONS ============ */
+var bulkMode={};
+
+function bulkToggle(entity){
+bulkMode[entity]=!bulkMode[entity];
+var btn=document.getElementById('bulk-'+entity+'-toggle');
+if(btn){btn.textContent=bulkMode[entity]?'✕ Отмена':'☑ Выбрать';btn.className=bulkMode[entity]?'bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-semibold':'bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold';}
+document.querySelectorAll('.bulk-'+entity+'-cb').forEach(function(cb){
+cb.classList.toggle('hidden',!bulkMode[entity]);cb.checked=false;
+});
+var bar=document.getElementById('bulk-bar-'+entity);
+if(bar)bar.remove();
+if(bulkMode[entity]){
+var el=document.getElementById('p-'+entity==='offers'?'offers':entity);
+if(!el)el=document.getElementById('p-'+(entity==='tags'?'tags':entity));
+}
+}
+
+function bulkUpdate(entity){
+var checked=document.querySelectorAll('.bulk-'+entity+'-cb:checked');
+var count=checked.length;
+var bar=document.getElementById('bulk-bar');
+if(count===0){if(bar)bar.remove();return;}
+
+var ids=[];checked.forEach(function(cb){ids.push(cb.dataset.id);});
+
+if(!bar){
+bar=document.createElement('div');bar.id='bulk-bar';
+bar.className='fixed bottom-0 left-0 right-0 bg-gray-900 text-white py-3 px-4 z-50 shadow-2xl';
+document.body.appendChild(bar);
+}
+
+var h='<div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">';
+h+='<span class="text-sm font-medium">Выбрано: <strong>'+count+'</strong></span>';
+h+='<div class="flex flex-wrap gap-2">';
+
+if(entity==='offers'){
+h+='<button onclick="bulkDo(\'offers\',\'enable\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-semibold">✅ Включить</button>';
+h+='<button onclick="bulkDo(\'offers\',\'disable\')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-xs font-semibold">⛔ Выключить</button>';
+h+='<button onclick="bulkAssignTags()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🏷️ Назначить теги</button>';
+h+='<button onclick="bulkDo(\'offers\',\'generate-meta\')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🤖 Генерация Meta</button>';
+h+='<button onclick="bulkDo(\'offers\',\'delete\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🗑️ Удалить</button>';
+}
+if(entity==='tags'){
+h+='<button onclick="bulkDo(\'tags\',\'enable\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-semibold">✅ Включить</button>';
+h+='<button onclick="bulkDo(\'tags\',\'disable\')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-xs font-semibold">⛔ Выключить</button>';
+h+='<button onclick="bulkDo(\'tags\',\'generate-meta\')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🤖 Генерация Meta</button>';
+h+='<button onclick="bulkDo(\'tags\',\'delete\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🗑️ Удалить</button>';
+}
+if(entity==='articles'){
+h+='<button onclick="bulkDo(\'articles\',\'publish\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-semibold">✅ Опубликовать</button>';
+h+='<button onclick="bulkDo(\'articles\',\'unpublish\')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-xs font-semibold">⛔ Снять</button>';
+h+='<button onclick="bulkDo(\'articles\',\'generate-meta\')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🤖 Генерация Meta</button>';
+h+='<button onclick="bulkDo(\'articles\',\'delete\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold">🗑️ Удалить</button>';
+}
+
+h+='<button onclick="bulkSelectAll(\''+entity+'\')" class="text-gray-300 hover:text-white px-2 py-1.5 text-xs">Выбрать все</button>';
+h+='<button onclick="bulkSelectNone(\''+entity+'\')" class="text-gray-300 hover:text-white px-2 py-1.5 text-xs">Снять</button>';
+h+='</div></div>';
+bar.innerHTML=h;
+}
+
+function bulkGetIds(entity){
+var ids=[];
+document.querySelectorAll('.bulk-'+entity+'-cb:checked').forEach(function(cb){ids.push(parseInt(cb.dataset.id));});
+return ids;
+}
+
+function bulkSelectAll(entity){
+document.querySelectorAll('.bulk-'+entity+'-cb').forEach(function(cb){if(!cb.classList.contains('hidden'))cb.checked=true;});
+bulkUpdate(entity);
+}
+
+function bulkSelectNone(entity){
+document.querySelectorAll('.bulk-'+entity+'-cb').forEach(function(cb){cb.checked=false;});
+bulkUpdate(entity);
+}
+
+function bulkDo(entity,action){
+var ids=bulkGetIds(entity);
+if(!ids.length){alert('Выберите элементы');return;}
+
+var labels={'enable':'включить','disable':'выключить','delete':'УДАЛИТЬ','publish':'опубликовать','unpublish':'снять с публикации','generate-meta':'сгенерировать Meta'};
+var label=labels[action]||action;
+
+if(action==='generate-meta'){
+ap('/batch-generate',{method:'POST',body:JSON.stringify({entity:entity,ids:ids,fields:['meta_title','meta_description'],overwrite:false})}).then(function(d){
+alert('✅ Готово: '+d.success+' успешно, '+d.skipped+' пропущено'+(d.errors?', '+d.errors+' ошибок':''));
+bulkFinish(entity);
+}).catch(function(err){alert('Ошибка: '+err.message);});
+return;
+}
+
+if(!confirm(label.toUpperCase()+' '+ids.length+' элемент(ов)?'))return;
+
+ap('/bulk-actions',{method:'POST',body:JSON.stringify({action:action,entity:entity,ids:ids})}).then(function(d){
+if(d.error){alert('❌ '+d.error);return;}
+alert('✅ Выполнено: '+d.count+' элементов');
+bulkFinish(entity);
+}).catch(function(err){alert('Ошибка: '+err.message);});
+}
+
+function bulkFinish(entity){
+bulkMode[entity]=false;
+var bar=document.getElementById('bulk-bar');if(bar)bar.remove();
+var btn=document.getElementById('bulk-'+entity+'-toggle');
+if(btn){btn.textContent='☑ Выбрать';btn.className='bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold';}
+var reload={offers:lO,tags:lT,articles:lA};
+if(reload[entity])reload[entity]();
+}
+
+function bulkAssignTags(){
+var ids=bulkGetIds('offers');
+if(!ids.length){alert('Выберите офферы');return;}
+ap('/tags').then(function(tags){
+if(!tags.length){alert('Нет тегов');return;}
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🏷️ Назначить теги ('+ids.length+' офферов)</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
+h+='<div class="space-y-2 max-h-80 overflow-y-auto mb-4">';
+tags.forEach(function(t){
+h+='<label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer">';
+h+='<input type="checkbox" class="bulk-tag-cb w-4 h-4" value="'+t.id+'">';
+h+='<span>'+(t.icon||'🏷️')+' '+e(t.title)+'</span>';
+h+='<span class="text-xs text-gray-400 ml-auto">'+(t.category||'')+'</span>';
+h+='</label>';
+});
+h+='</div>';
+h+='<div class="flex justify-end gap-3"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="bulkAssignTagsDo()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">Назначить</button></div>';
+modal(h);
+});
+}
+
+function bulkAssignTagsDo(){
+var ids=bulkGetIds('offers');
+var tagIds=[];
+document.querySelectorAll('.bulk-tag-cb:checked').forEach(function(cb){tagIds.push(parseInt(cb.value));});
+if(!tagIds.length){alert('Выберите хотя бы один тег');return;}
+ap('/bulk-actions',{method:'POST',body:JSON.stringify({action:'assign-tags',entity:'offers',ids:ids,tagIds:tagIds})}).then(function(d){
+if(d.error){alert('❌ '+d.error);return;}
+alert('✅ Теги назначены: '+d.count+' связей');
+cm();bulkFinish('offers');
+}).catch(function(err){alert('Ошибка: '+err.message);});
+}
 
 /* ============ SETTINGS ============ */
 
