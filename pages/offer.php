@@ -470,7 +470,7 @@ ob_start();
     <!-- Перелинковка: города -->
     <?php
     require_once __DIR__ . '/../data/cities.php';
-    $shuffledCities = $cities; shuffle($shuffledCities);
+    $shuffledCities = getCities(); shuffle($shuffledCities);
     ?>
     <div class="offer-related-card bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4"><?= $catLabel ?> по городам</h2>

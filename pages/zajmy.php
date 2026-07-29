@@ -116,7 +116,7 @@ ob_start();
         <h2 class="text-lg font-bold text-gray-900 mb-4">Займы по городам России</h2>
         <div class="flex flex-wrap gap-2">
             <?php
-            $shuffledCities = $cities;
+            $shuffledCities = getCities();
             shuffle($shuffledCities);
             foreach (array_slice($shuffledCities, 0, 15) as $c):
             ?>

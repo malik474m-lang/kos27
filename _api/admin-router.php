@@ -141,7 +141,6 @@ if (str_starts_with($adminUri, '/postback-profiles')) { require __DIR__ . '/admi
 if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/postback-list.php'; exit; }
 
 // Проверка ссылок
-if (str_starts_with($adminUri, '/link-check')) { require __DIR__ . '/admin/link-check.php'; exit; }
 
 // Здоровье сайта
 if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'; exit; }

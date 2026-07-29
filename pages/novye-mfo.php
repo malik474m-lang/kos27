@@ -11,7 +11,7 @@ $pageTitle = 'Новые МФО — последние добавленные з
 $metaDescription = 'Новые МФО и последние добавленные предложения по займам на сайте Космозайм. Сравните условия, ставки, суммы и сроки оформления онлайн.';
 $metaKeywords = 'новые мфо, новые займы, последние мфо, новые микрозаймы, новые предложения мфо';
 
-$shuffledCities = $cities;
+$shuffledCities = getCities();
 shuffle($shuffledCities);
 $shuffledCities = array_slice($shuffledCities, 0, 12);
 

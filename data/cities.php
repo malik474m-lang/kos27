@@ -77,3 +77,8 @@ function findCityByName(string $name): ?array {
     }
     return null;
 }
+
+function getCities(): array {
+    global $cities;
+    return is_array($cities) ? $cities : [];
+}

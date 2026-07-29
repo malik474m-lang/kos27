@@ -27,12 +27,12 @@ if (!$noLogo && !$noAffUrl) { $checks[] = ['level'=>'ok','msg'=>'Все оффе
 
 // Проверенные битые партнёрские ссылки
 try {
-    $badLinks = $db->query("SELECT o.title, lc.status, lc.http_code FROM offer_link_checks lc JOIN offers o ON o.id = lc.offer_id WHERE o.is_active = 1 AND lc.status IN ('broken','timeout','error')")->fetchAll();
+    $badLinks = $db->query("SELECT o.title, lc.http_code FROM offers o JOIN (SELECT t1.* FROM offer_link_checks t1 INNER JOIN (SELECT offer_id, MAX(id) as max_id FROM offer_link_checks GROUP BY offer_id) t2 ON t1.id = t2.max_id) lc ON lc.offer_id = o.id WHERE o.is_active = 1 AND lc.is_ok = 0")->fetchAll();
     if ($badLinks) {
         $checks[] = [
             'level' => 'error',
             'msg' => count($badLinks) . ' проблемных партнёрских ссылок',
-            'items' => array_map(fn($r) => $r['title'] . ' (' . $r['status'] . ', HTTP ' . $r['http_code'] . ')', $badLinks),
+            'items' => array_map(fn($r) => $r['title'] . ' (HTTP ' . $r['http_code'] . ')', $badLinks),
         ];
         $score -= min(15, count($badLinks) * 3);
     } else {
