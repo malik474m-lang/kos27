@@ -533,6 +533,71 @@ h+='<div class="bg-gray-50 rounded-xl p-4 mt-6"><p class="text-sm text-gray-500"
 document.getElementById('p-tags').innerHTML=h;
 initSort('tags-sortable','offer_tags');});}
 
+function tgFeatureTemplatesByCategory(category){
+  if(category==='microloans') return [
+    {icon:'⚡',title:'Быстрое решение',text:'Рассмотрение заявки за несколько минут'},
+    {icon:'📱',title:'Онлайн оформление',text:'Подача заявки без визита в офис'},
+    {icon:'💳',title:'На карту',text:'Перевод денег на банковскую карту'},
+    {icon:'✅',title:'Высокое одобрение',text:'Лояльные требования к заёмщикам'}
+  ];
+  if(category==='credits') return [
+    {icon:'🏦',title:'Надёжный банк',text:'Оформление через проверенные банки-партнёры'},
+    {icon:'📄',title:'Прозрачные условия',text:'Сравнение ставок и полной стоимости кредита'},
+    {icon:'💰',title:'Крупные суммы',text:'Подбор лимита под ваши задачи'},
+    {icon:'🧮',title:'Предварительный расчёт',text:'Оценка платежей перед отправкой заявки'}
+  ];
+  if(category==='credit_cards') return [
+    {icon:'💳',title:'Кредитный лимит',text:'Доступ к заёмным средствам на карте'},
+    {icon:'🗓️',title:'Льготный период',text:'Можно пользоваться лимитом без процентов'},
+    {icon:'🎁',title:'Бонусы и кэшбэк',text:'Дополнительная выгода при оплате покупок'},
+    {icon:'📦',title:'Доставка карты',text:'Многие банки доставляют карту на дом'}
+  ];
+  if(category==='debit_cards') return [
+    {icon:'🪪',title:'Повседневные платежи',text:'Удобная карта для покупок и переводов'},
+    {icon:'💸',title:'Кэшбэк',text:'Возврат части расходов рублями или бонусами'},
+    {icon:'📈',title:'Процент на остаток',text:'Можно получать доход на средства на счёте'},
+    {icon:'🆓',title:'Бесплатное обслуживание',text:'Есть предложения без абонентской платы'}
+  ];
+  return [
+    {icon:'⭐',title:'Удобный выбор',text:'Сравните условия и выберите подходящий вариант'},
+    {icon:'📋',title:'Прозрачные условия',text:'Основные параметры собраны в одном месте'},
+    {icon:'⚡',title:'Быстрый старт',text:'Переход к оформлению за пару кликов'},
+    {icon:'✅',title:'Актуальные данные',text:'Мы регулярно обновляем информацию по предложениям'}
+  ];
+}
+
+function tgAutoFeatures(){
+  var title=(document.getElementById('tg-title')?.value||'').toLowerCase();
+  var category=document.getElementById('tg-cat')?.value||'microloans';
+  var features=tgFeatureTemplatesByCategory(category).map(function(x){return Object.assign({},x);});
+
+  if(title.includes('без отказ')){
+    features[0]={icon:'✅',title:'Высокий шанс одобрения',text:'Подбор предложений с лояльными требованиями'};
+    features[3]={icon:'📊',title:'Проверенные офферы',text:'Собраны предложения с хорошей конверсией'};
+  }
+  if(title.includes('кэшбэк') || title.includes('кешбек')){
+    features[1]={icon:'💸',title:'Повышенный кэшбэк',text:'Выгода за покупки в популярных категориях'};
+  }
+  if(title.includes('без процент') || title.includes('0%')){
+    features[0]={icon:'🆓',title:'Без процентов',text:'Льготный период для новых клиентов'};
+    features[2]={icon:'📅',title:'Ограниченный срок',text:'Важно вернуть деньги в рамках акции'};
+  }
+  if(title.includes('студент')){
+    features[3]={icon:'🎓',title:'Для студентов',text:'Подходящие условия для молодых заёмщиков'};
+  }
+  if(title.includes('пенсион')){
+    features[3]={icon:'👴',title:'Для пенсионеров',text:'Подбор предложений с лояльными возрастными условиями'};
+  }
+  if(title.includes('на карту')){
+    features[2]={icon:'💳',title:'Мгновенный перевод',text:'Деньги отправляются на карту после одобрения'};
+  }
+  if(title.includes('дебет')){
+    features[3]={icon:'📲',title:'Удобное приложение',text:'Контроль расходов и операций в мобильном банке'};
+  }
+
+  document.getElementById('tg-feat').value = JSON.stringify(features, null, 2);
+}
+
 function tPreview(t){
 var url=tUrl(t);
 var feat=t.features||'[]';if(typeof feat==='string')try{feat=JSON.parse(feat);}catch(x){feat=[];}
@@ -572,7 +637,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Короткое описание</label><input id="tg-desc" class="input-f" value="'+e(f.description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="tg-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="tg-meta-btn" onclick="fillMeta(&quot;tg&quot;,&quot;tag&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="3">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="4" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><textarea id="tg-feat" class="input-f font-mono text-xs" rows="3">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><div class="flex gap-2 mb-2"><button type="button" onclick="tgAutoFeatures()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ Автофичи</button><span class="text-xs text-gray-400 self-center">Сгенерирует 4 карточки по категории и названию</span></div><textarea id="tg-feat" class="input-f font-mono text-xs" rows="5">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
