@@ -41,6 +41,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('scheduler')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="scheduler">⏰ Планировщик</button>
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
+<button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('security')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="security">🔒 Безопасность</button>
 </div></div></div>
 <div class="bg-gray-50 border-b"><div class="max-w-7xl mx-auto px-4 py-3 text-sm text-gray-500" id="admin-breadcrumb">Админка</div></div>
@@ -60,6 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-scheduler" class="tp hidden"></div>
 <div id="p-backup" class="tp hidden"></div>
 <div id="p-users" class="tp hidden"></div>
+<div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
 </div>
 <div id="M"></div>
@@ -68,7 +70,7 @@ const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,security:lSec})[t]?.();}
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -1176,6 +1178,51 @@ h+='<td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(u.
 h+='</tr>';});
 h+='</tbody></table></div>';}
 document.getElementById('p-users').innerHTML=h;});}
+
+/* ============ HEALTH CHECK ============ */
+function lHealth(){
+var el=document.getElementById('p-health');
+el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Проверяем сайт...</p></div>';
+ap('/health-check').then(d=>{
+var s=d.score||0;
+var barColor=s>=80?'bg-green-500':s>=50?'bg-yellow-500':'bg-red-500';
+var barTextColor=s>=80?'text-green-600':s>=50?'text-yellow-600':'text-red-600';
+var emoji=s>=80?'✅':s>=50?'⚠️':'❌';
+
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏥 Здоровье сайта</h2><button onclick="lHealth()" class="btn-p text-sm">🔄 Проверить</button></div>';
+
+// Score
+h+='<div class="bg-white rounded-2xl border p-6 mb-6 text-center"><p class="text-5xl font-bold '+barTextColor+'">'+s+'<span class="text-2xl text-gray-400">/100</span></p><div class="w-full bg-gray-200 rounded-full h-4 mt-4 max-w-md mx-auto"><div class="'+barColor+' rounded-full h-4 transition-all" style="width:'+s+'%"></div></div><p class="text-sm text-gray-500 mt-2">'+emoji+' '+(s>=80?'Сайт в хорошем состоянии':s>=50?'Есть замечания, которые стоит исправить':'Обнаружены критичные проблемы')+'</p></div>';
+
+// Critical
+if(d.critical&&d.critical.length){
+h+='<div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-4"><h3 class="font-bold text-red-800 mb-3">❌ Критичные ('+d.critical.length+')</h3><ul class="space-y-2">';
+d.critical.forEach(i=>{h+='<li class="flex items-start gap-2 text-sm text-red-700"><span class="mt-0.5">•</span><span>'+e(i)+'</span></li>';});
+h+='</ul></div>';}
+
+// Warnings
+if(d.warnings&&d.warnings.length){
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-5 mb-4"><h3 class="font-bold text-yellow-800 mb-3">⚠️ Предупреждения ('+d.warnings.length+')</h3><ul class="space-y-2">';
+d.warnings.forEach(i=>{h+='<li class="flex items-start gap-2 text-sm text-yellow-700"><span class="mt-0.5">•</span><span>'+e(i)+'</span></li>';});
+h+='</ul></div>';}
+
+// OK
+if(d.ok&&d.ok.length){
+h+='<div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-4"><h3 class="font-bold text-green-800 mb-3">✅ Всё хорошо ('+d.ok.length+')</h3><ul class="space-y-2">';
+d.ok.forEach(i=>{h+='<li class="flex items-start gap-2 text-sm text-green-700"><span class="mt-0.5">•</span><span>'+e(i)+'</span></li>';});
+h+='</ul></div>';}
+
+// Stats
+if(d.stats){
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-700">'+d.stats.offers+'</p><p class="text-xs text-gray-500">Активных офферов</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-700">'+d.stats.pageCacheMB+' MB</p><p class="text-xs text-gray-500">Page cache</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-700">'+d.stats.apiCacheMB+' MB</p><p class="text-xs text-gray-500">API cache</p></div>';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-700">'+d.stats.geoCacheMB+' MB</p><p class="text-xs text-gray-500">Geo cache</p></div>';
+h+='</div>';}
+
+el.innerHTML=h;
+}).catch(function(){el.innerHTML='<p class="text-red-500 text-center py-8">Ошибка проверки</p>';});}
 
 /* ============ SECURITY ============ */
 function secAp(action,opts){return fetch(A+'/security?action='+action,{headers:{'Content-Type':'application/json'},...opts}).then(r=>r.json());}

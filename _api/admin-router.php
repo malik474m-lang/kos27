@@ -140,6 +140,9 @@ if (str_starts_with($adminUri, '/postback-profiles')) { require __DIR__ . '/admi
 // Postback конверсии
 if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/postback-list.php'; exit; }
 
+// Здоровье сайта
+if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'; exit; }
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 
