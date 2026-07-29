@@ -181,6 +181,8 @@ if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . 
 if ($adminUri === '/batch-generate' && $method === 'POST') { require __DIR__ . '/admin/batch-generate.php'; exit; }
 // История изменений
 if ($adminUri === '/audit-log') { require __DIR__ . '/admin/audit-log.php'; exit; }
+// Финансовая аналитика
+if ($adminUri === '/analytics') { require __DIR__ . '/admin/analytics.php'; exit; }
 
 http_response_code(404);
 echo json_encode(['error' => 'Not found']);

@@ -44,6 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('scheduler')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="scheduler">⏰ Планировщик</button>
 <button onclick="sw('batch')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="batch">🤖 Пакетная</button>
 <button onclick="sw('history')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="history">📜 История</button>
+<button onclick="sw('analytics')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="analytics">📈 Аналитика</button>
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
@@ -69,6 +70,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-scheduler" class="tp hidden"></div>
 <div id="p-batch" class="tp hidden"></div>
 <div id="p-history" class="tp hidden"></div>
+<div id="p-analytics" class="tp hidden"></div>
 <div id="p-backup" class="tp hidden"></div>
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
@@ -79,8 +81,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -1464,6 +1466,233 @@ lSch();
 
 
 /* ============ SETTINGS ============ */
+
+/* ============ FINANCIAL ANALYTICS ============ */
+var analyticsPeriod=30;
+var analyticsCompare=false;
+var analyticsChart=null;
+
+function lAnalytics(){
+var params='period='+analyticsPeriod;
+if(analyticsCompare)params+='&compare=prev';
+
+ap('/analytics?'+params).then(function(d){
+if(d.error){document.getElementById('p-analytics').innerHTML='<div class="text-red-500">Ошибка: '+e(d.error)+'</div>';return;}
+
+var h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">';
+h+='<h2 class="text-xl font-bold">📈 Финансовая аналитика</h2>';
+h+='<div class="flex flex-wrap gap-3 items-center">';
+h+='<select id="an-period" class="sel-f w-auto" onchange="anPeriod(this.value)">';
+h+='<option value="7"'+(analyticsPeriod===7?' selected':'')+'>7 дней</option>';
+h+='<option value="14"'+(analyticsPeriod===14?' selected':'')+'>14 дней</option>';
+h+='<option value="30"'+(analyticsPeriod===30?' selected':'')+'>30 дней</option>';
+h+='<option value="90"'+(analyticsPeriod===90?' selected':'')+'>90 дней</option>';
+h+='<option value="180"'+(analyticsPeriod===180?' selected':'')+'>180 дней</option>';
+h+='<option value="365"'+(analyticsPeriod===365?' selected':'')+'>365 дней</option>';
+h+='</select>';
+h+='<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="an-compare" onchange="anCompare(this.checked)"'+(analyticsCompare?' checked':'')+'> Сравнить с пред. периодом</label>';
+h+='</div></div>';
+
+// Карточки с итогами
+var t=d.totals||{};
+h+='<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">';
+h+=anCard('💰','Доход',formatMoney(t.total_revenue||0),'revenue',d.comparison);
+h+=anCard('👆','Клики',formatNum(t.total_clicks||0),'clicks',d.comparison);
+h+=anCard('✅','Одобрено',formatNum(t.total_approved||0),'approved',d.comparison);
+h+=anCard('❌','Отклонено',formatNum(t.total_rejected||0),'rejected',null);
+h+=anCard('⏳','В ожидании',formatNum(t.total_pending||0),'pending',null);
+h+=anCard('📊','EPC',formatMoney(t.avg_epc||0),'epc',null);
+h+='</div>';
+
+// График
+h+='<div class="bg-white rounded-xl border p-6 mb-6">';
+h+='<h3 class="font-bold mb-4">📊 Динамика дохода</h3>';
+h+='<div style="height:300px"><canvas id="analytics-chart"></canvas></div>';
+h+='</div>';
+
+// Таблицы в 2 колонки
+h+='<div class="grid lg:grid-cols-2 gap-6 mb-6">';
+
+// По офферам
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<h3 class="font-bold mb-4">💵 Доход по офферам</h3>';
+h+='<div class="overflow-x-auto max-h-80 overflow-y-auto">';
+h+='<table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Оффер</th>';
+h+='<th class="px-3 py-2 text-right">Доход</th>';
+h+='<th class="px-3 py-2 text-right">EPC</th>';
+h+='<th class="px-3 py-2 text-right">AR%</th>';
+h+='</tr></thead><tbody>';
+if(!d.by_offer||!d.by_offer.length){
+h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+}else{
+d.by_offer.forEach(function(o){
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2"><div class="flex items-center gap-2">';
+if(o.logo_url)h+='<img src="'+e(o.logo_url)+'" class="w-6 h-6 rounded object-contain bg-gray-100">';
+h+='<span class="truncate max-w-32" title="'+e(o.title)+'">'+e(o.title)+'</span></div></td>';
+h+='<td class="px-3 py-2 text-right font-medium text-green-600">'+formatMoney(o.revenue)+'</td>';
+h+='<td class="px-3 py-2 text-right">'+formatMoney(o.epc)+'</td>';
+h+='<td class="px-3 py-2 text-right">'+(o.approval_rate||0)+'%</td>';
+h+='</tr>';
+});
+}
+h+='</tbody></table></div></div>';
+
+// По категориям
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<h3 class="font-bold mb-4">📂 Доход по категориям</h3>';
+h+='<div class="space-y-3">';
+if(!d.by_category||!d.by_category.length){
+h+='<p class="text-gray-400">Нет данных</p>';
+}else{
+var maxCatRev=Math.max(...d.by_category.map(c=>parseFloat(c.revenue)||0),1);
+d.by_category.forEach(function(c){
+var pct=maxCatRev>0?Math.round((parseFloat(c.revenue)||0)/maxCatRev*100):0;
+h+='<div>';
+h+='<div class="flex justify-between text-sm mb-1"><span class="font-medium">'+e(c.category_label)+'</span><span class="text-green-600 font-medium">'+formatMoney(c.revenue)+'</span></div>';
+h+='<div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:'+pct+'%"></div></div>';
+h+='<div class="flex justify-between text-xs text-gray-500 mt-1"><span>'+formatNum(c.clicks)+' кликов</span><span>EPC: '+formatMoney(c.epc)+' • AR: '+(c.approval_rate||0)+'%</span></div>';
+h+='</div>';
+});
+}
+h+='</div></div>';
+
+h+='</div>'; // end grid
+
+// Партнёрки и источники
+h+='<div class="grid lg:grid-cols-2 gap-6">';
+
+// По партнёркам
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<h3 class="font-bold mb-4">🤝 Доход по партнёркам</h3>';
+h+='<div class="overflow-x-auto max-h-64 overflow-y-auto">';
+h+='<table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Партнёрка</th>';
+h+='<th class="px-3 py-2 text-right">Доход</th>';
+h+='<th class="px-3 py-2 text-right">Одобр.</th>';
+h+='<th class="px-3 py-2 text-right">AR%</th>';
+h+='</tr></thead><tbody>';
+if(!d.by_partner||!d.by_partner.length){
+h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+}else{
+d.by_partner.forEach(function(p){
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 font-medium">'+e(p.partner_name)+'</td>';
+h+='<td class="px-3 py-2 text-right text-green-600 font-medium">'+formatMoney(p.revenue)+'</td>';
+h+='<td class="px-3 py-2 text-right">'+formatNum(p.approved)+'</td>';
+h+='<td class="px-3 py-2 text-right '+(p.approval_rate>=50?'text-green-600':'text-orange-500')+'">'+(p.approval_rate||0)+'%</td>';
+h+='</tr>';
+});
+}
+h+='</tbody></table></div></div>';
+
+// По источникам
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<h3 class="font-bold mb-4">🔗 EPC по источникам трафика</h3>';
+h+='<div class="overflow-x-auto max-h-64 overflow-y-auto">';
+h+='<table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Источник</th>';
+h+='<th class="px-3 py-2 text-right">Клики</th>';
+h+='<th class="px-3 py-2 text-right">Доход</th>';
+h+='<th class="px-3 py-2 text-right">EPC</th>';
+h+='</tr></thead><tbody>';
+if(!d.by_source||!d.by_source.length){
+h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+}else{
+d.by_source.forEach(function(s){
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2"><span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">'+e(s.source)+'</span></td>';
+h+='<td class="px-3 py-2 text-right">'+formatNum(s.clicks)+'</td>';
+h+='<td class="px-3 py-2 text-right text-green-600">'+formatMoney(s.revenue)+'</td>';
+h+='<td class="px-3 py-2 text-right font-medium">'+formatMoney(s.epc)+'</td>';
+h+='</tr>';
+});
+}
+h+='</tbody></table></div></div>';
+
+h+='</div>'; // end grid
+
+document.getElementById('p-analytics').innerHTML=h;
+
+// Рисуем график
+setTimeout(function(){anDrawChart(d.timeline||[]);},100);
+}).catch(function(err){
+document.getElementById('p-analytics').innerHTML='<div class="text-red-500">Ошибка загрузки: '+err.message+'</div>';
+});
+}
+
+function anCard(icon,label,value,key,comparison){
+var h='<div class="bg-white rounded-xl border p-4">';
+h+='<div class="flex items-center gap-2 text-gray-500 text-sm mb-1"><span>'+icon+'</span><span>'+label+'</span></div>';
+h+='<div class="text-xl font-bold">'+value+'</div>';
+if(comparison&&comparison.changes&&comparison.changes[key]!==undefined){
+var ch=comparison.changes[key];
+var color=ch>0?'text-green-600':ch<0?'text-red-500':'text-gray-400';
+var arrow=ch>0?'↑':ch<0?'↓':'→';
+h+='<div class="text-xs '+color+'">'+arrow+' '+Math.abs(ch)+'% к пред.</div>';
+}
+h+='</div>';
+return h;
+}
+
+function formatMoney(v){
+v=parseFloat(v)||0;
+if(v>=1000000)return (v/1000000).toFixed(1)+'M ₽';
+if(v>=1000)return (v/1000).toFixed(1)+'K ₽';
+return v.toFixed(2)+' ₽';
+}
+
+function formatNum(v){
+v=parseInt(v)||0;
+if(v>=1000000)return (v/1000000).toFixed(1)+'M';
+if(v>=1000)return (v/1000).toFixed(1)+'K';
+return v.toString();
+}
+
+function anPeriod(v){
+analyticsPeriod=parseInt(v)||30;
+lAnalytics();
+}
+
+function anCompare(v){
+analyticsCompare=!!v;
+lAnalytics();
+}
+
+function anDrawChart(data){
+var canvas=document.getElementById('analytics-chart');
+if(!canvas)return;
+var ctx=canvas.getContext('2d');
+if(analyticsChart){analyticsChart.destroy();}
+
+var labels=data.map(function(d){return d.date;});
+var revenues=data.map(function(d){return parseFloat(d.revenue)||0;});
+var clicks=data.map(function(d){return parseInt(d.clicks)||0;});
+var approved=data.map(function(d){return parseInt(d.approved)||0;});
+
+analyticsChart=new Chart(ctx,{
+type:'line',
+data:{
+labels:labels,
+datasets:[
+{label:'Доход ₽',data:revenues,borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.1)',fill:true,tension:0.3,yAxisID:'y'},
+{label:'Клики',data:clicks,borderColor:'#3b82f6',backgroundColor:'transparent',borderDash:[5,5],tension:0.3,yAxisID:'y1'},
+{label:'Одобрено',data:approved,borderColor:'#8b5cf6',backgroundColor:'transparent',borderDash:[2,2],tension:0.3,yAxisID:'y1'}
+]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false,
+interaction:{mode:'index',intersect:false},
+plugins:{legend:{position:'bottom'}},
+scales:{
+y:{type:'linear',position:'left',title:{display:true,text:'Доход ₽'},grid:{color:'#f3f4f6'}},
+y1:{type:'linear',position:'right',title:{display:true,text:'Кол-во'},grid:{drawOnChartArea:false}}
+}
+}
+});
+}
 
 /* ============ HISTORY (AUDIT LOG) ============ */
 var historyFilters={entity:'',action:'',dateFrom:'',dateTo:''};
