@@ -2217,7 +2217,7 @@ h+='<h3 class="font-bold">3. Выберите элементы <span id="batch-c
 h+='<div class="flex gap-2">';
 h+='<button onclick="batchSelectAll()" class="text-sm text-blue-600 hover:underline">Выбрать все</button>';
 h+='<button onclick="batchSelectNone()" class="text-sm text-gray-500 hover:underline">Снять выбор</button>';
-h+='<button onclick="batchSelectEmpty()" class="text-sm text-orange-600 hover:underline">Только с пустыми SEO-мета</button>';
+h+='<button onclick="batchSelectEmpty()" id="batch-empty-btn" class="text-sm text-orange-600 hover:underline">Только с пустыми SEO-мета</button>';
 h+='</div>';
 h+='</div>';
 h+='<div id="batch-list" class="max-h-96 overflow-y-auto space-y-2">';
@@ -2261,6 +2261,34 @@ h+='</label>';
 return h;
 }
 
+function batchItemState(entity,item){
+if(entity==='offers'){
+  var hasDesc=!!(item.description&&String(item.description).trim());
+  var hasSeoKeys=!!(item.seo_keywords&&String(item.seo_keywords).trim());
+  return {
+    isFilled: hasDesc&&hasSeoKeys,
+    label: hasDesc&&hasSeoKeys ? 'Описание и SEO ✓' : (!hasDesc&&!hasSeoKeys ? 'Описание и SEO пустые' : (hasDesc ? 'Нет SEO-ключей' : 'Нет описания')),
+    okClass: 'bg-green-100 text-green-600',
+    emptyClass: 'bg-orange-100 text-orange-600'
+  };
+}
+if(entity==='articles' || entity==='categories' || entity==='tags'){
+  var hasMeta=!!(item.meta_title||item.meta_description);
+  return {
+    isFilled: hasMeta,
+    label: hasMeta ? 'SEO-мета ✓' : 'SEO-мета пустые',
+    okClass: 'bg-green-100 text-green-600',
+    emptyClass: 'bg-orange-100 text-orange-600'
+  };
+}
+return {isFilled:false,label:'Нет данных',okClass:'bg-green-100 text-green-600',emptyClass:'bg-orange-100 text-orange-600'};
+}
+
+function batchEmptyButtonLabel(entity){
+if(entity==='offers') return 'Только без описания / SEO';
+return 'Только с пустыми SEO-мета';
+}
+
 function batchListHtml(entity){
 var list=batchData[entity]||[];
 var h='';
@@ -2270,8 +2298,8 @@ return h;
 }
 list.forEach(function(item){
 var name=item.title||item.name||'ID '+item.id;
-var hasMeta=!!(item.meta_title||item.meta_description);
-var badge=hasMeta?'<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">SEO-мета ✓</span>':'<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">SEO-мета пустые</span>';
+var state=batchItemState(entity,item);
+var badge='<span class="text-xs px-2 py-0.5 rounded '+(state.isFilled?state.okClass:state.emptyClass)+'">'+state.label+'</span>';
 h+='<label class="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">';
 h+='<input type="checkbox" class="batch-item w-4 h-4" data-id="'+item.id+'" data-entity="'+entity+'">';
 h+='<span class="flex-1">'+e(name)+'</span>';
@@ -2294,6 +2322,7 @@ document.getElementById('batch-fields').innerHTML=batchFieldsHtml(entity);
 // Update list
 batchSelected[entity]=[];
 document.getElementById('batch-list').innerHTML=batchListHtml(entity);
+var emptyBtn=document.getElementById('batch-empty-btn');if(emptyBtn)emptyBtn.textContent=batchEmptyButtonLabel(entity);
 batchUpdateCount(entity);
 // Store current entity
 document.getElementById('batch-run-btn').dataset.entity=entity;
@@ -2319,9 +2348,9 @@ batchSelected[entity]=[];
 document.querySelectorAll('.batch-item').forEach(function(cb){
 var id=parseInt(cb.dataset.id);
 var item=batchData[entity].find(function(i){return i.id===id;});
-var hasMeta=item&&(item.meta_title||item.meta_description);
-cb.checked=!hasMeta;
-if(!hasMeta)batchSelected[entity].push(id);
+var itemState=item?batchItemState(entity,item):{isFilled:false};
+cb.checked=!itemState.isFilled;
+if(!itemState.isFilled)batchSelected[entity].push(id);
 });
 batchUpdateCount(entity);
 }

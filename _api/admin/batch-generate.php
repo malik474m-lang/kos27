@@ -44,7 +44,7 @@ $entityConfig = [
         'fields' => ['meta_title', 'meta_description', 'h1', 'description', 'seo_text'],
     ],
     'tags' => [
-        'table' => 'tags',
+        'table' => 'offer_tags',
         'name_field' => 'title',
         'fields' => ['meta_title', 'meta_description', 'description'],
     ],
