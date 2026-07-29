@@ -4,10 +4,59 @@
  */
 header('Content-Type: application/json; charset=UTF-8');
 
-// Проверка авторизации
+$db = getDB();
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+
+// === ЛОГИН (доступен без авторизации) ===
+if ($action === 'login' && $method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = trim($data['username'] ?? '');
+    $password = $data['password'] ?? '';
+    
+    $rate = checkRateLimit('admin_login', 5, 300);
+    if (!$rate['allowed']) {
+        http_response_code(429);
+        echo json_encode(['error' => 'Слишком много попыток']);
+        exit;
+    }
+    
+    $stmt = $db->prepare("SELECT * FROM admins WHERE username = ? LIMIT 1");
+    $stmt->execute([$username]);
+    $admin = $stmt->fetch();
+    
+    if (!$admin || !password_verify($password, $admin['password_hash'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Неверные данные']);
+        exit;
+    }
+    
+    if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params(['lifetime' => 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict']);
+        session_start();
+    }
+    session_regenerate_id(true);
+    $_SESSION['lic_admin_id'] = $admin['id'];
+    $_SESSION['lic_admin_user'] = $admin['username'];
+    
+    echo json_encode(['success' => true]);
+    exit;
+}
+
+// === ЛОГАУТ ===
+if ($action === 'logout' && $method === 'POST') {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params(['lifetime' => 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict']);
+        session_start();
+    }
+    session_destroy();
+    echo json_encode(['success' => true]);
+    exit;
+}
+
+// Проверка авторизации для остальных действий
 $token = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_GET['token'] ?? '';
 if ($token !== ADMIN_API_TOKEN) {
-    // Проверяем сессию
     if (session_status() === PHP_SESSION_NONE) {
         session_set_cookie_params(['lifetime' => 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict']);
         session_start();
@@ -18,10 +67,6 @@ if ($token !== ADMIN_API_TOKEN) {
         exit;
     }
 }
-
-$db = getDB();
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
 
 // === Список лицензий ===
 if ($action === 'list') {
@@ -115,36 +160,6 @@ if ($action === 'stats') {
         'denied_today' => (int)$db->query("SELECT COUNT(*) FROM license_log WHERE action = 'denied' AND created_at > CURDATE()")->fetchColumn(),
     ];
     echo json_encode($stats);
-    exit;
-}
-
-// === Логин ===
-if ($action === 'login' && $method === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $username = trim($data['username'] ?? '');
-    $password = $data['password'] ?? '';
-    
-    $rate = checkRateLimit('admin_login', 5, 300);
-    if (!$rate['allowed']) { echo json_encode(['error' => 'Слишком много попыток']); exit; }
-    
-    $stmt = $db->prepare("SELECT * FROM admins WHERE username = ? LIMIT 1");
-    $stmt->execute([$username]);
-    $admin = $stmt->fetch();
-    
-    if (!$admin || !password_verify($password, $admin['password_hash'])) {
-        echo json_encode(['error' => 'Неверные данные']);
-        exit;
-    }
-    
-    if (session_status() === PHP_SESSION_NONE) {
-        session_set_cookie_params(['lifetime' => 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict']);
-        session_start();
-    }
-    session_regenerate_id(true);
-    $_SESSION['lic_admin_id'] = $admin['id'];
-    $_SESSION['lic_admin_user'] = $admin['username'];
-    
-    echo json_encode(['success' => true]);
     exit;
 }
 

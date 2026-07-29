@@ -41,7 +41,7 @@ return false;}
 
 <?php else: ?>
 <!-- Админка -->
-<div class="bg-gray-900 text-white"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">🔑</span><h1 class="font-bold">License Server</h1></div><span class="text-gray-400 text-sm"><?= e($_SESSION['lic_admin_user'] ?? '') ?></span></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">🔑</span><h1 class="font-bold">License Server</h1></div><div class="flex items-center gap-4"><span class="text-gray-400 text-sm"><?= e($_SESSION['lic_admin_user'] ?? '') ?></span><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти</button></div></div></div>
 
 <div class="max-w-6xl mx-auto px-4 py-8">
 <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
@@ -159,6 +159,7 @@ modal(h);
 });
 }
 
+function logout(){fetch('/admin/api?action=logout',{method:'POST'}).then(()=>location.reload());}
 load();
 </script>
 <?php endif; ?>
