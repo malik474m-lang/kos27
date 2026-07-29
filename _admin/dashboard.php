@@ -533,6 +533,29 @@ h+='<div class="bg-gray-50 rounded-xl p-4 mt-6"><p class="text-sm text-gray-500"
 document.getElementById('p-tags').innerHTML=h;
 initSort('tags-sortable','offer_tags');});}
 
+function tgSuggestIcon(title, category){
+  var t=(title||'').toLowerCase();
+  var rules=[
+    ['кэшбэк','💸'],['кешбек','💸'],['бонус','🎁'],['льгот','🗓️'],['без процент','🆓'],['0%','🆓'],
+    ['без отказ','✅'],['студент','🎓'],['пенсион','👴'],['на карту','💳'],['сроч','⚡'],
+    ['плохой кредитной истории','📊'],['рефинанс','♻️'],['наличными','💵'],['дебет','🪪'],
+    ['кредитн','💳'],['ипотек','🏠'],['вклад','🏦'],['страхов','🛡️'],['авто','🚗']
+  ];
+  for(var i=0;i<rules.length;i++){ if(t.includes(rules[i][0])) return rules[i][1]; }
+  if(category==='microloans') return '💵';
+  if(category==='credits') return '🏦';
+  if(category==='credit_cards') return '💳';
+  if(category==='debit_cards') return '🪪';
+  return '🏷️';
+}
+function tgAutoIcon(){
+  var title=document.getElementById('tg-title')?.value||'';
+  var cat=document.getElementById('tg-cat')?.value||'microloans';
+  var icon=tgSuggestIcon(title, cat);
+  var el=document.getElementById('tg-icon');
+  if(el) el.value=icon;
+}
+
 function tgFeatureTemplatesByCategory(category){
   if(category==='microloans') return [
     {icon:'⚡',title:'Быстрое решение',text:'Рассмотрение заявки за несколько минут'},
@@ -626,9 +649,10 @@ var f=t||{title:'',slug:'',h1:'',description:'',meta_title:'',meta_description:'
 var id=t?t.id:0;
 var catOpts='';for(var k in TG_CAT)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+TG_CAT[k]+'</option>';
 var feat=f.features||'[]';if(typeof feat==='string')try{feat=JSON.parse(feat);}catch(e){feat=[];}
+if(!f.icon)f.icon=tgSuggestIcon(f.title||'', f.category||'microloans');
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать тег':'Новый тег')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return tS(event,'+id+')"><div class="grid grid-cols-2 gap-3">'+
-'<div><label class="block text-xs font-medium mb-1">Иконка (эмодзи)</label><input id="tg-icon" class="input-f" value="'+e(f.icon||'🏷️')+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Иконка (эмодзи)</label><div class="flex gap-2"><input id="tg-icon" class="input-f flex-1" value="'+e(f.icon||'')+'" placeholder="авто"><button type="button" onclick="tgAutoIcon()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ Иконка</button></div></div>'+
 '<div><label class="block text-xs font-medium mb-1">Категория</label><select id="tg-cat" class="sel-f">'+catOpts+'</select></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Название *</label><input id="tg-title" class="input-f" value="'+e(f.title)+'" required></div>'+
 '<div><label class="block text-xs font-medium mb-1">Slug (авто)</label><input id="tg-slug" class="input-f" value="'+e(f.slug)+'" placeholder="авто из названия"></div>'+
@@ -641,6 +665,8 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
+if(!id){setTimeout(function(){var tt=document.getElementById('tg-title'), cc=document.getElementById('tg-cat'); if(tt&&!tt.dataset.iconbound){tt.dataset.iconbound='1'; tt.addEventListener('input', tgAutoIcon);} if(cc&&!cc.dataset.iconbound){cc.dataset.iconbound='1'; cc.addEventListener('change', tgAutoIcon);} tgAutoIcon();},0);}
+
 // Загружаем офферы для тега
 Promise.all([ap('/offers'),ap('/tag-links?tagId='+(id||0))]).then(([allOffers,linked])=>{
 var box=document.getElementById('tg-offers-box');if(!box)return;
