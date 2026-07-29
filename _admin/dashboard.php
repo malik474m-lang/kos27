@@ -82,17 +82,43 @@ const CL={microloans:'Займы',credits:'Кредиты',credit_cards:'Кре�
 const BL={any:'Любой',employed:'Работающий',unemployed:'Безработный',pensioner:'Пенсионер',student:'Студент',self_employed:'Самозанятый'};
 
 /* ============ OFFERS ============ */
-function lO(){ap('/offers').then(list=>{let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><button onclick="oForm()" class="btn-p">+ Добавить</button></div>';
-h+='<div class="bg-gray-50 rounded-lg p-2 mb-4 text-xs text-gray-500">💡 Перетаскивайте строки за ☰ для изменения порядка</div>';
-h+='<div id="offers-sortable" class="space-y-2">';
-list.forEach(o=>{h+='<div class="bg-white rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'"><span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
-if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"><img src="'+lg+'" class="w-full h-full object-contain p-0.5"></div>';}else{h+='<div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">🏦</div>';}
-h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(o.title)+'</p><p class="text-xs text-gray-500">'+(CL[o.category]||o.category)+' • '+o.rate+'% '+((o.rate_unit==='year')?'в год':'в день')+' • '+Number(o.amount_min).toLocaleString()+'—'+Number(o.amount_max).toLocaleString()+' ₽</p></div>';
-h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
-h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
-h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></div>';});
-h+='</div>';document.getElementById('p-offers').innerHTML=h;
-initSort('offers-sortable','offers');});}
+function lO(){ap('/offers').then(list=>{
+let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><button onclick="oForm()" class="btn-p">+ Добавить</button></div>';
+h+='<div class="bg-gray-50 rounded-lg p-2 mb-4 text-xs text-gray-500">💡 Перетаскивайте строки за ☰ внутри каждой категории — порядок сохранится отдельно по разделам</div>';
+
+// Группируем по категориям
+let groups={};
+list.forEach(function(o){
+  let key=o.category||'other';
+  if(!groups[key]) groups[key]=[];
+  groups[key].push(o);
+});
+
+let orderedKeys=[];
+for(let k in CL){ if(groups[k]) orderedKeys.push(k); }
+Object.keys(groups).forEach(function(k){ if(!orderedKeys.includes(k)) orderedKeys.push(k); });
+
+orderedKeys.forEach(function(key){
+  let items=groups[key]||[];
+  h+='<div class="bg-white rounded-2xl border shadow-sm p-4 mb-6">';
+  h+='<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold text-gray-900">'+(CL[key]||key)+' <span class="text-sm font-normal text-gray-400">('+items.length+')</span></h3></div>';
+  h+='<div id="offers-sortable-'+key+'" class="space-y-2">';
+  items.forEach(o=>{
+    h+='<div class="bg-gray-50 rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'">';
+    h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
+    if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border"><img src="'+lg+'" class="w-full h-full object-contain p-0.5" loading="lazy"></div>';}else{h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border">🏦</div>';}
+    h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(o.title)+'</p><p class="text-xs text-gray-500">'+(CL[o.category]||o.category)+' • '+o.rate+'% '+((o.rate_unit==='year')?'в год':'в день')+' • '+Number(o.amount_min).toLocaleString()+'—'+Number(o.amount_max).toLocaleString()+' ₽</p></div>';
+    h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
+    h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
+    h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+});
+
+document.getElementById('p-offers').innerHTML=h;
+orderedKeys.forEach(function(key){ initSort('offers-sortable-'+key,'offers'); });
+});}
 
 function oForm(o){let f=o||{title:'',category:'microloans',amount_min:1000,amount_max:100000,term_min_days:1,term_max_days:365,psk:'0',rate:'0',rate_unit:'day',free_term_days:0,logo_url:'',affiliate_url:'',borrower_category:'any',description:'',seo_keywords:'',regions:'',is_active:true,sort_order:0};let id=o?o.id:0;
 let catOpts='',borOpts='';for(let k in CL)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+CL[k]+'</option>';for(let k in BL)borOpts+='<option value="'+k+'"'+(f.borrower_category===k?' selected':'')+'>'+BL[k]+'</option>';
