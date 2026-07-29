@@ -135,6 +135,7 @@ function generateCitySeoTemplate(array $city, string $category = 'microloans'): 
     $tpl = $catTemplates[$idx];
 
     return [
+        'meta_title' => ($tpl['h1'] . ' | ' . SITE_NAME),
         'seo_h1' => $tpl['h1'],
         'seo_text' => $tpl['text'],
         'meta_description' => "Оформите {$catLabel} в {$prep} онлайн. Быстрое одобрение, выгодные условия. Сравните предложения на Космозайм.",
@@ -183,6 +184,7 @@ function generateCitySeoGPT(array $city, string $category = 'microloans'): ?arra
     $catLabelUp = mb_strtoupper(mb_substr($catLabel, 0, 1)) . mb_substr($catLabel, 1);
 
     return [
+        'meta_title' => "{$catLabelUp} в {$city['prep']} | " . SITE_NAME,
         'seo_h1' => "{$catLabelUp} в {$city['prep']} — онлайн оформление",
         'seo_text' => $text,
         'meta_description' => "{$catLabelUp} в {$city['prep']}. Сравните условия, оформите онлайн. Быстрое одобрение.",
@@ -192,8 +194,8 @@ function generateCitySeoGPT(array $city, string $category = 'microloans'): ?arra
 
 function saveCitySeo(string $citySlug, string $category, array $seoData): void {
     $db = getDB();
-    $db->prepare("INSERT INTO city_seo_texts (city_slug, category, seo_h1, seo_text, meta_description, generated_by) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE seo_h1=VALUES(seo_h1), seo_text=VALUES(seo_text), meta_description=VALUES(meta_description), generated_by=VALUES(generated_by)")
-       ->execute([$citySlug, $category, $seoData['seo_h1'], $seoData['seo_text'], $seoData['meta_description'], $seoData['generated_by']]);
+    $db->prepare("INSERT INTO city_seo_texts (city_slug, category, meta_title, seo_h1, seo_text, meta_description, generated_by) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE meta_title=VALUES(meta_title), seo_h1=VALUES(seo_h1), seo_text=VALUES(seo_text), meta_description=VALUES(meta_description), generated_by=VALUES(generated_by)")
+       ->execute([$citySlug, $category, $seoData['meta_title'] ?? null, $seoData['seo_h1'], $seoData['seo_text'], $seoData['meta_description'], $seoData['generated_by']]);
 }
 
 function getOrGenerateCitySeo(array $city, string $category = 'microloans'): array {

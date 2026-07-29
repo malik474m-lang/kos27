@@ -37,7 +37,7 @@ if (!empty($type['features'])) {
     $features = json_decode($type['features'], true) ?: [];
 }
 
-$pageTitle = ($type['h1'] ?: $type['title']) . ' — ' . SITE_NAME;
+$pageTitle = ($type['meta_title'] ?: ($type['h1'] ?: $type['title'])) . ' — ' . SITE_NAME;
 $metaDescription = $type['meta_description'] ?: $type['description'];
 
 // URL категории
