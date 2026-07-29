@@ -144,7 +144,7 @@ orderedKeys.forEach(function(key){
   h+='</div>';
   h+='<div id="offers-group-'+key+'" class="space-y-2'+(collapsed?' hidden':'')+'">';
   h+='<div id="offers-sortable-'+key+'" class="space-y-2">';
-  items.forEach(o=>{
+  items.forEach(function(o){
     h+='<div class="bg-gray-50 rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'">';
     h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
     if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border"><img src="'+lg+'" class="w-full h-full object-contain p-0.5" loading="lazy"></div>';}else{h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border">🏦</div>';}
@@ -166,7 +166,7 @@ if(pendingHealthOfferId){
   if(found){
     var toOpen=found;
     pendingHealthOfferId=null;
-    setTimeout(function(){ oForm(toOpen); }, 50);
+    setTimeout(function(){ oForm(toOpen); }, 80);
   }
 }
 });}
