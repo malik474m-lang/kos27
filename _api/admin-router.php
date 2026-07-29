@@ -18,6 +18,7 @@ if ($adminUri === '/offers' && $method === 'GET') { require __DIR__ . '/admin/of
 if ($adminUri === '/offers' && $method === 'POST') { require __DIR__ . '/admin/offers-create.php'; exit; }
 if (preg_match('#^/offers/(\d+)$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
+    if ($method === 'GET') { require __DIR__ . '/admin/offer-item.php'; exit; }
     if ($method === 'PUT') { require __DIR__ . '/admin/offers-update.php'; exit; }
     if ($method === 'DELETE') { require __DIR__ . '/admin/offers-delete.php'; exit; }
 }
