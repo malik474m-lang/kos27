@@ -42,6 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('ab')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="ab">🧪 A/B тесты</button>
 <button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
 <button onclick="sw('scheduler')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="scheduler">⏰ Планировщик</button>
+<button onclick="sw('batch')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="batch">🤖 Пакетная</button>
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
@@ -65,6 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-ab" class="tp hidden"></div>
 <div id="p-subs" class="tp hidden"></div>
 <div id="p-scheduler" class="tp hidden"></div>
+<div id="p-batch" class="tp hidden"></div>
 <div id="p-backup" class="tp hidden"></div>
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
@@ -75,8 +77,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -1460,6 +1462,240 @@ lSch();
 
 
 /* ============ SETTINGS ============ */
+
+/* ============ BATCH GENERATION ============ */
+var batchData={offers:[],articles:[],categories:[],tags:[]};
+var batchSelected={offers:[],articles:[],categories:[],tags:[]};
+
+function lBatch(){
+Promise.all([
+ap('/offers'),
+ap('/articles'),
+ap('/categories'),
+ap('/tags')
+]).then(([offers,articles,categories,tags])=>{
+batchData={offers:offers||[],articles:articles||[],categories:categories||[],tags:tags||[]};
+batchSelected={offers:[],articles:[],categories:[],tags:[]};
+
+var h='<h2 class="text-xl font-bold mb-6">🤖 Пакетная автогенерация текстов</h2>';
+
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">';
+h+='<p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Выберите сущности и поля для генерации. Система использует YandexGPT для создания уникальных текстов. Генерация происходит последовательно с паузами, чтобы не превысить лимиты API.</p>';
+h+='</div>';
+
+// Выбор типа сущности
+h+='<div class="bg-white rounded-xl border p-6 mb-6">';
+h+='<h3 class="font-bold mb-4">1. Выберите тип сущности</h3>';
+h+='<div class="flex flex-wrap gap-3">';
+h+='<button onclick="batchShowEntity(\'offers\')" id="batch-btn-offers" class="px-4 py-2 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 font-medium">📋 Предложения ('+offers.length+')</button>';
+h+='<button onclick="batchShowEntity(\'articles\')" id="batch-btn-articles" class="px-4 py-2 rounded-lg border-2 border-gray-200 hover:border-blue-300">📰 Статьи ('+articles.length+')</button>';
+h+='<button onclick="batchShowEntity(\'categories\')" id="batch-btn-categories" class="px-4 py-2 rounded-lg border-2 border-gray-200 hover:border-blue-300">📂 Категории ('+categories.length+')</button>';
+h+='<button onclick="batchShowEntity(\'tags\')" id="batch-btn-tags" class="px-4 py-2 rounded-lg border-2 border-gray-200 hover:border-blue-300">🏷️ Теги ('+tags.length+')</button>';
+h+='</div>';
+h+='</div>';
+
+// Выбор полей
+h+='<div class="bg-white rounded-xl border p-6 mb-6">';
+h+='<h3 class="font-bold mb-4">2. Выберите поля для генерации</h3>';
+h+='<div id="batch-fields" class="flex flex-wrap gap-3">';
+h+=batchFieldsHtml('offers');
+h+='</div>';
+h+='<div class="mt-4"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="batch-overwrite" class="w-4 h-4"> Перезаписывать существующие значения</label></div>';
+h+='</div>';
+
+// Список сущностей
+h+='<div class="bg-white rounded-xl border p-6 mb-6">';
+h+='<div class="flex justify-between items-center mb-4">';
+h+='<h3 class="font-bold">3. Выберите элементы <span id="batch-count" class="text-gray-400 font-normal">(0 выбрано)</span></h3>';
+h+='<div class="flex gap-2">';
+h+='<button onclick="batchSelectAll()" class="text-sm text-blue-600 hover:underline">Выбрать все</button>';
+h+='<button onclick="batchSelectNone()" class="text-sm text-gray-500 hover:underline">Снять выбор</button>';
+h+='<button onclick="batchSelectEmpty()" class="text-sm text-orange-600 hover:underline">Только без мета</button>';
+h+='</div>';
+h+='</div>';
+h+='<div id="batch-list" class="max-h-96 overflow-y-auto space-y-2">';
+h+=batchListHtml('offers');
+h+='</div>';
+h+='</div>';
+
+// Кнопка запуска
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<div class="flex items-center justify-between">';
+h+='<div>';
+h+='<p class="text-sm text-gray-500">Выбрано элементов: <strong id="batch-selected-count">0</strong></p>';
+h+='<p class="text-xs text-gray-400 mt-1">Примерное время: <span id="batch-time">0 сек</span></p>';
+h+='</div>';
+h+='<button onclick="batchRun()" id="batch-run-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50" disabled>🚀 Запустить генерацию</button>';
+h+='</div>';
+h+='<div id="batch-progress" class="hidden mt-4">';
+h+='<div class="w-full bg-gray-200 rounded-full h-3"><div id="batch-progress-bar" class="bg-purple-600 h-3 rounded-full transition-all" style="width:0%"></div></div>';
+h+='<p id="batch-progress-text" class="text-sm text-gray-600 mt-2">Подготовка...</p>';
+h+='</div>';
+h+='<div id="batch-results" class="hidden mt-4"></div>';
+h+='</div>';
+
+document.getElementById('p-batch').innerHTML=h;
+batchShowEntity('offers');
+});}
+
+function batchFieldsHtml(entity){
+var fields={
+offers:[{id:'description',label:'📝 Описание'},{id:'seo_keywords',label:'🔑 SEO ключевые'}],
+articles:[{id:'meta_title',label:'🏷️ Meta Title'},{id:'meta_description',label:'📄 Meta Description'}],
+categories:[{id:'meta_title',label:'🏷️ Meta Title'},{id:'meta_description',label:'📄 Meta Description'},{id:'h1',label:'📌 H1'},{id:'description',label:'📝 Описание'},{id:'seo_text',label:'📰 SEO текст'}],
+tags:[{id:'meta_title',label:'🏷️ Meta Title'},{id:'meta_description',label:'📄 Meta Description'},{id:'description',label:'📝 Описание'}]
+};
+var h='';
+(fields[entity]||[]).forEach(function(f,i){
+h+='<label class="flex items-center gap-2 px-3 py-2 rounded-lg border '+(i<2?'bg-blue-50 border-blue-200':'bg-white border-gray-200')+'">';
+h+='<input type="checkbox" class="batch-field w-4 h-4" value="'+f.id+'"'+(i<2?' checked':'')+'> '+f.label;
+h+='</label>';
+});
+return h;
+}
+
+function batchListHtml(entity){
+var list=batchData[entity]||[];
+var h='';
+if(!list.length){
+h='<p class="text-gray-400 text-sm">Нет элементов</p>';
+return h;
+}
+list.forEach(function(item){
+var name=item.title||item.name||'ID '+item.id;
+var hasMeta=!!(item.meta_title||item.meta_description);
+var badge=hasMeta?'<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">мета ✓</span>':'<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">без мета</span>';
+h+='<label class="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">';
+h+='<input type="checkbox" class="batch-item w-4 h-4" data-id="'+item.id+'" data-entity="'+entity+'">';
+h+='<span class="flex-1">'+e(name)+'</span>';
+h+=badge;
+h+='</label>';
+});
+return h;
+}
+
+function batchShowEntity(entity){
+// Update buttons
+['offers','articles','categories','tags'].forEach(function(ent){
+var btn=document.getElementById('batch-btn-'+ent);
+if(btn){
+btn.className=ent===entity?'px-4 py-2 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 font-medium':'px-4 py-2 rounded-lg border-2 border-gray-200 hover:border-blue-300';
+}
+});
+// Update fields
+document.getElementById('batch-fields').innerHTML=batchFieldsHtml(entity);
+// Update list
+batchSelected[entity]=[];
+document.getElementById('batch-list').innerHTML=batchListHtml(entity);
+batchUpdateCount(entity);
+// Store current entity
+document.getElementById('batch-run-btn').dataset.entity=entity;
+}
+
+function batchSelectAll(){
+var entity=document.getElementById('batch-run-btn').dataset.entity;
+batchSelected[entity]=batchData[entity].map(function(i){return i.id;});
+document.querySelectorAll('.batch-item').forEach(function(cb){cb.checked=true;});
+batchUpdateCount(entity);
+}
+
+function batchSelectNone(){
+var entity=document.getElementById('batch-run-btn').dataset.entity;
+batchSelected[entity]=[];
+document.querySelectorAll('.batch-item').forEach(function(cb){cb.checked=false;});
+batchUpdateCount(entity);
+}
+
+function batchSelectEmpty(){
+var entity=document.getElementById('batch-run-btn').dataset.entity;
+batchSelected[entity]=[];
+document.querySelectorAll('.batch-item').forEach(function(cb){
+var id=parseInt(cb.dataset.id);
+var item=batchData[entity].find(function(i){return i.id===id;});
+var hasMeta=item&&(item.meta_title||item.meta_description);
+cb.checked=!hasMeta;
+if(!hasMeta)batchSelected[entity].push(id);
+});
+batchUpdateCount(entity);
+}
+
+function batchUpdateCount(entity){
+var count=0;
+document.querySelectorAll('.batch-item:checked').forEach(function(){count++;});
+batchSelected[entity]=[];
+document.querySelectorAll('.batch-item:checked').forEach(function(cb){
+batchSelected[entity].push(parseInt(cb.dataset.id));
+});
+document.getElementById('batch-count').textContent='('+count+' выбрано)';
+document.getElementById('batch-selected-count').textContent=count;
+document.getElementById('batch-time').textContent=count<=0?'0 сек':(count*2)+'-'+(count*4)+' сек';
+document.getElementById('batch-run-btn').disabled=count<=0;
+}
+
+// Event delegation for checkboxes
+document.addEventListener('change',function(e){
+if(e.target.classList.contains('batch-item')){
+var entity=document.getElementById('batch-run-btn').dataset.entity;
+batchUpdateCount(entity);
+}
+});
+
+function batchRun(){
+var entity=document.getElementById('batch-run-btn').dataset.entity;
+var ids=batchSelected[entity]||[];
+if(!ids.length){alert('Выберите хотя бы один элемент');return;}
+
+var fields=[];
+document.querySelectorAll('.batch-field:checked').forEach(function(cb){fields.push(cb.value);});
+if(!fields.length){alert('Выберите хотя бы одно поле для генерации');return;}
+
+var overwrite=document.getElementById('batch-overwrite').checked;
+
+// UI
+var btn=document.getElementById('batch-run-btn');
+btn.disabled=true;
+btn.textContent='⏳ Генерация...';
+document.getElementById('batch-progress').classList.remove('hidden');
+document.getElementById('batch-results').classList.add('hidden');
+
+ap('/batch-generate',{
+method:'POST',
+body:JSON.stringify({entity:entity,ids:ids,fields:fields,overwrite:overwrite})
+}).then(function(d){
+btn.disabled=false;
+btn.textContent='🚀 Запустить генерацию';
+document.getElementById('batch-progress').classList.add('hidden');
+
+var res=document.getElementById('batch-results');
+res.classList.remove('hidden');
+
+var h='<div class="p-4 rounded-lg '+(d.errors?'bg-yellow-50 border border-yellow-200':'bg-green-50 border border-green-200')+'">';
+h+='<p class="font-semibold '+(d.errors?'text-yellow-700':'text-green-700')+'">✅ Завершено: '+d.success+' успешно, '+d.skipped+' пропущено'+(d.errors?', '+d.errors+' ошибок':'')+'</p>';
+if(d.details&&d.details.length){
+h+='<div class="mt-3 max-h-48 overflow-y-auto text-sm">';
+d.details.forEach(function(det){
+var icon=det.status==='ok'?'✅':det.status==='skipped'?'⏭️':'❌';
+h+='<div class="flex items-center gap-2 py-1">';
+h+='<span>'+icon+'</span>';
+h+='<span class="flex-1">'+e(det.name)+'</span>';
+if(det.fields)h+='<span class="text-xs text-gray-400">'+det.fields.join(', ')+'</span>';
+if(det.reason)h+='<span class="text-xs text-gray-400">'+e(det.reason)+'</span>';
+h+='</div>';
+});
+h+='</div>';
+}
+h+='</div>';
+res.innerHTML=h;
+
+// Обновляем данные
+lBatch();
+}).catch(function(err){
+btn.disabled=false;
+btn.textContent='🚀 Запустить генерацию';
+document.getElementById('batch-progress').classList.add('hidden');
+alert('Ошибка: '+err.message);
+});
+}
 var siteSettings={};
 function lSet(){ap('/settings').then(d=>{
 siteSettings=d.settings||{};
