@@ -43,6 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('security')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="security">🔒 Безопасность</button>
+<button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 </div></div></div>
 <div class="bg-gray-50 border-b"><div class="max-w-7xl mx-auto px-4 py-3 text-sm text-gray-500" id="admin-breadcrumb">Админка</div></div>
 <div class="max-w-7xl mx-auto px-4 py-8">
@@ -63,14 +64,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
+<div id="p-health" class="tp hidden"></div>
 </div>
 <div id="M"></div>
 <script>
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -1267,6 +1269,45 @@ function secAddIpForm(){var ip=document.getElementById('sec-ip').value.trim();if
 function secRemoveIp(id){if(confirm('Удалить IP из белого списка?'))secAp('remove-ip',{method:'POST',body:JSON.stringify({id:id})}).then(()=>lSec());}
 function secUnblock(ip){secAp('unblock-ip',{method:'POST',body:JSON.stringify({ip:ip})}).then(()=>lSec());}
 function secClearLog(){if(confirm('Удалить записи старше 30 дней?'))secAp('clear-log',{method:'POST'}).then(()=>lSec());}
+
+/* ============ HEALTH CHECK ============ */
+function lHealth(){
+var el=document.getElementById('p-health');
+el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Проверка...</p></div>';
+ap('/health-check').then(d=>{
+var s=d.score||0;
+var barColor=s>=80?'bg-green-500':s>=50?'bg-yellow-500':'bg-red-500';
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏥 Здоровье сайта</h2><div class="flex gap-2"><button onclick="lHealth()" class="btn-p text-sm">🔄 Проверить</button><span class="text-xs text-gray-400">'+e(d.timestamp||'')+'</span></div></div>';
+
+h+='<div class="bg-white rounded-2xl border p-6 mb-6 text-center"><p class="text-5xl font-bold '+(s>=80?'text-green-600':s>=50?'text-yellow-600':'text-red-600')+'">'+s+'<span class="text-2xl text-gray-400">/100</span></p><div class="w-full bg-gray-200 rounded-full h-4 mt-4 max-w-md mx-auto"><div class="'+barColor+' rounded-full h-4 transition-all" style="width:'+s+'%"></div></div></div>';
+
+var errors=(d.checks||[]).filter(c=>c.level==='error');
+var warnings=(d.checks||[]).filter(c=>c.level==='warning');
+var oks=(d.checks||[]).filter(c=>c.level==='ok');
+var infos=(d.checks||[]).filter(c=>c.level==='info');
+
+if(errors.length){
+h+='<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4"><h3 class="font-bold text-red-800 mb-3">❌ Критичные ('+errors.length+')</h3><div class="space-y-2">';
+errors.forEach(c=>{h+='<div class="text-sm text-red-700">• '+e(c.msg);if(c.items&&c.items.length)h+='<span class="text-red-400 text-xs ml-2">('+c.items.slice(0,5).map(i=>e(i)).join(', ')+')</span>';h+='</div>';});
+h+='</div></div>';}
+
+if(warnings.length){
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4"><h3 class="font-bold text-yellow-800 mb-3">⚠️ Предупреждения ('+warnings.length+')</h3><div class="space-y-2">';
+warnings.forEach(c=>{h+='<div class="text-sm text-yellow-700">• '+e(c.msg);if(c.items&&c.items.length)h+='<span class="text-yellow-500 text-xs ml-2">('+c.items.slice(0,5).map(i=>e(i)).join(', ')+')</span>';h+='</div>';});
+h+='</div></div>';}
+
+if(oks.length){
+h+='<div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4"><h3 class="font-bold text-green-800 mb-3">✅ Всё хорошо ('+oks.length+')</h3><div class="space-y-2">';
+oks.forEach(c=>{h+='<div class="text-sm text-green-700">• '+e(c.msg)+'</div>';});
+h+='</div></div>';}
+
+if(infos.length){
+h+='<div class="bg-gray-50 border border-gray-200 rounded-xl p-4"><h3 class="font-bold text-gray-700 mb-3">ℹ️ Информация</h3><div class="space-y-2">';
+infos.forEach(c=>{h+='<div class="text-sm text-gray-600">• '+e(c.msg)+'</div>';});
+h+='</div>';}
+
+el.innerHTML=h;});}
+
 
 </script>
 </body>
