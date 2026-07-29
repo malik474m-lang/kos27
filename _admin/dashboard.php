@@ -120,10 +120,44 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 // Инициализируем видимость стандартных полей
 ofInitDisplayFields(f);
 
-// Инициализируем дополнительные поля
+// Инициализируем дополнительные поля (из шаблона категории или существующих)
 var ef=[];try{ef=JSON.parse(f.extra_fields||'[]');}catch(x){}
-if(!ef.length)ef=[{label:'Льготный период',value:'',visible:true},{label:'Кэшбэк/мес.',value:'',visible:false},{label:'Годовое обслуживание',value:'',visible:false},{label:'Баллы/мес.',value:'',visible:false},{label:'Бонусы',value:'',visible:false},{label:'Выпуск карты',value:'',visible:false},{label:'Обслуживание',value:'',visible:false}];
-ofRenderExtraFields(ef);
+if(!ef.length){
+  // Загружаем шаблон из категории
+  var catSlug=f.category||document.getElementById('of-c')?.value||'microloans';
+  ap('/categories').then(function(cats){
+    var cat=cats.find(function(c){return c.slug===catSlug;});
+    var tpl=[];
+    if(cat&&cat.field_templates){try{tpl=JSON.parse(cat.field_templates);}catch(x){}}
+    if(!tpl.length)tpl=[{label:'Льготный период',visible:true}];
+    tpl=tpl.map(function(t){return{label:t.label||'',value:'',visible:!!t.visible};});
+    ofRenderExtraFields(tpl);
+  }).catch(function(){
+    ofRenderExtraFields([{label:'Льготный период',value:'',visible:true}]);
+  });
+} else {
+  ofRenderExtraFields(ef);
+}
+
+// При смене категории — предлагать подставить шаблон
+var catSelect=document.getElementById('of-c');
+if(catSelect&&!catSelect.dataset.boundTpl){
+  catSelect.dataset.boundTpl='1';
+  catSelect.addEventListener('change',function(){
+    if(!id){
+      ap('/categories').then(function(cats){
+        var cat=cats.find(function(c){return c.slug===catSelect.value;});
+        if(cat&&cat.field_templates){
+          var tpl=[];try{tpl=JSON.parse(cat.field_templates);}catch(x){}
+          if(tpl.length&&confirm('Подставить шаблон полей для категории "'+(cat.name||catSelect.value)+'"?')){
+            tpl=tpl.map(function(t){return{label:t.label||'',value:'',visible:!!t.visible};});
+            ofRenderExtraFields(tpl);
+          }
+        }
+      });
+    }
+  });
+}
 
 // Загружаем теги для оффера
 Promise.all([ap('/tags'),ap('/tag-links?offerId='+(id||0))]).then(([allTags,linked])=>{
@@ -341,7 +375,7 @@ ap('/categories/reorder',{method:'POST',body:JSON.stringify({items:items})}).the
 }
 
 function catForm(c){
-var f=c||{name:'',slug:'',icon:'',h1:'',description:'',meta_title:'',meta_description:'',seo_text:'',parent_id:null,show_in_header:true,show_in_footer:true,is_active:true,sort_order:0};
+var f=c||{name:'',slug:'',icon:'',h1:'',description:'',meta_title:'',meta_description:'',seo_text:'',parent_id:null,show_in_header:true,show_in_footer:true,field_templates:'',is_active:true,sort_order:0};
 var id=c?c.id:0;
 // Загружаем список родительских категорий
 ap('/categories').then(cats=>{
@@ -359,14 +393,14 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><input id="cat-mt" class="input-f" value="'+e(f.meta_title||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="cat-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO-текст (HTML)</label><textarea id="cat-seo" class="input-f text-xs" rows="4">'+e(f.seo_text||'')+'</textarea></div>'+
-'<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-header" '+(f.show_in_header?'checked':'')+' class="w-4 h-4"><span class="text-sm">В шапке</span></label></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Шаблон доп. полей для офферов <span class="text-gray-400">(JSON)</span></label><textarea id="cat-field-tpl" class="input-f font-mono text-xs" rows="3" placeholder=\'[{"label":"Кэшбэк","visible":true}]\'>'+e(f.field_templates||'')+'</textarea><p class="text-xs text-gray-400 mt-1">При создании оффера в этой категории поля подставятся автоматически</p></div>'+'<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-header" '+(f.show_in_header?'checked':'')+' class="w-4 h-4"><span class="text-sm">В шапке</span></label></div>'+
 '<div><label class="flex items-center gap-2"><input type="checkbox" id="cat-footer" '+(f.show_in_footer?'checked':'')+' class="w-4 h-4"><span class="text-sm">В футере</span></label></div>'+'<div><label class="block text-xs font-medium mb-1">Раздел футера</label><select id="cat-footer-section" class="sel-f"><option value="products"'+((f.footer_section||'products')==='products'?' selected':'')+'>Продукты</option><option value="tools"'+((f.footer_section||'products')==='tools'?' selected':'')+'>Инструменты</option></select></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="cat-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активна</span></label></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
 });}
 
 function catSave(ev,id){ev.preventDefault();
-var d={id:id,name:document.getElementById('cat-name').value,slug:document.getElementById('cat-slug').value,icon:document.getElementById('cat-icon').value,h1:document.getElementById('cat-h1').value,description:document.getElementById('cat-desc').value,metaTitle:document.getElementById('cat-mt').value,metaDescription:document.getElementById('cat-md').value,seoText:document.getElementById('cat-seo').value,parentId:document.getElementById('cat-parent').value||null,showInHeader:document.getElementById('cat-header').checked,showInFooter:document.getElementById('cat-footer').checked,footerSection:document.getElementById('cat-footer-section').value,isActive:document.getElementById('cat-active').checked};
+var d={id:id,name:document.getElementById('cat-name').value,slug:document.getElementById('cat-slug').value,icon:document.getElementById('cat-icon').value,h1:document.getElementById('cat-h1').value,description:document.getElementById('cat-desc').value,metaTitle:document.getElementById('cat-mt').value,metaDescription:document.getElementById('cat-md').value,seoText:document.getElementById('cat-seo').value,parentId:document.getElementById('cat-parent').value||null,showInHeader:document.getElementById('cat-header').checked,showInFooter:document.getElementById('cat-footer').checked,fieldTemplates:document.getElementById('cat-field-tpl').value,footerSection:document.getElementById('cat-footer-section').value,isActive:document.getElementById('cat-active').checked};
 ap(id?'/categories/'+id:'/categories',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{if(r.error){alert(r.error);return;}cm();lCats();});return false;}
 
 function catDel(id){if(confirm('Удалить категорию?'))ap('/categories/'+id,{method:'DELETE'}).then(()=>lCats());}
