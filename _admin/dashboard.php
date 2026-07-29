@@ -161,6 +161,14 @@ orderedKeys.forEach(function(key){
 
 document.getElementById('p-offers').innerHTML=h;
 orderedKeys.forEach(function(key){ if(document.getElementById('offers-sortable-'+key)) initSort('offers-sortable-'+key,'offers'); });
+if(pendingHealthOfferId){
+  var found=(list||[]).find(function(x){ return Number(x.id)===Number(pendingHealthOfferId); });
+  if(found){
+    var toOpen=found;
+    pendingHealthOfferId=null;
+    setTimeout(function(){ oForm(toOpen); }, 50);
+  }
+}
 });}
 
 function applyOffersFilters(){
@@ -1599,17 +1607,13 @@ function secRemoveIp(id){if(confirm('Удалить IP из белого спи�
 function secUnblock(ip){secAp('unblock-ip',{method:'POST',body:JSON.stringify({ip:ip})}).then(()=>lSec());}
 function secClearLog(){if(confirm('Удалить записи старше 30 дней?'))secAp('clear-log',{method:'POST'}).then(()=>lSec());}
 
+var pendingHealthOfferId = null;
 function goHealthFix(tab, itemType, itemId){
-  sw(tab);
-  window.scrollTo({top:0,behavior:'smooth'});
   if(itemType==='offer' && itemId){
-    setTimeout(function(){
-      ap('/offers').then(function(list){
-        var found=(list||[]).find(function(x){ return Number(x.id)===Number(itemId); });
-        if(found) oForm(found);
-      });
-    }, 200);
+    pendingHealthOfferId = Number(itemId);
   }
+  sw(tab);
+  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
 }
 
 /* ============ HEALTH CHECK ============ */
