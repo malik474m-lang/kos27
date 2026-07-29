@@ -1517,6 +1517,16 @@ h+='</div>';
 // Инфо
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"><p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Система автоматически создаёт контент при каждом посещении сайта, если прошло достаточно времени. Отзывы равномерно распределяются в указанном временном окне. Часовой пояс: Москва.</p></div>';
 
+// Лог последних запусков
+if(st.last_fires&&st.last_fires.length){
+h+='<div class="bg-white rounded-xl border p-4 mt-4"><h3 class="font-bold text-sm mb-2">📋 Последние запуски</h3><div class="max-h-40 overflow-y-auto text-xs font-mono text-gray-600 space-y-0.5">';
+st.last_fires.forEach(function(line){
+var color=line.includes('ERR')?'text-red-600':line.includes('OK')?'text-green-700':'text-gray-500';
+h+='<div class="'+color+'">'+e(line)+'</div>';
+});
+h+='</div></div>';
+}
+
 document.getElementById('p-scheduler').innerHTML=h;
 });}
 

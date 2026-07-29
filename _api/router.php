@@ -19,6 +19,7 @@ if (str_starts_with($apiUri, '/user/')) {
     $userFile = __DIR__ . '/user/' . basename($userAction) . '.php';
     if (file_exists($userFile)) { require $userFile; exit; }
 }
+if ($apiUri === '/cron-generate') { require __DIR__ . '/cron-generate.php'; exit; }
 if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 
