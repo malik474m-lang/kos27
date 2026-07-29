@@ -1,28 +1,23 @@
 <?php
-/**
- * Крон-задачи обслуживания сайта
- * 
- * Запуск: php cron/maintenance-cron.php [задача]
- * 
- * Задачи:
- *   all              — все задачи по порядку (по умолчанию)
- *   link-check       — проверка битых партнёрских ссылок
- *   smart-rating     — пересчёт умного рейтинга
- *   clean-logs       — очистка старых логов
- *   clean-cache      — очистка старого кэша
- *   backup           — бэкап базы данных
- *   health-ping      — проверка работоспособности сайта
- * 
- * Crontab (рекомендуется):
- *   0 4 * * *  php ~/domains/kosmozaim.ru/cron/maintenance-cron.php all
- *   или по отдельности:
- *   0 3 * * *  php ~/domains/kosmozaim.ru/cron/maintenance-cron.php link-check
- *   0 5 * * *  php ~/domains/kosmozaim.ru/cron/maintenance-cron.php smart-rating
- *   30 4 * * * php ~/domains/kosmozaim.ru/cron/maintenance-cron.php clean-logs
- *   35 4 * * * php ~/domains/kosmozaim.ru/cron/maintenance-cron.php clean-cache
- *   0 2 * * 0  php ~/domains/kosmozaim.ru/cron/maintenance-cron.php backup
- *   */10 * * * * php ~/domains/kosmozaim.ru/cron/maintenance-cron.php health-ping
- */
+// Крон-задачи обслуживания сайта
+//
+// Запуск: php cron/maintenance-cron.php [задача]
+//
+// Задачи:
+//   all              — все задачи по порядку (по умолчанию)
+//   link-check       — проверка битых партнёрских ссылок
+//   smart-rating     — пересчёт умного рейтинга
+//   clean-logs       — очистка старых логов
+//   clean-cache      — очистка старого кэша
+//   backup           — бэкап базы данных
+//   health-ping      — проверка работоспособности сайта
+//
+// Crontab:
+//   0 4 * * *     maintenance-cron.php all
+//   0 3 * * *     maintenance-cron.php link-check
+//   0 5 * * *     maintenance-cron.php smart-rating
+//   0 2 * * 0     maintenance-cron.php backup
+//   каждые 10мин  maintenance-cron.php health-ping
 
 require_once __DIR__ . '/../config.php';
 
