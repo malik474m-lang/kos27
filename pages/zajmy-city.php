@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../data/cities.php';
 require_once __DIR__ . '/../includes/city-seo.php';
 
@@ -49,7 +50,7 @@ ob_start();
     <?php $citySeo = getOrGenerateCitySeo($city, 'microloans'); ?>
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
         <div class="prose prose-sm text-gray-600 max-w-none">
-            <?= $citySeo['seo_text'] ?>
+            <?= autoLinkText($citySeo['seo_text'], 8) ?>
         </div>
     </div>
 

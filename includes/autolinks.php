@@ -22,6 +22,44 @@ function getOfferLinks(): array {
     return $links;
 }
 
+
+function getCityLinks(): array {
+    require_once __DIR__ . '/../data/cities.php';
+    $cacheFile = __DIR__ . '/../data/city-links-cache.json';
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if ($cached) return $cached;
+    }
+
+    $links = [];
+    foreach ($cities as $city) {
+        $prep = $city['prep'];
+        $name = $city['name'];
+        $slug = $city['slug'];
+
+        // Займы
+        foreach (['займы', 'займ', 'микрозаймы', 'микрозайм'] as $phrase) {
+            $links[] = ['phrase' => $phrase . ' в ' . $prep, 'url' => '/zajmy/' . $slug, 'title' => 'Займы в ' . $prep, 'priority' => 35];
+            $links[] = ['phrase' => $phrase . ' ' . $name, 'url' => '/zajmy/' . $slug, 'title' => 'Займы в ' . $prep, 'priority' => 34];
+        }
+
+        // Кредиты
+        foreach (['кредиты', 'кредит', 'банковские кредиты'] as $phrase) {
+            $links[] = ['phrase' => $phrase . ' в ' . $prep, 'url' => '/kredity/' . $slug, 'title' => 'Кредиты в ' . $prep, 'priority' => 35];
+            $links[] = ['phrase' => $phrase . ' ' . $name, 'url' => '/kredity/' . $slug, 'title' => 'Кредиты в ' . $prep, 'priority' => 34];
+        }
+
+        // Карты
+        foreach (['карты', 'банковские карты', 'кредитные карты', 'дебетовые карты'] as $phrase) {
+            $links[] = ['phrase' => $phrase . ' в ' . $prep, 'url' => '/karty/' . $slug, 'title' => 'Карты в ' . $prep, 'priority' => 35];
+            $links[] = ['phrase' => $phrase . ' ' . $name, 'url' => '/karty/' . $slug, 'title' => 'Карты в ' . $prep, 'priority' => 34];
+        }
+    }
+
+    @file_put_contents($cacheFile, json_encode($links, JSON_UNESCAPED_UNICODE));
+    return $links;
+}
+
 function getTagLinks(): array {
     $cacheFile = __DIR__ . '/../data/tag-links-cache.json';
     if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
@@ -115,7 +153,7 @@ function buildAutoLinkMap(): array {
         ['phrase' => 'сайте Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
         ['phrase' => 'Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
     ];
-    $linkMap = array_merge(getTagLinks(), $staticLinks, getOfferLinks());
+    $linkMap = array_merge(getTagLinks(), getCityLinks(), $staticLinks, getOfferLinks());
     usort($linkMap, function($a, $b) {
         $ap = (int)($a['priority'] ?? 0);
         $bp = (int)($b['priority'] ?? 0);

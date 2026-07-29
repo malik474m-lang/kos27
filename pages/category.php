@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../includes/categories.php';
 
 $cat = findCategoryBySlug($catSlug);
@@ -72,7 +73,7 @@ ob_start();
 
     <?php if ($cat['seo_text']): ?>
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-8">
-        <div class="prose prose-sm text-gray-600 max-w-none"><?= $cat['seo_text'] ?></div>
+        <div class="prose prose-sm text-gray-600 max-w-none"><?= autoLinkText($cat['seo_text'], 8) ?></div>
     </div>
     <?php endif; ?>
 </div>
