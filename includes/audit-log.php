@@ -5,12 +5,6 @@
 
 /**
  * Записать действие в аудит-лог
- * 
- * @param string $action Действие: create, update, delete, send, apply, enable, disable
- * @param string $entity Сущность: offer, tag, category, newsletter, postback, smart_rating, article, review, etc.
- * @param int|null $entityId ID сущности
- * @param string|null $entityName Название сущности (для истории)
- * @param array|null $changes Изменения ['field' => ['old' => ..., 'new' => ...]]
  */
 function auditLog(string $action, string $entity, ?int $entityId = null, ?string $entityName = null, ?array $changes = null): void {
     try {
@@ -23,6 +17,32 @@ function auditLog(string $action, string $entity, ?int $entityId = null, ?string
         
         $ip = getClientIp();
         $userAgent = mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+        
+        // Проверяем/создаём таблицу
+        try {
+            $db->query("SELECT 1 FROM admin_audit_log LIMIT 1");
+        } catch (Exception $e) {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS `admin_audit_log` (
+                  `id` int(11) NOT NULL AUTO_INCREMENT,
+                  `admin_id` int(11) DEFAULT NULL,
+                  `admin_name` varchar(100) DEFAULT NULL,
+                  `action` varchar(50) NOT NULL,
+                  `entity` varchar(50) NOT NULL,
+                  `entity_id` int(11) DEFAULT NULL,
+                  `entity_name` varchar(255) DEFAULT NULL,
+                  `changes` text DEFAULT NULL,
+                  `ip` varchar(45) DEFAULT NULL,
+                  `user_agent` varchar(500) DEFAULT NULL,
+                  `created_at` timestamp NULL DEFAULT current_timestamp(),
+                  PRIMARY KEY (`id`),
+                  KEY `idx_entity` (`entity`, `entity_id`),
+                  KEY `idx_action` (`action`),
+                  KEY `idx_admin` (`admin_id`),
+                  KEY `idx_created` (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+            ");
+        }
         
         $stmt = $db->prepare("
             INSERT INTO admin_audit_log 
@@ -58,7 +78,6 @@ function auditDiff(array $old, array $new, array $fields = []): array {
         $oldVal = $old[$field] ?? null;
         $newVal = $new[$field] ?? null;
         
-        // Приводим к строкам для сравнения
         $oldStr = is_array($oldVal) ? json_encode($oldVal) : (string)$oldVal;
         $newStr = is_array($newVal) ? json_encode($newVal) : (string)$newVal;
         
