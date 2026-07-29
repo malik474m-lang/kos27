@@ -25,6 +25,25 @@ if ($noDesc) { $checks[] = ['level'=>'warning','msg'=>count($noDesc).' оффе�
 if ($noClicks) { $checks[] = ['level'=>'warning','msg'=>count($noClicks).' оффер(ов) без кликов за 30 дней','items'=>array_map(fn($o)=>$o['title'],$noClicks)]; $score -= 2; }
 if (!$noLogo && !$noAffUrl) { $checks[] = ['level'=>'ok','msg'=>'Все офферы имеют логотип и ссылку']; }
 
+// Проверенные битые партнёрские ссылки
+try {
+    $badLinks = $db->query("SELECT o.title, lc.status, lc.http_code FROM offer_link_checks lc JOIN offers o ON o.id = lc.offer_id WHERE o.is_active = 1 AND lc.status IN ('broken','timeout','error')")->fetchAll();
+    if ($badLinks) {
+        $checks[] = [
+            'level' => 'error',
+            'msg' => count($badLinks) . ' проблемных партнёрских ссылок',
+            'items' => array_map(fn($r) => $r['title'] . ' (' . $r['status'] . ', HTTP ' . $r['http_code'] . ')', $badLinks),
+        ];
+        $score -= min(15, count($badLinks) * 3);
+    } else {
+        $checkedCount = (int)$db->query("SELECT COUNT(*) FROM offer_link_checks")->fetchColumn();
+        if ($checkedCount > 0) $checks[] = ['level'=>'ok','msg'=>'Проверенные партнёрские ссылки работают'];
+        else $checks[] = ['level'=>'warning','msg'=>'Партнёрские ссылки ещё не проверялись'];
+    }
+} catch (Exception $e) {
+    $checks[] = ['level'=>'warning','msg'=>'Таблица проверки ссылок не создана — выполните миграцию'];
+}
+
 // === ТЕГИ ===
 $allTags = $db->query("SELECT id, title, content, meta_description, search_queries FROM offer_tags WHERE is_active = 1")->fetchAll();
 $tagsWithOffers = $db->query("SELECT DISTINCT tag_id FROM offer_tag_links")->fetchAll(PDO::FETCH_COLUMN);
