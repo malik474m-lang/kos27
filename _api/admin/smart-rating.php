@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/audit-log.php';
 require_once __DIR__ . '/../../includes/page-cache.php';
 
 $db = getDB();
@@ -130,6 +131,9 @@ if ($method === 'POST') {
     }
 
     pageCacheClear();
+
+    // Аудит
+    auditLog('apply', 'smart_rating', null, 'Период: ' . $period . ' дней', ['offers_count' => count($scored)]);
     echo json_encode(['success' => true, 'message' => 'Умная сортировка применена', 'period' => $period]);
     exit;
 }

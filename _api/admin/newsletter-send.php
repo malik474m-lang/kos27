@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/audit-log.php';
 $db = getDB();
 $nl = $db->prepare("SELECT * FROM newsletters WHERE id = ? LIMIT 1");
 $nl->execute([$itemId]);
@@ -144,4 +145,6 @@ $db->prepare("UPDATE newsletters SET status = ?, sent_count = ?, failed_count = 
 
 $result = ['success' => true, 'sent' => $sent, 'failed' => $failed, 'total' => count($subs)];
 if ($errors) $result['failedEmails'] = array_slice($errors, 0, 10);
+// Аудит
+auditLog('send', 'newsletter', $itemId, $newsletter['subject'] ?? 'Рассылка', ['sent' => $sent, 'failed' => $failed]);
 echo json_encode($result);

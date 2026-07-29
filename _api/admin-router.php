@@ -179,6 +179,8 @@ if ($adminUri === '/generate-article') { require __DIR__ . '/admin/generate-arti
 if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . '/admin/generate-review.php'; exit; }
 // Пакетная генерация
 if ($adminUri === '/batch-generate' && $method === 'POST') { require __DIR__ . '/admin/batch-generate.php'; exit; }
+// История изменений
+if ($adminUri === '/audit-log') { require __DIR__ . '/admin/audit-log.php'; exit; }
 
 http_response_code(404);
 echo json_encode(['error' => 'Not found']);

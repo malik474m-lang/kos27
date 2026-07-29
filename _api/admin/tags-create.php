@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/page-cache.php';
+require_once __DIR__ . '/../../includes/audit-log.php';
+
 function pickTagIcon(string $title, string $category): string {
     $t = mb_strtolower(trim($title));
     $map = [
@@ -39,6 +41,11 @@ if (is_array($features)) $features = json_encode($features, JSON_UNESCAPED_UNICO
 $db->prepare("INSERT INTO offer_tags (slug, title, h1, description, meta_title, meta_description, content, icon, category, features, search_queries, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
    ->execute([$slug, $title, $data['h1'] ?? $title, $data['description'] ?? '', $data['metaTitle'] ?? '', $data['metaDescription'] ?? '', $data['content'] ?? '', $icon, $data['category'] ?? 'microloans', $features, $data['searchQueries'] ?? '', $data['isActive'] ?? true ? 1 : 0, (int)($data['sortOrder'] ?? 0)]);
 
+$newId = $db->lastInsertId();
+
+// Аудит
+auditLog('create', 'tag', (int)$newId, $title);
+
 @unlink(__DIR__ . '/../../data/tag-links-cache.json');
 pageCacheClear();
-echo json_encode(['success' => true, 'id' => $db->lastInsertId()]);
+echo json_encode(['success' => true, 'id' => $newId]);

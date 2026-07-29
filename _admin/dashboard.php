@@ -43,6 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
 <button onclick="sw('scheduler')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="scheduler">⏰ Планировщик</button>
 <button onclick="sw('batch')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="batch">🤖 Пакетная</button>
+<button onclick="sw('history')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="history">📜 История</button>
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
@@ -67,6 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-subs" class="tp hidden"></div>
 <div id="p-scheduler" class="tp hidden"></div>
 <div id="p-batch" class="tp hidden"></div>
+<div id="p-history" class="tp hidden"></div>
 <div id="p-backup" class="tp hidden"></div>
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
@@ -77,8 +79,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -1462,6 +1464,145 @@ lSch();
 
 
 /* ============ SETTINGS ============ */
+
+/* ============ HISTORY (AUDIT LOG) ============ */
+var historyFilters={entity:'',action:'',dateFrom:'',dateTo:''};
+var historyOffset=0;
+var historyLimit=50;
+
+function lHistory(){
+var params=new URLSearchParams();
+if(historyFilters.entity)params.set('entity',historyFilters.entity);
+if(historyFilters.action)params.set('action',historyFilters.action);
+if(historyFilters.dateFrom)params.set('date_from',historyFilters.dateFrom);
+if(historyFilters.dateTo)params.set('date_to',historyFilters.dateTo);
+params.set('limit',historyLimit);
+params.set('offset',historyOffset);
+
+ap('/audit-log?'+params.toString()).then(function(d){
+var h='<h2 class="text-xl font-bold mb-6">📜 История изменений</h2>';
+
+// Фильтры
+h+='<div class="bg-white rounded-xl border p-4 mb-6">';
+h+='<div class="flex flex-wrap gap-4 items-end">';
+h+='<div><label class="block text-xs font-medium mb-1">Сущность</label><select id="hist-entity" class="sel-f" onchange="histFilter()">';
+h+='<option value="">Все</option>';
+h+='<option value="offer"'+(historyFilters.entity==='offer'?' selected':'')+'>📋 Офферы</option>';
+h+='<option value="article"'+(historyFilters.entity==='article'?' selected':'')+'>📰 Статьи</option>';
+h+='<option value="tag"'+(historyFilters.entity==='tag'?' selected':'')+'>🏷️ Теги</option>';
+h+='<option value="category"'+(historyFilters.entity==='category'?' selected':'')+'>📂 Категории</option>';
+h+='<option value="newsletter"'+(historyFilters.entity==='newsletter'?' selected':'')+'>📬 Рассылки</option>';
+h+='<option value="postback_profile"'+(historyFilters.entity==='postback_profile'?' selected':'')+'>🔗 Postback</option>';
+h+='<option value="smart_rating"'+(historyFilters.entity==='smart_rating'?' selected':'')+'>🧠 Умный рейтинг</option>';
+h+='</select></div>';
+
+h+='<div><label class="block text-xs font-medium mb-1">Действие</label><select id="hist-action" class="sel-f" onchange="histFilter()">';
+h+='<option value="">Все</option>';
+h+='<option value="create"'+(historyFilters.action==='create'?' selected':'')+'>➕ Создание</option>';
+h+='<option value="update"'+(historyFilters.action==='update'?' selected':'')+'>✏️ Изменение</option>';
+h+='<option value="delete"'+(historyFilters.action==='delete'?' selected':'')+'>🗑️ Удаление</option>';
+h+='<option value="enable"'+(historyFilters.action==='enable'?' selected':'')+'>✅ Включение</option>';
+h+='<option value="disable"'+(historyFilters.action==='disable'?' selected':'')+'>⛔ Отключение</option>';
+h+='<option value="send"'+(historyFilters.action==='send'?' selected':'')+'>📤 Отправка</option>';
+h+='<option value="apply"'+(historyFilters.action==='apply'?' selected':'')+'>⚡ Применение</option>';
+h+='</select></div>';
+
+h+='<div><label class="block text-xs font-medium mb-1">Дата от</label><input type="date" id="hist-from" class="input-f" value="'+(historyFilters.dateFrom||'')+'" onchange="histFilter()"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Дата до</label><input type="date" id="hist-to" class="input-f" value="'+(historyFilters.dateTo||'')+'" onchange="histFilter()"></div>';
+
+h+='<button onclick="histReset()" class="text-sm text-gray-500 hover:underline">Сбросить</button>';
+h+='</div>';
+h+='</div>';
+
+// Таблица
+h+='<div class="bg-white rounded-xl border overflow-hidden">';
+h+='<table class="w-full text-sm">';
+h+='<thead class="bg-gray-50 text-left"><tr>';
+h+='<th class="px-4 py-3 font-medium">Дата</th>';
+h+='<th class="px-4 py-3 font-medium">Админ</th>';
+h+='<th class="px-4 py-3 font-medium">Действие</th>';
+h+='<th class="px-4 py-3 font-medium">Сущность</th>';
+h+='<th class="px-4 py-3 font-medium">Название</th>';
+h+='<th class="px-4 py-3 font-medium">Изменения</th>';
+h+='</tr></thead>';
+h+='<tbody>';
+
+if(!d.logs||!d.logs.length){
+h+='<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Нет записей</td></tr>';
+}else{
+d.logs.forEach(function(log){
+var date=new Date(log.created_at);
+var dateStr=date.toLocaleDateString('ru-RU')+' '+date.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+var changesStr='—';
+if(log.changes&&typeof log.changes==='object'){
+var parts=[];
+for(var k in log.changes){
+var c=log.changes[k];
+if(c.old!==undefined||c.new!==undefined){
+parts.push(k+': '+JSON.stringify(c.old)+' → '+JSON.stringify(c.new));
+}
+}
+if(parts.length)changesStr='<span class="text-xs text-gray-500">'+e(parts.slice(0,3).join('; '))+(parts.length>3?' ...':'')+'</span>';
+}
+
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-4 py-3 text-gray-500 whitespace-nowrap">'+dateStr+'</td>';
+h+='<td class="px-4 py-3">'+e(log.admin_name||'—')+'</td>';
+h+='<td class="px-4 py-3"><span class="inline-flex items-center gap-1">'+(log.action_icon||'📝')+' '+e(log.action_label||log.action)+'</span></td>';
+h+='<td class="px-4 py-3">'+e(log.entity_label||log.entity)+'</td>';
+h+='<td class="px-4 py-3 max-w-xs truncate" title="'+e(log.entity_name||'')+'">'+e(log.entity_name||'—')+'</td>';
+h+='<td class="px-4 py-3 max-w-xs">'+changesStr+'</td>';
+h+='</tr>';
+});
+}
+
+h+='</tbody></table>';
+h+='</div>';
+
+// Пагинация
+if(d.total>historyLimit){
+h+='<div class="flex justify-between items-center mt-4">';
+h+='<span class="text-sm text-gray-500">Показано '+(historyOffset+1)+'–'+Math.min(historyOffset+d.logs.length,d.total)+' из '+d.total+'</span>';
+h+='<div class="flex gap-2">';
+if(historyOffset>0){
+h+='<button onclick="histPrev()" class="px-3 py-1 border rounded hover:bg-gray-50">← Назад</button>';
+}
+if(historyOffset+historyLimit<d.total){
+h+='<button onclick="histNext()" class="px-3 py-1 border rounded hover:bg-gray-50">Вперёд →</button>';
+}
+h+='</div></div>';
+}
+
+document.getElementById('p-history').innerHTML=h;
+}).catch(function(err){
+document.getElementById('p-history').innerHTML='<div class="text-red-500">Ошибка загрузки: '+err.message+'</div>';
+});
+}
+
+function histFilter(){
+historyFilters.entity=document.getElementById('hist-entity').value;
+historyFilters.action=document.getElementById('hist-action').value;
+historyFilters.dateFrom=document.getElementById('hist-from').value;
+historyFilters.dateTo=document.getElementById('hist-to').value;
+historyOffset=0;
+lHistory();
+}
+
+function histReset(){
+historyFilters={entity:'',action:'',dateFrom:'',dateTo:''};
+historyOffset=0;
+lHistory();
+}
+
+function histPrev(){
+historyOffset=Math.max(0,historyOffset-historyLimit);
+lHistory();
+}
+
+function histNext(){
+historyOffset+=historyLimit;
+lHistory();
+}
 
 /* ============ BATCH GENERATION ============ */
 var batchData={offers:[],articles:[],categories:[],tags:[]};
