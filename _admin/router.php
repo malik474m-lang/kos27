@@ -10,7 +10,7 @@ if ($adminPath === '/login' || $adminPath === '/login/') {
 $adminIp = getClientIp();
 if (!checkIpWhitelist($adminIp)) {
     http_response_code(403);
-    echo '<!DOCTYPE html><html><body style="font-family:sans-serif;text-center;padding:100px"><h1>403</h1><p>Доступ запрещён для вашего IP</p><p style="color:#999">' . htmlspecialchars($adminIp) . '</p></body></html>';
+    echo '<!DOCTYPE html><html><body style="font-family:sans-serif;text-center;padding:100px"><h1>403</h1><p>Доступ запрещён для вашего IP</p><p style="color:#999">' . htmlspecialchars($adminIp, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
     exit;
 }
 

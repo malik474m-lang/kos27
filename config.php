@@ -1,5 +1,10 @@
 <?php
 $GLOBALS['page_start_time'] = microtime(true);
+
+// UTF-8 по умолчанию
+mb_internal_encoding('UTF-8');
+mb_regex_encoding('UTF-8');
+ini_set('default_charset', 'UTF-8');
 // Конфигурация Космозайм
 // Этот файл загружает .env и создаёт подключение к MySQL
 
@@ -76,6 +81,7 @@ function getDB(): PDO {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
+        $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
         return $pdo;
     }
     
@@ -92,6 +98,7 @@ function getDB(): PDO {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
     return $pdo;
 }
 

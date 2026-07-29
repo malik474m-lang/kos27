@@ -195,7 +195,7 @@ function autoLinkText(string $html, int $maxLinks = 10): string {
 
             $pattern = '/(?<![\p{L}\p{N}])(' . preg_quote($phrase, '/') . ')(?![\p{L}\p{N}])/ui';
             if (preg_match($pattern, $parts[$idx])) {
-                $link = '<a href="' . $item['url'] . '" title="' . htmlspecialchars($item['title'], ENT_QUOTES) . '" class="text-primary hover:underline">$1</a>';
+                $link = '<a href="' . $item['url'] . '" title="' . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') . '" class="text-primary hover:underline">$1</a>';
                 $parts[$idx] = preg_replace($pattern, $link, $parts[$idx], 1);
                 $linkedCount++;
                 $usedUrls[] = $item['url'];
