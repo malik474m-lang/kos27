@@ -1617,12 +1617,12 @@ var infos=(d.checks||[]).filter(c=>c.level==='info');
 
 if(errors.length){
 h+='<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4"><h3 class="font-bold text-red-800 mb-3">❌ Критичные ('+errors.length+')</h3><div class="space-y-2">';
-errors.forEach(c=>{h+='<div class="text-sm text-red-700">• '+e(c.msg);if(c.items&&c.items.length)h+='<span class="text-red-400 text-xs ml-2">('+c.items.slice(0,5).map(i=>e(i)).join(', ')+')</span>';h+='</div>';});
+errors.forEach(c=>{h+='<div class="text-sm text-red-700"><div>• '+e(c.msg)+'</div>'; if(c.items&&c.items.length){ h+='<ul class="mt-2 ml-5 list-disc text-xs text-red-500 space-y-1">'+c.items.slice(0,10).map(i=>'<li>'+e(i)+'</li>').join('')+'</ul>'; } h+='</div>';});
 h+='</div></div>';}
 
 if(warnings.length){
 h+='<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4"><h3 class="font-bold text-yellow-800 mb-3">⚠️ Предупреждения ('+warnings.length+')</h3><div class="space-y-2">';
-warnings.forEach(c=>{h+='<div class="text-sm text-yellow-700">• '+e(c.msg);if(c.items&&c.items.length)h+='<span class="text-yellow-500 text-xs ml-2">('+c.items.slice(0,5).map(i=>e(i)).join(', ')+')</span>';h+='</div>';});
+warnings.forEach(c=>{h+='<div class="text-sm text-yellow-700"><div>• '+e(c.msg)+'</div>'; if(c.items&&c.items.length){ h+='<ul class="mt-2 ml-5 list-disc text-xs text-yellow-600 space-y-1">'+c.items.slice(0,10).map(i=>'<li>'+e(i)+'</li>').join('')+'</ul>'; } h+='</div>';});
 h+='</div></div>';}
 
 if(oks.length){

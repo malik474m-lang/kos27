@@ -157,7 +157,7 @@ if ($adminUser && password_verify('admin123', $adminUser['password_hash'])) {
 
 try {
     $ipWhitelist = (int)$db->query("SELECT COUNT(*) FROM admin_ip_whitelist")->fetchColumn();
-    if ($ipWhitelist === 0) { $checks[] = ['level'=>'warning','msg'=>'IP whitelist пустой — доступ в админку со всех IP']; $score -= 2; }
+    if ($ipWhitelist === 0) { $checks[] = ['level'=>'info','msg'=>'IP whitelist пустой (это допустимо при динамическом IP)']; }
     else { $checks[] = ['level'=>'ok','msg'=>"IP whitelist: $ipWhitelist адресов"]; }
 } catch (Exception $e) {}
 
