@@ -44,7 +44,7 @@ $entityConfig = [
         'fields' => ['meta_title', 'meta_description', 'h1', 'description', 'seo_text'],
     ],
     'tags' => [
-        'table' => 'tags',
+        'table' => 'offer_tags',
         'name_field' => 'title',
         'fields' => ['meta_title', 'meta_description', 'description'],
     ],
@@ -180,6 +180,70 @@ function generateDescription(array $item, string $entity, string $siteName): ?st
     return $result ? mb_limit(strip_tags($result), 500) : null;
 }
 
+function generateSeoKeywords(array $item, string $entity, string $siteName): ?string {
+    if ($entity !== 'offers') return null;
+
+    $name = trim((string)($item['title'] ?? $item['name'] ?? ''));
+    $category = (string)($item['category'] ?? 'microloans');
+    $amountMax = (int)($item['amount_max'] ?? 0);
+    $rate = trim((string)($item['rate'] ?? ''));
+    $borrower = (string)($item['borrower_category'] ?? 'any');
+
+    $categoryMap = [
+        'microloans' => ['микрозайм', 'займ онлайн', 'займ на карту', 'срочный займ'],
+        'credits' => ['кредит онлайн', 'потребительский кредит', 'кредит наличными', 'заявка на кредит'],
+        'credit_cards' => ['кредитная карта', 'карта онлайн', 'кредитный лимит', 'льготный период'],
+        'debit_cards' => ['дебетовая карта', 'карта с кэшбэком', 'банковская карта', 'оформить карту'],
+    ];
+    $borrowerMap = [
+        'students' => ['для студентов', 'студентам'],
+        'pensioners' => ['для пенсионеров', 'пенсионерам'],
+        'unemployed' => ['безработным', 'без официальной работы'],
+        'bad_history' => ['с плохой кредитной историей', 'без отказа'],
+        'any' => ['онлайн', 'без визита в офис'],
+    ];
+
+    if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
+        $prompt = "Сгенерируй 8-14 SEO ключевых фраз на русском языке для карточки финансового предложения. "
+            . "Верни только список через запятую, без нумерации, без точек, без markdown. "
+            . "Используй коммерческие и информационные запросы. "
+            . "Данные: " . json_encode([
+                'title' => $name,
+                'category' => $category,
+                'amount_max' => $amountMax,
+                'rate' => $rate,
+                'borrower_category' => $borrower,
+                'site' => $siteName,
+            ], JSON_UNESCAPED_UNICODE);
+
+        $result = callYandexGPT($prompt, 'Ты SEO-специалист. Генерируешь естественные ключевые фразы через запятую. Без пояснений.');
+        if ($result) {
+            $result = preg_replace('/^```.*?
+/s', '', trim($result));
+            $result = preg_replace('/```$/', '', trim($result));
+            $result = trim(strip_tags($result));
+            if ($result !== '') return mb_limit($result, 500);
+        }
+    }
+
+    $keywords = array_merge(
+        [$name, $name . ' отзывы', $name . ' условия'],
+        $categoryMap[$category] ?? ['финансовое предложение', 'онлайн заявка'],
+        $borrowerMap[$borrower] ?? []
+    );
+
+    if ($amountMax > 0) {
+        $keywords[] = $name . ' до ' . number_format($amountMax, 0, '', ' ') . ' рублей';
+        $keywords[] = ($category === 'microloans' ? 'займ до ' : 'кредит до ') . number_format($amountMax, 0, '', ' ') . ' рублей';
+    }
+    if ($rate !== '' && $rate !== '0') {
+        $keywords[] = $name . ' ставка ' . $rate . '%';
+    }
+
+    $keywords = array_values(array_unique(array_filter(array_map('trim', $keywords))));
+    return mb_limit(implode(', ', array_slice($keywords, 0, 14)), 500);
+}
+
 function generateSeoText(array $item, string $entity, string $siteName): ?string {
     $name = $item['name'] ?? $item['title'] ?? '';
     
@@ -240,6 +304,15 @@ foreach ($items as $item) {
         }
     }
     
+    // Генерируем seo_keywords (для офферов)
+    if (in_array('seo_keywords', $fields) && ($overwrite || empty($item['seo_keywords']))) {
+        $seoKeywords = generateSeoKeywords($item, $entity, $siteName);
+        if ($seoKeywords) {
+            $updates['seo_keywords'] = $seoKeywords;
+            $generated[] = 'seo_keywords';
+        }
+    }
+
     // Генерируем seo_text (только для категорий/тегов)
     if (in_array('seo_text', $fields) && ($overwrite || empty($item['seo_text']))) {
         $seo = generateSeoText($item, $entity, $siteName);
