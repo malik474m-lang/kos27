@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/recommendation.php';
 require_once __DIR__ . '/../data/cities.php';
 
 $db = getDB();
@@ -41,6 +42,7 @@ $metaDescription = 'Подберите выгодный микрозайм он�
 $metaKeywords = 'займы онлайн, микрозаймы, займ на карту, быстрый займ, МФО';
 
 $borrowerLabels = [''=>'Все категории','employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
+$bestOffer = getBestOfferByCategory('microloans', ['amount'=>$fAmount, 'term'=>$fTerm, 'borrower'=>$fBorrower]);
 
 ob_start();
 ?>
@@ -49,6 +51,8 @@ ob_start();
     <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Займы онлайн</nav>
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Займы онлайн</h1>
     <p class="text-gray-600 mb-6">Подберите выгодный микрозайм на карту. Сравните условия от надёжных МФО.</p>
+
+    <?= renderBestOfferRecommendation($bestOffer, 'Самый выгодный вариант по займам') ?>
 
     <!-- Фильтр -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">

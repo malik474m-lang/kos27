@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/recommendation.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../includes/categories.php';
 
@@ -30,6 +31,7 @@ if ($cat['parent_id']) {
 
 $pageTitle = ($cat['meta_title'] ?: $cat['name']) . ' — ' . SITE_NAME;
 $metaDescription = $cat['meta_description'] ?: 'Сравните лучшие предложения: ' . $cat['name'];
+$bestOffer = getBestOfferByCategory($offerCategoryKey);
 
 ob_start();
 ?>
@@ -44,6 +46,8 @@ ob_start();
     <?php if ($cat['description']): ?>
     <p class="text-gray-600 mb-6"><?= e($cat['description']) ?></p>
     <?php endif; ?>
+
+    <?= renderBestOfferRecommendation($bestOffer, 'Самый выгодный вариант в разделе') ?>
 
     <?php if ($subcats): ?>
     <div class="flex flex-wrap gap-2 mb-6">
