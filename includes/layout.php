@@ -9,6 +9,7 @@ $metaKeywords = $metaKeywords ?? 'займы онлайн, кредиты, ми�
 $canonicalUrl = $canonicalUrl ?? '';
 $ogImage = $ogImage ?? '';
 $jsonLdSchemas = $jsonLdSchemas ?? [];
+$pageHeadHtml = $pageHeadHtml ?? '';
 
 // Лучшее предложение для popup (только для публичных страниц)
 $bestOfferPopup = null;
@@ -79,6 +80,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     }
     </script>
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
+    <?= $pageHeadHtml ?>
 
     <!-- JSON-LD SEO разметка -->
     <?= renderJsonLd(...$jsonLdSchemas) ?>

@@ -77,8 +77,7 @@ $displayFields = $displayDefaults[$offer['category']] ?? ['amount'=>true,'term'=
 if (!empty($offer['display_fields'])) { $tmp = json_decode($offer['display_fields'], true); if (is_array($tmp)) $displayFields = array_merge($displayFields, $tmp); }
 $borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
 
-ob_start();
-?>
+$pageHeadHtml = <<<'HTML'
 <style>
 .offer-page-wrap{max-width:80rem;margin:0 auto;padding:2rem 1rem}
 .offer-main-card,.offer-calc-card,.offer-review-card,.offer-form-card,.offer-related-card{background:#fff;border:1px solid #f1f5f9;border-radius:1.5rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
@@ -93,6 +92,10 @@ ob_start();
 @media (max-width:1023px){.offer-calc-grid{grid-template-columns:1fr}}
 @media (max-width:639px){.offer-page-wrap{padding:1.5rem 1rem}.offer-main-card{padding:1.25rem}.offer-calc-card{padding:1.25rem}.offer-top{gap:1rem;align-items:flex-start}.offer-logo{width:4.25rem;height:4.25rem}.offer-main-grid,.offer-main-grid-4{grid-template-columns:1fr 1fr;gap:.75rem}.offer-metric-value{font-size:1rem}.offer-cta{width:100%;justify-content:center}}
 </style>
+HTML;
+
+ob_start();
+?>
 <section class="offer-page-wrap max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <nav class="text-sm text-gray-500 mb-6">
         <a href="/" class="hover:text-primary">Главная</a> → 
