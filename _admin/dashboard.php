@@ -194,7 +194,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Ставка %</label><div class="flex gap-2"><input id="of-r" type="number" step="0.01" class="input-f flex-1" value="'+f.rate+'"><select id="of-ru" class="sel-f w-32"><option value="day"'+((f.rate_unit||'day')==='day'?' selected':'')+'>в день</option><option value="year"'+((f.rate_unit||'day')==='year'?' selected':'')+'>в год</option></select></div></div>'+
 '<div><label class="block text-xs font-medium mb-1">Без % (дн)</label><input id="of-fr" type="number" class="input-f" value="'+f.free_term_days+'"></div>'+
 '<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="of-so" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><input id="of-lo" class="input-f" value="'+e(f.logo_url||'')+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><div class="flex gap-2"><input id="of-lo" class="input-f flex-1" value="'+e(f.logo_url||'')+'"><button type="button" onclick="mediaPicker(\'of-lo\',\'offer\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="of-lo-preview" class="mt-2">'+(f.logo_url?'<img src="'+e(f.logo_url)+'" class="w-16 h-16 object-contain rounded border bg-white">':'')+'</div></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
@@ -343,7 +343,7 @@ function agDo(){let cu=document.getElementById('ag-cu').value.trim(),tp=cu||docu
 ap('/generate-article',{method:'POST',body:JSON.stringify({topic:tp||null,category:ct||null})}).then(d=>{cm();if(d.success){let im=d.hasImage?'\n📷 Обложка: YandexART':'\n📷 Без обложки';alert('Статья "'+d.article.title+'" создана!\n🤖 '+d.aiProvider+im);}else alert('Ошибка: '+(d.error||''));lA();}).catch(()=>{alert('Ошибка');b.disabled=false;b.textContent='🚀 Сгенерировать';});}
 
 function aForm(a){let f=a||{title:'',excerpt:'',content:'',meta_title:'',meta_description:'',cover_image:'',is_published:false};let id=a?a.id:0;
-modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать статью':'Новая статья')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><form onsubmit="return aS(event,'+id+')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Заголовок *</label><input id="af-t" class="input-f" value="'+e(f.title)+'" required></div><div><label class="block text-xs font-medium mb-1">Краткое описание</label><textarea id="af-ex" class="input-f" rows="2">'+e(f.excerpt||'')+'</textarea></div><div><label class="block text-xs font-medium mb-1">Содержание *</label><textarea id="af-co" class="input-f" rows="10" required>'+e(f.content)+'</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="af-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="af-meta-btn" onclick="fillMeta(&quot;af&quot;,&quot;article&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div><div><label class="block text-xs font-medium mb-1">Обложка URL</label><input id="af-ci" class="input-f" value="'+e(f.cover_image||'')+'"></div></div><div><label class="block text-xs font-medium mb-1">Meta Description</label><textarea id="af-md" class="input-f" rows="2">'+e(f.meta_description||'')+'</textarea></div><div><label class="flex items-center gap-2"><input type="checkbox" id="af-pu" '+(f.is_published?'checked':'')+' class="w-4 h-4"><span class="text-sm">Опубликовать</span></label></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать статью':'Новая статья')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><form onsubmit="return aS(event,'+id+')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Заголовок *</label><input id="af-t" class="input-f" value="'+e(f.title)+'" required></div><div><label class="block text-xs font-medium mb-1">Краткое описание</label><textarea id="af-ex" class="input-f" rows="2">'+e(f.excerpt||'')+'</textarea></div><div><label class="block text-xs font-medium mb-1">Содержание *</label><textarea id="af-co" class="input-f" rows="10" required>'+e(f.content)+'</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="af-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="af-meta-btn" onclick="fillMeta(&quot;af&quot;,&quot;article&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div><div><label class="block text-xs font-medium mb-1">Обложка</label><div class="flex gap-2"><input id="af-ci" class="input-f flex-1" value="'+e(f.cover_image||'')+'"><button type="button" onclick="mediaPicker(\'af-ci\',\'articles\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="af-ci-preview" class="mt-1">'+(f.cover_image?'<img src="'+e(f.cover_image)+'" class="w-20 h-12 object-cover rounded border">':'')+'</div></div></div><div><label class="block text-xs font-medium mb-1">Meta Description</label><textarea id="af-md" class="input-f" rows="2">'+e(f.meta_description||'')+'</textarea></div><div><label class="flex items-center gap-2"><input type="checkbox" id="af-pu" '+(f.is_published?'checked':'')+' class="w-4 h-4"><span class="text-sm">Опубликовать</span></label></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
 
 function aS(ev,id){ev.preventDefault();let d={title:document.getElementById('af-t').value,excerpt:document.getElementById('af-ex').value,content:document.getElementById('af-co').value,metaTitle:document.getElementById('af-mt').value,metaDescription:document.getElementById('af-md').value,coverImage:document.getElementById('af-ci').value,isPublished:document.getElementById('af-pu').checked};ap(id?'/articles/'+id:'/articles',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lA();});return false;}
 function aToggle(id,v){ap('/articles/'+id,{method:'PUT',body:JSON.stringify({isPublished:v})}).then(()=>lA());}
@@ -1692,6 +1692,104 @@ if(d.error){alert('❌ '+d.error);return;}
 alert('✅ Теги назначены: '+d.count+' связей');
 cm();bulkFinish('offers');
 }).catch(function(err){alert('Ошибка: '+err.message);});
+}
+
+
+/* ============ MEDIA MANAGER ============ */
+function mediaPicker(targetInputId, dir){
+var inp=document.getElementById(targetInputId);
+ap('/media?dir='+dir).then(function(d){
+if(d.error){alert(d.error);return;}
+var files=d.files||[];
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📁 Выбрать картинку</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
+
+// Upload form
+h+='<div class="border-2 border-dashed border-gray-300 rounded-xl p-4 mb-4 text-center" id="media-drop-zone">';
+h+='<p class="text-sm text-gray-500 mb-2">Перетащите файл сюда или</p>';
+h+='<label class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer">';
+h+='📤 Загрузить файл<input type="file" id="media-file-input" accept="image/*" class="hidden" onchange="mediaUpload(\''+dir+'\',\''+targetInputId+'\')">';
+h+='</label>';
+h+='<p class="text-xs text-gray-400 mt-2">JPG, PNG, SVG, WebP, GIF — до 5MB</p>';
+h+='<div id="media-upload-status" class="mt-2"></div>';
+h+='</div>';
+
+// File grid
+h+='<div class="text-xs text-gray-500 mb-2">📂 /images/'+dir+'/ — '+files.length+' файлов</div>';
+h+='<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-80 overflow-y-auto" id="media-grid">';
+if(!files.length){
+h+='<p class="col-span-full text-center text-gray-400 py-8">Нет файлов</p>';
+}else{
+files.forEach(function(f){
+var isSvg=f.ext==='svg';
+var preview=isSvg?'<div class="w-full h-full flex items-center justify-center bg-gray-100 text-2xl">SVG</div>':'<img src="'+f.url+'" class="w-full h-full object-contain" loading="lazy">';
+h+='<div class="group relative border rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 hover:shadow-md transition-all" onclick="mediaSelect(\''+f.url+'\',\''+targetInputId+'\')" title="'+e(f.name)+'\\n'+f.sizeHuman+'">';
+h+='<div class="aspect-square bg-gray-50 flex items-center justify-center p-1">'+preview+'</div>';
+h+='<div class="px-1.5 py-1 text-center"><p class="text-xs text-gray-700 truncate">'+e(f.name)+'</p><p class="text-xs text-gray-400">'+f.sizeHuman+'</p></div>';
+h+='<button onclick="event.stopPropagation();mediaDelete(\''+dir+'\',\''+f.name+'\',\''+targetInputId+'\')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs hidden group-hover:flex items-center justify-center" title="Удалить">&times;</button>';
+h+='</div>';
+});
+}
+h+='</div>';
+modal(h);
+
+// Drag & drop
+setTimeout(function(){
+var zone=document.getElementById('media-drop-zone');
+if(!zone)return;
+zone.addEventListener('dragover',function(ev){ev.preventDefault();zone.classList.add('border-blue-400','bg-blue-50');});
+zone.addEventListener('dragleave',function(){zone.classList.remove('border-blue-400','bg-blue-50');});
+zone.addEventListener('drop',function(ev){
+ev.preventDefault();zone.classList.remove('border-blue-400','bg-blue-50');
+var files=ev.dataTransfer.files;
+if(files.length){
+document.getElementById('media-file-input').files=files;
+mediaUpload(dir,targetInputId);
+}
+});
+},100);
+});
+}
+
+function mediaSelect(url, targetInputId){
+var inp=document.getElementById(targetInputId);
+if(inp)inp.value=url;
+// Update preview if exists
+var prev=document.getElementById(targetInputId+'-preview');
+if(prev)prev.innerHTML='<img src="'+url+'" class="w-16 h-16 object-contain rounded border bg-white">';
+cm();
+}
+
+function mediaUpload(dir, targetInputId){
+var fileInput=document.getElementById('media-file-input');
+if(!fileInput||!fileInput.files.length)return;
+var file=fileInput.files[0];
+var status=document.getElementById('media-upload-status');
+if(status)status.innerHTML='<span class="text-blue-600 text-sm">⏳ Загрузка...</span>';
+
+var fd=new FormData();
+fd.append('file',file);
+fd.append('dir',dir);
+
+fetch(A+'/media',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+if(d.error){
+if(status)status.innerHTML='<span class="text-red-600 text-sm">❌ '+e(d.error)+'</span>';
+return;
+}
+if(status)status.innerHTML='<span class="text-green-600 text-sm">✅ Загружено: '+e(d.name)+'</span>';
+// Auto-select uploaded file
+mediaSelect(d.url, targetInputId);
+}).catch(function(err){
+if(status)status.innerHTML='<span class="text-red-600 text-sm">❌ Ошибка</span>';
+});
+}
+
+function mediaDelete(dir, name, targetInputId){
+if(!confirm('Удалить файл '+name+'?'))return;
+fetch(A+'/media',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({dir:dir,name:name})}).then(r=>r.json()).then(function(d){
+if(d.error){alert(d.error);return;}
+// Reload picker
+mediaPicker(targetInputId, dir);
+});
 }
 
 /* ============ SETTINGS ============ */

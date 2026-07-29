@@ -181,6 +181,10 @@ if ($adminUri === '/change-password' && $method === 'POST') { require __DIR__ . 
 // Генерация
 if ($adminUri === '/generate-article') { require __DIR__ . '/admin/generate-article.php'; exit; }
 if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . '/admin/generate-review.php'; exit; }
+// Медиа (загрузка/просмотр картинок)
+if (str_starts_with($adminUri, '/media')) {
+    if ($method === 'GET' || $method === 'POST' || $method === 'DELETE') { require __DIR__ . '/admin/media.php'; exit; }
+}
 // Массовые действия
 if ($adminUri === '/bulk-actions' && $method === 'POST') { require __DIR__ . '/admin/bulk-actions.php'; exit; }
 // Пакетная генерация
