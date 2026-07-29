@@ -1,15 +1,4 @@
 <?php
-/**
- * Автоматическая перелинковка в текстах
- * - Теги и офферы подтягиваются из БД автоматически
- * - Каждая фраза линкуется только 1 раз
- * - Один URL не повторяется
- * - Длинные фразы первыми
- */
-
-/**
- * Получить ссылки на офферы из БД (кэш 5 мин)
- */
 function getOfferLinks(): array {
     $cacheFile = __DIR__ . '/../data/offer-links-cache.json';
     if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
@@ -33,9 +22,6 @@ function getOfferLinks(): array {
     return $links;
 }
 
-/**
- * Получить ссылки на теги из БД (кэш 5 мин)
- */
 function getTagLinks(): array {
     $cacheFile = __DIR__ . '/../data/tag-links-cache.json';
     if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
@@ -51,28 +37,21 @@ function getTagLinks(): array {
             $catUrl = $catUrls[$tag['category']] ?? '/zajmy';
             $url = $catUrl . '/type/' . $tag['slug'];
             $title = $tag['title'];
-            // Основная фраза
             $links[] = ['phrase' => $title, 'url' => $url, 'title' => $title, 'priority' => 50];
-            // Без "Займы " / "Кредиты " в начале — если остаётся осмысленная фраза
-            foreach (['Займы ', 'Кредиты ', 'Карты '] as $prefix) {
+            foreach (['Займы ', 'Кредиты ', 'Карты ', 'Кредитные ', 'Дебетовые '] as $prefix) {
                 if (mb_stripos($title, $prefix) === 0) {
-                    $short = mb_substr($title, mb_strlen($prefix));
+                    $short = trim(mb_substr($title, mb_strlen($prefix)));
                     if (mb_strlen($short) >= 4) {
                         $links[] = ['phrase' => $short, 'url' => $url, 'title' => $title, 'priority' => 10];
                         $links[] = ['phrase' => mb_strtolower($short), 'url' => $url, 'title' => $title, 'priority' => 9];
                     }
                 }
             }
-            // Из H1 если отличается от title
-            if ($tag['h1'] && $tag['h1'] !== $title) {
+            if (!empty($tag['h1']) && $tag['h1'] !== $title) {
                 $links[] = ['phrase' => $tag['h1'], 'url' => $url, 'title' => $title, 'priority' => 40];
             }
-            // Поисковые запросы / фразы для перелинковки
             if (!empty($tag['search_queries'])) {
-                $queries = preg_split('/
-|
-|
-/', (string)$tag['search_queries']);
+                $queries = preg_split('/\r\n|\r|\n/', (string)$tag['search_queries']);
                 foreach ($queries as $q) {
                     $q = trim($q);
                     if (mb_strlen($q) < 3) continue;
@@ -83,7 +62,6 @@ function getTagLinks(): array {
                     }
                 }
             }
-            // Строчная версия
             $lower = mb_strtolower($title);
             if ($lower !== $title) {
                 $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $title, 'priority' => 30];
@@ -94,116 +72,106 @@ function getTagLinks(): array {
     return $links;
 }
 
-function autoLinkText(string $text, int $maxLinks = 10): string {
-    // Статическая карта — общие фразы
-    $linkMap = [
-        // === ЗАЙМЫ общие ===
-        ['phrase' => 'микрозаймы онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн'],
-        ['phrase' => 'микрозайм онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн'],
-        ['phrase' => 'займы онлайн', 'url' => '/zajmy', 'title' => 'Займы онлайн'],
-        ['phrase' => 'займ онлайн', 'url' => '/zajmy', 'title' => 'Займы онлайн'],
-        ['phrase' => 'оформить займ', 'url' => '/zajmy', 'title' => 'Оформить займ'],
-        ['phrase' => 'взять займ', 'url' => '/zajmy', 'title' => 'Взять займ'],
-        ['phrase' => 'получить займ', 'url' => '/zajmy', 'title' => 'Получить займ'],
-        ['phrase' => 'займы на карту', 'url' => '/zajmy', 'title' => 'Займы на карту'],
-        ['phrase' => 'займ на карту', 'url' => '/zajmy', 'title' => 'Займы на карту'],
-        ['phrase' => 'микрозаймы', 'url' => '/zajmy', 'title' => 'Микрозаймы'],
-        ['phrase' => 'микрозайм', 'url' => '/zajmy', 'title' => 'Микрозаймы'],
-
-        // === КРЕДИТЫ общие ===
-        ['phrase' => 'потребительский кредит', 'url' => '/kredity', 'title' => 'Потребительские кредиты'],
-        ['phrase' => 'банковский кредит', 'url' => '/kredity', 'title' => 'Банковские кредиты'],
-        ['phrase' => 'кредит наличными', 'url' => '/kredity', 'title' => 'Кредиты наличными'],
-        ['phrase' => 'оформить кредит', 'url' => '/kredity', 'title' => 'Оформить кредит'],
-        ['phrase' => 'взять кредит', 'url' => '/kredity', 'title' => 'Взять кредит'],
-
-        // === КАРТЫ общие ===
-        ['phrase' => 'кредитные карты', 'url' => '/karty/kreditnye', 'title' => 'Кредитные карты'],
-        ['phrase' => 'кредитная карта', 'url' => '/karty/kreditnye', 'title' => 'Кредитные карты'],
-        ['phrase' => 'дебетовые карты', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты'],
-        ['phrase' => 'дебетовая карта', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты'],
-        ['phrase' => 'карта с кэшбеком', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты'],
-
-        // === ИНСТРУМЕНТЫ ===
-        ['phrase' => 'калькулятор займа', 'url' => '/calculator', 'title' => 'Калькулятор займа'],
-        ['phrase' => 'калькулятор кредита', 'url' => '/calculator', 'title' => 'Калькулятор кредита'],
-        ['phrase' => 'сравнить предложения', 'url' => '/compare', 'title' => 'Сравнение предложений'],
-
-        // === ГЛОССАРИЙ ===
-        ['phrase' => 'полная стоимость кредита', 'url' => '/glossary/psk', 'title' => 'Что такое ПСК'],
-        ['phrase' => 'процентная ставка', 'url' => '/glossary/procentnaya-stavka', 'title' => 'Процентная ставка'],
-        ['phrase' => 'льготный период', 'url' => '/glossary/grejs-period', 'title' => 'Льготный период'],
-        ['phrase' => 'грейс-период', 'url' => '/glossary/grejs-period', 'title' => 'Грейс-период'],
-        ['phrase' => 'кредитная история', 'url' => '/glossary/kreditnaya-istoriya', 'title' => 'Кредитная история'],
-        ['phrase' => 'микрофинансовая организация', 'url' => '/glossary/mfo', 'title' => 'Что такое МФО'],
-        ['phrase' => 'скоринг', 'url' => '/glossary/skoring', 'title' => 'Что такое скоринг'],
-        ['phrase' => 'рефинансирование', 'url' => '/glossary/refinansirovanie', 'title' => 'Рефинансирование'],
-        ['phrase' => 'кэшбек', 'url' => '/glossary/keshbek', 'title' => 'Что такое кэшбек'],
-        ['phrase' => 'аннуитетный платёж', 'url' => '/glossary/annuitetnyj-platezh', 'title' => 'Аннуитетный платёж'],
-        ['phrase' => 'ПСК', 'url' => '/glossary/psk', 'title' => 'Полная стоимость кредита'],
-        ['phrase' => 'МФО', 'url' => '/glossary/mfo', 'title' => 'Микрофинансовая организация'],
-        ['phrase' => 'БКИ', 'url' => '/glossary/bki', 'title' => 'Бюро кредитных историй'],
-        ['phrase' => 'ЦБ РФ', 'url' => '/glossary/reestr-cb', 'title' => 'Центральный банк'],
-
-        // === САЙТ ===
-        ['phrase' => 'сайте Космозайм', 'url' => '/', 'title' => 'Космозайм'],
-        ['phrase' => 'Космозайм', 'url' => '/', 'title' => 'Космозайм'],
+function buildAutoLinkMap(): array {
+    $staticLinks = [
+        ['phrase' => 'микрозаймы онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн', 'priority' => 5],
+        ['phrase' => 'микрозайм онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн', 'priority' => 5],
+        ['phrase' => 'займы онлайн', 'url' => '/zajmy', 'title' => 'Займы онлайн', 'priority' => 5],
+        ['phrase' => 'займ онлайн', 'url' => '/zajmy', 'title' => 'Займы онлайн', 'priority' => 5],
+        ['phrase' => 'оформить займ', 'url' => '/zajmy', 'title' => 'Оформить займ', 'priority' => 5],
+        ['phrase' => 'взять займ', 'url' => '/zajmy', 'title' => 'Взять займ', 'priority' => 5],
+        ['phrase' => 'получить займ', 'url' => '/zajmy', 'title' => 'Получить займ', 'priority' => 5],
+        ['phrase' => 'займы на карту', 'url' => '/zajmy', 'title' => 'Займы на карту', 'priority' => 5],
+        ['phrase' => 'займ на карту', 'url' => '/zajmy', 'title' => 'Займы на карту', 'priority' => 5],
+        ['phrase' => 'микрозаймы', 'url' => '/zajmy', 'title' => 'Микрозаймы', 'priority' => 4],
+        ['phrase' => 'микрозайм', 'url' => '/zajmy', 'title' => 'Микрозаймы', 'priority' => 4],
+        ['phrase' => 'потребительский кредит', 'url' => '/kredity', 'title' => 'Потребительские кредиты', 'priority' => 5],
+        ['phrase' => 'банковский кредит', 'url' => '/kredity', 'title' => 'Банковские кредиты', 'priority' => 5],
+        ['phrase' => 'кредит наличными', 'url' => '/kredity', 'title' => 'Кредиты наличными', 'priority' => 5],
+        ['phrase' => 'оформить кредит', 'url' => '/kredity', 'title' => 'Оформить кредит', 'priority' => 5],
+        ['phrase' => 'взять кредит', 'url' => '/kredity', 'title' => 'Взять кредит', 'priority' => 5],
+        ['phrase' => 'кредитные карты', 'url' => '/karty/kreditnye', 'title' => 'Кредитные карты', 'priority' => 4],
+        ['phrase' => 'кредитная карта', 'url' => '/karty/kreditnye', 'title' => 'Кредитные карты', 'priority' => 4],
+        ['phrase' => 'дебетовые карты', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты', 'priority' => 4],
+        ['phrase' => 'дебетовая карта', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты', 'priority' => 4],
+        ['phrase' => 'карта с кэшбеком', 'url' => '/karty/debetovye', 'title' => 'Дебетовые карты', 'priority' => 4],
+        ['phrase' => 'калькулятор займа', 'url' => '/calculator', 'title' => 'Калькулятор займа', 'priority' => 4],
+        ['phrase' => 'калькулятор кредита', 'url' => '/calculator', 'title' => 'Калькулятор кредита', 'priority' => 4],
+        ['phrase' => 'сравнить предложения', 'url' => '/compare', 'title' => 'Сравнение предложений', 'priority' => 4],
+        ['phrase' => 'полная стоимость кредита', 'url' => '/glossary/psk', 'title' => 'Что такое ПСК', 'priority' => 3],
+        ['phrase' => 'процентная ставка', 'url' => '/glossary/procentnaya-stavka', 'title' => 'Процентная ставка', 'priority' => 3],
+        ['phrase' => 'льготный период', 'url' => '/glossary/grejs-period', 'title' => 'Льготный период', 'priority' => 3],
+        ['phrase' => 'грейс-период', 'url' => '/glossary/grejs-period', 'title' => 'Грейс-период', 'priority' => 3],
+        ['phrase' => 'кредитная история', 'url' => '/glossary/kreditnaya-istoriya', 'title' => 'Кредитная история', 'priority' => 3],
+        ['phrase' => 'микрофинансовая организация', 'url' => '/glossary/mfo', 'title' => 'Что такое МФО', 'priority' => 3],
+        ['phrase' => 'скоринг', 'url' => '/glossary/skoring', 'title' => 'Что такое скоринг', 'priority' => 3],
+        ['phrase' => 'рефинансирование', 'url' => '/glossary/refinansirovanie', 'title' => 'Рефинансирование', 'priority' => 3],
+        ['phrase' => 'кэшбек', 'url' => '/glossary/keshbek', 'title' => 'Что такое кэшбек', 'priority' => 3],
+        ['phrase' => 'аннуитетный платёж', 'url' => '/glossary/annuitetnyj-platezh', 'title' => 'Аннуитетный платёж', 'priority' => 3],
+        ['phrase' => 'ПСК', 'url' => '/glossary/psk', 'title' => 'Полная стоимость кредита', 'priority' => 3],
+        ['phrase' => 'МФО', 'url' => '/glossary/mfo', 'title' => 'Микрофинансовая организация', 'priority' => 3],
+        ['phrase' => 'БКИ', 'url' => '/glossary/bki', 'title' => 'Бюро кредитных историй', 'priority' => 3],
+        ['phrase' => 'ЦБ РФ', 'url' => '/glossary/reestr-cb', 'title' => 'Центральный банк', 'priority' => 3],
+        ['phrase' => 'сайте Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
+        ['phrase' => 'Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
     ];
-
-    // Добавляем теги из БД (автоматически!)
-    $tagLinks = getTagLinks();
-    $linkMap = array_merge($tagLinks, $linkMap);
-
-    // Добавляем офферы из БД
-    $offerLinks = getOfferLinks();
-    $linkMap = array_merge($offerLinks, $linkMap);
-
-    // Сортируем по длине (длинные первыми)
+    $linkMap = array_merge(getTagLinks(), $staticLinks, getOfferLinks());
     usort($linkMap, function($a, $b) {
         $ap = (int)($a['priority'] ?? 0);
         $bp = (int)($b['priority'] ?? 0);
         if ($bp !== $ap) return $bp <=> $ap;
         return mb_strlen($b['phrase']) <=> mb_strlen($a['phrase']);
     });
+    return $linkMap;
+}
 
-    $linkedCount = 0;
+function autoLinkText(string $html, int $maxLinks = 10): string {
+    $linkMap = buildAutoLinkMap();
     $usedUrls = [];
     $usedPhrases = [];
+    $linkedCount = 0;
 
-    foreach ($linkMap as $item) {
+    $parts = preg_split('/(<[^>]+>)/u', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    if (!$parts) return $html;
+
+    foreach ($parts as $idx => $part) {
         if ($linkedCount >= $maxLinks) break;
-        if (in_array($item['url'], $usedUrls, true)) continue;
+        if ($part === '' || $part[0] === '<') continue;
 
-        $phraseLower = mb_strtolower($item['phrase']);
-        $skip = false;
-        foreach ($usedPhrases as $used) {
-            if (str_contains($phraseLower, $used) || str_contains($used, $phraseLower)) {
-                $skip = true;
+        foreach ($linkMap as $item) {
+            if ($linkedCount >= $maxLinks) break;
+            if (in_array($item['url'], $usedUrls, true)) continue;
+
+            $phrase = trim((string)$item['phrase']);
+            if ($phrase === '' || mb_strlen($phrase) < 3) continue;
+
+            $phraseLower = mb_strtolower($phrase);
+            $skip = false;
+            foreach ($usedPhrases as $used) {
+                if (str_contains($phraseLower, $used) || str_contains($used, $phraseLower)) {
+                    $skip = true;
+                    break;
+                }
+            }
+            if ($skip) continue;
+
+            $pattern = '/(?<![\p{L}\p{N}])(' . preg_quote($phrase, '/') . ')(?![\p{L}\p{N}])/ui';
+            if (preg_match($pattern, $parts[$idx])) {
+                $link = '<a href="' . $item['url'] . '" title="' . htmlspecialchars($item['title'], ENT_QUOTES) . '" class="text-primary hover:underline">$1</a>';
+                $parts[$idx] = preg_replace($pattern, $link, $parts[$idx], 1);
+                $linkedCount++;
+                $usedUrls[] = $item['url'];
+                $usedPhrases[] = $phraseLower;
                 break;
             }
         }
-        if ($skip) continue;
-
-        $pattern = '/(?<![а-яёa-z\">])(' . preg_quote($item['phrase'], '/') . ')(?![а-яёa-z\"<])/ui';
-
-        if (preg_match($pattern, $text)) {
-            $link = '<a href="' . $item['url'] . '" title="' . htmlspecialchars($item['title'], ENT_QUOTES) . '" class="text-primary hover:underline">$1</a>';
-            $text = preg_replace($pattern, $link, $text, 1);
-            $linkedCount++;
-            $usedUrls[] = $item['url'];
-            $usedPhrases[] = $phraseLower;
-        }
     }
 
-    return $text;
+    return implode('', $parts);
 }
 
-/**
- * Безопасный вывод текста с автолинками
- */
 function safeAutoLink(string $text, int $maxLinks = 10): string {
-    $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-    $text = nl2br($text);
-    $text = autoLinkText($text, $maxLinks);
-    return $text;
+    $html = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    $html = nl2br($html);
+    return autoLinkText($html, $maxLinks);
 }
