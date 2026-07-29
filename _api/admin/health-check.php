@@ -83,8 +83,30 @@ else { $checks[] = ['level'=>'ok','msg'=>"Отзывов: $reviewCount (ср. $a
 
 // === КАТЕГОРИИ ===
 try {
-    $emptyCats = $db->query("SELECT c.name FROM categories c WHERE c.is_active = 1 AND c.parent_id IS NULL AND NOT EXISTS (SELECT 1 FROM offers o WHERE o.category = c.slug AND o.is_active = 1) AND c.slug NOT IN ('compare','calculator','articles','faq','glossary','novye-mfo')")->fetchAll(PDO::FETCH_COLUMN);
-    if ($emptyCats) { $checks[] = ['level'=>'warning','msg'=>count($emptyCats).' категорий без офферов','items'=>$emptyCats]; $score -= 2; }
+    require_once __DIR__ . '/../../includes/categories.php';
+    $allCats = getCategories(false);
+    $activeOffersByCategory = $db->query("SELECT category, COUNT(*) as cnt FROM offers WHERE is_active = 1 GROUP BY category")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $emptyCats = [];
+
+    foreach ($allCats as $cat) {
+        if (empty($cat['is_active'])) continue;
+        if (in_array($cat['slug'], ['compare','calculator','articles','faq','glossary','novye-mfo','privacy','terms','disclaimer','favorites','search'], true)) continue;
+
+        // Если это родитель с подкатегориями — не считаем пустым
+        $children = array_filter($allCats, fn($c) => (int)($c['parent_id'] ?? 0) === (int)$cat['id'] && !empty($c['is_active']));
+        if ($children) continue;
+
+        $offerKey = function_exists('getCategoryOfferKeyBySlug') ? getCategoryOfferKeyBySlug($cat['slug']) : $cat['slug'];
+        $count = (int)($activeOffersByCategory[$offerKey] ?? 0);
+        if ($count === 0) $emptyCats[] = $cat['name'];
+    }
+
+    if ($emptyCats) {
+        $checks[] = ['level'=>'warning','msg'=>count($emptyCats).' категорий без офферов','items'=>$emptyCats];
+        $score -= 2;
+    } else {
+        $checks[] = ['level'=>'ok','msg'=>'Категории наполнены офферами или используются как родительские'];
+    }
 } catch (Exception $e) {}
 
 // === БД ===

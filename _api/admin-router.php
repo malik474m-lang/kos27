@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/api-cache.php';
 $adminUri = substr($apiUri, 6); // убираем /admin
 $method = $_SERVER['REQUEST_METHOD'];
+if ($adminUri === '/clear-api-cache' && $method === 'POST') { $count = apiCacheClear(); echo json_encode(['success' => true, 'cleared' => $count]); exit; }
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { register_shutdown_function('apiCacheClear'); }
 
 // Логин не требует авторизации
