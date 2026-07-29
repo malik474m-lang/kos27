@@ -63,6 +63,9 @@ $pageTitle = $offer['title'] . ' — ' . SITE_NAME;
 $metaDescription = $offer['description'] ?: "Оформите {$offer['title']} онлайн. Сумма от " . formatMoney($offer['amount_min']) . " до " . formatMoney($offer['amount_max']);
 $rating = (float)$offer['rating'];
 $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
+require_once __DIR__ . '/../includes/ab-test.php';
+$offerCtaLabel = getDefaultCtaLabelByCategory($offer['category'] ?? '');
+$offerCtaSecondary = getDefaultCtaSecondaryLabelByCategory($offer['category'] ?? '');
 
 $displayDefaults = [
     'microloans' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>true],
@@ -160,7 +163,7 @@ ob_start();
 
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
            class="inline-flex items-center space-x-2 bg-accent text-white px-8 py-4 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-lg">
-            <span>Оформить заявку</span>
+            <span><?= e($offerCtaLabel) ?></span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </a>
     </div>
@@ -249,7 +252,7 @@ ob_start();
                         <p id="offer-calc-note" class="text-sm text-gray-600">Предварительный расчёт по открытым параметрам оффера.</p>
                     </div>
                 </div>
-                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors">Оформить по этим условиям</a>
+                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors"><?= e($offerCtaSecondary) ?></a>
             </div>
         </div>
     </div>

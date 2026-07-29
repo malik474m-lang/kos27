@@ -7,8 +7,8 @@ function renderOfferCard(array $offer): string {
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
 
     require_once __DIR__ . '/ab-test.php';
-    $abVar = getAbVariant();
-    $btnLabel = $abVar ? $abVar['label'] : 'Оформить';
+    $abVar = getAbVariant($offer['category'] ?? '');
+    $btnLabel = $abVar ? $abVar['label'] : getDefaultCtaLabelByCategory($offer['category'] ?? '');
     $btnColor = $abVar ? $abVar['color'] : '#059669';
     $abVid = $abVar ? (int)$abVar['id'] : 0;
 

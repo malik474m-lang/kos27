@@ -1,54 +1,78 @@
 <?php
 /**
- * A/B тестирование кнопки
- * Вариант выбирается один раз для сессии пользователя и сохраняется в куке
+ * A/B тестирование CTA по категориям
  */
 
-function getAbVariant(): ?array {
-    static $variant = null;
-    if ($variant !== null) return $variant ?: null;
+function getDefaultCtaLabelByCategory(string $category): string {
+    return match ($category) {
+        'microloans' => 'Получить займ',
+        'credits' => 'Оформить кредит',
+        'credit_cards' => 'Оформить карту',
+        'debit_cards' => 'Заказать карту',
+        default => 'Оформить',
+    };
+}
+
+function getDefaultCtaSecondaryLabelByCategory(string $category): string {
+    return match ($category) {
+        'microloans' => 'Оформить по этим условиям',
+        'credits' => 'Подать заявку на кредит',
+        'credit_cards' => 'Оформить карту по этим условиям',
+        'debit_cards' => 'Заказать карту по этим условиям',
+        default => 'Оформить по этим условиям',
+    };
+}
+
+function getAbVariant(string $category = ''): ?array {
+    static $variantsCache = [];
+    $cacheKey = $category ?: 'all';
+    if (array_key_exists($cacheKey, $variantsCache)) {
+        return $variantsCache[$cacheKey] ?: null;
+    }
 
     try {
         $db = getDB();
 
-        // Ищем активный тест
-        $test = $db->query("SELECT id FROM ab_tests WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetch();
-        if (!$test) { $variant = false; return null; }
+        if ($category) {
+            $testStmt = $db->prepare("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 AND category_scope IN (?, 'all') ORDER BY (category_scope = ?) DESC, id DESC LIMIT 1");
+            $testStmt->execute([$category, $category]);
+            $test = $testStmt->fetch();
+        } else {
+            $test = $db->query("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetch();
+        }
 
-        // Все варианты теста
-        $variants = $db->prepare("SELECT * FROM ab_variants WHERE test_id = ?");
+        if (!$test) { $variantsCache[$cacheKey] = false; return null; }
+
+        $variants = $db->prepare("SELECT * FROM ab_variants WHERE test_id = ? ORDER BY id ASC");
         $variants->execute([$test['id']]);
         $all = $variants->fetchAll();
-        if (!$all) { $variant = false; return null; }
+        if (!$all) { $variantsCache[$cacheKey] = false; return null; }
 
-        // Проверяем куку
         $cookieKey = 'ab_v_' . $test['id'];
         if (isset($_COOKIE[$cookieKey])) {
             $vid = (int)$_COOKIE[$cookieKey];
             foreach ($all as $v) {
-                if ((int)$v['id'] === $vid) { $variant = $v; return $v; }
+                if ((int)$v['id'] === $vid) {
+                    $variantsCache[$cacheKey] = $v;
+                    return $v;
+                }
             }
         }
 
-        // Выбираем случайный вариант
         $chosen = $all[array_rand($all)];
-
-        // Сохраняем в куку на 30 дней
         setcookie($cookieKey, $chosen['id'], time() + 86400 * 30, '/');
         $_COOKIE[$cookieKey] = $chosen['id'];
-
-        // Считаем показ
         $db->prepare("UPDATE ab_variants SET impressions = impressions + 1 WHERE id = ?")->execute([$chosen['id']]);
 
-        $variant = $chosen;
+        $variantsCache[$cacheKey] = $chosen;
         return $chosen;
     } catch (Exception $e) {
-        $variant = false;
+        $variantsCache[$cacheKey] = false;
         return null;
     }
 }
 
-function getAbVariantId(): ?int {
-    $v = getAbVariant();
+function getAbVariantId(string $category = ''): ?int {
+    $v = getAbVariant($category);
     return $v ? (int)$v['id'] : null;
 }
