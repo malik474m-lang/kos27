@@ -18,11 +18,11 @@ $noTags = array_filter($allOffers, fn($o) => !in_array($o['id'], $offersWithTags
 $clickedOffers = $db->query("SELECT DISTINCT offer_id FROM click_stats WHERE clicked_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchAll(PDO::FETCH_COLUMN);
 $noClicks = array_filter($allOffers, fn($o) => !in_array($o['id'], $clickedOffers));
 
-if ($noLogo) { $checks[] = ['level'=>'error','msg'=>count($noLogo).' оффер(ов) без логотипа','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noLogo),'fixTab'=>'offers','fixItemType'=>'offer']; $score -= 5; }
-if ($noAffUrl) { $checks[] = ['level'=>'error','msg'=>count($noAffUrl).' оффер(ов) без партнёрской ссылки','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noAffUrl),'fixTab'=>'offers','fixItemType'=>'offer']; $score -= 10; }
-if ($noTags) { $checks[] = ['level'=>'warning','msg'=>count($noTags).' оффер(ов) без тегов','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noTags),'fixTab'=>'offers','fixItemType'=>'offer']; $score -= 3; }
-if ($noDesc) { $checks[] = ['level'=>'warning','msg'=>count($noDesc).' оффер(ов) без описания','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noDesc),'fixTab'=>'offers','fixItemType'=>'offer']; $score -= 2; }
-if ($noClicks) { $checks[] = ['level'=>'warning','msg'=>count($noClicks).' оффер(ов) без кликов за 30 дней','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noClicks),'fixTab'=>'offers','fixItemType'=>'offer']; $score -= 2; }
+if ($noLogo) { $checks[] = ['level'=>'error','msg'=>count($noLogo).' оффер(ов) без логотипа','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noLogo),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noLogo)[0]['id']]; $score -= 5; }
+if ($noAffUrl) { $checks[] = ['level'=>'error','msg'=>count($noAffUrl).' оффер(ов) без партнёрской ссылки','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noAffUrl),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noAffUrl)[0]['id']]; $score -= 10; }
+if ($noTags) { $checks[] = ['level'=>'warning','msg'=>count($noTags).' оффер(ов) без тегов','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noTags),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noTags)[0]['id']]; $score -= 3; }
+if ($noDesc) { $checks[] = ['level'=>'warning','msg'=>count($noDesc).' оффер(ов) без описания','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noDesc),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noDesc)[0]['id']]; $score -= 2; }
+if ($noClicks) { $checks[] = ['level'=>'warning','msg'=>count($noClicks).' оффер(ов) без кликов за 30 дней','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noClicks),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noClicks)[0]['id']]; $score -= 2; }
 if (!$noLogo && !$noAffUrl) { $checks[] = ['level'=>'ok','msg'=>'Все офферы имеют логотип и ссылку']; }
 
 // Проверенные битые партнёрские ссылки
