@@ -2184,7 +2184,7 @@ ap('/tags')
 batchData={offers:offers||[],articles:articles||[],categories:categories||[],tags:tags||[]};
 batchSelected={offers:[],articles:[],categories:[],tags:[]};
 
-var h='<h2 class="text-xl font-bold mb-6">🤖 Пакетная автогенерация текстов</h2>';
+var h='<h2 class="text-xl font-bold mb-6">🤖 Пакетная автогенерация текстов и SEO</h2>';
 
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">';
 h+='<p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Выберите сущности и поля для генерации. Система использует YandexGPT для создания уникальных текстов. Генерация происходит последовательно с паузами, чтобы не превысить лимиты API.</p>';
@@ -2203,11 +2203,11 @@ h+='</div>';
 
 // Выбор полей
 h+='<div class="bg-white rounded-xl border p-6 mb-6">';
-h+='<h3 class="font-bold mb-4">2. Выберите поля для генерации</h3>';
+h+='<h3 class="font-bold mb-4">2. Выберите поля, которые нужно заполнить</h3>';
 h+='<div id="batch-fields" class="flex flex-wrap gap-3">';
 h+=batchFieldsHtml('offers');
 h+='</div>';
-h+='<div class="mt-4"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="batch-overwrite" class="w-4 h-4"> Перезаписывать существующие значения</label></div>';
+h+='<div class="mt-4 space-y-2"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="batch-overwrite" class="w-4 h-4"> Перезаписать уже заполненные поля</label><p class="text-xs text-gray-500">SEO-мета = <strong>meta title</strong> и <strong>meta description</strong>. Если галочку не ставить, уже заполненные поля останутся без изменений.</p></div>';
 h+='</div>';
 
 // Список сущностей
@@ -2217,7 +2217,7 @@ h+='<h3 class="font-bold">3. Выберите элементы <span id="batch-c
 h+='<div class="flex gap-2">';
 h+='<button onclick="batchSelectAll()" class="text-sm text-blue-600 hover:underline">Выбрать все</button>';
 h+='<button onclick="batchSelectNone()" class="text-sm text-gray-500 hover:underline">Снять выбор</button>';
-h+='<button onclick="batchSelectEmpty()" class="text-sm text-orange-600 hover:underline">Только без мета</button>';
+h+='<button onclick="batchSelectEmpty()" class="text-sm text-orange-600 hover:underline">Только с пустыми SEO-мета</button>';
 h+='</div>';
 h+='</div>';
 h+='<div id="batch-list" class="max-h-96 overflow-y-auto space-y-2">';
@@ -2271,7 +2271,7 @@ return h;
 list.forEach(function(item){
 var name=item.title||item.name||'ID '+item.id;
 var hasMeta=!!(item.meta_title||item.meta_description);
-var badge=hasMeta?'<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">мета ✓</span>':'<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">без мета</span>';
+var badge=hasMeta?'<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">SEO-мета ✓</span>':'<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">SEO-мета пустые</span>';
 h+='<label class="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">';
 h+='<input type="checkbox" class="batch-item w-4 h-4" data-id="'+item.id+'" data-entity="'+entity+'">';
 h+='<span class="flex-1">'+e(name)+'</span>';
