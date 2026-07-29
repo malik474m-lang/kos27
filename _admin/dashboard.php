@@ -787,22 +787,22 @@ h+='</div>';
 // Таблица по офферам
 var items=d.funnel||[];
 if(items.length){
-h+='<div class="bg-white rounded-2xl border shadow-sm"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Просм.</th><th class="p-3 text-right">Клики</th><th class="p-3 text-right">CTR</th><th class="p-3 text-right text-green-700">Одобр.</th><th class="p-3 text-right text-red-600">Откл.</th><th class="p-3 text-right">CR</th><th class="p-3 text-right">Approval</th><th class="p-3 text-right">EPC</th><th class="p-3 text-right font-semibold">Доход</th></tr></thead><tbody>';
+h+='<div class="bg-white rounded-2xl border shadow-sm overflow-hidden"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div class="overflow-x-auto"><div class="min-w-[980px]"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Оффер</th><th class="p-3 text-right whitespace-nowrap">Просм.</th><th class="p-3 text-right whitespace-nowrap">Клики</th><th class="p-3 text-right whitespace-nowrap">CTR</th><th class="p-3 text-right text-green-700 whitespace-nowrap">Одобр.</th><th class="p-3 text-right text-red-600 whitespace-nowrap">Откл.</th><th class="p-3 text-right whitespace-nowrap">CR</th><th class="p-3 text-right whitespace-nowrap">Approval</th><th class="p-3 text-right whitespace-nowrap">EPC</th><th class="p-3 text-right font-semibold whitespace-nowrap">Доход</th></tr></thead><tbody>';
 items.forEach(function(o){
 var rowClass=o.clicks===0?'bg-gray-50 text-gray-400':'';
-h+='<tr class="border-t hover:bg-gray-50 '+rowClass+'"><td class="p-3 font-medium">'+e(o.title)+'</td>';
-h+='<td class="p-3 text-right">'+o.views+'</td>';
-h+='<td class="p-3 text-right font-semibold">'+o.clicks+'</td>';
-h+='<td class="p-3 text-right '+(o.ctr>=5?'text-blue-600':'text-gray-500')+'">'+o.ctr+'%</td>';
-h+='<td class="p-3 text-right text-green-600 font-semibold">'+o.approved+'</td>';
-h+='<td class="p-3 text-right text-red-500">'+o.rejected+'</td>';
-h+='<td class="p-3 text-right '+(o.cr>=3?'text-green-600':'text-gray-500')+'">'+o.cr+'%</td>';
-h+='<td class="p-3 text-right '+(o.approval_rate>=50?'text-green-600':o.approval_rate>0?'text-yellow-600':'text-gray-400')+'">'+o.approval_rate+'%</td>';
-h+='<td class="p-3 text-right '+(o.epc>0?'text-purple-600':'text-gray-400')+'">'+Number(o.epc).toFixed(2)+'</td>';
-h+='<td class="p-3 text-right font-semibold '+(o.payout>0?'text-green-700':'text-gray-400')+'">'+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td>';
+h+='<tr class="border-t hover:bg-gray-50 '+rowClass+'"><td class="p-3 font-medium min-w-[220px]"><div class="max-w-[260px] truncate" title="'+e(o.title)+'">'+e(o.title)+'</div></td>';
+h+='<td class="p-3 text-right whitespace-nowrap">'+o.views+'</td>';
+h+='<td class="p-3 text-right whitespace-nowrap font-semibold">'+o.clicks+'</td>';
+h+='<td class="p-3 text-right whitespace-nowrap '+(o.ctr>=5?'text-blue-600':'text-gray-500')+'">'+o.ctr+'%</td>';
+h+='<td class="p-3 text-right whitespace-nowrap text-green-600 font-semibold">'+o.approved+'</td>';
+h+='<td class="p-3 text-right whitespace-nowrap text-red-500">'+o.rejected+'</td>';
+h+='<td class="p-3 text-right whitespace-nowrap '+(o.cr>=3?'text-green-600':'text-gray-500')+'">'+o.cr+'%</td>';
+h+='<td class="p-3 text-right whitespace-nowrap '+(o.approval_rate>=50?'text-green-600':o.approval_rate>0?'text-yellow-600':'text-gray-400')+'">'+o.approval_rate+'%</td>';
+h+='<td class="p-3 text-right whitespace-nowrap '+(o.epc>0?'text-purple-600':'text-gray-400')+'">'+Number(o.epc).toFixed(2)+'</td>';
+h+='<td class="p-3 text-right whitespace-nowrap font-semibold '+(o.payout>0?'text-green-700':'text-gray-400')+'">'+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td>';
 h+='</tr>';
 });
-h+='</tbody></table></div></div>';
+h+='</tbody></table></div></div></div>';
 }
 
 document.getElementById('p-funnel').innerHTML=h;});}
