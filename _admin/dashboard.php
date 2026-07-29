@@ -82,43 +82,92 @@ const CL={microloans:'Займы',credits:'Кредиты',credit_cards:'Кре�
 const BL={any:'Любой',employed:'Работающий',unemployed:'Безработный',pensioner:'Пенсионер',student:'Студент',self_employed:'Самозанятый'};
 
 /* ============ OFFERS ============ */
-function lO(){ap('/offers').then(list=>{
-let h='<div class="flex justify-between mb-6"><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><button onclick="oForm()" class="btn-p">+ Добавить</button></div>';
-h+='<div class="bg-gray-50 rounded-lg p-2 mb-4 text-xs text-gray-500">💡 Перетаскивайте строки за ☰ внутри каждой категории — порядок сохранится отдельно по разделам</div>';
+function getOffersUiState(){
+try{return JSON.parse(localStorage.getItem('offers_ui_state')||'{}')||{};}catch(e){return{};}}
+function setOffersUiState(state){localStorage.setItem('offers_ui_state',JSON.stringify(state));}
+function toggleOfferGroup(key){
+var state=getOffersUiState();
+state['group_'+key]=!(state['group_'+key]===true);
+setOffersUiState(state);
+var box=document.getElementById('offers-group-'+key);
+var icon=document.getElementById('offers-group-icon-'+key);
+if(box){box.classList.toggle('hidden',state['group_'+key]===true);} 
+if(icon){icon.textContent=(state['group_'+key]===true?'▸':'▾');}
+}
 
-// Группируем по категориям
-let groups={};
-list.forEach(function(o){
-  let key=o.category||'other';
-  if(!groups[key]) groups[key]=[];
-  groups[key].push(o);
+function lO(){ap('/offers').then(list=>{
+let state=getOffersUiState();
+let currentFilter=state.filter||'all';
+let currentSearch=state.search||'';
+let h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Сортировка отдельно внутри каждой категории</p></div><div class="flex flex-wrap gap-2"><button onclick="oForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
+
+h+='<div class="bg-white rounded-xl border p-4 mb-6"><div class="grid sm:grid-cols-[1fr_220px_auto] gap-3 items-end">';
+h+='<div><label class="block text-xs font-medium text-gray-500 mb-1">Поиск по названию</label><input id="offers-search" class="input-f" placeholder="Например, Вебзайм" value="'+e(currentSearch)+'" oninput="applyOffersFilters()"></div>';
+h+='<div><label class="block text-xs font-medium text-gray-500 mb-1">Категория</label><select id="offers-filter" class="sel-f" onchange="applyOffersFilters()"><option value="all">Все категории</option>';
+Object.keys(CL).forEach(function(k){h+='<option value="'+k+'"'+(currentFilter===k?' selected':'')+'>'+CL[k]+'</option>';});
+h+='</select></div>';
+h+='<div class="flex gap-2"><button type="button" onclick="expandAllOfferGroups()" class="px-3 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-50">Развернуть</button><button type="button" onclick="collapseAllOfferGroups()" class="px-3 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-50">Свернуть</button></div>';
+h+='</div></div>';
+
+let filtered=list.filter(function(o){
+  let okCat=currentFilter==='all'||o.category===currentFilter;
+  let q=currentSearch.trim().toLowerCase();
+  let okSearch=!q || (o.title||'').toLowerCase().includes(q) || (o.slug||'').toLowerCase().includes(q);
+  return okCat && okSearch;
 });
 
+let groups={};
+filtered.forEach(function(o){ let key=o.category||'other'; if(!groups[key]) groups[key]=[]; groups[key].push(o); });
 let orderedKeys=[];
-for(let k in CL){ if(groups[k]) orderedKeys.push(k); }
+Object.keys(CL).forEach(function(k){ if(groups[k]&&groups[k].length) orderedKeys.push(k); });
 Object.keys(groups).forEach(function(k){ if(!orderedKeys.includes(k)) orderedKeys.push(k); });
 
+if(!filtered.length){
+h+='<div class="bg-white rounded-xl border p-10 text-center text-gray-500">Ничего не найдено по выбранным фильтрам</div>';
+}else{
 orderedKeys.forEach(function(key){
   let items=groups[key]||[];
+  let totalClicks=items.reduce((s,o)=>s+Number(o.clicks_total||0),0);
+  let monthClicks=items.reduce((s,o)=>s+Number(o.clicks_30d||0),0);
+  let collapsed=state['group_'+key]===true;
   h+='<div class="bg-white rounded-2xl border shadow-sm p-4 mb-6">';
-  h+='<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold text-gray-900">'+(CL[key]||key)+' <span class="text-sm font-normal text-gray-400">('+items.length+')</span></h3></div>';
+  h+='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">';
+  h+='<button type="button" onclick="toggleOfferGroup(\''+key+'\')" class="flex items-center gap-3 text-left min-w-0">';
+  h+='<span id="offers-group-icon-'+key+'" class="text-gray-400 text-lg">'+(collapsed?'▸':'▾')+'</span>';
+  h+='<div><h3 class="text-lg font-bold text-gray-900">'+(CL[key]||key)+' <span class="text-sm font-normal text-gray-400">('+items.length+')</span></h3><p class="text-xs text-gray-500 mt-1">Клики за 30 дней: <strong>'+monthClicks+'</strong> • Всего: <strong>'+totalClicks+'</strong></p></div>';
+  h+='</button>';
+  h+='<div class="text-xs text-gray-400">Перетаскивай внутри блока за ☰</div>';
+  h+='</div>';
+  h+='<div id="offers-group-'+key+'" class="space-y-2'+(collapsed?' hidden':'')+'">';
   h+='<div id="offers-sortable-'+key+'" class="space-y-2">';
   items.forEach(o=>{
     h+='<div class="bg-gray-50 rounded-xl border p-4 flex items-center gap-4 cursor-move hover:shadow-sm transition-shadow" data-id="'+o.id+'">';
     h+='<span class="text-gray-300 cursor-grab drag-handle text-lg">☰</span>';
     if(o.logo_url){var lg=o.logo_url;if(lg.indexOf("/public/")===0)lg=lg.substring(7);h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border"><img src="'+lg+'" class="w-full h-full object-contain p-0.5" loading="lazy"></div>';}else{h+='<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border">🏦</div>';}
     h+='<div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 text-sm">'+e(o.title)+'</p><p class="text-xs text-gray-500">'+(CL[o.category]||o.category)+' • '+o.rate+'% '+((o.rate_unit==='year')?'в год':'в день')+' • '+Number(o.amount_min).toLocaleString()+'—'+Number(o.amount_max).toLocaleString()+' ₽</p></div>';
+    h+='<div class="text-right text-xs text-gray-500 min-w-[86px]"><div>30 дн: <strong>'+Number(o.clicks_30d||0)+'</strong></div><div>всего: <strong>'+Number(o.clicks_total||0)+'</strong></div></div>';
     h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
     h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
     h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button>';
     h+='</div>';
   });
-  h+='</div></div>';
+  h+='</div></div></div>';
 });
+}
 
 document.getElementById('p-offers').innerHTML=h;
-orderedKeys.forEach(function(key){ initSort('offers-sortable-'+key,'offers'); });
+orderedKeys.forEach(function(key){ if(document.getElementById('offers-sortable-'+key)) initSort('offers-sortable-'+key,'offers'); });
 });}
+
+function applyOffersFilters(){
+var state=getOffersUiState();
+state.search=document.getElementById('offers-search')?.value||'';
+state.filter=document.getElementById('offers-filter')?.value||'all';
+setOffersUiState(state);
+lO();
+}
+function expandAllOfferGroups(){var state=getOffersUiState();Object.keys(CL).forEach(function(k){delete state['group_'+k];});setOffersUiState(state);lO();}
+function collapseAllOfferGroups(){var state=getOffersUiState();Object.keys(CL).forEach(function(k){state['group_'+k]=true;});setOffersUiState(state);lO();}
 
 function oForm(o){let f=o||{title:'',category:'microloans',amount_min:1000,amount_max:100000,term_min_days:1,term_max_days:365,psk:'0',rate:'0',rate_unit:'day',free_term_days:0,logo_url:'',affiliate_url:'',borrower_category:'any',description:'',seo_keywords:'',regions:'',is_active:true,sort_order:0};let id=o?o.id:0;
 let catOpts='',borOpts='';for(let k in CL)catOpts+='<option value="'+k+'"'+(f.category===k?' selected':'')+'>'+CL[k]+'</option>';for(let k in BL)borOpts+='<option value="'+k+'"'+(f.borrower_category===k?' selected':'')+'>'+BL[k]+'</option>';
