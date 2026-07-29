@@ -3,65 +3,99 @@ $db = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? 'list';
 
+function checkAffiliateUrlOnce(string $url, bool $head = true): array {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_NOBODY => $head,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; Kosmozaim-LinkChecker/1.0; +https://kosmozaim.ru/)',
+        CURLOPT_HEADER => false,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HTTPHEADER => [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control: no-cache',
+            'Pragma: no-cache',
+        ],
+    ]);
+    curl_exec($ch);
+    $curlErr = curl_error($ch);
+    $info = curl_getinfo($ch);
+    curl_close($ch);
+
+    return [
+        'http_code' => (int)($info['http_code'] ?? 0),
+        'final_url' => $info['url'] ?? $url,
+        'redirect_count' => (int)($info['redirect_count'] ?? 0),
+        'error_message' => $curlErr ?: null,
+        'mode' => $head ? 'HEAD' : 'GET',
+    ];
+}
+
 function checkAffiliateUrl(string $url): array {
     if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
         return ['http_code' => 0, 'final_url' => $url, 'redirect_count' => 0, 'is_ok' => 0, 'error_message' => 'Некорректный URL'];
     }
 
-    if (function_exists('curl_init')) {
-        $attempts = [true, false]; // сперва HEAD, затем GET
-        foreach ($attempts as $nobody) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 5,
-                CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_TIMEOUT => 12,
-                CURLOPT_NOBODY => $nobody,
-                CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_SSL_VERIFYHOST => 2,
-                CURLOPT_USERAGENT => 'Kosmozaim-LinkChecker/1.0',
-                CURLOPT_HEADER => false,
-            ]);
-            curl_exec($ch);
-            $curlErr = curl_error($ch);
-            $info = curl_getinfo($ch);
-            curl_close($ch);
-
-            $code = (int)($info['http_code'] ?? 0);
-            $final = $info['url'] ?? $url;
-            $redirects = (int)($info['redirect_count'] ?? 0);
-
-            if ($code > 0 && $code !== 405) {
-                return [
-                    'http_code' => $code,
-                    'final_url' => $final,
-                    'redirect_count' => $redirects,
-                    'is_ok' => ($code >= 200 && $code < 400) ? 1 : 0,
-                    'error_message' => ($code >= 200 && $code < 400) ? null : ('HTTP ' . $code),
-                ];
-            }
-
-            if (!$nobody) {
-                return [
-                    'http_code' => $code,
-                    'final_url' => $final,
-                    'redirect_count' => $redirects,
-                    'is_ok' => ($code >= 200 && $code < 400) ? 1 : 0,
-                    'error_message' => $curlErr ?: ($code ? ('HTTP ' . $code) : 'Нет ответа'),
-                ];
-            }
-        }
+    if (!function_exists('curl_init')) {
+        return ['http_code' => 0, 'final_url' => $url, 'redirect_count' => 0, 'is_ok' => 0, 'error_message' => 'cURL недоступен'];
     }
 
-    return ['http_code' => 0, 'final_url' => $url, 'redirect_count' => 0, 'is_ok' => 0, 'error_message' => 'cURL недоступен'];
+    // 1) Сначала HEAD
+    $head = checkAffiliateUrlOnce($url, true);
+    if ($head['http_code'] >= 200 && $head['http_code'] < 400) {
+        return [
+            'http_code' => $head['http_code'],
+            'final_url' => $head['final_url'],
+            'redirect_count' => $head['redirect_count'],
+            'is_ok' => 1,
+            'error_message' => null,
+        ];
+    }
+
+    // 2) Если HEAD дал 404/403/405/0 — обязательно перепроверяем GET
+    $get = checkAffiliateUrlOnce($url, false);
+    if ($get['http_code'] >= 200 && $get['http_code'] < 400) {
+        return [
+            'http_code' => $get['http_code'],
+            'final_url' => $get['final_url'],
+            'redirect_count' => $get['redirect_count'],
+            'is_ok' => 1,
+            'error_message' => null,
+        ];
+    }
+
+    // 3) Некоторые партнёрки режут ботов, но ссылка технически существует.
+    // Если GET дал 403 после редиректов — считаем подозрительной, но не битой.
+    if ($get['http_code'] === 403 && $get['redirect_count'] > 0) {
+        return [
+            'http_code' => $get['http_code'],
+            'final_url' => $get['final_url'],
+            'redirect_count' => $get['redirect_count'],
+            'is_ok' => 1,
+            'error_message' => 'Ограничение доступа для ботов (403 после редиректа), в браузере может открываться корректно',
+        ];
+    }
+
+    return [
+        'http_code' => $get['http_code'] ?: $head['http_code'],
+        'final_url' => $get['final_url'] ?: $head['final_url'] ?: $url,
+        'redirect_count' => max((int)$get['redirect_count'], (int)$head['redirect_count']),
+        'is_ok' => 0,
+        'error_message' => $get['error_message'] ?: $head['error_message'] ?: ('HTTP ' . ($get['http_code'] ?: $head['http_code'] ?: 0)),
+    ];
 }
 
 if ($method === 'GET' && $action === 'list') {
     if (apiCacheStart('admin_link_checks', 20)) exit;
 
-    $rows = $db->query("\n        SELECT o.id as offer_id, o.title, o.affiliate_url, lc.http_code, lc.final_url, lc.redirect_count, lc.is_ok, lc.error_message, lc.checked_at\n        FROM offers o\n        LEFT JOIN (\n            SELECT t1.* FROM offer_link_checks t1\n            INNER JOIN (SELECT offer_id, MAX(id) as max_id FROM offer_link_checks GROUP BY offer_id) t2 ON t1.id = t2.max_id\n        ) lc ON lc.offer_id = o.id\n        WHERE o.is_active = 1\n        ORDER BY o.category ASC, o.sort_order ASC, o.id ASC\n    ")->fetchAll();
+    $rows = $db->query("\n        SELECT o.id as offer_id, o.title, o.category, o.affiliate_url, lc.http_code, lc.final_url, lc.redirect_count, lc.is_ok, lc.error_message, lc.checked_at\n        FROM offers o\n        LEFT JOIN (\n            SELECT t1.* FROM offer_link_checks t1\n            INNER JOIN (SELECT offer_id, MAX(id) as max_id FROM offer_link_checks GROUP BY offer_id) t2 ON t1.id = t2.max_id\n        ) lc ON lc.offer_id = o.id\n        WHERE o.is_active = 1\n        ORDER BY o.category ASC, o.sort_order ASC, o.id ASC\n    ")->fetchAll();
 
     $summary = [
         'total' => count($rows),
