@@ -1,6 +1,7 @@
 <?php
 $data = json_decode(file_get_contents('php://input'), true);
 $email = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
+$source = trim($data['source'] ?? 'footer');
 
 if (!$email) {
     http_response_code(400);
@@ -17,5 +18,13 @@ if ($check->fetch()) {
 }
 
 $token = md5($email . time() . mt_rand());
-$db->prepare("INSERT INTO subscribers (email, unsubscribe_token) VALUES (?, ?)")->execute([$email, $token]);
-echo json_encode(['success' => true]);
+
+// Проверяем есть ли колонка source
+try {
+    $db->prepare("INSERT INTO subscribers (email, unsubscribe_token, source) VALUES (?, ?, ?)")->execute([$email, $token, $source]);
+} catch (Exception $e) {
+    // Если колонки source нет — вставляем без неё
+    $db->prepare("INSERT INTO subscribers (email, unsubscribe_token) VALUES (?, ?)")->execute([$email, $token]);
+}
+
+echo json_encode(['success' => true, 'message' => 'Подписка оформлена! Проверьте почту.']);

@@ -245,6 +245,140 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <?php endif; ?>
 
 
+
+    <!-- Exit Intent Popup: Подписка -->
+    <div id="exit-popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:10001;backdrop-filter:blur(4px)"></div>
+    <div id="exit-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10002;width:min(460px,calc(100vw - 32px));background:#fff;border-radius:24px;box-shadow:0 25px 80px rgba(15,23,42,.3);overflow:hidden">
+        <div style="background:linear-gradient(135deg,#059669 0%,#0d9488 50%,#0891b2 100%);padding:28px 24px 20px;text-align:center;position:relative">
+            <button type="button" onclick="hideExitPopup(true)" aria-label="Закрыть" style="position:absolute;top:12px;right:12px;border:none;background:rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:999px;font-size:18px;cursor:pointer;line-height:30px">×</button>
+            <div style="font-size:48px;margin-bottom:8px">🚀</div>
+            <h3 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 6px;line-height:1.3">Подождите!</h3>
+            <p style="color:rgba(255,255,255,.9);font-size:14px;margin:0;line-height:1.5">Получите персональную подборку лучших<br>предложений прямо на почту</p>
+        </div>
+        <div style="padding:24px">
+            <form id="exit-popup-form" onsubmit="return exitPopupSubmit(event)">
+                <div style="display:flex;gap:10px;margin-bottom:12px">
+                    <input type="email" id="exit-popup-email" placeholder="Ваш email" required style="flex:1;border:2px solid #e5e7eb;border-radius:12px;padding:14px 16px;font-size:15px;outline:none;transition:border .2s" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#e5e7eb'">
+                    <button type="submit" id="exit-popup-btn" style="background:#059669;color:#fff;border:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap">Получить</button>
+                </div>
+                <div id="exit-popup-msg" style="display:none;text-align:center;padding:8px;border-radius:8px;font-size:13px;margin-bottom:8px"></div>
+            </form>
+            <div style="display:flex;gap:12px;margin-top:16px">
+                <div style="flex:1;background:#f0fdf4;border-radius:12px;padding:12px;text-align:center">
+                    <div style="font-size:20px">💰</div>
+                    <div style="font-size:11px;color:#166534;font-weight:600;margin-top:4px">Лучшие ставки</div>
+                </div>
+                <div style="flex:1;background:#eff6ff;border-radius:12px;padding:12px;text-align:center">
+                    <div style="font-size:20px">⚡</div>
+                    <div style="font-size:11px;color:#1e40af;font-weight:600;margin-top:4px">Быстрое одобрение</div>
+                </div>
+                <div style="flex:1;background:#fdf4ff;border-radius:12px;padding:12px;text-align:center">
+                    <div style="font-size:20px">🎁</div>
+                    <div style="font-size:11px;color:#7e22ce;font-weight:600;margin-top:4px">Спецпредложения</div>
+                </div>
+            </div>
+            <p style="text-align:center;font-size:11px;color:#9ca3af;margin:14px 0 0">Без спама. Отписка в один клик.</p>
+        </div>
+    </div>
+    <script>
+    (function(){
+        var popup=document.getElementById('exit-popup');
+        var overlay=document.getElementById('exit-popup-overlay');
+        if(!popup||!overlay)return;
+
+        var storageKey='exit_popup_closed_v1';
+        var shownThisSession=false;
+
+        function isClosed(){
+            try{
+                var until=parseInt(localStorage.getItem(storageKey)||'0',10);
+                return until&&until>Date.now();
+            }catch(e){return false;}
+        }
+
+        function showExitPopup(){
+            if(shownThisSession||isClosed())return;
+            // Не показывать на админке, в кабинете, на странице отписки
+            var p=location.pathname;
+            if(p.indexOf('/admin')===0||p.indexOf('/cabinet')===0||p.indexOf('/unsubscribe')===0||p.indexOf('/login')===0||p.indexOf('/register')===0)return;
+            // Не показывать если уже подписан (localStorage)
+            if(localStorage.getItem('subscribed')==='1')return;
+            shownThisSession=true;
+            popup.style.display='block';
+            overlay.style.display='block';
+        }
+
+        window.hideExitPopup=function(persist){
+            popup.style.display='none';
+            overlay.style.display='none';
+            if(persist){
+                try{localStorage.setItem(storageKey,String(Date.now()+3*24*60*60*1000));}catch(e){}
+            }
+        };
+
+        overlay.addEventListener('click',function(){hideExitPopup(true);});
+
+        // Exit intent: курсор уходит вверх за пределы окна
+        document.addEventListener('mouseout',function(e){
+            if(e.clientY<=0&&e.relatedTarget===null){
+                showExitPopup();
+            }
+        });
+
+        // Мобильные: при нажатии "назад" / закрытии — через задержку + скролл вверх
+        var lastScroll=window.scrollY;
+        var scrollUpCount=0;
+        window.addEventListener('scroll',function(){
+            var cur=window.scrollY;
+            if(cur<lastScroll&&lastScroll-cur>100){
+                scrollUpCount++;
+                if(scrollUpCount>=3){showExitPopup();}
+            }else{
+                scrollUpCount=0;
+            }
+            lastScroll=cur;
+        });
+    })();
+
+    function exitPopupSubmit(ev){
+        ev.preventDefault();
+        var email=document.getElementById('exit-popup-email').value.trim();
+        var btn=document.getElementById('exit-popup-btn');
+        var msg=document.getElementById('exit-popup-msg');
+        if(!email)return false;
+
+        btn.disabled=true;btn.textContent='⏳';
+
+        fetch('/api/subscribe',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({email:email,source:'exit_popup'})
+        }).then(function(r){return r.json();}).then(function(d){
+            btn.disabled=false;btn.textContent='Получить';
+            if(d.success||d.message){
+                msg.style.display='block';
+                msg.style.background='#ecfdf5';
+                msg.style.color='#166534';
+                msg.textContent='✅ '+(d.message||'Подписка оформлена! Проверьте почту.');
+                try{localStorage.setItem('subscribed','1');}catch(e){}
+                setTimeout(function(){hideExitPopup(true);},2500);
+            }else{
+                msg.style.display='block';
+                msg.style.background='#fef2f2';
+                msg.style.color='#991b1b';
+                msg.textContent='❌ '+(d.error||'Ошибка');
+            }
+        }).catch(function(){
+            btn.disabled=false;btn.textContent='Получить';
+            msg.style.display='block';
+            msg.style.background='#fef2f2';
+            msg.style.color='#991b1b';
+            msg.textContent='❌ Ошибка соединения';
+        });
+        return false;
+    }
+    </script>
+
     <!-- Cookie consent -->
     <div id="cookie-consent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:0;margin:0">
         <div style="max-width:600px;margin:0 auto 16px;background:#1f2937;color:#f3f4f6;border-radius:16px;padding:20px 24px;box-shadow:0 -4px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">
