@@ -143,6 +143,9 @@ if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/
 // Здоровье сайта
 if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'; exit; }
 
+// Воронка
+if ($adminUri === '/funnel') { require __DIR__ . '/admin/funnel.php'; exit; }
+
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 

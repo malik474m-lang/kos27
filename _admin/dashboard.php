@@ -35,6 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('geo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="geo">🌍 Гео-редиректы</button>
 <button onclick="sw('cityseo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cityseo">🏙️ SEO городов</button>
 <button onclick="sw('stats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="stats">📊 Статистика</button>
+<button onclick="sw('funnel')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="funnel">🔻 Воронка</button>
 <button onclick="sw('conversions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="conversions">💰 Конверсии</button>
 <button onclick="sw('ab')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="ab">🧪 A/B тесты</button>
 <button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
@@ -56,6 +57,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-geo" class="tp hidden"></div>
 <div id="p-cityseo" class="tp hidden"></div>
 <div id="p-stats" class="tp hidden"></div>
+<div id="p-funnel" class="tp hidden"></div>
 <div id="p-conversions" class="tp hidden"></div>
 <div id="p-ab" class="tp hidden"></div>
 <div id="p-subs" class="tp hidden"></div>
@@ -71,8 +73,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -748,6 +750,62 @@ window.stHourlyInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{lab
 }
 
 
+
+/* ============ FUNNEL ============ */
+var _funnelPeriod=30;
+function lFunnel(){
+var p=_funnelPeriod;
+ap('/funnel?period='+p).then(d=>{
+var t=d.totals||{};
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🔻 Воронка по офферам</h2><div class="flex gap-2"><select id="fn-period" onchange="_funnelPeriod=+this.value;lFunnel()" class="sel-f text-sm w-auto"><option value="7"'+(p==7?' selected':'')+'>7 дн</option><option value="14"'+(p==14?' selected':'')+'>14 дн</option><option value="30"'+(p==30?' selected':'')+'>30 дн</option><option value="90"'+(p==90?' selected':'')+'>90 дн</option><option value="365"'+(p==365?' selected':'')+'>Год</option></select><button onclick="lFunnel()" class="text-sm text-blue-600 hover:underline">🔄</button></div></div>';
+
+// Общая воронка
+h+='<div class="bg-white rounded-2xl border p-6 mb-6">';
+h+='<h3 class="font-bold text-gray-900 mb-4">Общая воронка за '+p+' дней</h3>';
+var steps=[
+  {label:'Просмотры',value:t.views||0,color:'bg-blue-500'},
+  {label:'Клики',value:t.clicks||0,color:'bg-indigo-500'},
+  {label:'Одобрено',value:t.approved||0,color:'bg-green-500'},
+  {label:'Отклонено',value:t.rejected||0,color:'bg-red-400'},
+];
+var maxVal=Math.max(t.views||1, 1);
+h+='<div class="space-y-3">';
+steps.forEach(function(s){
+var pct=Math.round((s.value/maxVal)*100)||0;
+h+='<div><div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700">'+s.label+'</span><span class="font-bold text-gray-900">'+s.value.toLocaleString('ru-RU')+'</span></div><div class="bg-gray-200 rounded-full h-4"><div class="'+s.color+' rounded-full h-4 transition-all" style="width:'+Math.max(pct,1)+'%"></div></div></div>';
+});
+h+='</div>';
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">';
+h+='<div class="bg-blue-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-blue-600">'+t.ctr+'%</p><p class="text-xs text-gray-500">CTR</p><p class="text-xs text-gray-400">просм → клик</p></div>';
+h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-green-600">'+t.cr+'%</p><p class="text-xs text-gray-500">CR</p><p class="text-xs text-gray-400">клик → одобр.</p></div>';
+h+='<div class="bg-yellow-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-yellow-600">'+t.approval_rate+'%</p><p class="text-xs text-gray-500">Approval</p><p class="text-xs text-gray-400">одобр. / решений</p></div>';
+h+='<div class="bg-purple-50 rounded-xl p-4 text-center"><p class="text-2xl font-bold text-purple-600">'+Number(t.epc||0).toFixed(2)+' ₽</p><p class="text-xs text-gray-500">EPC</p><p class="text-xs text-gray-400">доход / клик</p></div>';
+h+='</div>';
+h+='<div class="mt-4 text-right"><span class="text-sm font-semibold text-green-700">Доход: '+Number(t.payout||0).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</span></div>';
+h+='</div>';
+
+// Таблица по офферам
+var items=d.funnel||[];
+if(items.length){
+h+='<div class="bg-white rounded-2xl border shadow-sm"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Просм.</th><th class="p-3 text-right">Клики</th><th class="p-3 text-right">CTR</th><th class="p-3 text-right text-green-700">Одобр.</th><th class="p-3 text-right text-red-600">Откл.</th><th class="p-3 text-right">CR</th><th class="p-3 text-right">Approval</th><th class="p-3 text-right">EPC</th><th class="p-3 text-right font-semibold">Доход</th></tr></thead><tbody>';
+items.forEach(function(o){
+var rowClass=o.clicks===0?'bg-gray-50 text-gray-400':'';
+h+='<tr class="border-t hover:bg-gray-50 '+rowClass+'"><td class="p-3 font-medium">'+e(o.title)+'</td>';
+h+='<td class="p-3 text-right">'+o.views+'</td>';
+h+='<td class="p-3 text-right font-semibold">'+o.clicks+'</td>';
+h+='<td class="p-3 text-right '+(o.ctr>=5?'text-blue-600':'text-gray-500')+'">'+o.ctr+'%</td>';
+h+='<td class="p-3 text-right text-green-600 font-semibold">'+o.approved+'</td>';
+h+='<td class="p-3 text-right text-red-500">'+o.rejected+'</td>';
+h+='<td class="p-3 text-right '+(o.cr>=3?'text-green-600':'text-gray-500')+'">'+o.cr+'%</td>';
+h+='<td class="p-3 text-right '+(o.approval_rate>=50?'text-green-600':o.approval_rate>0?'text-yellow-600':'text-gray-400')+'">'+o.approval_rate+'%</td>';
+h+='<td class="p-3 text-right '+(o.epc>0?'text-purple-600':'text-gray-400')+'">'+Number(o.epc).toFixed(2)+'</td>';
+h+='<td class="p-3 text-right font-semibold '+(o.payout>0?'text-green-700':'text-gray-400')+'">'+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div></div>';
+}
+
+document.getElementById('p-funnel').innerHTML=h;});}
 
 /* ============ CONVERSIONS / POSTBACK ============ */
 var _convPeriod=30;
