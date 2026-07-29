@@ -79,16 +79,30 @@ $borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безрабо
 
 ob_start();
 ?>
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<style>
+.offer-page-wrap{max-width:80rem;margin:0 auto;padding:2rem 1rem}
+.offer-main-card,.offer-calc-card,.offer-review-card,.offer-form-card,.offer-related-card{background:#fff;border:1px solid #f1f5f9;border-radius:1.5rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.offer-main-card{padding:2rem}.offer-calc-card{padding:1.5rem 2rem}.offer-form-card{padding:1.5rem}.offer-related-card{padding:1.5rem}
+.offer-top{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}.offer-logo{width:5rem;height:5rem;background:#f3f4f6;border-radius:.75rem;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.offer-main-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-bottom:1.5rem}.offer-main-grid-4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-bottom:1.5rem}
+.offer-metric{background:#f9fafb;border-radius:.75rem;padding:1rem}.offer-metric-label{font-size:.75rem;text-transform:uppercase;color:#6b7280}.offer-metric-value{font-size:1.125rem;font-weight:700;color:#111827;margin-top:.25rem}
+.offer-cta{display:inline-flex;align-items:center;gap:.5rem;background:#059669;color:#fff;padding:1rem 2rem;border-radius:.75rem;font-weight:700;text-decoration:none}
+.offer-cta:hover{opacity:.92}.offer-section{margin-top:3rem}.offer-title-2{font-size:1.5rem;font-weight:700;color:#111827;margin-bottom:1.5rem}
+.offer-calc-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:2rem;align-items:start}.offer-calc-side{background:#f9fafb;border:1px solid #f1f5f9;border-radius:1rem;padding:1.5rem}
+@media (min-width:768px){.offer-main-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:1023px){.offer-calc-grid{grid-template-columns:1fr}}
+@media (max-width:639px){.offer-page-wrap{padding:1.5rem 1rem}.offer-main-card{padding:1.25rem}.offer-calc-card{padding:1.25rem}.offer-top{gap:1rem;align-items:flex-start}.offer-logo{width:4.25rem;height:4.25rem}.offer-main-grid,.offer-main-grid-4{grid-template-columns:1fr 1fr;gap:.75rem}.offer-metric-value{font-size:1rem}.offer-cta{width:100%;justify-content:center}}
+</style>
+<section class="offer-page-wrap max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <nav class="text-sm text-gray-500 mb-6">
         <a href="/" class="hover:text-primary">Главная</a> → 
         <a href="<?= $catUrl ?>" class="hover:text-primary"><?= $catLabel ?></a> → 
         <?= e($offer['title']) ?>
     </nav>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-        <div class="flex items-center gap-6 mb-6">
-            <div class="w-20 h-20 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+    <div class="offer-main-card bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+        <div class="offer-top flex items-center gap-6 mb-6">
+            <div class="offer-logo w-20 h-20 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
                 <?php if ($logo): ?>
                 <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="w-full h-full object-contain p-2" decoding="async" fetchpriority="high">
                 <?php else: ?>
@@ -124,11 +138,11 @@ ob_start();
             $mainCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
         }
         if ($mainCards): ?>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="offer-main-grid-4 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <?php foreach ($mainCards as $card): ?>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase"><?= e($card['label']) ?></p>
-                <p class="text-lg font-bold text-gray-900"><?= e($card['value']) ?></p>
+            <div class="offer-metric bg-gray-50 rounded-lg p-4">
+                <p class="offer-metric-label text-xs text-gray-500 uppercase"><?= e($card['label']) ?></p>
+                <p class="offer-metric-value text-lg font-bold text-gray-900"><?= e($card['value']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -140,11 +154,11 @@ ob_start();
         $visibleExtra = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
         if ($visibleExtra):
         ?>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="offer-main-grid-4 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <?php foreach ($visibleExtra as $ef): ?>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-xs text-gray-500 uppercase"><?= e($ef['label']) ?></p>
-                <p class="text-lg font-bold text-gray-900"><?= e($ef['value']) ?></p>
+            <div class="offer-metric bg-gray-50 rounded-lg p-4">
+                <p class="offer-metric-label text-xs text-gray-500 uppercase"><?= e($ef['label']) ?></p>
+                <p class="offer-metric-value text-lg font-bold text-gray-900"><?= e($ef['value']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -162,7 +176,7 @@ ob_start();
 
 
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
-           style="background:#059669" class="inline-flex items-center space-x-2 text-white px-8 py-4 rounded-lg font-semibold transition-colors text-lg hover:opacity-90">
+           style="background:#059669" class="offer-cta inline-flex items-center space-x-2 text-white px-8 py-4 rounded-lg font-semibold transition-colors text-lg hover:opacity-90">
             <span><?= e($offerCtaLabel) ?></span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </a>
@@ -189,7 +203,7 @@ ob_start();
             default => 'Предварительный расчёт по условиям займа',
         };
     ?>
-    <div class="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+    <div class="offer-calc-card mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         <div class="flex items-center justify-between gap-4 flex-wrap mb-6">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900"><?= $calcTitle ?></h2>
@@ -200,7 +214,7 @@ ob_start();
             <?php endif; ?>
         </div>
 
-        <div class="grid lg:grid-cols-2 gap-8 items-start">
+        <div class="offer-calc-grid grid lg:grid-cols-2 gap-8 items-start">
             <div class="space-y-6">
                 <div>
                     <div class="flex items-center justify-between mb-2">
@@ -232,7 +246,7 @@ ob_start();
                 </div>
             </div>
 
-            <div class="rounded-2xl bg-gray-50 border border-gray-100 p-6">
+            <div class="offer-calc-side rounded-2xl bg-gray-50 border border-gray-100 p-6">
                 <h3 class="font-bold text-gray-900 mb-4">Результат расчёта</h3>
                 <div class="space-y-4">
                     <div>
@@ -310,10 +324,10 @@ ob_start();
     <!-- Отзывы -->
     <?php if ($offerReviews): ?>
     <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Отзывы о <?= e($offer['title']) ?></h2>
+        <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Отзывы о <?= e($offer['title']) ?></h2>
         <div class="space-y-4">
             <?php foreach ($offerReviews as $rev): ?>
-            <div class="bg-white rounded-xl border border-gray-100 p-5" itemprop="review" itemscope itemtype="https://schema.org/Review">
+            <div class="offer-review-card bg-white rounded-xl border border-gray-100 p-5" itemprop="review" itemscope itemtype="https://schema.org/Review">
                 <div class="flex items-center gap-3 mb-2">
                     <span class="font-semibold text-gray-900" itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name"><?= e($rev['author_name']) ?></span></span>
                     <div class="flex text-yellow-400" itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating">
@@ -334,8 +348,8 @@ ob_start();
 
     <!-- Форма отзыва -->
     <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Оставить отзыв о <?= e($offer['title']) ?></h2>
-        <div class="bg-white rounded-xl border border-gray-100 p-6">
+        <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Оставить отзыв о <?= e($offer['title']) ?></h2>
+        <div class="offer-form-card bg-white rounded-xl border border-gray-100 p-6">
             <form id="review-form" onsubmit="return submitReview(event)">
                 <input type="hidden" id="rv-offer-id" value="<?= (int)$offer['id'] ?>">
                 <div class="grid sm:grid-cols-2 gap-4 mb-4">
@@ -425,7 +439,7 @@ ob_start();
     <!-- Похожие -->
     <?php if ($similarOffers): ?>
     <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Похожие предложения по сумме и ставке</h2>
+        <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Похожие предложения по сумме и ставке</h2>
         <div class="grid gap-4">
             <?php foreach ($similarOffers as $sim): echo renderOfferCard($sim); endforeach; ?>
         </div>
@@ -438,7 +452,7 @@ ob_start();
     if ($relatedArticles):
     ?>
     <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Полезные статьи</h2>
+        <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Полезные статьи</h2>
         <div class="grid sm:grid-cols-3 gap-4">
             <?php foreach ($relatedArticles as $ra): ?>
             <a href="/articles/<?= e($ra['slug']) ?>" class="bg-white rounded-xl border border-gray-100 p-5 card-hover block">
@@ -455,7 +469,7 @@ ob_start();
     require_once __DIR__ . '/../data/cities.php';
     $shuffledCities = $cities; shuffle($shuffledCities);
     ?>
-    <div class="bg-gray-50 rounded-xl p-6 mt-8">
+    <div class="offer-related-card bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4"><?= $catLabel ?> по городам</h2>
         <div class="flex flex-wrap gap-2">
             <?php foreach (array_slice($shuffledCities, 0, 12) as $c): ?>
