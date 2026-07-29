@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/seo.php';
+require_once __DIR__ . '/includes/canonical.php';
 require_once __DIR__ . '/includes/page-cache.php';
 
 // Гео-редирект (до любого вывода)
@@ -17,6 +18,9 @@ foreach (['utm_source','utm_medium','utm_campaign','utm_content','utm_term'] as 
         $_COOKIE[$utm] = $_GET[$utm];
     }
 }
+
+// Каноникализация дублей URL (после сохранения UTM в cookies)
+canonicalizeRequest();
 
 // Трекинг просмотров страниц офферов (для конверсии)
 if (preg_match('#^/offer/([a-z0-9-]+)$#', $uri)) {
