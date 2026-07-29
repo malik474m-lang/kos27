@@ -59,20 +59,22 @@ return false;}
 
 <script>
 var A='/admin/api';
-function ap(u,o){return fetch(A+u,Object.assign({headers:{'Content-Type':'application/json'}},o||{})).then(r=>r.json());}
+function ap(u,o){return fetch(A+u,Object.assign({headers:{'Content-Type':'application/json'},credentials:'same-origin'},o||{})).then(async function(r){var t=await r.text(); try{return JSON.parse(t);}catch(e){throw new Error('Невалидный ответ API: '+t.substring(0,200));}});}
 function e(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function modal(h){document.getElementById('M').innerHTML='<div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto" onclick="if(event.target===this)cm()"><div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:560px;margin-top:40px" onclick="event.stopPropagation()">'+h+'</div></div>';}
 function cm(){document.getElementById('M').innerHTML='';}
 
 function load(){
 ap('?action=stats').then(d=>{
+if(d.error) throw new Error(d.error);
 var h='';
 [['🔑','Всего',d.total],['✅','Активных',d.active],['⏰','Истёкших',d.expired],['🚫','Отказов сегодня',d.denied_today]].forEach(c=>{
-h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">'+c[2]+'</p><p class="text-xs text-gray-500">'+c[0]+' '+c[1]+'</p></div>';});
+h+='<div class=\"bg-white rounded-xl border p-4 text-center\"><p class=\"text-2xl font-bold\">'+(c[2]||0)+'</p><p class=\"text-xs text-gray-500\">'+c[0]+' '+c[1]+'</p></div>';});
 document.getElementById('stats').innerHTML=h;
-});
+}).catch(function(err){document.getElementById('stats').innerHTML='<div class=\"col-span-full bg-red-50 border border-red-200 text-red-700 rounded-xl p-4\">Ошибка загрузки статистики: '+e(err.message)+'</div>';});
 
 ap('?action=list').then(d=>{
+if(d.error) throw new Error(d.error);
 var h='';
 (d.licenses||[]).forEach(l=>{
 var st={'active':'bg-green-100 text-green-700','expired':'bg-red-100 text-red-700','suspended':'bg-yellow-100 text-yellow-700','revoked':'bg-gray-100 text-gray-500'};
@@ -88,17 +90,18 @@ if(l.status==='active')h+='<button onclick="toggleLic('+l.id+',\'suspended\')" c
 if(l.status==='suspended')h+='<button onclick="toggleLic('+l.id+',\'active\')" class="text-green-600 text-xs hover:underline">Активировать</button>';
 h+='<button onclick="delLic('+l.id+')" class="text-red-500 text-xs hover:underline">Удалить</button>';
 h+='</div></div>';});
-document.getElementById('list').innerHTML=h||'<p class="text-gray-400 text-center py-8">Нет лицензий</p>';
-});
+document.getElementById('list').innerHTML=h||'<p class=\"text-gray-400 text-center py-8\">Нет лицензий</p>';
+}).catch(function(err){document.getElementById('list').innerHTML='<div class=\"bg-red-50 border border-red-200 text-red-700 rounded-xl p-4\">Ошибка загрузки лицензий: '+e(err.message)+'</div>';});
 
 ap('?action=logs&limit=30').then(d=>{
-var h='<table class="w-full text-xs"><thead class="bg-gray-50"><tr><th class="px-3 py-2 text-left">Время</th><th class="px-3 py-2">Действие</th><th class="px-3 py-2">Ключ</th><th class="px-3 py-2">Домен</th><th class="px-3 py-2">IP</th><th class="px-3 py-2">Код</th></tr></thead><tbody>';
+if(d.error) throw new Error(d.error);
+var h='<table class=\"w-full text-xs\"><thead class=\"bg-gray-50\"><tr><th class=\"px-3 py-2 text-left\">Время</th><th class=\"px-3 py-2\">Действие</th><th class=\"px-3 py-2\">Ключ</th><th class=\"px-3 py-2\">Домен</th><th class=\"px-3 py-2\">IP</th><th class=\"px-3 py-2\">Код</th></tr></thead><tbody>';
 (d.logs||[]).forEach(l=>{
 var acol={'activate':'text-green-600','verify':'text-blue-600','denied':'text-red-600','heartbeat':'text-gray-500','deactivate':'text-yellow-600','error':'text-red-600'};
 h+='<tr class="border-t"><td class="px-3 py-1.5">'+new Date(l.created_at).toLocaleString('ru-RU',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})+'</td><td class="px-3 py-1.5 font-medium '+(acol[l.action]||'')+'">'+e(l.action)+'</td><td class="px-3 py-1.5 font-mono">'+e((l.license_key||'').substr(-12))+'</td><td class="px-3 py-1.5">'+e(l.domain||'-')+'</td><td class="px-3 py-1.5 text-gray-400">'+e(l.ip||'')+'</td><td class="px-3 py-1.5">'+(l.response_code||'')+'</td></tr>';});
 h+='</tbody></table>';
 document.getElementById('logs').innerHTML=h;
-});
+}).catch(function(err){document.getElementById('logs').innerHTML='<div class=\"bg-red-50 border border-red-200 text-red-700 rounded-xl p-4\">Ошибка загрузки логов: '+e(err.message)+'</div>';});
 }
 
 function showCreate(){
