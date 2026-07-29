@@ -8,31 +8,51 @@ header('Content-Type: application/json; charset=UTF-8');
 try {
     $db = getDB();
     
-    // Проверяем что таблица существует
+    // Проверяем/создаём таблицу
+    $tableExists = false;
     try {
         $db->query("SELECT 1 FROM admin_audit_log LIMIT 1");
+        $tableExists = true;
     } catch (Exception $e) {
-        // Таблица не существует — создаём
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS `admin_audit_log` (
-              `id` int(11) NOT NULL AUTO_INCREMENT,
-              `admin_id` int(11) DEFAULT NULL,
-              `admin_name` varchar(100) DEFAULT NULL,
-              `action` varchar(50) NOT NULL,
-              `entity` varchar(50) NOT NULL,
-              `entity_id` int(11) DEFAULT NULL,
-              `entity_name` varchar(255) DEFAULT NULL,
-              `changes` text DEFAULT NULL,
-              `ip` varchar(45) DEFAULT NULL,
-              `user_agent` varchar(500) DEFAULT NULL,
-              `created_at` timestamp NULL DEFAULT current_timestamp(),
-              PRIMARY KEY (`id`),
-              KEY `idx_entity` (`entity`, `entity_id`),
-              KEY `idx_action` (`action`),
-              KEY `idx_admin` (`admin_id`),
-              KEY `idx_created` (`created_at`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-        ");
+        // Пробуем создать
+        try {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS `admin_audit_log` (
+                  `id` int(11) NOT NULL AUTO_INCREMENT,
+                  `admin_id` int(11) DEFAULT NULL,
+                  `admin_name` varchar(100) DEFAULT NULL,
+                  `action` varchar(50) NOT NULL,
+                  `entity` varchar(50) NOT NULL,
+                  `entity_id` int(11) DEFAULT NULL,
+                  `entity_name` varchar(255) DEFAULT NULL,
+                  `changes` text DEFAULT NULL,
+                  `ip` varchar(45) DEFAULT NULL,
+                  `user_agent` varchar(500) DEFAULT NULL,
+                  `created_at` timestamp NULL DEFAULT current_timestamp(),
+                  PRIMARY KEY (`id`),
+                  KEY `idx_entity` (`entity`, `entity_id`),
+                  KEY `idx_action` (`action`),
+                  KEY `idx_admin` (`admin_id`),
+                  KEY `idx_created` (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+            ");
+            $tableExists = true;
+        } catch (Exception $e2) {
+            // Не удалось создать — возвращаем пустой результат
+            echo json_encode([
+                'logs' => [],
+                'total' => 0,
+                'limit' => 50,
+                'offset' => 0,
+                'warning' => 'Таблица admin_audit_log не существует. Создайте её вручную через phpMyAdmin.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+    
+    if (!$tableExists) {
+        echo json_encode(['logs' => [], 'total' => 0, 'limit' => 50, 'offset' => 0], JSON_UNESCAPED_UNICODE);
+        exit;
     }
     
     // Параметры фильтрации
@@ -81,7 +101,7 @@ try {
     $countStmt->execute($params);
     $total = (int)$countStmt->fetch()['total'];
     
-    // Записи — LIMIT/OFFSET вставляем напрямую (целые числа, безопасно)
+    // Записи
     $limit = (int)$limit;
     $offset = (int)$offset;
     

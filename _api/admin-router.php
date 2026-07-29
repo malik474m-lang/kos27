@@ -105,7 +105,6 @@ if (preg_match('#^/newsletters/(\d+)/test$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     require __DIR__ . '/admin/newsletter-test.php'; exit;
 }
-}
 
 // Управление подписчиками
 if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
