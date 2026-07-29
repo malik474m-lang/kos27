@@ -80,6 +80,51 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     }
     </script>
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .gradient-hero { background: linear-gradient(135deg, #1a56db 0%, #7e3af2 100%); }
+        .card-hover { transition: transform .2s, box-shadow .2s; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,.1); }
+        .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .line-clamp-3 { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+        .prose h2 { font-size:1.5rem; font-weight:700; color:#111827; margin-top:1.75rem; margin-bottom:.75rem; line-height:1.3; }
+        .prose h3 { font-size:1.25rem; font-weight:600; color:#111827; margin-top:1.5rem; margin-bottom:.5rem; line-height:1.4; }
+        .prose h4 { font-size:1.1rem; font-weight:600; color:#1f2937; margin-top:1.25rem; margin-bottom:.5rem; }
+        .prose p { margin-bottom:1rem; line-height:1.7; }
+        .prose ul, .prose ol { margin-bottom:1rem; padding-left:1.5rem; }
+        .prose ul { list-style-type:disc; }
+        .prose ol { list-style-type:decimal; }
+        .prose li { margin-bottom:.35rem; line-height:1.6; }
+        .prose li::marker { color:#6b7280; }
+        .prose a { color:#1a56db; text-decoration:underline; }
+        .prose a:hover { color:#1244af; }
+        .prose strong { font-weight:600; color:#111827; }
+        .prose blockquote { border-left:4px solid #e5e7eb; padding-left:1rem; margin:1rem 0; color:#6b7280; font-style:italic; }
+        .prose table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        .prose th, .prose td { border:1px solid #e5e7eb; padding:.5rem .75rem; text-align:left; }
+        .prose th { background:#f9fafb; font-weight:600; }
+        .prose img { border-radius:.5rem; margin:1rem 0; }
+        .prose-sm h2 { font-size:1.3rem; }
+        .prose-sm h3 { font-size:1.15rem; }
+        .prose-sm p, .prose-sm li { font-size:.938rem; }
+        .prose-lg h2 { font-size:1.75rem; }
+        .prose-lg h3 { font-size:1.4rem; }
+        .prose-lg p { font-size:1.1rem; }
+
+        /* Глобальный fallback для страницы оффера */
+        .offer-page-wrap{max-width:80rem;margin:0 auto;padding:2rem 1rem}
+        .offer-main-card,.offer-calc-card,.offer-review-card,.offer-form-card,.offer-related-card{background:#fff;border:1px solid #f1f5f9;border-radius:1.5rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+        .offer-main-card{padding:2rem}.offer-calc-card{padding:1.5rem 2rem}.offer-form-card{padding:1.5rem}.offer-related-card{padding:1.5rem}
+        .offer-top{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}.offer-logo{width:5rem;height:5rem;background:#f3f4f6;border-radius:.75rem;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+        .offer-main-grid,.offer-main-grid-4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-bottom:1.5rem}
+        .offer-metric{background:#f9fafb;border-radius:.75rem;padding:1rem}.offer-metric-label{font-size:.75rem;text-transform:uppercase;color:#6b7280}.offer-metric-value{font-size:1.125rem;font-weight:700;color:#111827;margin-top:.25rem}
+        .offer-cta{display:inline-flex;align-items:center;gap:.5rem;background:#059669;color:#fff;padding:1rem 2rem;border-radius:.75rem;font-weight:700;text-decoration:none}.offer-cta:hover{opacity:.92}
+        .offer-title-2{font-size:1.5rem;font-weight:700;color:#111827;margin-bottom:1.5rem}
+        .offer-calc-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:2rem;align-items:start}.offer-calc-side{background:#f9fafb;border:1px solid #f1f5f9;border-radius:1rem;padding:1.5rem}
+        @media (min-width:768px){.offer-main-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+        @media (max-width:1023px){.offer-calc-grid{grid-template-columns:1fr}}
+        @media (max-width:639px){.offer-page-wrap{padding:1.5rem 1rem}.offer-main-card{padding:1.25rem}.offer-calc-card{padding:1.25rem}.offer-top{gap:1rem;align-items:flex-start}.offer-logo{width:4.25rem;height:4.25rem}.offer-main-grid,.offer-main-grid-4{grid-template-columns:1fr 1fr;gap:.75rem}.offer-metric-value{font-size:1rem}.offer-cta{width:100%;justify-content:center}}
+    </style>
     <?= $pageHeadHtml ?>
 
     <!-- JSON-LD SEO разметка -->
