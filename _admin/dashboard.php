@@ -1320,7 +1320,7 @@ var dt=new Date(l.sent_at);
 var dtStr=dt.toLocaleDateString('ru-RU')+' '+dt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 var badge=l.status==='sent'?'<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">✅ OK</span>':
 '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs" title="'+e(l.error_message||'')+'">❌ Ошибка</span>';
-var testBadge=l.is_test==1?' <span class="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded text-xs">тест</span>':';
+var testBadge=l.is_test==1?' <span class="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded text-xs">тест</span>':'';
 h+='<tr class="border-t hover:bg-gray-50">';
 h+='<td class="px-3 py-2 text-gray-500 whitespace-nowrap text-xs">'+dtStr+'</td>';
 h+='<td class="px-3 py-2 text-xs truncate max-w-40">'+e(l.newsletter_subject||'#'+l.newsletter_id)+'</td>';
