@@ -1194,7 +1194,7 @@ var active=subs.filter(s=>s.is_active);
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">📬 Подписчики и рассылки</h2><div class="flex gap-2"><span class="text-sm text-gray-500 mt-1">Активных: <strong>'+active.length+'</strong> из '+subs.length+'</span></div></div>';
 
 // Рассылки
-h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">✉️ Рассылки</h3><div class="flex gap-2"><button onclick="nlSendLog()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">📋 Лог</button><button onclick="nlForm()" class="btn-p text-sm">+ Создать</button></div></div>';
+h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">✉️ Рассылки</h3><div class="flex gap-2"><button onclick="nlSendLog()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">📋 Лог</button><button onclick="nlQuickTest()" class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Тестовая</button><button onclick="nlForm()" class="btn-p text-sm">+ Создать</button></div></div>';
 if(nls.length){
 h+='<div class="space-y-3">';
 nls.forEach(n=>{
@@ -1333,6 +1333,35 @@ h+='</tbody></table></div>';
 if(d.total>100)h+='<p class="text-xs text-gray-400 mt-2 text-center">Показано 100 из '+d.total+'</p>';
 modal(h);
 }).catch(function(err){alert('Ошибка: '+err.message);});}
+function nlQuickTest(){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Быстрая тестовая рассылка</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<div class="space-y-4">'+
+'<div><label class="block text-sm font-medium mb-1">Тема письма</label><input id="qt-subj" class="input-f" value="Тестовая рассылка" placeholder="Тема письма"></div>'+
+'<div><label class="block text-sm font-medium mb-1">Содержание (HTML)</label><textarea id="qt-body" class="input-f font-mono text-xs" rows="6" placeholder="<h2>Заголовок</h2><p>Текст...</p>"><h2>Тестовое письмо</h2><p>Проверка рассылки Космозайм.</p><p>{{offers}}</p></textarea></div>'+
+'<div><label class="block text-sm font-medium mb-1">Email получателя *</label><input id="qt-email" class="input-f" type="email" placeholder="ваш@email.ru" required></div>'+
+'<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">⚠️ Создаст черновик и сразу отправит тестовое письмо с пометкой [ТЕСТ].</div>'+
+'<div class="flex justify-end gap-3"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="nlQuickTestSend()" id="qt-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">🚀 Отправить тест</button></div>'+
+'</div>');
+}
+function nlQuickTestSend(){
+var subj=document.getElementById('qt-subj').value.trim();
+var body=document.getElementById('qt-body').value;
+var email=document.getElementById('qt-email').value.trim();
+if(!email){alert('Введите email');return;}
+if(!subj)subj='Тестовая рассылка';
+var btn=document.getElementById('qt-btn');
+btn.disabled=true;btn.textContent='⏳ Создаю и отправляю...';
+ap('/newsletters',{method:'POST',body:JSON.stringify({subject:subj,bodyHtml:body})}).then(function(d){
+if(!d.success&&!d.id){btn.disabled=false;btn.textContent='🚀 Отправить тест';alert('Ошибка создания: '+(d.error||''));return;}
+var nlId=d.id;
+return ap('/newsletters/'+nlId+'/test',{method:'POST',body:JSON.stringify({email:email})});
+}).then(function(d){
+btn.disabled=false;btn.textContent='🚀 Отправить тест';
+if(!d)return;
+if(d.success){alert('✅ '+(d.message||'Тестовое письмо отправлено!'));cm();lSu();}
+else alert('❌ '+(d.error||'Ошибка отправки'));
+}).catch(function(err){btn.disabled=false;btn.textContent='🚀 Отправить тест';alert('Ошибка: '+err.message);});}
+
 function nlStats(id){
 ap('/newsletters/'+id+'/stats').then(d=>{
 var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📊 Статистика рассылки</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
