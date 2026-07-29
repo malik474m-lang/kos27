@@ -1,4 +1,7 @@
 <?php
+$data = json_decode(file_get_contents('php://input'), true) ?: [];
+$targetOfferId = (int)($data['offerId'] ?? 0);
+
 $maleNames = ['Александр','Дмитрий','Максим','Иван','Артём','Андрей','Михаил','Сергей','Николай','Евгений','Алексей','Владимир','Денис','Кирилл','Роман','Олег','Павел','Виктор','Антон','Игорь'];
 $femaleNames = ['Анна','Мария','Елена','Ольга','Наталья','Татьяна','Ирина','Светлана','Екатерина','Юлия','Дарья','Алина','Марина','Оксана','Виктория','Полина'];
 $maleFallbacks = ['Срочно нужны были деньги, оформил за пару минут. Перевели быстро, доволен.','Подавал заявку вечером, одобрили сразу. Нормальный сервис.','Брал первый раз, переживал. Но всё нормально.','Коллега посоветовал, попробовал. Удобно.','Не хватало до зарплаты, выручили. Погасил вовремя.'];
@@ -8,16 +11,23 @@ $situations = ['срочно понадобились деньги до зарп
 $styles = ['коротко, 2 предложения','эмоционально, 3 предложения','спокойно, 2-3 предложения','с деталями, 3 предложения'];
 
 function weightedRating(): int {
-    $w = [1,2,5,25,67]; $t = 100; $r = mt_rand(0,99);
+    $w = [1,2,5,25,67]; $r = mt_rand(0,99);
     foreach ($w as $i => $v) { $r -= $v; if ($r < 0) return $i + 1; }
     return 5;
 }
 
 $db = getDB();
-$offers = $db->query("SELECT id, title FROM offers WHERE is_active = 1")->fetchAll();
-if (!$offers) { echo json_encode(['error' => 'Нет офферов']); exit; }
+if ($targetOfferId > 0) {
+    $stmt = $db->prepare("SELECT id, title FROM offers WHERE is_active = 1 AND id = ? LIMIT 1");
+    $stmt->execute([$targetOfferId]);
+    $offer = $stmt->fetch();
+    if (!$offer) { echo json_encode(['error' => 'Оффер не найден']); exit; }
+} else {
+    $offers = $db->query("SELECT id, title FROM offers WHERE is_active = 1")->fetchAll();
+    if (!$offers) { echo json_encode(['error' => 'Нет офферов']); exit; }
+    $offer = $offers[array_rand($offers)];
+}
 
-$offer = $offers[array_rand($offers)];
 $gender = mt_rand(0,1) ? 'male' : 'female';
 $name = $gender === 'male' ? $maleNames[array_rand($maleNames)] : $femaleNames[array_rand($femaleNames)];
 $rating = weightedRating();
@@ -47,8 +57,8 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
     ]));
 
     if ($response) {
-        $data = json_decode($response, true);
-        $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
+        $respData = json_decode($response, true);
+        $text = $respData['result']['alternatives'][0]['message']['text'] ?? null;
         if ($text) {
             $comment = preg_replace('/\*/', '', $text);
             $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
@@ -64,8 +74,7 @@ if (!$comment) {
 $db->prepare("INSERT INTO reviews (offer_id, author_name, rating, comment, is_approved) VALUES (?,?,?,?,1)")
    ->execute([$offer['id'], $name, $rating, $comment]);
 
-// Пересчитать рейтинг
 $db->prepare("UPDATE offers SET rating = (SELECT COALESCE(ROUND(AVG(r.rating),1),0) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1), review_count = (SELECT COUNT(*) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1) WHERE id = ?")
    ->execute([$offer['id'], $offer['id'], $offer['id']]);
 
-echo json_encode(['success' => true, 'review' => ['offer' => $offer['title'], 'name' => $name, 'rating' => $rating, 'comment' => $comment]]);
+echo json_encode(['success' => true, 'review' => ['offer' => $offer['title'], 'offerId' => $offer['id'], 'name' => $name, 'rating' => $rating, 'comment' => $comment]]);

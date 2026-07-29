@@ -370,7 +370,25 @@ function lR(){ap('/reviews').then(list=>{let pend=list.filter(r=>!r.is_approved)
 list.forEach(r=>{let st='';for(let i=1;i<=5;i++)st+='<span class="'+(i<=r.rating?'text-yellow-400':'text-gray-300')+'">★</span>';
 h+='<div class="bg-white rounded-xl border p-4 '+(r.is_approved?'':'border-yellow-200 bg-yellow-50/50')+'"><div class="flex justify-between"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><span class="font-semibold">'+e(r.author_name)+'</span><span>'+st+'</span><span class="text-xs text-gray-400">'+new Date(r.created_at).toLocaleDateString('ru-RU')+'</span></div><p class="text-sm text-gray-500">'+e(r.offer_title||'—')+'</p><p class="text-gray-700 mt-1">'+e(r.comment)+'</p></div><div class="flex flex-col gap-1 ml-4">'+(r.is_approved?'<button onclick="rA('+r.id+',false)" class="text-sm bg-gray-100 px-3 py-1 rounded">Скрыть</button>':'<button onclick="rA('+r.id+',true)" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded">✓ Одобрить</button>')+'<button onclick="rD('+r.id+')" class="text-sm text-red-500">Удалить</button></div></div></div>';});
 h+='</div>';document.getElementById('p-reviews').innerHTML=h;});}
-function rGen(){ap('/generate-review',{method:'POST'}).then(d=>{if(d.success)alert(d.review.name+' → '+d.review.offer+' ('+d.review.rating+'/5)');lR();});}
+function rGen(){
+ap('/offers').then(list=>{
+  let opts='<option value="">Случайный оффер</option>';
+  (list||[]).forEach(o=>{ opts+='<option value="'+o.id+'">'+e(o.title)+'</option>'; });
+  modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🤖 Генерация отзыва</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+  '<div class="space-y-4">'+
+  '<div><label class="block text-sm font-medium mb-1">На какой оффер сгенерировать отзыв?</label><select id="rg-offer" class="sel-f">'+opts+'</select><p class="text-xs text-gray-400 mt-1">Можно выбрать конкретный оффер или оставить случайный вариант.</p></div>'+
+  '<div class="flex justify-end gap-3 pt-2"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="rGenDo()" id="rg-btn" class="btn-p">Сгенерировать</button></div></div>');
+});
+}
+function rGenDo(){
+  let btn=document.getElementById('rg-btn');
+  let offerId=document.getElementById('rg-offer')?.value||'';
+  btn.disabled=true; btn.textContent='⏳ Генерация...';
+  ap('/generate-review',{method:'POST',body:JSON.stringify({offerId:offerId||null})}).then(d=>{
+    if(d.success){ cm(); alert(d.review.name+' → '+d.review.offer+' ('+d.review.rating+'/5)'); lR(); }
+    else { btn.disabled=false; btn.textContent='Сгенерировать'; alert(d.error||'Ошибка'); }
+  }).catch(()=>{ btn.disabled=false; btn.textContent='Сгенерировать'; alert('Ошибка'); });
+}
 function rA(id,v){ap('/reviews/'+id,{method:'PUT',body:JSON.stringify({isApproved:v})}).then(()=>lR());}
 function rD(id){if(confirm('Удалить?'))ap('/reviews/'+id,{method:'DELETE'}).then(()=>lR());}
 
