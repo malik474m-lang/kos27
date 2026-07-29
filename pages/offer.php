@@ -86,7 +86,7 @@ ob_start();
         <?= e($offer['title']) ?>
     </nav>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         <div class="flex items-center gap-6 mb-6">
             <div class="w-20 h-20 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
                 <?php if ($logo): ?>
@@ -124,7 +124,7 @@ ob_start();
             $mainCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
         }
         if ($mainCards): ?>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <?php foreach ($mainCards as $card): ?>
             <div class="bg-gray-50 rounded-lg p-4">
                 <p class="text-xs text-gray-500 uppercase"><?= e($card['label']) ?></p>
@@ -162,7 +162,7 @@ ob_start();
 
 
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
-           class="inline-flex items-center space-x-2 bg-accent text-white px-8 py-4 rounded-lg font-semibold hover:bg-accent-dark transition-colors text-lg">
+           style="background:#059669" class="inline-flex items-center space-x-2 text-white px-8 py-4 rounded-lg font-semibold transition-colors text-lg hover:opacity-90">
             <span><?= e($offerCtaLabel) ?></span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </a>
@@ -200,7 +200,7 @@ ob_start();
             <?php endif; ?>
         </div>
 
-        <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-start">
+        <div class="grid lg:grid-cols-2 gap-8 items-start">
             <div class="space-y-6">
                 <div>
                     <div class="flex items-center justify-between mb-2">
@@ -252,7 +252,7 @@ ob_start();
                         <p id="offer-calc-note" class="text-sm text-gray-600">Предварительный расчёт по открытым параметрам оффера.</p>
                     </div>
                 </div>
-                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors"><?= e($offerCtaSecondary) ?></a>
+                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" style="background:#059669" class="mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 font-semibold text-white transition-colors hover:opacity-90"><?= e($offerCtaSecondary) ?></a>
             </div>
         </div>
     </div>
