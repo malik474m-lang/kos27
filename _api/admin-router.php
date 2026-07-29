@@ -149,6 +149,9 @@ if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'
 // Воронка
 if ($adminUri === '/funnel') { require __DIR__ . '/admin/funnel.php'; exit; }
 
+// Проверка партнёрских ссылок
+if (str_starts_with($adminUri, '/link-checks')) { require __DIR__ . '/admin/link-checks.php'; exit; }
+
 // Умный рейтинг
 if ($adminUri === '/smart-rating' && ($method === 'GET' || $method === 'POST')) { require __DIR__ . '/admin/smart-rating.php'; exit; }
 

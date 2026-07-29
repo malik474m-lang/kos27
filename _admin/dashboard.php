@@ -38,6 +38,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('stats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="stats">📊 Статистика</button>
 <button onclick="sw('funnel')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="funnel">🔻 Воронка</button>
 <button onclick="sw('smart')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="smart">🧠 Рейтинг</button>
+<button onclick="sw('links')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="links">🔗 Ссылки</button>
 <button onclick="sw('conversions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="conversions">💰 Конверсии</button>
 <button onclick="sw('ab')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="ab">🧪 A/B тесты</button>
 <button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
@@ -61,6 +62,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-stats" class="tp hidden"></div>
 <div id="p-funnel" class="tp hidden"></div>
 <div id="p-smart" class="tp hidden"></div>
+<div id="p-links" class="tp hidden"></div>
 <div id="p-conversions" class="tp hidden"></div>
 <div id="p-ab" class="tp hidden"></div>
 <div id="p-subs" class="tp hidden"></div>
@@ -75,8 +77,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',links:'Проверка ссылок',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,links:lLinks,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -905,6 +907,49 @@ h+='</tbody></table></div></div>';
 }
 
 document.getElementById('p-funnel').innerHTML=h;});}
+
+/* ============ LINK CHECKS ============ */
+function lLinks(){
+var el=document.getElementById('p-links');
+el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Загрузка...</p></div>';
+ap('/link-checks?action=list').then(d=>{
+var s=d.summary||{}; var items=d.items||[];
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🔗 Партнёрские ссылки</h2><div class="flex gap-2"><button onclick="runLinkChecks()" class="btn-p text-sm">Проверить все</button></div></div>';
+
+h+='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">';
+h+='<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold text-gray-800">'+(s.total||0)+'</p><p class="text-xs text-gray-500">Всего</p></div>';
+h+='<div class="bg-green-50 rounded-xl border border-green-100 p-4 text-center"><p class="text-2xl font-bold text-green-600">'+(s.ok||0)+'</p><p class="text-xs text-gray-500">Работают</p></div>';
+h+='<div class="bg-red-50 rounded-xl border border-red-100 p-4 text-center"><p class="text-2xl font-bold text-red-600">'+(s.broken||0)+'</p><p class="text-xs text-gray-500">Битые/ошибки</p></div>';
+h+='<div class="bg-yellow-50 rounded-xl border border-yellow-100 p-4 text-center"><p class="text-2xl font-bold text-yellow-600">'+(s.unchecked||0)+'</p><p class="text-xs text-gray-500">Не проверены</p></div>';
+h+='</div>';
+
+if(items.length){
+h+='<div class="bg-white rounded-2xl border shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Оффер</th><th class="p-3 text-left">Статус</th><th class="p-3 text-left">HTTP</th><th class="p-3 text-left">Проверено</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
+items.forEach(function(it){
+  var badge='';
+  if(!it.checked_at) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Не проверен</span>';
+  else if(Number(it.is_ok)===1) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">OK</span>';
+  else badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Ошибка</span>';
+  var code=it.http_code?String(it.http_code):'—';
+  var checked=it.checked_at?new Date(it.checked_at).toLocaleString('ru-RU'):'—';
+  var title=it.error_message?('Ошибка: '+it.error_message):(it.final_url||it.affiliate_url||'');
+  h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 min-w-[280px]"><div class="font-medium text-gray-900">'+e(it.title||'—')+'</div><div class="text-xs text-gray-400 break-all" title="'+e(title)+'">'+e((it.final_url||it.affiliate_url||'').substring(0,90))+( (it.final_url||it.affiliate_url||'').length>90?'...':'')+'</div></td><td class="p-3">'+badge+'</td><td class="p-3 font-mono text-xs">'+e(code)+'</td><td class="p-3 text-xs text-gray-500 whitespace-nowrap">'+e(checked)+'</td><td class="p-3 text-right"><button onclick="runLinkChecks('+it.offer_id+')" class="text-blue-600 hover:underline text-sm">Проверить</button></td></tr>';
+});
+h+='</tbody></table></div></div>';
+} else {
+ h+='<div class="bg-white rounded-xl border p-8 text-center text-gray-500">Нет данных для проверки</div>';
+}
+
+el.innerHTML=h;
+});}
+function runLinkChecks(offerId){
+var text=offerId?'Проверить эту ссылку?':'Проверить все партнёрские ссылки?';
+if(!confirm(text)) return;
+ap('/link-checks?action=run',{method:'POST',body:JSON.stringify({offerId:offerId||0})}).then(function(d){
+  if(d.success) alert('Проверено: '+d.checked+'; проблемных: '+d.broken);
+  else alert(d.error||'Ошибка');
+  lLinks();
+});}
 
 /* ============ CONVERSIONS / POSTBACK ============ */
 var _convPeriod=30;

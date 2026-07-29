@@ -105,6 +105,15 @@ try { $db->query("SELECT source FROM postback_conversions LIMIT 1"); } catch (Ex
 if ($missingCols) { $checks[] = ['level'=>'error','msg'=>count($missingCols).' колонок не найдено — выполните миграции','items'=>$missingCols]; $score -= 8; }
 else { $checks[] = ['level'=>'ok','msg'=>'Все колонки БД актуальны']; }
 
+// === ПАРТНЁРСКИЕ ССЫЛКИ ===
+try {
+    $brokenLinks = $db->query("SELECT COUNT(*) FROM (SELECT offer_id, MAX(id) as max_id FROM offer_link_checks GROUP BY offer_id) x JOIN offer_link_checks lc ON lc.id = x.max_id WHERE lc.is_ok = 0")->fetchColumn();
+    $uncheckedLinks = $db->query("SELECT COUNT(*) FROM offers o WHERE o.is_active = 1 AND NOT EXISTS (SELECT 1 FROM offer_link_checks lc WHERE lc.offer_id = o.id)")->fetchColumn();
+    if ((int)$brokenLinks > 0) { $checks[] = ['level'=>'warning','msg'=>(int)$brokenLinks.' партнёрских ссылок битые или неактуальные']; $score -= 4; }
+    else { $checks[] = ['level'=>'ok','msg'=>'Битых партнёрских ссылок не найдено']; }
+    if ((int)$uncheckedLinks > 0) { $checks[] = ['level'=>'info','msg'=>(int)$uncheckedLinks.' ссылок ещё не проверялись']; }
+} catch (Exception $e) {}
+
 // === КЭШИ ===
 $pageCacheSize = 0;
 $pageCacheFiles = glob(__DIR__ . '/../../data/page_cache/*.html') ?: [];
