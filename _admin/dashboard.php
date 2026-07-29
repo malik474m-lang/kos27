@@ -24,7 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Сменить пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm mr-4">⚡ API-кэш</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm mr-4">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm mr-4">⚡ API-кэш</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
 <div class="bg-white shadow-sm border-b"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-4 overflow-x-auto">
 <button onclick="sw('settings')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="settings">⚙️ Настройки</button>
 <button onclick="sw('offers')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="offers">📋 Предложения</button>
@@ -1560,6 +1560,109 @@ lSch();
 
 
 
+
+
+/* ============ TWO-FACTOR AUTH ============ */
+function show2FA(){
+ap('/two-factor').then(function(d){
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔐 Двухфакторная авторизация</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+
+if(d.enabled){
+h+='<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">';
+h+='<span class="text-3xl">✅</span>';
+h+='<p class="font-bold text-green-700 mt-2">2FA включена</p>';
+h+='<p class="text-sm text-green-600">Резервных кодов осталось: <strong>'+d.backup_codes_remaining+'</strong></p>';
+h+='</div>';
+h+='<div class="space-y-3">';
+h+='<button onclick="tfa_regenBackup()" class="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 rounded-lg text-sm font-semibold">🔄 Перегенерировать резервные коды</button>';
+h+='<button onclick="tfa_disable()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2 rounded-lg text-sm font-semibold">⛔ Отключить 2FA</button>';
+h+='</div>';
+}else{
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">';
+h+='<p class="text-yellow-700 text-sm"><strong>⚠️ 2FA не включена.</strong> Рекомендуем включить для защиты аккаунта.</p>';
+h+='</div>';
+h+='<div class="text-center">';
+h+='<p class="text-gray-600 text-sm mb-4">Понадобится приложение:<br><strong>Google Authenticator</strong>, <strong>Яндекс.Ключ</strong> или <strong>Authy</strong></p>';
+h+='<button onclick="tfa_setup()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">🔐 Включить 2FA</button>';
+h+='</div>';
+}
+modal(h);
+}).catch(function(err){alert('Ошибка: '+err.message);});
+}
+
+function tfa_setup(){
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'setup'})}).then(function(d){
+if(d.error){alert(d.error);return;}
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔐 Настройка 2FA</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="text-center mb-4">';
+h+='<p class="text-sm text-gray-600 mb-3">1. Отсканируйте QR-код в приложении:</p>';
+h+='<img src="'+d.qr_url+'" alt="QR" style="width:250px;height:250px;margin:0 auto;display:block;border:1px solid #e5e7eb;border-radius:12px;padding:8px">';
+h+='<p class="text-xs text-gray-400 mt-2">Или введите вручную: <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs select-all">'+d.secret+'</code></p>';
+h+='</div>';
+h+='<div class="mt-4">';
+h+='<p class="text-sm text-gray-600 mb-2">2. Введите 6-значный код из приложения:</p>';
+h+='<div class="flex gap-3"><input type="text" id="tfa-verify-code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="000000" class="input-f text-center text-2xl tracking-widest font-mono flex-1"><button onclick="tfa_enable()" id="tfa-enable-btn" class="btn-p">Подтвердить</button></div>';
+h+='<div id="tfa-setup-err" class="hidden text-red-600 text-sm mt-2"></div>';
+h+='</div>';
+modal(h);
+setTimeout(function(){var el=document.getElementById('tfa-verify-code');if(el)el.focus();},200);
+});
+}
+
+function tfa_enable(){
+var code=document.getElementById('tfa-verify-code').value.trim();
+if(!code||code.length!==6){showTfaErr('Введите 6-значный код');return;}
+var btn=document.getElementById('tfa-enable-btn');
+btn.disabled=true;btn.textContent='⏳';
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'enable',code:code})}).then(function(d){
+btn.disabled=false;btn.textContent='Подтвердить';
+if(d.error){showTfaErr(d.error);return;}
+// Показать резервные коды
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">✅ 2FA включена!</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center"><p class="text-green-700 font-bold">Двухфакторная авторизация активна</p></div>';
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">';
+h+='<p class="font-bold text-yellow-700 mb-2">⚠️ Сохраните резервные коды!</p>';
+h+='<p class="text-sm text-yellow-600 mb-3">Эти коды нужны для входа, если потеряете телефон. Каждый код одноразовый.</p>';
+h+='<div class="grid grid-cols-2 gap-2 font-mono text-sm">';
+(d.backup_codes||[]).forEach(function(c){
+h+='<div class="bg-white border rounded px-3 py-1.5 text-center select-all">'+c+'</div>';
+});
+h+='</div>';
+h+='</div>';
+h+='<button onclick="cm()" class="w-full btn-p">Понятно, я сохранил коды</button>';
+modal(h);
+}).catch(function(){btn.disabled=false;btn.textContent='Подтвердить';showTfaErr('Ошибка соединения');});
+}
+
+function showTfaErr(msg){var el=document.getElementById('tfa-setup-err');if(el){el.textContent=msg;el.classList.remove('hidden');}}
+
+function tfa_disable(){
+var pw=prompt('Введите текущий пароль для отключения 2FA:');
+if(!pw)return;
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'disable',password:pw})}).then(function(d){
+if(d.error){alert('❌ '+d.error);return;}
+alert('✅ 2FA отключена');
+cm();
+});
+}
+
+function tfa_regenBackup(){
+var pw=prompt('Введите текущий пароль:');
+if(!pw)return;
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'regenerate-backup',password:pw})}).then(function(d){
+if(d.error){alert('❌ '+d.error);return;}
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔄 Новые резервные коды</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">';
+h+='<p class="font-bold text-yellow-700 mb-2">⚠️ Старые коды больше не действуют!</p>';
+h+='<div class="grid grid-cols-2 gap-2 font-mono text-sm mt-3">';
+(d.backup_codes||[]).forEach(function(c){
+h+='<div class="bg-white border rounded px-3 py-1.5 text-center select-all">'+c+'</div>';
+});
+h+='</div></div>';
+h+='<button onclick="cm()" class="w-full btn-p">Понятно</button>';
+modal(h);
+});
+}
 
 /* ============ BULK ACTIONS ============ */
 var bulkMode={};

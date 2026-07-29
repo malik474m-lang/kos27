@@ -175,6 +175,8 @@ if ($adminUri === '/settings') { require __DIR__ . '/admin/settings.php'; exit; 
 // Планировщик
 if ($adminUri === '/scheduler') { require __DIR__ . '/admin/scheduler.php'; exit; }
 
+// 2FA управление
+if (str_starts_with($adminUri, '/two-factor')) { require __DIR__ . '/admin/two-factor.php'; exit; }
 // Смена пароля
 if ($adminUri === '/change-password' && $method === 'POST') { require __DIR__ . '/admin/change-password.php'; exit; }
 

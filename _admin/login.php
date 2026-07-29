@@ -14,10 +14,12 @@ ob_start('minifyHtmlOutput');
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div class="text-center mb-8">
-            <span class="text-4xl">\xf0\x9f\x9a\x80</span>
+            <span class="text-4xl">🚀</span>
             <h1 class="text-2xl font-bold text-gray-900 mt-2">Админ-панель</h1>
             <p class="text-gray-500 text-sm">Космозайм</p>
         </div>
+
+        <!-- Шаг 1: Логин/пароль -->
         <form id="login-form" onsubmit="return handleLogin(event)">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Логин</label>
@@ -27,22 +29,160 @@ ob_start('minifyHtmlOutput');
                 <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
                 <input type="password" name="password" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <div id="error" class="hidden text-red-600 text-sm mb-4"></div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Войти</button>
+            <div id="error" class="hidden text-red-600 text-sm mb-4 bg-red-50 border border-red-200 rounded-lg p-3"></div>
+            <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Войти</button>
         </form>
+
+        <!-- Шаг 2: 2FA код -->
+        <form id="totp-form" class="hidden" onsubmit="return handle2FA(event)">
+            <div class="text-center mb-4">
+                <span class="text-3xl">🔐</span>
+                <h2 class="text-lg font-bold text-gray-900 mt-2">Двухфакторная авторизация</h2>
+                <p class="text-gray-500 text-sm">Введите код из приложения</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Код из приложения</label>
+                <input type="text" id="totp-code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" autofocus>
+            </div>
+            <div id="totp-error" class="hidden text-red-600 text-sm mb-4 bg-red-50 border border-red-200 rounded-lg p-3"></div>
+            <button type="submit" id="totp-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mb-3">Подтвердить</button>
+            <button type="button" onclick="showBackupForm()" class="w-full text-gray-500 hover:text-gray-700 text-sm py-2">Использовать резервный код</button>
+        </form>
+
+        <!-- Шаг 2б: Резервный код -->
+        <form id="backup-form" class="hidden" onsubmit="return handleBackup(event)">
+            <div class="text-center mb-4">
+                <span class="text-3xl">🔑</span>
+                <h2 class="text-lg font-bold text-gray-900 mt-2">Резервный код</h2>
+                <p class="text-gray-500 text-sm">Введите один из резервных кодов</p>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="backup-code" maxlength="8" placeholder="ABCD1234" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-center text-lg tracking-widest font-mono uppercase focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div id="backup-error" class="hidden text-red-600 text-sm mb-4 bg-red-50 border border-red-200 rounded-lg p-3"></div>
+            <button type="submit" id="backup-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mb-3">Войти</button>
+            <button type="button" onclick="showTotpForm()" class="w-full text-gray-500 hover:text-gray-700 text-sm py-2">← Ввести код из приложения</button>
+        </form>
+
+        <!-- Блокировка -->
+        <div id="blocked-msg" class="hidden text-center py-6">
+            <span class="text-4xl">⏳</span>
+            <p class="text-red-600 font-semibold mt-3" id="blocked-text"></p>
+            <p class="text-gray-500 text-sm mt-2">Осталось: <span id="blocked-timer" class="font-mono font-bold">--:--</span></p>
+        </div>
     </div>
+
     <script>
+    var loginData = {};
+    var blockedUntil = 0;
+
     function handleLogin(e) {
         e.preventDefault();
-        const form = e.target;
-        const data = {username: form.username.value, password: form.password.value};
-        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)})
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) window.location.href = '/admin';
-                else { document.getElementById('error').textContent = d.error || 'Ошибка'; document.getElementById('error').classList.remove('hidden'); }
-            }).catch(() => { document.getElementById('error').textContent = 'Ошибка соединения'; document.getElementById('error').classList.remove('hidden'); });
+        var form = e.target;
+        loginData = {username: form.username.value, password: form.password.value};
+        var btn = document.getElementById('login-btn');
+        btn.disabled = true; btn.textContent = '⏳';
+
+        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(loginData)})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                btn.disabled = false; btn.textContent = 'Войти';
+                if (d.success) {
+                    window.location.href = '/admin';
+                } else if (d.require_2fa) {
+                    document.getElementById('login-form').classList.add('hidden');
+                    document.getElementById('totp-form').classList.remove('hidden');
+                    document.getElementById('totp-code').focus();
+                } else if (d.blocked) {
+                    showBlocked(d.error, d.wait || 300);
+                } else {
+                    showError('error', d.error || 'Ошибка');
+                }
+            }).catch(function(){
+                btn.disabled = false; btn.textContent = 'Войти';
+                showError('error', 'Ошибка соединения');
+            });
         return false;
+    }
+
+    function handle2FA(e) {
+        e.preventDefault();
+        var code = document.getElementById('totp-code').value.trim();
+        if (!code) return false;
+        var btn = document.getElementById('totp-btn');
+        btn.disabled = true; btn.textContent = '⏳';
+
+        var payload = Object.assign({}, loginData, {totp_code: code});
+        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                btn.disabled = false; btn.textContent = 'Подтвердить';
+                if (d.success) window.location.href = '/admin';
+                else if (d.blocked) showBlocked(d.error, d.wait || 300);
+                else showError('totp-error', d.error || 'Неверный код');
+            }).catch(function(){
+                btn.disabled = false; btn.textContent = 'Подтвердить';
+                showError('totp-error', 'Ошибка соединения');
+            });
+        return false;
+    }
+
+    function handleBackup(e) {
+        e.preventDefault();
+        var code = document.getElementById('backup-code').value.trim();
+        if (!code) return false;
+        var btn = document.getElementById('backup-btn');
+        btn.disabled = true; btn.textContent = '⏳';
+
+        var payload = Object.assign({}, loginData, {backup_code: code});
+        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                btn.disabled = false; btn.textContent = 'Войти';
+                if (d.success) window.location.href = '/admin';
+                else if (d.blocked) showBlocked(d.error, d.wait || 300);
+                else showError('backup-error', d.error || 'Неверный код');
+            }).catch(function(){
+                btn.disabled = false; btn.textContent = 'Войти';
+                showError('backup-error', 'Ошибка соединения');
+            });
+        return false;
+    }
+
+    function showTotpForm() {
+        document.getElementById('backup-form').classList.add('hidden');
+        document.getElementById('totp-form').classList.remove('hidden');
+        document.getElementById('totp-code').focus();
+    }
+    function showBackupForm() {
+        document.getElementById('totp-form').classList.add('hidden');
+        document.getElementById('backup-form').classList.remove('hidden');
+        document.getElementById('backup-code').focus();
+    }
+
+    function showError(id, msg) {
+        var el = document.getElementById(id);
+        el.textContent = msg;
+        el.classList.remove('hidden');
+    }
+
+    function showBlocked(msg, waitSec) {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('totp-form').classList.add('hidden');
+        document.getElementById('backup-form').classList.add('hidden');
+        document.getElementById('blocked-msg').classList.remove('hidden');
+        document.getElementById('blocked-text').textContent = msg;
+        blockedUntil = Date.now() + waitSec * 1000;
+        updateTimer();
+    }
+
+    function updateTimer() {
+        var left = Math.max(0, Math.ceil((blockedUntil - Date.now()) / 1000));
+        var m = Math.floor(left / 60);
+        var s = left % 60;
+        document.getElementById('blocked-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        if (left > 0) setTimeout(updateTimer, 1000);
+        else location.reload();
     }
     </script>
 </body>
