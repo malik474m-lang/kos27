@@ -36,6 +36,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('cityseo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cityseo">🏙️ SEO городов</button>
 <button onclick="sw('stats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="stats">📊 Статистика</button>
 <button onclick="sw('funnel')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="funnel">🔻 Воронка</button>
+<button onclick="sw('smart')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="smart">🧠 Рейтинг</button>
 <button onclick="sw('conversions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="conversions">💰 Конверсии</button>
 <button onclick="sw('ab')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="ab">🧪 A/B тесты</button>
 <button onclick="sw('subs')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subs">📬 Подписчики</button>
@@ -58,6 +59,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-cityseo" class="tp hidden"></div>
 <div id="p-stats" class="tp hidden"></div>
 <div id="p-funnel" class="tp hidden"></div>
+<div id="p-smart" class="tp hidden"></div>
 <div id="p-conversions" class="tp hidden"></div>
 <div id="p-ab" class="tp hidden"></div>
 <div id="p-subs" class="tp hidden"></div>
@@ -73,8 +75,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,backup:lB,users:lUsers,health:lHealth,security:lSec,health:lHealth})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -772,6 +774,44 @@ window.stHourlyInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{lab
 }
 
 
+
+/* ============ SMART RATING ============ */
+var _smartPeriod=30;
+function lSmart(){
+var p=_smartPeriod;
+ap('/smart-rating?period='+p).then(d=>{
+var items=d.items||[];
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧠 Умный рейтинг офферов</h2><div class="flex gap-2"><select id="smart-period" onchange="_smartPeriod=+this.value;lSmart()" class="sel-f text-sm w-auto"><option value="7"'+(p==7?' selected':'')+'>7 дн</option><option value="14"'+(p==14?' selected':'')+'>14 дн</option><option value="30"'+(p==30?' selected':'')+'>30 дн</option><option value="90"'+(p==90?' selected':'')+'>90 дн</option><option value="365"'+(p==365?' selected':'')+'>Год</option></select><button onclick="smartApply()" class="btn-p text-sm">Применить сортировку</button></div></div>';
+
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700">Формула рейтинга внутри каждой категории: <strong>клики 25%</strong> + <strong>CTR 20%</strong> + <strong>approval 20%</strong> + <strong>EPC 20%</strong> + <strong>отзывы 10%</strong> + <strong>свежесть 5%</strong>. Кнопка «Применить сортировку» перезапишет sort_order внутри каждой категории.</div>';
+
+if(!items.length){h+='<div class="bg-white rounded-xl border p-8 text-center text-gray-500">Нет офферов для расчёта</div>';document.getElementById('p-smart').innerHTML=h;return;}
+
+let groups={}; items.forEach(function(o){ if(!groups[o.category]) groups[o.category]=[]; groups[o.category].push(o); });
+Object.keys(groups).forEach(function(cat){
+  h+='<div class="bg-white rounded-2xl border shadow-sm p-4 mb-6"><h3 class="text-lg font-bold text-gray-900 mb-4">'+(CL[cat]||cat)+'</h3><div class="space-y-3">';
+  groups[cat].sort(function(a,b){ return b.smart_score-a.smart_score; });
+  groups[cat].forEach(function(o,idx){
+    h+='<div class="bg-gray-50 rounded-xl border p-4">';
+    h+='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">';
+    h+='<div class="min-w-0"><p class="font-semibold text-gray-900 text-sm">#'+(idx+1)+' • '+e(o.title)+'</p><p class="text-xs text-gray-500 mt-1">Текущий sort_order: '+o.sort_order+' • Новый: '+idx+'</p></div>';
+    h+='<div class="text-right"><p class="text-xs text-gray-400">Smart Score</p><p class="text-2xl font-bold text-purple-700">'+o.smart_score+'</p></div>';
+    h+='</div>';
+    h+='<div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 text-center">';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">Клики</p><p class="mt-1 font-bold text-gray-900">'+o.clicks+'</p><p class="text-[11px] text-blue-600">+'+o.score_parts.clicks+'</p></div>';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">CTR</p><p class="mt-1 font-bold text-gray-900">'+o.ctr+'%</p><p class="text-[11px] text-blue-600">+'+o.score_parts.ctr+'</p></div>';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">Approval</p><p class="mt-1 font-bold text-gray-900">'+o.approval_rate+'%</p><p class="text-[11px] text-blue-600">+'+o.score_parts.approval+'</p></div>';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">EPC</p><p class="mt-1 font-bold text-gray-900">'+Number(o.epc).toFixed(2)+' ₽</p><p class="text-[11px] text-blue-600">+'+o.score_parts.epc+'</p></div>';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">Отзывы</p><p class="mt-1 font-bold text-gray-900">'+o.rating+' ★ / '+o.review_count+'</p><p class="text-[11px] text-blue-600">+'+o.score_parts.reviews+'</p></div>';
+    h+='<div class="rounded-lg bg-white border p-3"><p class="text-[11px] text-gray-400 uppercase">Свежесть</p><p class="mt-1 font-bold text-gray-900">'+o.freshness+'</p><p class="text-[11px] text-blue-600">+'+o.score_parts.freshness+'</p></div>';
+    h+='</div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+});
+
+document.getElementById('p-smart').innerHTML=h;});}
+function smartApply(){if(!confirm('Применить умную сортировку ко всем офферам? Текущий ручной порядок будет перезаписан внутри каждой категории.'))return;ap('/smart-rating?period='+_smartPeriod,{method:'POST'}).then(function(d){if(d.success){alert(d.message);lSmart();}else alert(d.error||'Ошибка');});}
 
 /* ============ FUNNEL ============ */
 var _funnelPeriod=30;

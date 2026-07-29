@@ -146,6 +146,9 @@ if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'
 // Воронка
 if ($adminUri === '/funnel') { require __DIR__ . '/admin/funnel.php'; exit; }
 
+// Умный рейтинг
+if ($adminUri === '/smart-rating' && ($method === 'GET' || $method === 'POST')) { require __DIR__ . '/admin/smart-rating.php'; exit; }
+
 // Автогенерация meta
 if ($adminUri === '/meta-generate' && $method === 'POST') { require __DIR__ . '/admin/meta-generate.php'; exit; }
 
