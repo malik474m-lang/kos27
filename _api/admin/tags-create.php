@@ -17,4 +17,6 @@ if (is_array($features)) $features = json_encode($features, JSON_UNESCAPED_UNICO
 $db->prepare("INSERT INTO offer_tags (slug, title, h1, description, meta_description, content, icon, category, features, search_queries, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
    ->execute([$slug, $title, $data['h1'] ?? $title, $data['description'] ?? '', $data['metaDescription'] ?? '', $data['content'] ?? '', $data['icon'] ?? '🏷️', $data['category'] ?? 'microloans', $features, $data['searchQueries'] ?? '', $data['isActive'] ?? true ? 1 : 0, (int)($data['sortOrder'] ?? 0)]);
 
+@unlink(__DIR__ . '/../../data/tag-links-cache.json');
+@unlink(__DIR__ . '/../../data/page_cache/' . md5('/zajmy') . '.html');
 echo json_encode(['success' => true, 'id' => $db->lastInsertId()]);

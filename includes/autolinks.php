@@ -22,10 +22,10 @@ function getOfferLinks(): array {
         $offers = $db->query("SELECT title, slug FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
         foreach ($offers as $offer) {
             $url = '/offer/' . $offer['slug'];
-            $links[] = ['phrase' => $offer['title'], 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн'];
+            $links[] = ['phrase' => $offer['title'], 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => 20];
             $lower = mb_strtolower($offer['title']);
             if ($lower !== $offer['title']) {
-                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн'];
+                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => 19];
             }
         }
         @file_put_contents($cacheFile, json_encode($links, JSON_UNESCAPED_UNICODE));
@@ -52,40 +52,41 @@ function getTagLinks(): array {
             $url = $catUrl . '/type/' . $tag['slug'];
             $title = $tag['title'];
             // Основная фраза
-            $links[] = ['phrase' => $title, 'url' => $url, 'title' => $title];
+            $links[] = ['phrase' => $title, 'url' => $url, 'title' => $title, 'priority' => 50];
             // Без "Займы " / "Кредиты " в начале — если остаётся осмысленная фраза
             foreach (['Займы ', 'Кредиты ', 'Карты '] as $prefix) {
                 if (mb_stripos($title, $prefix) === 0) {
                     $short = mb_substr($title, mb_strlen($prefix));
                     if (mb_strlen($short) >= 4) {
-                        $links[] = ['phrase' => $short, 'url' => $url, 'title' => $title];
-                        $links[] = ['phrase' => mb_strtolower($short), 'url' => $url, 'title' => $title];
+                        $links[] = ['phrase' => $short, 'url' => $url, 'title' => $title, 'priority' => 10];
+                        $links[] = ['phrase' => mb_strtolower($short), 'url' => $url, 'title' => $title, 'priority' => 9];
                     }
                 }
             }
             // Из H1 если отличается от title
             if ($tag['h1'] && $tag['h1'] !== $title) {
-                $links[] = ['phrase' => $tag['h1'], 'url' => $url, 'title' => $title];
+                $links[] = ['phrase' => $tag['h1'], 'url' => $url, 'title' => $title, 'priority' => 40];
             }
             // Поисковые запросы / фразы для перелинковки
             if (!empty($tag['search_queries'])) {
                 $queries = preg_split('/
-||
+|
+|
 /', (string)$tag['search_queries']);
                 foreach ($queries as $q) {
                     $q = trim($q);
                     if (mb_strlen($q) < 3) continue;
-                    $links[] = ['phrase' => $q, 'url' => $url, 'title' => $title];
+                    $links[] = ['phrase' => $q, 'url' => $url, 'title' => $title, 'priority' => 100];
                     $ql = mb_strtolower($q);
                     if ($ql !== $q) {
-                        $links[] = ['phrase' => $ql, 'url' => $url, 'title' => $title];
+                        $links[] = ['phrase' => $ql, 'url' => $url, 'title' => $title, 'priority' => 99];
                     }
                 }
             }
             // Строчная версия
             $lower = mb_strtolower($title);
             if ($lower !== $title) {
-                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $title];
+                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $title, 'priority' => 30];
             }
         }
         @file_put_contents($cacheFile, json_encode($links, JSON_UNESCAPED_UNICODE));
@@ -159,6 +160,9 @@ function autoLinkText(string $text, int $maxLinks = 10): string {
 
     // Сортируем по длине (длинные первыми)
     usort($linkMap, function($a, $b) {
+        $ap = (int)($a['priority'] ?? 0);
+        $bp = (int)($b['priority'] ?? 0);
+        if ($bp !== $ap) return $bp <=> $ap;
         return mb_strlen($b['phrase']) <=> mb_strlen($a['phrase']);
     });
 
