@@ -208,10 +208,20 @@ if ($action === 'change-password' && $method === 'POST') {
 // === 2FA ===
 if ($action === '2fa-status') {
     if (session_status() === PHP_SESSION_NONE) { session_start(); }
-    $adm = $db->prepare("SELECT totp_enabled, totp_backup_codes FROM admins WHERE id = ?");
-    $adm->execute([$_SESSION['lic_admin_id'] ?? 0]); $a = $adm->fetch();
-    $codes = json_decode($a['totp_backup_codes'] ?? '[]', true) ?: [];
-    echo json_encode(['enabled' => !empty($a['totp_enabled']), 'backup_codes_remaining' => count($codes)]);
+    // Автомиграция: добавляем колонки 2FA если нет
+    try { $db->query("SELECT totp_enabled FROM admins LIMIT 1"); } catch (Exception $e) {
+        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_secret varchar(64) DEFAULT NULL"); } catch (Exception $e2) {}
+        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_enabled tinyint(1) NOT NULL DEFAULT 0"); } catch (Exception $e2) {}
+        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_backup_codes text DEFAULT NULL"); } catch (Exception $e2) {}
+    }
+    try {
+        $adm = $db->prepare("SELECT totp_enabled, totp_backup_codes FROM admins WHERE id = ?");
+        $adm->execute([$_SESSION['lic_admin_id'] ?? 0]); $a = $adm->fetch();
+        $codes = json_decode($a['totp_backup_codes'] ?? '[]', true) ?: [];
+        echo json_encode(['enabled' => !empty($a['totp_enabled']), 'backup_codes_remaining' => count($codes)]);
+    } catch (Exception $e) {
+        echo json_encode(['enabled' => false, 'backup_codes_remaining' => 0, 'error' => $e->getMessage()]);
+    }
     exit;
 }
 if ($action === '2fa' && $method === 'POST') {
