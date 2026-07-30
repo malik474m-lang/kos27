@@ -59,8 +59,14 @@ if ($license['expires_at'] && strtotime($license['expires_at']) < time()) {
 
 // Проверка домена
 if ($license['domain'] && $license['domain'] !== $domain) {
-    logAction('denied', (int)$license['id'], $licenseKey, $domain, 403, 'Domain mismatch: expected ' . $license['domain']);
-    jsonError('Лицензия привязана к другому домену: ' . $license['domain'], 403);
+    // Попытка активации на другом домене — БЛОКИРОВКА
+    $db->prepare("UPDATE licenses SET status = 'suspended' WHERE id = ? AND status = 'active'")
+       ->execute([$license['id']]);
+    
+    logAction('denied', (int)$license['id'], $licenseKey, $domain, 403, 
+        'ACTIVATE DOMAIN CHANGED: ' . $license['domain'] . ' → ' . $domain . '. License SUSPENDED.');
+    
+    jsonError('Лицензия привязана к домену ' . $license['domain'] . '. Попытка активации на другом домене — лицензия заблокирована. Обратитесь к администратору.', 403);
 }
 
 // Проверка количества активаций

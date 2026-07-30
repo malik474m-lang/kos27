@@ -3,9 +3,11 @@
  * Проверка лицензии (периодическая)
  * POST /api/verify
  * Body: {"license_key": "KZM-...", "domain": "example.com"}
+ * 
+ * При несовпадении домена — автоматическая блокировка лицензии
  */
 
-$rate = checkRateLimit('verify', 60, 60); // 60 запросов в минуту
+$rate = checkRateLimit('verify', 60, 60);
 if (!$rate['allowed']) {
     jsonError('Rate limit', 429);
 }
@@ -28,10 +30,22 @@ if (!$license) {
     jsonError('Лицензия не найдена', 404);
 }
 
-// Проверка домена
+// Проверка домена — при несовпадении БЛОКИРУЕМ лицензию
 if ($license['domain'] && $license['domain'] !== $domain) {
-    logAction('denied', (int)$license['id'], $licenseKey, $domain, 403, 'Domain mismatch');
-    jsonResponse(['valid' => false, 'error' => 'Домен не совпадает', 'expected_domain' => $license['domain']], 403);
+    // Блокируем
+    $db->prepare("UPDATE licenses SET status = 'suspended' WHERE id = ? AND status = 'active'")
+       ->execute([$license['id']]);
+    
+    logAction('denied', (int)$license['id'], $licenseKey, $domain, 403, 
+        'DOMAIN CHANGED: ' . $license['domain'] . ' → ' . $domain . '. License SUSPENDED.');
+    
+    jsonResponse([
+        'valid' => false, 
+        'error' => 'Обнаружена смена домена. Лицензия заблокирована.',
+        'expected_domain' => $license['domain'],
+        'actual_domain' => $domain,
+        'action' => 'suspended',
+    ], 403);
 }
 
 // Проверка срока
