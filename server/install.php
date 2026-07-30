@@ -65,11 +65,974 @@ Options -Indexes
     'admin/api.php' => '<?php
 /**
  * API админки сервера лицензий
+ * Бэкап БД, Rate-limit, 2FA
  */
 header(\'Content-Type: application/json; charset=UTF-8\');
+require_once __DIR__ . \'/../totp.php\';
 
 $db = getDB();
 $method = $_SERVER[\'REQUEST_METHOD\'];
+$action = $_GET[\'action\'] ?? \'\';
+
+// === ЛОГИН (без авторизации) ===
+if ($action === \'login\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $username = trim($data[\'username\'] ?? \'\');
+    $password = $data[\'password\'] ?? \'\';
+    $totpCode = trim($data[\'totp_code\'] ?? \'\');
+    $backupCode = trim($data[\'backup_code\'] ?? \'\');
+    $ip = getClientIp();
+
+    // Rate-limit: 5 попыток за 5 мин
+    $rate = checkRateLimit(\'admin_login\', 5, 300);
+    if (!$rate[\'allowed\']) {
+        http_response_code(429);
+        logAction(\'denied\', null, null, null, 429, "Login rate limit: $ip");
+        echo json_encode([\'error\' => \'Слишком много попыток. Подождите 5 минут.\', \'blocked\' => true]);
+        exit;
+    }
+
+    $stmt = $db->prepare("SELECT * FROM admins WHERE username = ? LIMIT 1");
+    $stmt->execute([$username]);
+    $admin = $stmt->fetch();
+
+    if (!$admin || !password_verify($password, $admin[\'password_hash\'])) {
+        logAction(\'denied\', null, null, null, 401, "Failed login: $username from $ip");
+        http_response_code(401);
+        echo json_encode([\'error\' => \'Неверные данные. Осталось попыток: \' . max(0, $rate[\'remaining\'] - 1)]);
+        exit;
+    }
+
+    // 2FA проверка
+    $tfa = !empty($admin[\'totp_enabled\']) && !empty($admin[\'totp_secret\']);
+    if ($tfa) {
+        if (!$totpCode && !$backupCode) {
+            echo json_encode([\'success\' => false, \'require_2fa\' => true]);
+            exit;
+        }
+        $ok2fa = false;
+        if ($totpCode) $ok2fa = TOTP::verify($admin[\'totp_secret\'], $totpCode);
+        if (!$ok2fa && $backupCode) {
+            $codes = json_decode($admin[\'totp_backup_codes\'] ?? \'[]\', true) ?: [];
+            if (TOTP::verifyBackupCode($backupCode, $codes)) {
+                $ok2fa = true;
+                $db->prepare("UPDATE admins SET totp_backup_codes = ? WHERE id = ?")
+                   ->execute([json_encode($codes), $admin[\'id\']]);
+            }
+        }
+        if (!$ok2fa) {
+            http_response_code(401);
+            echo json_encode([\'error\' => \'Неверный код 2FA\', \'require_2fa\' => true]);
+            exit;
+        }
+    }
+
+    if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([\'lifetime\' => 86400, \'path\' => \'/\', \'httponly\' => true, \'samesite\' => \'Strict\']);
+        session_start();
+    }
+    session_regenerate_id(true);
+    $_SESSION[\'lic_admin_id\'] = $admin[\'id\'];
+    $_SESSION[\'lic_admin_user\'] = $admin[\'username\'];
+    $_SESSION[\'lic_admin_ip\'] = $ip;
+
+    logAction(\'activate\', null, null, null, 200, "Admin login: $username from $ip");
+    echo json_encode([\'success\' => true]);
+    exit;
+}
+
+// === ЛОГАУТ ===
+if ($action === \'logout\' && $method === \'POST\') {
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    session_destroy();
+    echo json_encode([\'success\' => true]);
+    exit;
+}
+
+// === Проверка авторизации для остальных ===
+$token = $_SERVER[\'HTTP_X_ADMIN_TOKEN\'] ?? $_GET[\'token\'] ?? \'\';
+if ($token !== ADMIN_API_TOKEN) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([\'lifetime\' => 86400, \'path\' => \'/\', \'httponly\' => true, \'samesite\' => \'Strict\']);
+        session_start();
+    }
+    if (empty($_SESSION[\'lic_admin_id\'])) {
+        http_response_code(401);
+        echo json_encode([\'error\' => \'Unauthorized\']);
+        exit;
+    }
+    // Привязка сессии к IP
+    if (isset($_SESSION[\'lic_admin_ip\']) && $_SESSION[\'lic_admin_ip\'] !== getClientIp()) {
+        session_destroy();
+        http_response_code(401);
+        echo json_encode([\'error\' => \'Сессия привязана к другому IP\']);
+        exit;
+    }
+}
+
+// === Список лицензий ===
+if ($action === \'list\') {
+    $licenses = $db->query("SELECT l.*, 
+        (SELECT COUNT(*) FROM license_log ll WHERE ll.license_id = l.id AND ll.action = \'verify\' AND ll.created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)) as checks_24h
+        FROM licenses l ORDER BY l.id DESC")->fetchAll();
+    echo json_encode([\'licenses\' => $licenses]);
+    exit;
+}
+
+// === Создать лицензию ===
+if ($action === \'create\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $key = generateLicenseKey();
+    $domain = normalizeDomain($data[\'domain\'] ?? \'\');
+    $plan = in_array($data[\'plan\'] ?? \'\', [\'trial\',\'basic\',\'pro\',\'enterprise\']) ? $data[\'plan\'] : \'basic\';
+    $expiresAt = !empty($data[\'expires_at\']) ? $data[\'expires_at\'] : null;
+    $features = $data[\'features\'] ?? null;
+    if ($features && is_array($features)) $features = json_encode($features);
+    $db->prepare("INSERT INTO licenses (license_key, domain, product, plan, status, owner_name, owner_email, expires_at, features, notes, max_activations) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+       ->execute([$key, $domain, $data[\'product\'] ?? \'kosmozaim\', $plan, \'active\',
+           $data[\'owner_name\'] ?? null, $data[\'owner_email\'] ?? null,
+           $expiresAt, $features, $data[\'notes\'] ?? null, (int)($data[\'max_activations\'] ?? 1)]);
+    echo json_encode([\'success\' => true, \'license_key\' => $key, \'id\' => $db->lastInsertId()]);
+    exit;
+}
+
+// === Обновить лицензию ===
+if ($action === \'update\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $id = (int)($data[\'id\'] ?? 0);
+    if (!$id) { echo json_encode([\'error\' => \'id required\']); exit; }
+    $sets = []; $params = [];
+    foreach ([\'domain\',\'plan\',\'status\',\'owner_name\',\'owner_email\',\'expires_at\',\'notes\',\'max_activations\'] as $f) {
+        if (array_key_exists($f, $data)) {
+            if ($f === \'domain\') $data[$f] = normalizeDomain($data[$f]);
+            $sets[] = "`$f` = ?"; $params[] = $data[$f];
+        }
+    }
+    if (!empty($data[\'features\'])) {
+        $sets[] = "`features` = ?";
+        $params[] = is_array($data[\'features\']) ? json_encode($data[\'features\']) : $data[\'features\'];
+    }
+    if ($sets) { $params[] = $id; $db->prepare("UPDATE licenses SET " . implode(\', \', $sets) . " WHERE id = ?")->execute($params); }
+    echo json_encode([\'success\' => true]);
+    exit;
+}
+
+// === Удалить лицензию ===
+if ($action === \'delete\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $id = (int)($data[\'id\'] ?? 0);
+    if ($id) {
+        $db->prepare("DELETE FROM licenses WHERE id = ?")->execute([$id]);
+        $db->prepare("DELETE FROM license_log WHERE license_id = ?")->execute([$id]);
+    }
+    echo json_encode([\'success\' => true]);
+    exit;
+}
+
+// === Логи ===
+if ($action === \'logs\') {
+    $licId = (int)($_GET[\'license_id\'] ?? 0);
+    $limit = min((int)($_GET[\'limit\'] ?? 100), 500);
+    $where = $licId ? "WHERE license_id = $licId" : \'\';
+    $logs = $db->query("SELECT * FROM license_log $where ORDER BY created_at DESC LIMIT $limit")->fetchAll();
+    echo json_encode([\'logs\' => $logs]);
+    exit;
+}
+
+// === Статистика ===
+if ($action === \'stats\') {
+    echo json_encode([
+        \'total\' => (int)$db->query("SELECT COUNT(*) FROM licenses")->fetchColumn(),
+        \'active\' => (int)$db->query("SELECT COUNT(*) FROM licenses WHERE status = \'active\'")->fetchColumn(),
+        \'expired\' => (int)$db->query("SELECT COUNT(*) FROM licenses WHERE status = \'expired\'")->fetchColumn(),
+        \'suspended\' => (int)$db->query("SELECT COUNT(*) FROM licenses WHERE status = \'suspended\'")->fetchColumn(),
+        \'checks_today\' => (int)$db->query("SELECT COUNT(*) FROM license_log WHERE action IN (\'verify\',\'heartbeat\') AND created_at > CURDATE()")->fetchColumn(),
+        \'activations_today\' => (int)$db->query("SELECT COUNT(*) FROM license_log WHERE action = \'activate\' AND created_at > CURDATE()")->fetchColumn(),
+        \'denied_today\' => (int)$db->query("SELECT COUNT(*) FROM license_log WHERE action = \'denied\' AND created_at > CURDATE()")->fetchColumn(),
+    ]);
+    exit;
+}
+
+// === Смена пароля ===
+if ($action === \'change-password\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    $adminId = $_SESSION[\'lic_admin_id\'] ?? 0;
+    $stmt = $db->prepare("SELECT * FROM admins WHERE id = ?"); $stmt->execute([$adminId]); $adm = $stmt->fetch();
+    if (!$adm || !password_verify($data[\'current_password\'] ?? \'\', $adm[\'password_hash\'])) {
+        echo json_encode([\'error\' => \'Неверный текущий пароль\']); exit;
+    }
+    if (mb_strlen($data[\'new_password\'] ?? \'\') < 6) { echo json_encode([\'error\' => \'Минимум 6 символов\']); exit; }
+    $db->prepare("UPDATE admins SET password_hash = ? WHERE id = ?")
+       ->execute([password_hash($data[\'new_password\'], PASSWORD_BCRYPT, [\'cost\' => 12]), $adminId]);
+    echo json_encode([\'success\' => true, \'message\' => \'Пароль изменён\']);
+    exit;
+}
+
+// === 2FA ===
+if ($action === \'2fa-status\') {
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    $adm = $db->prepare("SELECT totp_enabled, totp_backup_codes FROM admins WHERE id = ?");
+    $adm->execute([$_SESSION[\'lic_admin_id\'] ?? 0]); $a = $adm->fetch();
+    $codes = json_decode($a[\'totp_backup_codes\'] ?? \'[]\', true) ?: [];
+    echo json_encode([\'enabled\' => !empty($a[\'totp_enabled\']), \'backup_codes_remaining\' => count($codes)]);
+    exit;
+}
+if ($action === \'2fa\' && $method === \'POST\') {
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $act = $data[\'action\'] ?? \'\';
+    $adminId = $_SESSION[\'lic_admin_id\'] ?? 0;
+    $adm = $db->prepare("SELECT * FROM admins WHERE id = ?"); $adm->execute([$adminId]); $admin = $adm->fetch();
+    if (!$admin) { echo json_encode([\'error\' => \'Not found\']); exit; }
+
+    if ($act === \'setup\') {
+        $secret = TOTP::generateSecret();
+        $url = TOTP::getQrUrl($secret, $admin[\'username\'], \'KZM License\');
+        $qr = TOTP::getQrImageUrl($url, 250);
+        $db->prepare("UPDATE admins SET totp_secret = ? WHERE id = ?")->execute([$secret, $adminId]);
+        echo json_encode([\'success\' => true, \'secret\' => $secret, \'qr_url\' => $qr]);
+        exit;
+    }
+    if ($act === \'enable\') {
+        $code = trim($data[\'code\'] ?? \'\');
+        if (!TOTP::verify($admin[\'totp_secret\'] ?? \'\', $code)) {
+            echo json_encode([\'error\' => \'Неверный код\']); exit;
+        }
+        $backup = TOTP::generateBackupCodes(10);
+        $db->prepare("UPDATE admins SET totp_enabled = 1, totp_backup_codes = ? WHERE id = ?")
+           ->execute([json_encode($backup), $adminId]);
+        echo json_encode([\'success\' => true, \'backup_codes\' => $backup]);
+        exit;
+    }
+    if ($act === \'disable\') {
+        if (!password_verify($data[\'password\'] ?? \'\', $admin[\'password_hash\'])) {
+            echo json_encode([\'error\' => \'Неверный пароль\']); exit;
+        }
+        $db->prepare("UPDATE admins SET totp_enabled = 0, totp_secret = NULL, totp_backup_codes = NULL WHERE id = ?")
+           ->execute([$adminId]);
+        echo json_encode([\'success\' => true]);
+        exit;
+    }
+    if ($act === \'regen-backup\') {
+        if (!password_verify($data[\'password\'] ?? \'\', $admin[\'password_hash\'])) {
+            echo json_encode([\'error\' => \'Неверный пароль\']); exit;
+        }
+        $backup = TOTP::generateBackupCodes(10);
+        $db->prepare("UPDATE admins SET totp_backup_codes = ? WHERE id = ?")->execute([json_encode($backup), $adminId]);
+        echo json_encode([\'success\' => true, \'backup_codes\' => $backup]);
+        exit;
+    }
+    echo json_encode([\'error\' => \'Unknown 2fa action\']);
+    exit;
+}
+
+// === Бэкап БД ===
+if ($action === \'backup-create\' && $method === \'POST\') {
+    $backupDir = __DIR__ . \'/../backups\';
+    if (!is_dir($backupDir)) @mkdir($backupDir, 0755, true);
+
+    // Получаем параметры БД из config
+    $ref = new ReflectionFunction(\'getDB\');
+    $src = file_get_contents($ref->getFileName());
+    preg_match(\'/dbname=([^;]+)/\', $src, $m); $dbName = $m[1] ?? \'license_server\';
+
+    $ts = date(\'Y-m-d_H-i-s\');
+    $sqlFile = "$backupDir/backup_$ts.sql";
+
+    // Экспорт через PDO
+    $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+    $dump = "-- KZM License Server Backup\\n-- Date: $ts\\n-- Tables: " . count($tables) . "\\n\\n";
+    foreach ($tables as $tbl) {
+        $create = $db->query("SHOW CREATE TABLE `$tbl`")->fetch();
+        $dump .= "DROP TABLE IF EXISTS `$tbl`;\\n" . $create[\'Create Table\'] . ";\\n\\n";
+        $rows = $db->query("SELECT * FROM `$tbl`")->fetchAll();
+        foreach ($rows as $row) {
+            $vals = array_map(function($v) use ($db) {
+                return $v === null ? \'NULL\' : $db->quote($v);
+            }, $row);
+            $dump .= "INSERT INTO `$tbl` VALUES (" . implode(\',\', $vals) . ");\\n";
+        }
+        $dump .= "\\n";
+    }
+
+    if (file_put_contents($sqlFile, $dump) === false) {
+        echo json_encode([\'error\' => \'Не удалось записать файл\']); exit;
+    }
+
+    // ZIP
+    $zipFile = "$backupDir/backup_$ts.zip";
+    if (class_exists(\'ZipArchive\')) {
+        $zip = new ZipArchive();
+        if ($zip->open($zipFile, ZipArchive::CREATE) === true) {
+            $zip->addFile($sqlFile, basename($sqlFile));
+            $zip->close();
+            @unlink($sqlFile);
+            $size = round(filesize($zipFile) / 1024, 1);
+            echo json_encode([\'success\' => true, \'file\' => basename($zipFile), \'size\' => "$size KB"]);
+            exit;
+        }
+    }
+    $size = round(filesize($sqlFile) / 1024, 1);
+    echo json_encode([\'success\' => true, \'file\' => basename($sqlFile), \'size\' => "$size KB"]);
+    exit;
+}
+
+if ($action === \'backup-list\') {
+    $backupDir = __DIR__ . \'/../backups\';
+    $files = [];
+    if (is_dir($backupDir)) {
+        foreach (glob("$backupDir/backup_*") as $f) {
+            $files[] = [\'name\' => basename($f), \'size\' => round(filesize($f) / 1024, 1) . \' KB\', \'date\' => date(\'Y-m-d H:i\', filemtime($f))];
+        }
+    }
+    usort($files, fn($a, $b) => strcmp($b[\'date\'], $a[\'date\']));
+    echo json_encode([\'backups\' => $files]);
+    exit;
+}
+
+if ($action === \'backup-download\') {
+    $name = basename($_GET[\'name\'] ?? \'\');
+    $path = __DIR__ . \'/../backups/\' . $name;
+    if (!$name || !file_exists($path)) { echo json_encode([\'error\' => \'Not found\']); exit; }
+    header(\'Content-Type: application/octet-stream\');
+    header(\'Content-Disposition: attachment; filename="\' . $name . \'"\');
+    header(\'Content-Length: \' . filesize($path));
+    readfile($path);
+    exit;
+}
+
+if ($action === \'backup-delete\' && $method === \'POST\') {
+    $data = json_decode(file_get_contents(\'php://input\'), true);
+    $name = basename($data[\'name\'] ?? \'\');
+    $path = __DIR__ . \'/../backups/\' . $name;
+    if ($name && file_exists($path)) @unlink($path);
+    echo json_encode([\'success\' => true]);
+    exit;
+}
+
+echo json_encode([\'error\' => \'Unknown action\']);
+',
+    'admin/index.php' => '<?php
+/**
+ * Админка сервера лицензий
+ */
+require_once __DIR__ . \'/../config.php\';
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([\'lifetime\' => 86400, \'path\' => \'/\', \'httponly\' => true, \'samesite\' => \'Strict\']);
+    session_start();
+}
+$isAuth = !empty($_SESSION[\'lic_admin_id\']);
+?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>License Server — KZM</title>
+<script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}.input-f{width:100%;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.875rem;}.input-f:focus{outline:none;border-color:#3b82f6;}.sel-f{width:100%;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.5rem 0.75rem;background:white;font-size:0.875rem;}</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<?php if (!$isAuth): ?>
+<div class="flex items-center justify-center min-h-screen">
+<div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+<div class="text-center mb-6"><span class="text-4xl">🔐</span><h1 class="text-xl font-bold mt-2">License Server</h1></div>
+<form id="login-form" onsubmit="return doLogin(event)">
+<div class="mb-4"><input type="text" id="lg-user" placeholder="Логин" required class="input-f"></div>
+<div class="mb-4"><input type="password" id="lg-pass" placeholder="Пароль" required class="input-f"></div>
+<div id="lg-err" class="hidden text-red-600 text-sm mb-3 bg-red-50 border border-red-200 rounded-lg p-2"></div>
+<button type="submit" id="lg-btn" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700">Войти</button>
+</form>
+<form id="totp-form" class="hidden" onsubmit="return do2FA(event)">
+<div class="text-center mb-4"><span class="text-3xl">🔐</span><p class="text-sm text-gray-500 mt-2">Введите код из приложения</p></div>
+<div class="mb-4"><input type="text" id="totp-code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="000000" class="input-f text-center text-2xl tracking-widest font-mono"></div>
+<div id="totp-err" class="hidden text-red-600 text-sm mb-3 bg-red-50 border border-red-200 rounded-lg p-2"></div>
+<button type="submit" id="totp-btn" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 mb-2">Подтвердить</button>
+<button type="button" onclick="showBackup()" class="w-full text-gray-500 text-sm py-1">Резервный код</button>
+</form>
+<form id="backup-form" class="hidden" onsubmit="return doBackupCode(event)">
+<div class="text-center mb-4"><span class="text-3xl">🔑</span><p class="text-sm text-gray-500 mt-2">Резервный код</p></div>
+<div class="mb-4"><input type="text" id="backup-code" maxlength="8" placeholder="ABCD1234" class="input-f text-center text-lg tracking-widest font-mono uppercase"></div>
+<div id="backup-err" class="hidden text-red-600 text-sm mb-3"></div>
+<button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 mb-2">Войти</button>
+<button type="button" onclick="showTotp()" class="w-full text-gray-500 text-sm py-1">← Код из приложения</button>
+</form>
+<div id="blocked-msg" class="hidden text-center py-6"><span class="text-4xl">⏳</span><p class="text-red-600 font-semibold mt-3" id="blocked-text"></p></div>
+</div>
+</div>
+<script>
+var creds={};
+function doLogin(e){e.preventDefault();
+creds={username:document.getElementById(\'lg-user\').value,password:document.getElementById(\'lg-pass\').value};
+var btn=document.getElementById(\'lg-btn\');btn.disabled=true;btn.textContent=\'⏳\';
+fetch(\'/admin/api?action=login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},credentials:\'same-origin\',body:JSON.stringify(creds)})
+.then(function(r){return r.json();}).then(function(d){
+btn.disabled=false;btn.textContent=\'Войти\';
+if(d.success)location.reload();
+else if(d.require_2fa){document.getElementById(\'login-form\').classList.add(\'hidden\');document.getElementById(\'totp-form\').classList.remove(\'hidden\');document.getElementById(\'totp-code\').focus();}
+else if(d.blocked){document.getElementById(\'login-form\').classList.add(\'hidden\');var b=document.getElementById(\'blocked-msg\');b.classList.remove(\'hidden\');document.getElementById(\'blocked-text\').textContent=d.error;}
+else{var el=document.getElementById(\'lg-err\');el.textContent=d.error||\'Ошибка\';el.classList.remove(\'hidden\');}
+});return false;}
+function do2FA(e){e.preventDefault();
+var p=Object.assign({},creds,{totp_code:document.getElementById(\'totp-code\').value});
+fetch(\'/admin/api?action=login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},credentials:\'same-origin\',body:JSON.stringify(p)})
+.then(function(r){return r.json();}).then(function(d){
+if(d.success)location.reload();else{var el=document.getElementById(\'totp-err\');el.textContent=d.error||\'Неверный код\';el.classList.remove(\'hidden\');}
+});return false;}
+function doBackupCode(e){e.preventDefault();
+var p=Object.assign({},creds,{backup_code:document.getElementById(\'backup-code\').value});
+fetch(\'/admin/api?action=login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},credentials:\'same-origin\',body:JSON.stringify(p)})
+.then(function(r){return r.json();}).then(function(d){
+if(d.success)location.reload();else{var el=document.getElementById(\'backup-err\');el.textContent=d.error||\'Неверный код\';el.classList.remove(\'hidden\');}
+});return false;}
+function showTotp(){document.getElementById(\'backup-form\').classList.add(\'hidden\');document.getElementById(\'totp-form\').classList.remove(\'hidden\');}
+function showBackup(){document.getElementById(\'totp-form\').classList.add(\'hidden\');document.getElementById(\'backup-form\').classList.remove(\'hidden\');}
+</script>
+
+<?php else: ?>
+<div class="bg-gray-900 text-white"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">🔑</span><h1 class="font-bold">License Server</h1></div><div class="flex items-center gap-3"><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="showBackups()" class="text-gray-300 hover:text-white text-sm">💾 Бэкап</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти</button></div></div></div>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+<div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+<div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Лицензии</h2><button onclick="showCreate()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">+ Создать</button></div>
+<div id="list" class="space-y-3"></div>
+<h2 class="text-xl font-bold mt-10 mb-4">Последние события</h2>
+<div id="logs" class="bg-white rounded-xl border overflow-hidden"></div>
+</div>
+<div id="M"></div>
+
+<script>
+var A=\'/admin/api\';
+function ap(u,o){return fetch(A+u,Object.assign({headers:{\'Content-Type\':\'application/json\'},credentials:\'same-origin\'},o||{})).then(async function(r){var t=await r.text();try{return JSON.parse(t);}catch(x){throw new Error(t.substring(0,200));}});}
+function e(s){if(!s)return\'\';var d=document.createElement(\'div\');d.textContent=s;return d.innerHTML;}
+function modal(h){document.getElementById(\'M\').innerHTML=\'<div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto" onclick="if(event.target===this)cm()"><div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:560px;margin-top:40px" onclick="event.stopPropagation()">\'+h+\'</div></div>\';}
+function cm(){document.getElementById(\'M\').innerHTML=\'\';}
+
+function load(){
+ap(\'?action=stats\').then(function(d){
+if(d.error)throw new Error(d.error);
+var h=\'\';[[\'🔑\',\'Всего\',d.total],[\'✅\',\'Активных\',d.active],[\'⏰\',\'Истёкших\',d.expired],[\'🚫\',\'Отказов\',d.denied_today]].forEach(function(c){
+h+=\'<div class="bg-white rounded-xl border p-4 text-center"><p class="text-2xl font-bold">\'+(c[2]||0)+\'</p><p class="text-xs text-gray-500">\'+c[0]+\' \'+c[1]+\'</p></div>\';});
+document.getElementById(\'stats\').innerHTML=h;
+}).catch(function(x){document.getElementById(\'stats\').innerHTML=\'<div class="col-span-full bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">\'+e(x.message)+\'</div>\';});
+
+ap(\'?action=list\').then(function(d){
+if(d.error)throw new Error(d.error);
+var h=\'\';(d.licenses||[]).forEach(function(l){
+var st={\'active\':\'bg-green-100 text-green-700\',\'expired\':\'bg-red-100 text-red-700\',\'suspended\':\'bg-yellow-100 text-yellow-700\',\'revoked\':\'bg-gray-100 text-gray-500\'};
+var exp=l.expires_at?new Date(l.expires_at).toLocaleDateString(\'ru-RU\'):\'∞\';
+h+=\'<div class="bg-white rounded-xl border p-4"><div class="flex items-center justify-between mb-2"><code class="text-sm font-bold bg-gray-100 px-2 py-1 rounded">\'+e(l.license_key)+\'</code><span class="text-xs px-2 py-0.5 rounded \'+(st[l.status]||\'\')+\'">\'+(l.status)+\'</span></div>\';
+h+=\'<div class="text-sm text-gray-600"><span class="font-medium">\'+e(l.domain||\'не привязан\')+\'</span> • \'+e(l.plan)+\' • до \'+exp+\'</div>\';
+h+=\'<div class="text-xs text-gray-400 mt-1">\'+e(l.owner_name||\'\')+\' \'+e(l.owner_email||\'\')+\' • Проверок 24ч: \'+(l.checks_24h||0)+\'</div>\';
+h+=\'<div class="flex gap-2 mt-2"><button onclick="editLic(\'+l.id+\')" class="text-blue-600 text-xs hover:underline">Ред.</button><button onclick="showLicLogs(\'+l.id+\')" class="text-purple-600 text-xs hover:underline">Логи</button>\';
+if(l.status===\'active\')h+=\'<button onclick="toggleLic(\'+l.id+\',\\\'suspended\\\')" class="text-yellow-600 text-xs hover:underline">Приостановить</button>\';
+if(l.status===\'suspended\')h+=\'<button onclick="toggleLic(\'+l.id+\',\\\'active\\\')" class="text-green-600 text-xs hover:underline">Активировать</button>\';
+h+=\'<button onclick="delLic(\'+l.id+\')" class="text-red-500 text-xs hover:underline">Удалить</button></div></div>\';});
+document.getElementById(\'list\').innerHTML=h||\'<p class="text-gray-400 text-center py-8">Нет лицензий</p>\';
+}).catch(function(x){document.getElementById(\'list\').innerHTML=\'<div class="bg-red-50 text-red-700 rounded-xl p-4">\'+e(x.message)+\'</div>\';});
+
+ap(\'?action=logs&limit=30\').then(function(d){
+if(d.error)throw new Error(d.error);
+var h=\'<table class="w-full text-xs"><thead class="bg-gray-50"><tr><th class="px-3 py-2 text-left">Время</th><th class="px-3 py-2">Действие</th><th class="px-3 py-2">Ключ</th><th class="px-3 py-2">Домен</th><th class="px-3 py-2">IP</th><th class="px-3 py-2">Код</th></tr></thead><tbody>\';
+(d.logs||[]).forEach(function(l){var ac={\'activate\':\'text-green-600\',\'verify\':\'text-blue-600\',\'denied\':\'text-red-600\',\'heartbeat\':\'text-gray-500\'};
+h+=\'<tr class="border-t"><td class="px-3 py-1.5">\'+new Date(l.created_at).toLocaleString(\'ru-RU\',{hour:\'2-digit\',minute:\'2-digit\',day:\'2-digit\',month:\'2-digit\'})+\'</td><td class="px-3 py-1.5 font-medium \'+(ac[l.action]||\'\')+\'">\'+e(l.action)+\'</td><td class="px-3 py-1.5 font-mono">\'+e((l.license_key||\'\').substr(-12))+\'</td><td class="px-3 py-1.5">\'+e(l.domain||\'-\')+\'</td><td class="px-3 py-1.5 text-gray-400">\'+e(l.ip||\'\')+\'</td><td class="px-3 py-1.5">\'+(l.response_code||\'\')+\'</td></tr>\';});
+h+=\'</tbody></table>\';document.getElementById(\'logs\').innerHTML=h;
+}).catch(function(x){document.getElementById(\'logs\').innerHTML=\'<div class="bg-red-50 text-red-700 p-4">\'+e(x.message)+\'</div>\';});
+}
+
+function showCreate(){modal(\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Создать лицензию</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><form onsubmit="return createLic(event)"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Домен</label><input id="cr-domain" class="input-f" placeholder="example.com"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">План</label><select id="cr-plan" class="sel-f"><option value="trial">Trial</option><option value="basic" selected>Basic</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></div><div><label class="block text-xs font-medium mb-1">Срок до</label><input type="date" id="cr-exp" class="input-f"></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Владелец</label><input id="cr-name" class="input-f"></div><div><label class="block text-xs font-medium mb-1">Email</label><input id="cr-email" class="input-f" type="email"></div></div><div><label class="block text-xs font-medium mb-1">Заметки</label><textarea id="cr-notes" class="input-f" rows="2"></textarea></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Создать</button></div></form>\');}
+function createLic(ev){ev.preventDefault();ap(\'?action=create\',{method:\'POST\',body:JSON.stringify({domain:document.getElementById(\'cr-domain\').value,plan:document.getElementById(\'cr-plan\').value,expires_at:document.getElementById(\'cr-exp\').value||null,owner_name:document.getElementById(\'cr-name\').value,owner_email:document.getElementById(\'cr-email\').value,notes:document.getElementById(\'cr-notes\').value})}).then(function(d){if(d.success){cm();alert(\'✅ Ключ:\\n\'+d.license_key);load();}else alert(\'❌ \'+d.error);});return false;}
+function toggleLic(id,st){ap(\'?action=update\',{method:\'POST\',body:JSON.stringify({id:id,status:st})}).then(function(){load();});}
+function delLic(id){if(!confirm(\'Удалить лицензию?\'))return;ap(\'?action=delete\',{method:\'POST\',body:JSON.stringify({id:id})}).then(function(){load();});}
+function editLic(id){ap(\'?action=list\').then(function(d){var l=(d.licenses||[]).find(function(x){return x.id==id;});if(!l)return;modal(\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><div class="mb-3"><code class="text-sm bg-gray-100 px-2 py-1 rounded block">\'+e(l.license_key)+\'</code></div><form onsubmit="return saveLic(event,\'+id+\')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Домен</label><input id="ed-domain" class="input-f" value="\'+e(l.domain||\'\')+\'"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">План</label><select id="ed-plan" class="sel-f"><option value="trial"\'+(l.plan===\'trial\'?\' selected\':\'\')+\'>Trial</option><option value="basic"\'+(l.plan===\'basic\'?\' selected\':\'\')+\'>Basic</option><option value="pro"\'+(l.plan===\'pro\'?\' selected\':\'\')+\'>Pro</option><option value="enterprise"\'+(l.plan===\'enterprise\'?\' selected\':\'\')+\'>Enterprise</option></select></div><div><label class="block text-xs font-medium mb-1">Статус</label><select id="ed-status" class="sel-f"><option value="active"\'+(l.status===\'active\'?\' selected\':\'\')+\'>Active</option><option value="suspended"\'+(l.status===\'suspended\'?\' selected\':\'\')+\'>Suspended</option><option value="expired"\'+(l.status===\'expired\'?\' selected\':\'\')+\'>Expired</option><option value="revoked"\'+(l.status===\'revoked\'?\' selected\':\'\')+\'>Revoked</option></select></div></div><div><label class="block text-xs font-medium mb-1">Срок до</label><input type="date" id="ed-exp" class="input-f" value="\'+(l.expires_at?l.expires_at.substr(0,10):\'\')+\'"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Владелец</label><input id="ed-name" class="input-f" value="\'+e(l.owner_name||\'\')+\'"></div><div><label class="block text-xs font-medium mb-1">Email</label><input id="ed-email" class="input-f" value="\'+e(l.owner_email||\'\')+\'"></div></div><div><label class="block text-xs font-medium mb-1">Заметки</label><textarea id="ed-notes" class="input-f" rows="2">\'+e(l.notes||\'\')+\'</textarea></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">Сохранить</button></div></form>\');});}
+function saveLic(ev,id){ev.preventDefault();ap(\'?action=update\',{method:\'POST\',body:JSON.stringify({id:id,domain:document.getElementById(\'ed-domain\').value,plan:document.getElementById(\'ed-plan\').value,status:document.getElementById(\'ed-status\').value,expires_at:document.getElementById(\'ed-exp\').value||null,owner_name:document.getElementById(\'ed-name\').value,owner_email:document.getElementById(\'ed-email\').value,notes:document.getElementById(\'ed-notes\').value})}).then(function(d){if(d.success){cm();load();}else alert(\'❌ \'+(d.error||\'Ошибка\'));});return false;}
+function showLicLogs(id){ap(\'?action=logs&license_id=\'+id+\'&limit=50\').then(function(d){var h=\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Логи #\'+id+\'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><div class="max-h-96 overflow-y-auto"><table class="w-full text-xs"><thead class="bg-gray-50"><tr><th class="px-2 py-1">Время</th><th class="px-2 py-1">Действие</th><th class="px-2 py-1">Домен</th><th class="px-2 py-1">IP</th><th class="px-2 py-1">Сообщение</th></tr></thead><tbody>\';(d.logs||[]).forEach(function(l){h+=\'<tr class="border-t"><td class="px-2 py-1">\'+new Date(l.created_at).toLocaleString(\'ru-RU\')+\'</td><td class="px-2 py-1 font-medium">\'+e(l.action)+\'</td><td class="px-2 py-1">\'+e(l.domain||\'\')+\'</td><td class="px-2 py-1">\'+e(l.ip||\'\')+\'</td><td class="px-2 py-1 text-gray-500">\'+e(l.message||\'\')+\'</td></tr>\';});h+=\'</tbody></table></div>\';modal(h);});}
+
+function showChangePw(){modal(\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔑 Смена пароля</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><form onsubmit="return doChangePw(event)"><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Текущий пароль</label><input type="password" id="cp-old" class="input-f" required></div><div><label class="block text-sm font-medium mb-1">Новый пароль</label><input type="password" id="cp-new" class="input-f" required minlength="6"></div><div><label class="block text-sm font-medium mb-1">Повторите</label><input type="password" id="cp-confirm" class="input-f" required></div><div id="cp-err" class="hidden text-red-600 text-sm"></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" id="cp-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">Сохранить</button></div></form>\');}
+function doChangePw(ev){ev.preventDefault();var n=document.getElementById(\'cp-new\').value,c=document.getElementById(\'cp-confirm\').value,err=document.getElementById(\'cp-err\');err.classList.add(\'hidden\');if(n!==c){err.textContent=\'Пароли не совпадают\';err.classList.remove(\'hidden\');return false;}ap(\'?action=change-password\',{method:\'POST\',body:JSON.stringify({current_password:document.getElementById(\'cp-old\').value,new_password:n})}).then(function(d){if(d.success){cm();alert(\'✅ \'+d.message);}else{err.textContent=d.error;err.classList.remove(\'hidden\');}});return false;}
+
+function show2FA(){ap(\'?action=2fa-status\').then(function(d){var h=\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔐 Двухфакторная авторизация</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>\';if(d.enabled){h+=\'<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center"><span class="text-3xl">✅</span><p class="font-bold text-green-700 mt-2">2FA включена</p><p class="text-sm text-green-600">Резервных кодов: \'+d.backup_codes_remaining+\'</p></div><div class="space-y-3"><button onclick="tfaRegenBackup()" class="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 rounded-lg text-sm font-semibold">🔄 Новые резервные коды</button><button onclick="tfaDisable()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2 rounded-lg text-sm font-semibold">⛔ Отключить 2FA</button></div>\';}else{h+=\'<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"><p class="text-yellow-700 text-sm"><strong>⚠️ 2FA не включена.</strong></p></div><div class="text-center"><button onclick="tfaSetup()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">🔐 Включить 2FA</button></div>\';}modal(h);});}
+function tfaSetup(){ap(\'?action=2fa\',{method:\'POST\',body:JSON.stringify({action:\'setup\'})}).then(function(d){if(d.error){alert(d.error);return;}modal(\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔐 Настройка 2FA</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><div class="text-center mb-4"><p class="text-sm text-gray-600 mb-3">Отсканируйте QR в приложении:</p><img src="\'+d.qr_url+\'" style="width:250px;height:250px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;padding:8px"><p class="text-xs text-gray-400 mt-2">Вручную: <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">\'+d.secret+\'</code></p></div><div class="mt-4"><p class="text-sm mb-2">Введите 6-значный код:</p><div class="flex gap-3"><input type="text" id="tfa-code" maxlength="6" inputmode="numeric" placeholder="000000" class="input-f text-center text-2xl tracking-widest font-mono flex-1"><button onclick="tfaEnable()" id="tfa-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">OK</button></div><div id="tfa-err" class="hidden text-red-600 text-sm mt-2"></div></div>\');setTimeout(function(){var el=document.getElementById(\'tfa-code\');if(el)el.focus();},200);});}
+function tfaEnable(){var code=document.getElementById(\'tfa-code\').value;ap(\'?action=2fa\',{method:\'POST\',body:JSON.stringify({action:\'enable\',code:code})}).then(function(d){if(d.error){var el=document.getElementById(\'tfa-err\');el.textContent=d.error;el.classList.remove(\'hidden\');return;}var h=\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">✅ 2FA включена!</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"><p class="font-bold text-yellow-700 mb-2">⚠️ Сохраните резервные коды!</p><div class="grid grid-cols-2 gap-2 font-mono text-sm mt-2">\';(d.backup_codes||[]).forEach(function(c){h+=\'<div class="bg-white border rounded px-3 py-1.5 text-center">\'+c+\'</div>\';});h+=\'</div></div><button onclick="cm()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Понятно</button>\';modal(h);});}
+function tfaDisable(){var pw=prompt(\'Пароль для отключения 2FA:\');if(!pw)return;ap(\'?action=2fa\',{method:\'POST\',body:JSON.stringify({action:\'disable\',password:pw})}).then(function(d){if(d.error)alert(\'❌ \'+d.error);else{alert(\'✅ 2FA отключена\');cm();}});}
+function tfaRegenBackup(){var pw=prompt(\'Пароль:\');if(!pw)return;ap(\'?action=2fa\',{method:\'POST\',body:JSON.stringify({action:\'regen-backup\',password:pw})}).then(function(d){if(d.error){alert(\'❌ \'+d.error);return;}var h=\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔄 Новые коды</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div><div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"><p class="font-bold text-yellow-700 mb-2">Старые коды недействительны!</p><div class="grid grid-cols-2 gap-2 font-mono text-sm mt-2">\';(d.backup_codes||[]).forEach(function(c){h+=\'<div class="bg-white border rounded px-3 py-1.5 text-center">\'+c+\'</div>\';});h+=\'</div></div><button onclick="cm()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">OK</button>\';modal(h);});}
+
+function showBackups(){ap(\'?action=backup-list\').then(function(d){var h=\'<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">💾 Бэкапы базы данных</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>\';h+=\'<button onclick="createBackup()" id="bk-btn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold mb-4">📦 Создать бэкап</button>\';h+=\'<div class="space-y-2 max-h-64 overflow-y-auto">\';if(!d.backups||!d.backups.length)h+=\'<p class="text-gray-400 text-sm text-center py-4">Нет бэкапов</p>\';(d.backups||[]).forEach(function(b){h+=\'<div class="flex items-center justify-between bg-gray-50 rounded-lg p-3"><div><p class="text-sm font-medium">\'+e(b.name)+\'</p><p class="text-xs text-gray-400">\'+b.size+\' • \'+b.date+\'</p></div><div class="flex gap-2"><a href="/admin/api?action=backup-download&name=\'+encodeURIComponent(b.name)+\'" class="text-blue-600 text-xs hover:underline">Скачать</a><button onclick="delBackup(\\\'\'+e(b.name)+\'\\\')" class="text-red-500 text-xs hover:underline">Удалить</button></div></div>\';});h+=\'</div>\';modal(h);});}
+function createBackup(){var btn=document.getElementById(\'bk-btn\');btn.disabled=true;btn.textContent=\'⏳ Создание...\';ap(\'?action=backup-create\',{method:\'POST\'}).then(function(d){btn.disabled=false;btn.textContent=\'📦 Создать бэкап\';if(d.success){alert(\'✅ Бэкап: \'+d.file+\' (\'+d.size+\')\');showBackups();}else alert(\'❌ \'+(d.error||\'Ошибка\'));});}
+function delBackup(name){if(!confirm(\'Удалить \'+name+\'?\'))return;ap(\'?action=backup-delete\',{method:\'POST\',body:JSON.stringify({name:name})}).then(function(){showBackups();});}
+
+function logout(){fetch(\'/admin/api?action=logout\',{method:\'POST\',credentials:\'same-origin\'}).then(function(){location.reload();});}
+load();
+</script>
+<?php endif; ?>
+</body>
+</html>
+',
+    'api/activate.php' => '<?php
+/**
+ * Активация лицензии
+ * POST /api/activate
+ * Body: {"license_key": "KZM-...", "domain": "example.com", "hardware_hash": "..."}
+ */
+
+$rate = checkRateLimit(\'activate\', 10, 300); // 10 попыток за 5 мин
+if (!$rate[\'allowed\']) {
+    logAction(\'denied\', null, null, null, 429, \'Rate limit exceeded\');
+    jsonError(\'Слишком много запросов. Подождите.\', 429);
+}
+
+$data = json_decode(file_get_contents(\'php://input\'), true);
+$licenseKey = trim($data[\'license_key\'] ?? \'\');
+$domain = normalizeDomain($data[\'domain\'] ?? \'\');
+$hardwareHash = trim($data[\'hardware_hash\'] ?? \'\');
+
+if (!$licenseKey || !$domain) {
+    logAction(\'error\', null, $licenseKey, $domain, 400, \'Missing params\');
+    jsonError(\'Укажите license_key и domain\');
+}
+
+// Валидация формата ключа
+if (!preg_match(\'/^KZM-[A-F0-9]{6}-[A-F0-9]{6}-[A-F0-9]{6}-[A-F0-9]{6}$/\', $licenseKey)) {
+    logAction(\'denied\', null, $licenseKey, $domain, 400, \'Invalid key format\');
+    jsonError(\'Неверный формат лицензионного ключа\');
+}
+
+$db = getDB();
+
+// Находим лицензию
+$stmt = $db->prepare("SELECT * FROM licenses WHERE license_key = ? LIMIT 1");
+$stmt->execute([$licenseKey]);
+$license = $stmt->fetch();
+
+if (!$license) {
+    logAction(\'denied\', null, $licenseKey, $domain, 404, \'Key not found\');
+    jsonError(\'Лицензионный ключ не найден\', 404);
+}
+
+// Проверка статуса
+if ($license[\'status\'] !== \'active\') {
+    logAction(\'denied\', (int)$license[\'id\'], $licenseKey, $domain, 403, \'License \' . $license[\'status\']);
+    jsonError(\'Лицензия \' . match($license[\'status\']) {
+        \'suspended\' => \'приостановлена\',
+        \'expired\' => \'истекла\',
+        \'revoked\' => \'отозвана\',
+        default => \'неактивна\'
+    }, 403);
+}
+
+// Проверка срока
+if ($license[\'expires_at\'] && strtotime($license[\'expires_at\']) < time()) {
+    $db->prepare("UPDATE licenses SET status = \'expired\' WHERE id = ?")->execute([$license[\'id\']]);
+    logAction(\'denied\', (int)$license[\'id\'], $licenseKey, $domain, 403, \'Expired\');
+    jsonError(\'Срок лицензии истёк\', 403);
+}
+
+// Проверка домена
+if ($license[\'domain\'] && $license[\'domain\'] !== $domain) {
+    // Попытка активации на другом домене — БЛОКИРОВКА
+    $db->prepare("UPDATE licenses SET status = \'suspended\' WHERE id = ? AND status = \'active\'")
+       ->execute([$license[\'id\']]);
+    
+    logAction(\'denied\', (int)$license[\'id\'], $licenseKey, $domain, 403, 
+        \'ACTIVATE DOMAIN CHANGED: \' . $license[\'domain\'] . \' → \' . $domain . \'. License SUSPENDED.\');
+    
+    jsonError(\'Лицензия привязана к домену \' . $license[\'domain\'] . \'. Попытка активации на другом домене — лицензия заблокирована. Обратитесь к администратору.\', 403);
+}
+
+// Проверка количества активаций
+if ((int)$license[\'activations_count\'] >= (int)$license[\'max_activations\'] && $license[\'domain\'] !== $domain) {
+    logAction(\'denied\', (int)$license[\'id\'], $licenseKey, $domain, 403, \'Max activations reached\');
+    jsonError(\'Достигнут лимит активаций\', 403);
+}
+
+// Активируем — привязываем домен
+$db->prepare("UPDATE licenses SET domain = ?, hardware_hash = ?, activations_count = activations_count + 1, last_check_at = NOW(), last_check_ip = ? WHERE id = ?")
+   ->execute([$domain, $hardwareHash ?: null, getClientIp(), $license[\'id\']]);
+
+logAction(\'activate\', (int)$license[\'id\'], $licenseKey, $domain, 200, \'Activated successfully\');
+
+// Генерируем зашифрованный токен активации
+$activationData = json_encode([
+    \'license_id\' => $license[\'id\'],
+    \'key\' => $licenseKey,
+    \'domain\' => $domain,
+    \'plan\' => $license[\'plan\'],
+    \'features\' => json_decode($license[\'features\'] ?? \'{}\', true),
+    \'expires\' => $license[\'expires_at\'],
+    \'activated_at\' => date(\'Y-m-d H:i:s\'),
+]);
+$encryptedToken = encryptData($activationData);
+
+jsonResponse([
+    \'valid\' => true,
+    \'license\' => [
+        \'key\' => $licenseKey,
+        \'domain\' => $domain,
+        \'plan\' => $license[\'plan\'],
+        \'features\' => json_decode($license[\'features\'] ?? \'{}\', true),
+        \'expires_at\' => $license[\'expires_at\'],
+    ],
+    \'activation_token\' => $encryptedToken,
+    \'message\' => \'Лицензия активирована\',
+]);
+',
+    'api/deactivate.php' => '<?php
+/**
+ * Деактивация лицензии
+ * POST /api/deactivate
+ */
+$rate = checkRateLimit(\'deactivate\', 5, 300);
+if (!$rate[\'allowed\']) { jsonError(\'Rate limit\', 429); }
+
+$data = json_decode(file_get_contents(\'php://input\'), true);
+$licenseKey = trim($data[\'license_key\'] ?? \'\');
+$domain = normalizeDomain($data[\'domain\'] ?? \'\');
+
+if (!$licenseKey || !$domain) { jsonError(\'Missing params\'); }
+
+$db = getDB();
+$stmt = $db->prepare("SELECT * FROM licenses WHERE license_key = ? AND domain = ? LIMIT 1");
+$stmt->execute([$licenseKey, $domain]);
+$lic = $stmt->fetch();
+
+if (!$lic) {
+    logAction(\'denied\', null, $licenseKey, $domain, 404, \'Not found for deactivation\');
+    jsonError(\'Лицензия не найдена для этого домена\', 404);
+}
+
+$db->prepare("UPDATE licenses SET domain = \'\', hardware_hash = NULL, activations_count = GREATEST(activations_count - 1, 0) WHERE id = ?")
+   ->execute([$lic[\'id\']]);
+
+logAction(\'deactivate\', (int)$lic[\'id\'], $licenseKey, $domain, 200, \'Deactivated\');
+jsonResponse([\'valid\' => true, \'message\' => \'Лицензия деактивирована. Можно привязать к другому домену.\']);
+',
+    'api/heartbeat.php' => '<?php
+/**
+ * Heartbeat — фоновая проверка (из крона клиента)
+ * POST /api/heartbeat
+ * 
+ * При несовпадении домена — автоматическая блокировка лицензии
+ */
+$rate = checkRateLimit(\'heartbeat\', 120, 60);
+if (!$rate[\'allowed\']) { jsonError(\'Rate limit\', 429); }
+
+$data = json_decode(file_get_contents(\'php://input\'), true);
+$licenseKey = trim($data[\'license_key\'] ?? \'\');
+$domain = normalizeDomain($data[\'domain\'] ?? \'\');
+
+if (!$licenseKey || !$domain) { jsonError(\'Missing params\'); }
+
+$db = getDB();
+$stmt = $db->prepare("SELECT id, domain, status, expires_at FROM licenses WHERE license_key = ? LIMIT 1");
+$stmt->execute([$licenseKey]);
+$lic = $stmt->fetch();
+
+if (!$lic) {
+    logAction(\'heartbeat\', null, $licenseKey, $domain, 404, \'Key not found\');
+    jsonResponse([\'valid\' => false], 404);
+}
+
+// Домен изменился — БЛОКИРОВКА
+if ($lic[\'domain\'] && $lic[\'domain\'] !== $domain) {
+    $db->prepare("UPDATE licenses SET status = \'suspended\' WHERE id = ? AND status = \'active\'")
+       ->execute([$lic[\'id\']]);
+    
+    logAction(\'heartbeat\', (int)$lic[\'id\'], $licenseKey, $domain, 403, 
+        \'DOMAIN CHANGED: \' . $lic[\'domain\'] . \' → \' . $domain . \'. License SUSPENDED.\');
+    
+    jsonResponse([\'valid\' => false, \'reason\' => \'domain_changed\', \'action\' => \'suspended\'], 403);
+}
+
+// Статус не active
+if ($lic[\'status\'] !== \'active\') {
+    logAction(\'heartbeat\', (int)$lic[\'id\'], $licenseKey, $domain, 403, \'Status: \' . $lic[\'status\']);
+    jsonResponse([\'valid\' => false, \'reason\' => $lic[\'status\']], 403);
+}
+
+// Срок истёк
+if ($lic[\'expires_at\'] && strtotime($lic[\'expires_at\']) < time()) {
+    $db->prepare("UPDATE licenses SET status = \'expired\' WHERE id = ?")->execute([$lic[\'id\']]);
+    logAction(\'heartbeat\', (int)$lic[\'id\'], $licenseKey, $domain, 403, \'Expired\');
+    jsonResponse([\'valid\' => false, \'reason\' => \'expired\'], 403);
+}
+
+$db->prepare("UPDATE licenses SET last_check_at = NOW(), last_check_ip = ? WHERE id = ?")
+   ->execute([getClientIp(), $lic[\'id\']]);
+
+logAction(\'heartbeat\', (int)$lic[\'id\'], $licenseKey, $domain, 200, \'OK\');
+jsonResponse([\'valid\' => true]);
+',
+    'api/verify.php' => '<?php
+/**
+ * Проверка лицензии (периодическая)
+ * POST /api/verify
+ * Body: {"license_key": "KZM-...", "domain": "example.com"}
+ * 
+ * При несовпадении домена — автоматическая блокировка лицензии
+ */
+
+$rate = checkRateLimit(\'verify\', 60, 60);
+if (!$rate[\'allowed\']) {
+    jsonError(\'Rate limit\', 429);
+}
+
+$data = json_decode(file_get_contents(\'php://input\'), true);
+$licenseKey = trim($data[\'license_key\'] ?? \'\');
+$domain = normalizeDomain($data[\'domain\'] ?? \'\');
+
+if (!$licenseKey || !$domain) {
+    jsonError(\'Укажите license_key и domain\');
+}
+
+$db = getDB();
+$stmt = $db->prepare("SELECT * FROM licenses WHERE license_key = ? LIMIT 1");
+$stmt->execute([$licenseKey]);
+$license = $stmt->fetch();
+
+if (!$license) {
+    logAction(\'denied\', null, $licenseKey, $domain, 404, \'Key not found\');
+    jsonError(\'Лицензия не найдена\', 404);
+}
+
+// Проверка домена — при несовпадении БЛОКИРУЕМ лицензию
+if ($license[\'domain\'] && $license[\'domain\'] !== $domain) {
+    // Блокируем
+    $db->prepare("UPDATE licenses SET status = \'suspended\' WHERE id = ? AND status = \'active\'")
+       ->execute([$license[\'id\']]);
+    
+    logAction(\'denied\', (int)$license[\'id\'], $licenseKey, $domain, 403, 
+        \'DOMAIN CHANGED: \' . $license[\'domain\'] . \' → \' . $domain . \'. License SUSPENDED.\');
+    
+    jsonResponse([
+        \'valid\' => false, 
+        \'error\' => \'Обнаружена смена домена. Лицензия заблокирована.\',
+        \'expected_domain\' => $license[\'domain\'],
+        \'actual_domain\' => $domain,
+        \'action\' => \'suspended\',
+    ], 403);
+}
+
+// Проверка срока
+if ($license[\'expires_at\'] && strtotime($license[\'expires_at\']) < time()) {
+    $db->prepare("UPDATE licenses SET status = \'expired\' WHERE id = ?")->execute([$license[\'id\']]);
+    logAction(\'verify\', (int)$license[\'id\'], $licenseKey, $domain, 403, \'Expired\');
+    jsonResponse([\'valid\' => false, \'error\' => \'Срок лицензии истёк\', \'expired_at\' => $license[\'expires_at\']], 403);
+}
+
+// Проверка статуса
+if ($license[\'status\'] !== \'active\') {
+    logAction(\'verify\', (int)$license[\'id\'], $licenseKey, $domain, 403, \'Status: \' . $license[\'status\']);
+    jsonResponse([\'valid\' => false, \'error\' => \'Лицензия неактивна\', \'status\' => $license[\'status\']], 403);
+}
+
+// Обновляем last_check
+$db->prepare("UPDATE licenses SET last_check_at = NOW(), last_check_ip = ? WHERE id = ?")
+   ->execute([getClientIp(), $license[\'id\']]);
+
+logAction(\'verify\', (int)$license[\'id\'], $licenseKey, $domain, 200, \'Valid\');
+
+$daysLeft = null;
+if ($license[\'expires_at\']) {
+    $daysLeft = max(0, (int)ceil((strtotime($license[\'expires_at\']) - time()) / 86400));
+}
+
+jsonResponse([
+    \'valid\' => true,
+    \'license\' => [
+        \'plan\' => $license[\'plan\'],
+        \'status\' => $license[\'status\'],
+        \'domain\' => $license[\'domain\'],
+        \'features\' => json_decode($license[\'features\'] ?? \'{}\', true),
+        \'expires_at\' => $license[\'expires_at\'],
+        \'days_left\' => $daysLeft,
+    ],
+]);
+',
+    'index.php' => '<?php
+/**
+ * Сервер лицензирования — Роутер
+ * serv.kosmozaim.ru
+ */
+require_once __DIR__ . \'/config.php\';
+
+header(\'Content-Type: application/json; charset=UTF-8\');
+header(\'X-License-Server: KZM/1.0\');
+
+// CORS для клиентских запросов
+$origin = $_SERVER[\'HTTP_ORIGIN\'] ?? \'\';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
+    header(\'Access-Control-Allow-Methods: POST, GET, OPTIONS\');
+    header(\'Access-Control-Allow-Headers: Content-Type, X-License-Key, X-Signature\');
+    header(\'Access-Control-Max-Age: 86400\');
+}
+if ($_SERVER[\'REQUEST_METHOD\'] === \'OPTIONS\') { http_response_code(204); exit; }
+
+$uri = parse_url($_SERVER[\'REQUEST_URI\'], PHP_URL_PATH);
+$uri = rtrim($uri, \'/\') ?: \'/\';
+
+// API эндпоинты
+if ($uri === \'/api/activate\' && $_SERVER[\'REQUEST_METHOD\'] === \'POST\') {
+    require __DIR__ . \'/api/activate.php\'; exit;
+}
+if ($uri === \'/api/verify\' && $_SERVER[\'REQUEST_METHOD\'] === \'POST\') {
+    require __DIR__ . \'/api/verify.php\'; exit;
+}
+if ($uri === \'/api/deactivate\' && $_SERVER[\'REQUEST_METHOD\'] === \'POST\') {
+    require __DIR__ . \'/api/deactivate.php\'; exit;
+}
+if ($uri === \'/api/heartbeat\' && $_SERVER[\'REQUEST_METHOD\'] === \'POST\') {
+    require __DIR__ . \'/api/heartbeat.php\'; exit;
+}
+
+// Статус
+if ($uri === \'/\' || $uri === \'/api/status\') {
+    jsonResponse([\'server\' => \'KZM License Server\', \'version\' => \'1.0\', \'status\' => \'online\']);
+}
+
+// Админка
+if (str_starts_with($uri, \'/admin\')) {
+    if ($uri === \'/admin/api\' || str_starts_with($uri, \'/admin/api\')) {
+        require __DIR__ . \'/admin/api.php\'; exit;
+    }
+    require __DIR__ . \'/admin/index.php\'; exit;
+}
+
+http_response_code(404);
+jsonResponse([\'error\' => \'Endpoint not found\'], 404);
+',
+    'totp.php' => '<?php
+/**
+ * TOTP (Time-based One-Time Password) — RFC 6238
+ * Совместимо с Google Authenticator, Yandex.Key, Authy
+ * Без внешних зависимостей
+ */
+
+class TOTP {
+    private const BASE32_CHARS = \'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\';
+    private const PERIOD = 30;
+    private const DIGITS = 6;
+
+    /**
+     * Генерировать случайный секрет (base32)
+     */
+    public static function generateSecret(int $length = 20): string {
+        $secret = \'\';
+        $bytes = random_bytes($length);
+        for ($i = 0; $i < $length; $i++) {
+            $secret .= self::BASE32_CHARS[ord($bytes[$i]) % 32];
+        }
+        return $secret;
+    }
+
+    /**
+     * Генерировать TOTP-код для текущего времени
+     */
+    public static function getCode(string $secret, ?int $time = null): string {
+        $time = $time ?? time();
+        $timeSlice = intdiv($time, self::PERIOD);
+        $key = self::base32Decode($secret);
+        $timeBytes = pack(\'N*\', 0) . pack(\'N*\', $timeSlice);
+        $hash = hash_hmac(\'sha1\', $timeBytes, $key, true);
+        $offset = ord($hash[strlen($hash) - 1]) & 0x0F;
+        $code = (
+            ((ord($hash[$offset]) & 0x7F) << 24) |
+            ((ord($hash[$offset + 1]) & 0xFF) << 16) |
+            ((ord($hash[$offset + 2]) & 0xFF) << 8) |
+            (ord($hash[$offset + 3]) & 0xFF)
+        ) % pow(10, self::DIGITS);
+        return str_pad((string)$code, self::DIGITS, \'0\', STR_PAD_LEFT);
+    }
+
+    /**
+     * Проверить код (с допуском ±1 период = 30 сек)
+     */
+    public static function verify(string $secret, string $code, int $window = 1): bool {
+        $code = trim($code);
+        if (strlen($code) !== self::DIGITS || !ctype_digit($code)) return false;
+        $time = time();
+        for ($i = -$window; $i <= $window; $i++) {
+            $checkTime = $time + ($i * self::PERIOD);
+            if (hash_equals(self::getCode($secret, $checkTime), $code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Генерировать URL для QR-кода (otpauth://)
+     */
+    public static function getQrUrl(string $secret, string $label, string $issuer = \'Космозайм\'): string {
+        $params = http_build_query([
+            \'secret\' => $secret,
+            \'issuer\' => $issuer,
+            \'algorithm\' => \'SHA1\',
+            \'digits\' => self::DIGITS,
+            \'period\' => self::PERIOD,
+        ]);
+        return \'otpauth://totp/\' . rawurlencode($issuer . \':\' . $label) . \'?\' . $params;
+    }
+
+    /**
+     * Получить URL картинки QR через Google Charts API
+     */
+    public static function getQrImageUrl(string $otpauthUrl, int $size = 200): string {
+        return \'https://chart.googleapis.com/chart?chs=\' . $size . \'x\' . $size 
+            . \'&chld=M|0&cht=qr&chl=\' . urlencode($otpauthUrl);
+    }
+
+    /**
+     * Генерировать резервные коды (10 шт, 8 символов)
+     */
+    public static function generateBackupCodes(int $count = 10): array {
+        $codes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $codes[] = strtoupper(bin2hex(random_bytes(4)));
+        }
+        return $codes;
+    }
+
+    /**
+     * Проверить резервный код
+     */
+    public static function verifyBackupCode(string $code, array &$codes): bool {
+        $code = strtoupper(trim($code));
+        $idx = array_search($code, $codes, true);
+        if ($idx !== false) {
+            unset($codes[$idx]);
+            $codes = array_values($codes);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Декодирование base32
+     */
+    private static function base32Decode(string $input): string {
+        $input = strtoupper(trim($input));
+        $input = rtrim($input, \'=\');
+        $buffer = 0;
+        $bitsLeft = 0;
+        $output = \'\';
+        for ($i = 0; $i < strlen($input); $i++) {
+            $val = strpos(self::BASE32_CHARS, $input[$i]);
+            if ($val === false) continue;
+            $buffer = ($buffer << 5) | $val;
+            $bitsLeft += 5;
+            if ($bitsLeft >= 8) {
+                $bitsLeft -= 8;
+                $output .= chr(($buffer >> $bitsLeft) & 0xFF);
+            }
+        }
+        return $output;
+    }
+}
+',
+];
 $action = $_GET[\'action\'] ?? \'\';
 
 // === ЛОГИН (доступен без авторизации) ===
