@@ -10,6 +10,33 @@ $db = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
+function ensureAdmin2FAColumns(PDO $db): void {
+    static $checked = false;
+    if ($checked) return;
+
+    $required = [
+        'totp_secret' => "ALTER TABLE admins ADD COLUMN totp_secret varchar(64) DEFAULT NULL",
+        'totp_enabled' => "ALTER TABLE admins ADD COLUMN totp_enabled tinyint(1) NOT NULL DEFAULT 0",
+        'totp_backup_codes' => "ALTER TABLE admins ADD COLUMN totp_backup_codes text DEFAULT NULL",
+    ];
+
+    foreach ($required as $column => $sql) {
+        try {
+            $stmt = $db->prepare("SHOW COLUMNS FROM admins LIKE ?");
+            $stmt->execute([$column]);
+            $exists = $stmt->fetch();
+            if (!$exists) {
+                $db->exec($sql);
+            }
+        } catch (Exception $e) {
+            // fallback: пробуем добавить и игнорируем ошибку дубля
+            try { $db->exec($sql); } catch (Exception $e2) {}
+        }
+    }
+
+    $checked = true;
+}
+
 // === ЛОГИН (без авторизации) ===
 if ($action === 'login' && $method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -27,6 +54,8 @@ if ($action === 'login' && $method === 'POST') {
         echo json_encode(['error' => 'Слишком много попыток. Подождите 5 минут.', 'blocked' => true]);
         exit;
     }
+
+    ensureAdmin2FAColumns($db);
 
     $stmt = $db->prepare("SELECT * FROM admins WHERE username = ? LIMIT 1");
     $stmt->execute([$username]);
@@ -208,15 +237,11 @@ if ($action === 'change-password' && $method === 'POST') {
 // === 2FA ===
 if ($action === '2fa-status') {
     if (session_status() === PHP_SESSION_NONE) { session_start(); }
-    // Автомиграция: добавляем колонки 2FA если нет
-    try { $db->query("SELECT totp_enabled FROM admins LIMIT 1"); } catch (Exception $e) {
-        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_secret varchar(64) DEFAULT NULL"); } catch (Exception $e2) {}
-        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_enabled tinyint(1) NOT NULL DEFAULT 0"); } catch (Exception $e2) {}
-        try { $db->exec("ALTER TABLE admins ADD COLUMN totp_backup_codes text DEFAULT NULL"); } catch (Exception $e2) {}
-    }
+    ensureAdmin2FAColumns($db);
     try {
         $adm = $db->prepare("SELECT totp_enabled, totp_backup_codes FROM admins WHERE id = ?");
-        $adm->execute([$_SESSION['lic_admin_id'] ?? 0]); $a = $adm->fetch();
+        $adm->execute([$_SESSION['lic_admin_id'] ?? 0]);
+        $a = $adm->fetch() ?: [];
         $codes = json_decode($a['totp_backup_codes'] ?? '[]', true) ?: [];
         echo json_encode(['enabled' => !empty($a['totp_enabled']), 'backup_codes_remaining' => count($codes)]);
     } catch (Exception $e) {
@@ -226,6 +251,7 @@ if ($action === '2fa-status') {
 }
 if ($action === '2fa' && $method === 'POST') {
     if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    ensureAdmin2FAColumns($db);
     $data = json_decode(file_get_contents('php://input'), true);
     $act = $data['action'] ?? '';
     $adminId = $_SESSION['lic_admin_id'] ?? 0;
