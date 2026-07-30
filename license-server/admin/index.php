@@ -42,7 +42,7 @@ return false;}
 
 <?php else: ?>
 <!-- Админка -->
-<div class="bg-gray-900 text-white"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">🔑</span><h1 class="font-bold">License Server</h1></div><div class="flex items-center gap-4"><span class="text-gray-400 text-sm"><?= e($_SESSION['lic_admin_user'] ?? '') ?></span><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти</button></div></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">🔑</span><h1 class="font-bold">License Server</h1></div><div class="flex items-center gap-4"><span class="text-gray-400 text-sm"><?= e($_SESSION['lic_admin_user'] ?? '') ?></span><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти</button></div></div></div>
 
 <div class="max-w-6xl mx-auto px-4 py-8">
 <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
@@ -162,6 +162,32 @@ h+='</tbody></table></div>';
 modal(h);
 });
 }
+
+function showChangePw(){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔑 Смена пароля</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return doChangePw(event)"><div class="space-y-4">'+
+'<div><label class="block text-sm font-medium mb-1">Текущий пароль</label><input type="password" id="cp-old" class="input-f" required></div>'+
+'<div><label class="block text-sm font-medium mb-1">Новый пароль</label><input type="password" id="cp-new" class="input-f" required minlength="6"></div>'+
+'<div><label class="block text-sm font-medium mb-1">Повторите</label><input type="password" id="cp-confirm" class="input-f" required minlength="6"></div>'+
+'<div id="cp-err" class="hidden text-red-600 text-sm"></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" id="cp-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Сохранить</button></div></form>');
+}
+
+function doChangePw(ev){ev.preventDefault();
+var o=document.getElementById('cp-old').value;
+var n=document.getElementById('cp-new').value;
+var c=document.getElementById('cp-confirm').value;
+var err=document.getElementById('cp-err');
+err.classList.add('hidden');
+if(n!==c){err.textContent='Пароли не совпадают';err.classList.remove('hidden');return false;}
+if(n.length<6){err.textContent='Минимум 6 символов';err.classList.remove('hidden');return false;}
+var btn=document.getElementById('cp-btn');btn.disabled=true;btn.textContent='⏳';
+ap('?action=change-password',{method:'POST',body:JSON.stringify({current_password:o,new_password:n})}).then(function(d){
+btn.disabled=false;btn.textContent='Сохранить';
+if(d.success){cm();alert('✅ '+(d.message||'Пароль изменён'));}
+else{err.textContent=d.error||'Ошибка';err.classList.remove('hidden');}
+}).catch(function(){btn.disabled=false;btn.textContent='Сохранить';err.textContent='Ошибка соединения';err.classList.remove('hidden');});
+return false;}
 
 function logout(){fetch('/admin/api?action=logout',{method:'POST'}).then(()=>location.reload());}
 load();

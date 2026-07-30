@@ -163,4 +163,40 @@ if ($action === 'stats') {
     exit;
 }
 
+
+// === Смена пароля ===
+if ($action === 'change-password' && $method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $currentPass = $data['current_password'] ?? '';
+    $newPass = $data['new_password'] ?? '';
+    
+    if (!$currentPass || !$newPass) {
+        echo json_encode(['error' => 'Заполните все поля']);
+        exit;
+    }
+    if (mb_strlen($newPass) < 6) {
+        echo json_encode(['error' => 'Минимум 6 символов']);
+        exit;
+    }
+    
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    $adminId = $_SESSION['lic_admin_id'] ?? 0;
+    
+    $stmt = $db->prepare("SELECT * FROM admins WHERE id = ? LIMIT 1");
+    $stmt->execute([$adminId]);
+    $admin = $stmt->fetch();
+    
+    if (!$admin || !password_verify($currentPass, $admin['password_hash'])) {
+        echo json_encode(['error' => 'Неверный текущий пароль']);
+        exit;
+    }
+    
+    $newHash = password_hash($newPass, PASSWORD_BCRYPT, ['cost' => 12]);
+    $db->prepare("UPDATE admins SET password_hash = ? WHERE id = ?")
+       ->execute([$newHash, $adminId]);
+    
+    echo json_encode(['success' => true, 'message' => 'Пароль изменён']);
+    exit;
+}
+
 echo json_encode(['error' => 'Unknown action']);
