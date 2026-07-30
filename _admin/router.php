@@ -10,7 +10,7 @@ if ($adminPath === '/login' || $adminPath === '/login/') {
 $adminIp = getClientIp();
 if (!checkIpWhitelist($adminIp)) {
     http_response_code(403);
-    echo '<!DOCTYPE html><html><body style="font-family:sans-serif;text-center;padding:100px"><h1>403</h1><p>Доступ запрещён для вашего IP</p><p style="color:#999">' . htmlspecialchars($adminIp, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
+    echo '<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:100px"><h1>403</h1><p>Доступ запрещён для вашего IP</p><p style="color:#999">' . htmlspecialchars($adminIp, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
     exit;
 }
 
@@ -56,6 +56,18 @@ if ($adminPath === '/clear-cache') {
 
 if ($adminPath === '/backup' || str_starts_with($adminPath, '/backup/')) {
     require __DIR__ . '/backup.php';
+    exit;
+}
+
+// Страница «О системе»
+if ($adminPath === '/about' || $adminPath === '/about/') {
+    require __DIR__ . '/about.php';
+    exit;
+}
+
+// Одноразовый патч брендинга dashboard
+if ($adminPath === '/patch-dashboard') {
+    require __DIR__ . '/patch-dashboard.php';
     exit;
 }
 

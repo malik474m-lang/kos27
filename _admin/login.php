@@ -7,7 +7,7 @@ ob_start('minifyHtmlOutput');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Вход в админку — Космозайм</title>
+    <title>Вход — KosmoEngine</title>
     <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
     <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}</style>
 </head>
@@ -15,8 +15,8 @@ ob_start('minifyHtmlOutput');
     <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div class="text-center mb-8">
             <span class="text-4xl">🚀</span>
-            <h1 class="text-2xl font-bold text-gray-900 mt-2">Админ-панель</h1>
-            <p class="text-gray-500 text-sm">Космозайм</p>
+            <h1 class="text-2xl font-bold text-gray-900 mt-2">KosmoEngine</h1>
+            <p class="text-gray-500 text-sm">Панель управления</p>
         </div>
 
         <!-- Шаг 1: Логин/пароль -->
@@ -70,6 +70,12 @@ ob_start('minifyHtmlOutput');
             <p class="text-red-600 font-semibold mt-3" id="blocked-text"></p>
             <p class="text-gray-500 text-sm mt-2">Осталось: <span id="blocked-timer" class="font-mono font-bold">--:--</span></p>
         </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-4 border-t border-gray-200 text-center">
+            <p class="text-gray-400 text-xs">KosmoEngine &copy; <?= date('Y') ?></p>
+            <p class="text-gray-400 text-xs mt-1">Разработчик: Рудаков Юрий</p>
+        </div>
     </div>
 
     <script>
@@ -87,18 +93,24 @@ ob_start('minifyHtmlOutput');
             .then(function(r){return r.json();})
             .then(function(d){
                 btn.disabled = false; btn.textContent = 'Войти';
-                if (d.success) {
-                    window.location.href = '/admin';
-                } else if (d.require_2fa) {
+                if (d.blocked) {
+                    blockedUntil = Date.now() + (d.remaining || 900) * 1000;
+                    showBlocked(d.error || 'Слишком много попыток');
+                    return;
+                }
+                if (d.requires_2fa) {
                     document.getElementById('login-form').classList.add('hidden');
                     document.getElementById('totp-form').classList.remove('hidden');
                     document.getElementById('totp-code').focus();
-                } else if (d.blocked) {
-                    showBlocked(d.error, d.wait || 300);
-                } else {
-                    showError('error', d.error || 'Ошибка');
+                    return;
                 }
-            }).catch(function(){
+                if (d.success) {
+                    window.location.href = '/admin';
+                    return;
+                }
+                showError('error', d.error || 'Неверный логин или пароль');
+            })
+            .catch(function(){
                 btn.disabled = false; btn.textContent = 'Войти';
                 showError('error', 'Ошибка соединения');
             });
@@ -107,20 +119,21 @@ ob_start('minifyHtmlOutput');
 
     function handle2FA(e) {
         e.preventDefault();
-        var code = document.getElementById('totp-code').value.trim();
-        if (!code) return false;
+        var code = document.getElementById('totp-code').value;
         var btn = document.getElementById('totp-btn');
         btn.disabled = true; btn.textContent = '⏳';
 
-        var payload = Object.assign({}, loginData, {totp_code: code});
-        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:loginData.username, password:loginData.password, totp_code:code})})
             .then(function(r){return r.json();})
             .then(function(d){
                 btn.disabled = false; btn.textContent = 'Подтвердить';
-                if (d.success) window.location.href = '/admin';
-                else if (d.blocked) showBlocked(d.error, d.wait || 300);
-                else showError('totp-error', d.error || 'Неверный код');
-            }).catch(function(){
+                if (d.success) {
+                    window.location.href = '/admin';
+                    return;
+                }
+                showError('totp-error', d.error || 'Неверный код');
+            })
+            .catch(function(){
                 btn.disabled = false; btn.textContent = 'Подтвердить';
                 showError('totp-error', 'Ошибка соединения');
             });
@@ -129,35 +142,25 @@ ob_start('minifyHtmlOutput');
 
     function handleBackup(e) {
         e.preventDefault();
-        var code = document.getElementById('backup-code').value.trim();
-        if (!code) return false;
+        var code = document.getElementById('backup-code').value;
         var btn = document.getElementById('backup-btn');
         btn.disabled = true; btn.textContent = '⏳';
 
-        var payload = Object.assign({}, loginData, {backup_code: code});
-        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+        fetch('/api/admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:loginData.username, password:loginData.password, backup_code:code})})
             .then(function(r){return r.json();})
             .then(function(d){
                 btn.disabled = false; btn.textContent = 'Войти';
-                if (d.success) window.location.href = '/admin';
-                else if (d.blocked) showBlocked(d.error, d.wait || 300);
-                else showError('backup-error', d.error || 'Неверный код');
-            }).catch(function(){
+                if (d.success) {
+                    window.location.href = '/admin';
+                    return;
+                }
+                showError('backup-error', d.error || 'Неверный код');
+            })
+            .catch(function(){
                 btn.disabled = false; btn.textContent = 'Войти';
                 showError('backup-error', 'Ошибка соединения');
             });
         return false;
-    }
-
-    function showTotpForm() {
-        document.getElementById('backup-form').classList.add('hidden');
-        document.getElementById('totp-form').classList.remove('hidden');
-        document.getElementById('totp-code').focus();
-    }
-    function showBackupForm() {
-        document.getElementById('totp-form').classList.add('hidden');
-        document.getElementById('backup-form').classList.remove('hidden');
-        document.getElementById('backup-code').focus();
     }
 
     function showError(id, msg) {
@@ -166,23 +169,37 @@ ob_start('minifyHtmlOutput');
         el.classList.remove('hidden');
     }
 
-    function showBlocked(msg, waitSec) {
+    function showBackupForm() {
+        document.getElementById('totp-form').classList.add('hidden');
+        document.getElementById('backup-form').classList.remove('hidden');
+        document.getElementById('backup-code').focus();
+    }
+
+    function showTotpForm() {
+        document.getElementById('backup-form').classList.add('hidden');
+        document.getElementById('totp-form').classList.remove('hidden');
+        document.getElementById('totp-code').focus();
+    }
+
+    function showBlocked(msg) {
         document.getElementById('login-form').classList.add('hidden');
         document.getElementById('totp-form').classList.add('hidden');
         document.getElementById('backup-form').classList.add('hidden');
-        document.getElementById('blocked-msg').classList.remove('hidden');
         document.getElementById('blocked-text').textContent = msg;
-        blockedUntil = Date.now() + waitSec * 1000;
-        updateTimer();
+        document.getElementById('blocked-msg').classList.remove('hidden');
+        updateBlockTimer();
     }
 
-    function updateTimer() {
-        var left = Math.max(0, Math.ceil((blockedUntil - Date.now()) / 1000));
-        var m = Math.floor(left / 60);
-        var s = left % 60;
-        document.getElementById('blocked-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
-        if (left > 0) setTimeout(updateTimer, 1000);
-        else location.reload();
+    function updateBlockTimer() {
+        var remaining = Math.max(0, Math.floor((blockedUntil - Date.now()) / 1000));
+        if (remaining <= 0) {
+            location.reload();
+            return;
+        }
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        document.getElementById('blocked-timer').textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        setTimeout(updateBlockTimer, 1000);
     }
     </script>
 </body>
