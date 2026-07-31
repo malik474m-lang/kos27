@@ -15,7 +15,7 @@ $offersWithTags = $db->query("SELECT DISTINCT offer_id FROM offer_tag_links")->f
 $noTags = array_filter($allOffers, fn($o) => !in_array($o['id'], $offersWithTags));
 
 // Офферы без кликов 30 дней
-$clickedOffers = $db->query("SELECT DISTINCT offer_id FROM click_stats WHERE clicked_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchAll(PDO::FETCH_COLUMN);
+$clickedOffers = $db->query("SELECT DISTINCT offer_id FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchAll(PDO::FETCH_COLUMN);
 $noClicks = array_filter($allOffers, fn($o) => !in_array($o['id'], $clickedOffers));
 
 if ($noLogo) { $checks[] = ['level'=>'error','msg'=>count($noLogo).' оффер(ов) без логотипа','items'=>array_map(fn($o)=>['id'=>$o['id'],'title'=>$o['title']],$noLogo),'fixTab'=>'offers','fixItemType'=>'offer','fixFirstId'=>(int)array_values($noLogo)[0]['id']]; $score -= 5; }

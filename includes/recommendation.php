@@ -54,7 +54,7 @@ function getBestOfferByCategory(string $category, array $filters = []): ?array {
 
         $clicks = 0;
         try {
-            $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND clicked_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+            $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
             $cstmt->execute([$oid]);
             $clicks = (int)$cstmt->fetch()['cnt'];
         } catch (Exception $e) {

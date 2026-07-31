@@ -18,7 +18,7 @@ function collectOfferMetrics(PDO $db, int $period): array {
         $vstmt->execute(['/offer/' . $slug]);
         $views = (int)$vstmt->fetch()['cnt'];
 
-        $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND clicked_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+        $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
         $cstmt->execute([$oid]);
         $clicks = (int)$cstmt->fetch()['cnt'];
 
