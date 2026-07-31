@@ -9,15 +9,15 @@
 function auditLog(string $action, string $entity, ?int $entityId = null, ?string $entityName = null, ?array $changes = null): void {
     try {
         $db = getDB();
-        
+
         // Получаем данные админа из сессии
         startAdminSession();
         $adminId = $_SESSION['admin_id'] ?? null;
         $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Unknown';
-        
+
         $ip = getClientIp();
         $userAgent = mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
-        
+
         // Проверяем/создаём таблицу
         try {
             $db->query("SELECT 1 FROM admin_audit_log LIMIT 1");
@@ -43,13 +43,13 @@ function auditLog(string $action, string $entity, ?int $entityId = null, ?string
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
             ");
         }
-        
+
         $stmt = $db->prepare("
             INSERT INTO admin_audit_log 
             (admin_id, admin_name, action, entity, entity_id, entity_name, changes, ip, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        
+
         $stmt->execute([
             $adminId,
             $adminName,
@@ -73,14 +73,14 @@ function auditLog(string $action, string $entity, ?int $entityId = null, ?string
 function auditDiff(array $old, array $new, array $fields = []): array {
     $changes = [];
     $checkFields = $fields ?: array_unique(array_merge(array_keys($old), array_keys($new)));
-    
+
     foreach ($checkFields as $field) {
         $oldVal = $old[$field] ?? null;
         $newVal = $new[$field] ?? null;
-        
+
         $oldStr = is_array($oldVal) ? json_encode($oldVal) : (string)$oldVal;
         $newStr = is_array($newVal) ? json_encode($newVal) : (string)$newVal;
-        
+
         if ($oldStr !== $newStr) {
             $changes[$field] = [
                 'old' => $oldVal,
@@ -88,7 +88,7 @@ function auditDiff(array $old, array $new, array $fields = []): array {
             ];
         }
     }
-    
+
     return $changes;
 }
 
@@ -96,64 +96,64 @@ function auditDiff(array $old, array $new, array $fields = []): array {
  * Человекочитаемое название действия
  */
 function auditActionLabel(string $action): string {
-    return match($action) {
-        'create' => 'Создание',
-        'update' => 'Изменение',
-        'delete' => 'Удаление',
-        'enable' => 'Включение',
-        'disable' => 'Отключение',
-        'send' => 'Отправка',
-        'apply' => 'Применение',
-        'reorder' => 'Сортировка',
-        'generate' => 'Генерация',
-        'login' => 'Вход',
-        'logout' => 'Выход',
-        default => $action
-    };
+    switch ($action) {
+        case 'create': return 'Создание';
+        case 'update': return 'Изменение';
+        case 'delete': return 'Удаление';
+        case 'enable': return 'Включение';
+        case 'disable': return 'Отключение';
+        case 'send': return 'Отправка';
+        case 'apply': return 'Применение';
+        case 'reorder': return 'Сортировка';
+        case 'generate': return 'Генерация';
+        case 'login': return 'Вход';
+        case 'logout': return 'Выход';
+        default: return $action;
+    }
 }
 
 /**
  * Человекочитаемое название сущности
  */
 function auditEntityLabel(string $entity): string {
-    return match($entity) {
-        'offer' => 'Оффер',
-        'article' => 'Статья',
-        'review' => 'Отзыв',
-        'tag' => 'Тег',
-        'category' => 'Категория',
-        'newsletter' => 'Рассылка',
-        'postback' => 'Postback',
-        'postback_profile' => 'Профиль Postback',
-        'smart_rating' => 'Умный рейтинг',
-        'ab_test' => 'A/B тест',
-        'city_seo' => 'SEO города',
-        'settings' => 'Настройки',
-        'subscriber' => 'Подписчик',
-        'user' => 'Пользователь',
-        'admin' => 'Администратор',
-        'geo_redirect' => 'Гео-редирект',
-        'batch' => 'Пакетная операция',
-        default => $entity
-    };
+    switch ($entity) {
+        case 'offer': return 'Оффер';
+        case 'article': return 'Статья';
+        case 'review': return 'Отзыв';
+        case 'tag': return 'Тег';
+        case 'category': return 'Категория';
+        case 'newsletter': return 'Рассылка';
+        case 'postback': return 'Postback';
+        case 'postback_profile': return 'Профиль Postback';
+        case 'smart_rating': return 'Умный рейтинг';
+        case 'ab_test': return 'A/B тест';
+        case 'city_seo': return 'SEO города';
+        case 'settings': return 'Настройки';
+        case 'subscriber': return 'Подписчик';
+        case 'user': return 'Пользователь';
+        case 'admin': return 'Администратор';
+        case 'geo_redirect': return 'Гео-редирект';
+        case 'batch': return 'Пакетная операция';
+        default: return $entity;
+    }
 }
 
 /**
  * Иконка для действия
  */
 function auditActionIcon(string $action): string {
-    return match($action) {
-        'create' => '➕',
-        'update' => '✏️',
-        'delete' => '🗑️',
-        'enable' => '✅',
-        'disable' => '⛔',
-        'send' => '📤',
-        'apply' => '⚡',
-        'reorder' => '↕️',
-        'generate' => '🤖',
-        'login' => '🔑',
-        'logout' => '🚪',
-        default => '📝'
-    };
+    switch ($action) {
+        case 'create': return '➕';
+        case 'update': return '✏️';
+        case 'delete': return '🗑️';
+        case 'enable': return '✅';
+        case 'disable': return '⛔';
+        case 'send': return '📤';
+        case 'apply': return '⚡';
+        case 'reorder': return '↕️';
+        case 'generate': return '🤖';
+        case 'login': return '🔑';
+        case 'logout': return '🚪';
+        default: return '📝';
+    }
 }
