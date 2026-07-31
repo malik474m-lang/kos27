@@ -4,6 +4,12 @@
  */
 require_once __DIR__ . '/../includes/license.php';
 
+// Если не авторизован — сначала логинимся
+if (!isAdmin()) {
+    header('Location: /admin/login');
+    exit;
+}
+
 $licenseInfo = getLicenseInfo();
 ?>
 <!DOCTYPE html>
@@ -21,7 +27,6 @@ $licenseInfo = getLicenseInfo();
             <div class="text-center mb-8">
                 <span class="text-5xl">🔐</span>
                 <h1 class="text-2xl font-bold text-gray-900 mt-3">Лицензия KosmoEngine</h1>
-                <p class="text-gray-500 text-sm mt-1">Управление лицензией системы</p>
             </div>
 
             <?php if ($licenseInfo['active']): ?>
@@ -50,29 +55,26 @@ $licenseInfo = getLicenseInfo();
                     </div>
                     <?php else: ?>
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Срок действия:</span>
+                        <span class="text-gray-600">Срок:</span>
                         <span class="text-green-600">Бессрочно</span>
                     </div>
                     <?php endif; ?>
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Последняя проверка:</span>
+                        <span class="text-gray-600">Проверка:</span>
                         <span><?= $licenseInfo['last_check'] ? date('d.m.Y H:i', $licenseInfo['last_check']) : '—' ?></span>
                     </div>
                 </div>
                 <?php if ($licenseInfo['grace'] ?? false): ?>
                 <div class="mt-4 bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded-lg">
-                    ⚠️ Работает в grace-режиме (ошибка связи с сервером лицензий)
+                    ⚠️ Grace-режим (нет связи с сервером лицензий)
                 </div>
                 <?php endif; ?>
             </div>
 
             <div class="flex space-x-3">
-                <a href="/admin" class="flex-1 bg-gray-900 text-white py-3 rounded-lg font-semibold text-center hover:bg-gray-800">
-                    ← В админку
-                </a>
-                <button onclick="removeLicense()" class="px-6 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
-                    Удалить
-                </button>
+                <a href="/admin" class="flex-1 bg-gray-900 text-white py-3 rounded-lg font-semibold text-center hover:bg-gray-800">← В админку</a>
+                <button onclick="forceCheck()" id="check-btn" class="px-4 py-3 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 text-sm">🔄 Проверить</button>
+                <button onclick="removeLicense()" class="px-4 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm">Удалить</button>
             </div>
 
             <?php else: ?>
@@ -82,7 +84,7 @@ $licenseInfo = getLicenseInfo();
                     <span class="text-2xl mr-3">⚠️</span>
                     <div>
                         <h2 class="font-bold text-red-800">Лицензия не активна</h2>
-                        <p class="text-red-600 text-sm">Введите ключ лицензии для активации</p>
+                        <p class="text-red-600 text-sm"><?= e($licenseInfo['reason'] ?? ($licenseInfo['message'] ?? 'Введите ключ')) ?></p>
                     </div>
                 </div>
             </div>
@@ -97,13 +99,13 @@ $licenseInfo = getLicenseInfo();
                 <div id="error" class="hidden text-red-600 text-sm mb-4 bg-red-50 border border-red-200 rounded-lg p-3"></div>
                 <div id="success" class="hidden text-green-600 text-sm mb-4 bg-green-50 border border-green-200 rounded-lg p-3"></div>
                 <button type="submit" id="submit-btn" 
-                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
                     Активировать лицензию
                 </button>
             </form>
 
             <div class="mt-6 text-center">
-                <p class="text-gray-400 text-xs">Текущий домен: <?= e(getCurrentDomain()) ?></p>
+                <p class="text-gray-400 text-xs">Домен: <?= e(getCurrentDomain()) ?></p>
             </div>
             <?php endif; ?>
 
@@ -117,14 +119,10 @@ $licenseInfo = getLicenseInfo();
     function activateLicense(e) {
         e.preventDefault();
         const key = document.getElementById('license-key').value.trim();
-        if (!key) {
-            showError('Введите ключ лицензии');
-            return false;
-        }
+        if (!key) { showError('Введите ключ лицензии'); return false; }
 
         const btn = document.getElementById('submit-btn');
-        btn.disabled = true;
-        btn.textContent = '⏳ Проверка...';
+        btn.disabled = true; btn.textContent = '⏳ Проверка...';
         hideMessages();
 
         fetch('/api/admin/license', {
@@ -134,9 +132,7 @@ $licenseInfo = getLicenseInfo();
         })
         .then(r => r.json())
         .then(data => {
-            btn.disabled = false;
-            btn.textContent = 'Активировать лицензию';
-            
+            btn.disabled = false; btn.textContent = 'Активировать лицензию';
             if (data.success) {
                 showSuccess(data.message || 'Лицензия активирована!');
                 setTimeout(() => location.reload(), 1500);
@@ -145,41 +141,37 @@ $licenseInfo = getLicenseInfo();
             }
         })
         .catch(() => {
-            btn.disabled = false;
-            btn.textContent = 'Активировать лицензию';
+            btn.disabled = false; btn.textContent = 'Активировать лицензию';
             showError('Ошибка соединения');
         });
-
         return false;
+    }
+
+    function forceCheck() {
+        const btn = document.getElementById('check-btn');
+        btn.disabled = true; btn.textContent = '⏳';
+        fetch('/api/admin/license', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'check'})
+        })
+        .then(r => r.json())
+        .then(() => location.reload())
+        .catch(() => location.reload());
     }
 
     function removeLicense() {
         if (!confirm('Удалить лицензию? Сайт перестанет работать.')) return;
-        
         fetch('/api/admin/license', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({action: 'remove'})
-        })
-        .then(() => location.reload());
+        }).then(() => location.reload());
     }
 
-    function showError(msg) {
-        const el = document.getElementById('error');
-        el.textContent = msg;
-        el.classList.remove('hidden');
-    }
-
-    function showSuccess(msg) {
-        const el = document.getElementById('success');
-        el.textContent = msg;
-        el.classList.remove('hidden');
-    }
-
-    function hideMessages() {
-        document.getElementById('error')?.classList.add('hidden');
-        document.getElementById('success')?.classList.add('hidden');
-    }
+    function showError(msg) { const el = document.getElementById('error'); el.textContent = msg; el.classList.remove('hidden'); }
+    function showSuccess(msg) { const el = document.getElementById('success'); el.textContent = msg; el.classList.remove('hidden'); }
+    function hideMessages() { document.getElementById('error')?.classList.add('hidden'); document.getElementById('success')?.classList.add('hidden'); }
     </script>
 </body>
 </html>
