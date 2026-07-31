@@ -201,15 +201,18 @@ function forceLicenseCheck(): array {
  */
 function requireLicense(): void {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $path = parse_url($uri, PHP_URL_PATH);
     
     // Пропускаем статику
     if (preg_match('#\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2)(\?|$)#i', $uri)) {
         return;
     }
     
-    // Пропускаем страницу лицензии и логин
-    $path = parse_url($uri, PHP_URL_PATH);
-    if ($path === '/admin/license' || $path === '/admin/license/' || $path === '/admin/login' || $path === '/admin/login/') {
+    // Пропускаем: страницу лицензии, логин, API лицензии
+    if ($path === '/admin/license' || $path === '/admin/license/'
+        || $path === '/admin/login' || $path === '/admin/login/'
+        || $path === '/api/admin/license'
+        || $path === '/api/admin/login') {
         return;
     }
     
@@ -219,14 +222,23 @@ function requireLicense(): void {
         return;
     }
     
-    // Для админки — редирект на страницу лицензии
-    if (strpos($uri, '/admin') === 0) {
+    // Для админки — пропускаем логин, после логина редирект на лицензию
+    if (strpos($path, '/admin') === 0) {
+        // Если залогинен — на страницу лицензии
         if (isAdmin()) {
             header('Location: /admin/license');
             exit;
         }
+        // Если не залогинен — пусть сначала войдёт, потом увидит лицензию
+        return;
     }
     
+    // Пропускаем все API (чтобы работал /api/admin/login и /api/admin/license)
+    if (strpos($path, '/api/') === 0) {
+        return;
+    }
+    
+    // Для публичных страниц — заглушка
     showLicenseError($status['reason'] ?? 'NO_LICENSE');
 }
 
