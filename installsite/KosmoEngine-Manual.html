@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>KosmoEngine — Руководство пользователя</title>
+<style>
+@page { margin: 20mm 15mm; size: A4; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.7; color: #1a1a1a; }
+.cover { page-break-after: always; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; text-align: center; }
+.cover h1 { font-size: 42px; font-weight: 800; color: #1a56db; margin-bottom: 10px; }
+.cover .subtitle { font-size: 20px; color: #6b7280; margin-bottom: 40px; }
+.cover .version { font-size: 14px; color: #9ca3af; }
+.cover .logo { font-size: 80px; margin-bottom: 30px; }
+h1 { font-size: 28px; font-weight: 700; color: #1a56db; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 3px solid #e5e7eb; page-break-after: avoid; }
+h2 { font-size: 20px; font-weight: 700; color: #111827; margin: 25px 0 10px; page-break-after: avoid; }
+h3 { font-size: 16px; font-weight: 600; color: #374151; margin: 18px 0 8px; }
+p { margin-bottom: 10px; }
+ul, ol { margin: 8px 0 12px 24px; }
+li { margin-bottom: 5px; }
+code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'Consolas', monospace; }
+pre { background: #1f2937; color: #e5e7eb; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; margin: 10px 0 15px; font-family: 'Consolas', monospace; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0 15px; font-size: 12px; }
+th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+th { background: #f9fafb; font-weight: 600; }
+.note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 12px; }
+.warn { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 12px; }
+.danger { background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 12px; }
+.toc { page-break-after: always; }
+.toc h2 { font-size: 24px; margin-bottom: 20px; }
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc li { padding: 6px 0; border-bottom: 1px dotted #d1d5db; }
+.toc li span { color: #6b7280; float: right; }
+.section { page-break-before: always; }
+.badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ОБЛОЖКА -->
+<div class="cover">
+<div class="logo">🚀</div>
+<h1>KosmoEngine</h1>
+<p class="subtitle">Руководство по установке и использованию</p>
+<p class="version">Версия 2.7 · Июль 2026</p>
+<p class="version" style="margin-top:30px">Разработчик: Рудаков Юрий</p>
+</div>
+
+<!-- ОГЛАВЛЕНИЕ -->
+<div class="toc">
+<h2>📋 Содержание</h2>
+<ul>
+<li>1. Требования к серверу <span>3</span></li>
+<li>2. Установка системы <span>3</span></li>
+<li>3. Активация лицензии <span>5</span></li>
+<li>4. Первые шаги после установки <span>5</span></li>
+<li>5. Админ-панель — Предложения (офферы) <span>6</span></li>
+<li>6. Категории <span>8</span></li>
+<li>7. Теги (типы предложений) <span>8</span></li>
+<li>8. Статьи <span>9</span></li>
+<li>9. Отзывы <span>10</span></li>
+<li>10. SEO городов <span>10</span></li>
+<li>11. Гео-редиректы <span>11</span></li>
+<li>12. Партнёрские ссылки <span>11</span></li>
+<li>13. Статистика и аналитика <span>12</span></li>
+<li>14. Воронка конверсий <span>12</span></li>
+<li>15. Умный рейтинг <span>13</span></li>
+<li>16. A/B тесты <span>13</span></li>
+<li>17. Конверсии и Postback <span>14</span></li>
+<li>18. Подписчики и рассылки <span>15</span></li>
+<li>19. Планировщик автогенерации <span>16</span></li>
+<li>20. Пакетная генерация <span>16</span></li>
+<li>21. История изменений (аудит) <span>17</span></li>
+<li>22. Финансовая аналитика <span>17</span></li>
+<li>23. Бэкап <span>18</span></li>
+<li>24. Пользователи сайта <span>18</span></li>
+<li>25. Здоровье сайта <span>19</span></li>
+<li>26. Безопасность <span>19</span></li>
+<li>27. Настройки сайта <span>20</span></li>
+<li>28. Публичные страницы <span>21</span></li>
+<li>29. Сервер лицензий <span>22</span></li>
+<li>30. Часто задаваемые вопросы <span>23</span></li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 1 -->
+<div class="section">
+<h1>1. Требования к серверу</h1>
+<table>
+<tr><th>Компонент</th><th>Минимум</th><th>Рекомендуется</th></tr>
+<tr><td>PHP</td><td>8.1</td><td>8.2 или 8.4</td></tr>
+<tr><td>MySQL</td><td>5.7</td><td>8.0 или MariaDB 10.5+</td></tr>
+<tr><td>Веб-сервер</td><td>Apache с mod_rewrite</td><td>Apache 2.4+</td></tr>
+<tr><td>PHP-расширения</td><td colspan="2">PDO MySQL, cURL, mbstring, JSON</td></tr>
+<tr><td>Дисковое пространство</td><td>50 МБ</td><td>200+ МБ (с картинками)</td></tr>
+<tr><td>SSL</td><td colspan="2">Обязательно (HTTPS)</td></tr>
+</table>
+
+<h1>2. Установка системы</h1>
+
+<h2>2.1. Подготовка</h2>
+<ol>
+<li>Создайте домен или поддомен на хостинге</li>
+<li>Создайте базу данных MySQL в панели хостинга</li>
+<li>Убедитесь, что PHP версия 8.1 или выше</li>
+<li>Убедитесь, что mod_rewrite включён</li>
+</ol>
+
+<h2>2.2. Загрузка установщика</h2>
+<p>Загрузите файл <code>install.php</code> из папки <code>installsite/</code> в корневую директорию домена через FTP или файловый менеджер хостинга.</p>
+<div class="note">Установщик содержит все файлы проекта внутри себя (~1.3 МБ). Больше ничего загружать не нужно.</div>
+
+<h2>2.3. Запуск установки</h2>
+<ol>
+<li>Откройте в браузере: <code>https://ваш-домен.ru/install.php</code></li>
+<li>Система проверит требования (PHP, MySQL, cURL и т.д.)</li>
+<li>Заполните форму:
+<ul>
+<li><strong>База данных:</strong> хост, имя БД, пользователь, пароль</li>
+<li><strong>Администратор:</strong> логин и пароль (минимум 6 символов)</li>
+<li><strong>Сайт:</strong> название и URL (с https://)</li>
+</ul>
+</li>
+<li>Нажмите <strong>«🚀 Установить»</strong></li>
+</ol>
+
+<h2>2.4. После установки</h2>
+<div class="danger"><strong>⚠️ Обязательно удалите install.php!</strong><br>Команда SSH: <code>rm install.php</code><br>Или удалите через файловый менеджер хостинга.</div>
+
+<p>Установщик создаёт:</p>
+<ul>
+<li>Все файлы проекта (~200 PHP файлов)</li>
+<li><code>.htaccess</code> — роутинг и безопасность</li>
+<li><code>.env</code> — конфигурация подключения к БД</li>
+<li><code>config.php</code> — настроенный под ваш домен</li>
+<li>27 таблиц в базе данных</li>
+<li>Демо-данные: 4 оффера, 6 тегов, 9 категорий, 15 городов</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 3 -->
+<div class="section">
+<h1>3. Активация лицензии</h1>
+<ol>
+<li>Войдите в админку: <code>https://ваш-домен.ru/admin/login</code></li>
+<li>После входа вас перенаправит на страницу лицензии: <code>/admin/license</code></li>
+<li>Введите ключ лицензии (формат: <code>XXXX-XXXX-XXXX-XXXX</code>)</li>
+<li>Нажмите <strong>«Активировать лицензию»</strong></li>
+</ol>
+<div class="note">Лицензия привязывается к домену при первой активации. Проверка происходит каждые 4 часа. Если сервер лицензий недоступен — сайт работает ещё 24 часа (grace period).</div>
+
+<p>На странице лицензии доступны:</p>
+<ul>
+<li><strong>🔄 Проверить</strong> — принудительная проверка лицензии</li>
+<li><strong>Удалить</strong> — удалить лицензию (сайт перестанет работать)</li>
+</ul>
+
+<h1>4. Первые шаги после установки</h1>
+<ol>
+<li><strong>Смените пароль:</strong> Шапка админки → 🔑 Пароль</li>
+<li><strong>Включите 2FA:</strong> Шапка → 🔐 2FA → отсканируйте QR-код</li>
+<li><strong>Настройте сайт:</strong> Вкладка «⚙️ Настройки» — название, URL, логотип, Yandex Metrika, Google Analytics</li>
+<li><strong>Добавьте реальные офферы:</strong> Замените демо-предложения на настоящие с партнёрскими ссылками</li>
+<li><strong>Настройте категории:</strong> Проверьте и настройте разделы сайта</li>
+</ol>
+</div>
+
+<!-- РАЗДЕЛ 5 -->
+<div class="section">
+<h1>5. Предложения (офферы)</h1>
+<p>Вкладка <strong>📋 Предложения</strong> — основной раздел системы. Здесь управляются все финансовые продукты.</p>
+
+<h2>5.1. Создание оффера</h2>
+<p>Нажмите <strong>«+ Добавить»</strong>. Заполните поля:</p>
+<table>
+<tr><th>Поле</th><th>Описание</th></tr>
+<tr><td>Название</td><td>Название МФО/банка</td></tr>
+<tr><td>Категория</td><td>Займы / Кредиты / Кредитные карты / Дебетовые карты</td></tr>
+<tr><td>Сумма от / до</td><td>Диапазон суммы (в рублях)</td></tr>
+<tr><td>Срок от / до</td><td>Диапазон срока (в днях)</td></tr>
+<tr><td>Ставка</td><td>Процентная ставка (в день или в год)</td></tr>
+<tr><td>Льготный период</td><td>Количество дней под 0%</td></tr>
+<tr><td>Партнёрская ссылка</td><td>URL для перенаправления при клике «Оформить»</td></tr>
+<tr><td>Логотип</td><td>Загрузите через 📁 Выбрать</td></tr>
+<tr><td>Описание</td><td>Подробное описание условий</td></tr>
+<tr><td>Категория заёмщика</td><td>Любой / Работающий / Пенсионер / Студент и т.д.</td></tr>
+</table>
+
+<h2>5.2. Дополнительные поля</h2>
+<p>Внизу формы оффера доступны дополнительные поля для SEO и детальной информации:</p>
+<ul>
+<li><strong>Meta Title / Meta Description</strong> — для SEO страницы оффера</li>
+<li><strong>Документы, Требования, Преимущества</strong> — отображаются на странице оффера</li>
+<li><strong>О компании</strong> — описание МФО/банка</li>
+<li><strong>FAQ</strong> — вопросы и ответы (JSON формат)</li>
+<li><strong>Features</strong> — ключевые особенности (JSON)</li>
+</ul>
+
+<h2>5.3. Сортировка</h2>
+<p>Офферы отображаются на сайте в порядке сортировки. Используйте drag-and-drop в списке или поле «Порядок» в форме редактирования.</p>
+
+<h2>5.4. Привязка тегов</h2>
+<p>В форме оффера есть раздел «Теги» — отметьте галочками нужные теги (например, «Без отказа», «На карту»). Оффер будет показываться на соответствующих страницах тегов.</p>
+
+<h2>5.5. Массовые действия</h2>
+<p>Нажмите <strong>☑ Выбрать</strong> → отметьте офферы → доступны действия: Включить, Выключить, Удалить.</p>
+</div>
+
+<!-- РАЗДЕЛ 6-7 -->
+<div class="section">
+<h1>6. Категории</h1>
+<p>Вкладка <strong>📂 Категории</strong> — управление разделами сайта и навигацией.</p>
+<ul>
+<li><strong>Основные категории:</strong> Займы, Кредиты, Кредитные карты, Дебетовые карты</li>
+<li><strong>Инструменты:</strong> Калькулятор, Сравнение, Статьи, FAQ, Глоссарий</li>
+</ul>
+<p>Для каждой категории настраиваются:</p>
+<ul>
+<li>Название, slug (URL), иконка</li>
+<li>H1, Meta Title, Meta Description — для SEO</li>
+<li>SEO-текст — отображается на странице категории</li>
+<li>Показ в шапке / в подвале</li>
+<li>Раздел подвала: Продукты или Инструменты</li>
+<li>Подкатегории (вложенность)</li>
+</ul>
+
+<h1>7. Теги (типы предложений)</h1>
+<p>Вкладка <strong>🏷️ Теги</strong> — типы займов/кредитов для фильтрации и SEO-страниц.</p>
+
+<h2>Примеры тегов:</h2>
+<table>
+<tr><th>Тег</th><th>URL</th><th>Описание</th></tr>
+<tr><td>✅ Без отказа</td><td>/zajmy/type/bez-otkaza</td><td>МФО с высоким одобрением</td></tr>
+<tr><td>🆓 Без процентов</td><td>/zajmy/type/bez-protsentov</td><td>Первый займ под 0%</td></tr>
+<tr><td>💳 На карту</td><td>/zajmy/type/na-kartu</td><td>Мгновенно на карту</td></tr>
+<tr><td>📊 С плохой КИ</td><td>/zajmy/type/s-plohoj-ki</td><td>Без проверки КИ</td></tr>
+</table>
+<p>Каждый тег имеет: H1, описание, Meta Title/Description, иконку, привязанные офферы, фичи (JSON).</p>
+</div>
+
+<!-- РАЗДЕЛ 8-9 -->
+<div class="section">
+<h1>8. Статьи</h1>
+<p>Вкладка <strong>📰 Статьи</strong> — блог и информационный раздел.</p>
+<ul>
+<li><strong>Создание:</strong> Заголовок, содержание (HTML), обложка, Meta Title/Description</li>
+<li><strong>Автогенерация 🤖:</strong> Генерация статей через Yandex GPT (требуется API-ключ в настройках)</li>
+<li><strong>Публикация:</strong> Чекбокс «Опубликовать» — неопубликованные статьи не видны на сайте</li>
+<li><strong>Meta 🤖:</strong> Автоматическая генерация Meta Title и Description по содержанию</li>
+</ul>
+<div class="note">Для автогенерации необходимо указать Yandex GPT API Key и Folder ID в настройках сайта.</div>
+
+<h1>9. Отзывы</h1>
+<p>Вкладка <strong>⭐ Отзывы</strong> — отзывы на офферы.</p>
+<ul>
+<li>Привязаны к конкретному офферу</li>
+<li>Поля: автор, рейтинг (1-5), текст, плюсы, минусы</li>
+<li><strong>Автогенерация 🤖:</strong> Генерация отзывов через Yandex GPT</li>
+<li>Модерация — можно скрыть отзыв</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 10-12 -->
+<div class="section">
+<h1>10. SEO городов</h1>
+<p>Вкладка <strong>🏙️ SEO городов</strong> — уникальные тексты для страниц городов.</p>
+<p>Города берутся из файла <code>data/cities.php</code> (~50 городов). Для каждого города генерируются SEO-тексты:</p>
+<ul>
+<li>H1, Title, Meta Description</li>
+<li>SEO-текст (уникальный для каждого города)</li>
+<li>Генерация: шаблонная или через Yandex GPT</li>
+</ul>
+<p>URL страниц: <code>/zajmy/moskva</code>, <code>/kredity/sankt-peterburg</code> и т.д.</p>
+
+<h1>11. Гео-редиректы</h1>
+<p>Вкладка <strong>🌍 Гео-редиректы</strong> — перенаправление посетителей по странам.</p>
+<ul>
+<li><strong>Редирект для всех стран:</strong> все посетители перенаправляются на указанный URL</li>
+<li><strong>Исключения:</strong> страны, которые НЕ редиректятся (например, Россия)</li>
+<li><strong>Редирект для конкретной страны:</strong> отдельный URL для выбранной страны</li>
+</ul>
+
+<h1>12. Партнёрские ссылки</h1>
+<p>Вкладка <strong>🔗 Ссылки</strong> — проверка работоспособности партнёрских ссылок.</p>
+<ul>
+<li><strong>Проверить все:</strong> проверяет HTTP-статус всех ссылок</li>
+<li><strong>Статусы:</strong> OK (зелёный), Ошибка (красный), Не проверен (жёлтый)</li>
+<li>Показывает HTTP-код, финальный URL после редиректов, дату проверки</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 13-16 -->
+<div class="section">
+<h1>13. Статистика и аналитика</h1>
+<p>Вкладка <strong>📊 Статистика</strong> — полная аналитика кликов и просмотров.</p>
+<ul>
+<li><strong>Реальное время:</strong> клики за 5 мин, за час, за сегодня</li>
+<li><strong>Счётчики:</strong> сегодня, неделя, месяц, всего</li>
+<li><strong>Графики:</strong> клики и просмотры по дням</li>
+<li><strong>Топ офферов:</strong> рейтинг по кликам с конверсией</li>
+<li><strong>UTM-источники:</strong> source, medium, campaign</li>
+<li><strong>По часам:</strong> распределение кликов в течение дня</li>
+</ul>
+<p>Период можно выбрать: 7, 14, 30, 90 дней или год.</p>
+
+<h1>14. Воронка конверсий</h1>
+<p>Вкладка <strong>🔻 Воронка</strong> — визуализация пути пользователя.</p>
+<p>Для каждого оффера показывает: Просмотры → Клики → Конверсии (одобрения). Помогает найти узкие места.</p>
+
+<h1>15. Умный рейтинг</h1>
+<p>Вкладка <strong>🧠 Рейтинг</strong> — автоматический рейтинг офферов на основе:</p>
+<ul>
+<li>CTR (кликабельность)</li>
+<li>Approval Rate (процент одобрения)</li>
+<li>EPC (доход за клик)</li>
+<li>Рейтинг и отзывы</li>
+</ul>
+<p>Кнопка <strong>«Применить Smart Rating»</strong> автоматически пересортирует офферы.</p>
+
+<h1>16. A/B тесты</h1>
+<p>Вкладка <strong>🧪 A/B тесты</strong> — тестирование кнопок оформления.</p>
+<ul>
+<li>Создайте тест с вариантами кнопок (текст + цвет)</li>
+<li>Система автоматически показывает разные варианты посетителям</li>
+<li>Отслеживайте показы и клики для каждого варианта</li>
+<li>Можно ограничить по категории офферов</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 17-20 -->
+<div class="section">
+<h1>17. Конверсии и Postback</h1>
+<p>Вкладка <strong>💰 Конверсии</strong> — трекинг конверсий от партнёрских программ.</p>
+
+<h2>17.1. Postback URL</h2>
+<p>Настройте в партнёрской программе (например, Leads.su) URL для отправки postback:</p>
+<pre>https://ваш-сайт.ru/api/postback?click_id={click_id}&status={status}&payout={payout}&offer_id={offer_id}</pre>
+
+<h2>17.2. Профили Postback</h2>
+<p>Создавайте профили для разных партнёрок. Каждый профиль содержит настройки маппинга параметров.</p>
+
+<h2>17.3. Таблица конверсий</h2>
+<p>Показывает: дату, оффер, статус (approved/rejected/pending), выплату, click_id.</p>
+
+<h1>18. Подписчики и рассылки</h1>
+<p>Вкладка <strong>📬 Подписчики</strong> — email-маркетинг.</p>
+
+<h2>18.1. Подписчики</h2>
+<ul>
+<li>Собираются через форму в подвале сайта и popup</li>
+<li>Можно включать/отключать подписку</li>
+<li>Автоматический токен отписки</li>
+</ul>
+
+<h2>18.2. Рассылки</h2>
+<ul>
+<li><strong>Создание:</strong> тема + HTML-содержание</li>
+<li><strong>{{offers}}</strong> — вставка карточек офферов с логотипами и кнопками</li>
+<li><strong>🤖 Генерация:</strong> автоматическая генерация текста через Yandex GPT</li>
+<li><strong>Тестовая отправка:</strong> отправить на свой email для проверки</li>
+<li><strong>Массовая отправка:</strong> всем активным подписчикам</li>
+<li><strong>Лог отправки:</strong> статус каждого письма</li>
+</ul>
+
+<h1>19. Планировщик автогенерации</h1>
+<p>Вкладка <strong>⏰ Планировщик</strong> — автоматическая генерация контента.</p>
+<ul>
+<li>Настройте расписание генерации статей и отзывов</li>
+<li>Указывается интервал (в часах) и количество</li>
+<li>Работает через cron или внутренний таймер</li>
+</ul>
+
+<h1>20. Пакетная генерация</h1>
+<p>Вкладка <strong>🤖 Пакетная</strong> — массовая генерация контента.</p>
+<ul>
+<li>Генерация нескольких статей или отзывов за один раз</li>
+<li>Выбор тематики и количества</li>
+<li>Требуется Yandex GPT API Key</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 21-26 -->
+<div class="section">
+<h1>21. История изменений (аудит)</h1>
+<p>Вкладка <strong>📜 История</strong> — лог всех действий администраторов.</p>
+<ul>
+<li>Создание, редактирование, удаление офферов, статей, тегов</li>
+<li>Входы/выходы из админки</li>
+<li>IP-адрес и время каждого действия</li>
+<li>Детали изменений (что было → что стало)</li>
+</ul>
+
+<h1>22. Финансовая аналитика</h1>
+<p>Вкладка <strong>📈 Аналитика</strong> — финансовые показатели.</p>
+<ul>
+<li>Доход по периодам</li>
+<li>EPC (доход за клик)</li>
+<li>Топ офферов по доходу</li>
+<li>Сравнение периодов</li>
+<li>Графики трендов</li>
+</ul>
+
+<h1>23. Бэкап</h1>
+<p>Вкладка <strong>💾 Бэкап</strong> — резервное копирование.</p>
+<ul>
+<li><strong>Создать бэкап:</strong> архивирует БД и файлы</li>
+<li><strong>Скачать:</strong> ZIP-архив с полным бэкапом</li>
+<li><strong>Восстановить:</strong> загрузить и применить бэкап</li>
+</ul>
+
+<h1>24. Пользователи сайта</h1>
+<p>Вкладка <strong>👥 Пользователи</strong> — зарегистрированные пользователи.</p>
+<ul>
+<li>Просмотр списка пользователей</li>
+<li>Email, имя, дата регистрации</li>
+<li>Пользователи могут: сравнивать офферы, сохранять избранное, отслеживать заявки</li>
+</ul>
+
+<h1>25. Здоровье сайта</h1>
+<p>Вкладка <strong>🏥 Здоровье</strong> — диагностика системы.</p>
+<ul>
+<li>Проверка подключения к БД</li>
+<li>Наличие обязательных таблиц</li>
+<li>Проверка офферов без ссылок</li>
+<li>Битые партнёрские ссылки</li>
+<li>Права на запись в директории</li>
+</ul>
+
+<h1>26. Безопасность</h1>
+<p>Вкладка <strong>🔒 Безопасность</strong> — защита админки.</p>
+<ul>
+<li><strong>IP Whitelist:</strong> ограничение доступа к админке по IP</li>
+<li><strong>2FA:</strong> двухфакторная авторизация (TOTP)</li>
+<li><strong>Защита от брутфорса:</strong> прогрессивная блокировка (5 попыток → 5 мин, 10 → 15 мин, 20 → 1 час)</li>
+<li><strong>Привязка сессии к IP</strong></li>
+<li><strong>Лог входов:</strong> все попытки авторизации с IP и User-Agent</li>
+</ul>
+</div>
+
+<!-- РАЗДЕЛ 27-30 -->
+<div class="section">
+<h1>27. Настройки сайта</h1>
+<p>Вкладка <strong>⚙️ Настройки</strong> — глобальные параметры.</p>
+<table>
+<tr><th>Параметр</th><th>Описание</th></tr>
+<tr><td>Название сайта</td><td>Отображается в шапке, подвале, title</td></tr>
+<tr><td>URL сайта</td><td>Основной URL (для canonical, sitemap)</td></tr>
+<tr><td>Логотип</td><td>Загрузите через медиа-менеджер</td></tr>
+<tr><td>Yandex Metrika ID</td><td>Для аналитики Яндекс.Метрики</td></tr>
+<tr><td>Google Analytics ID</td><td>Для Google Analytics</td></tr>
+<tr><td>Yandex GPT API Key</td><td>Для автогенерации контента</td></tr>
+<tr><td>Yandex Folder ID</td><td>ID каталога в Yandex Cloud</td></tr>
+</table>
+
+<h1>28. Публичные страницы</h1>
+<table>
+<tr><th>URL</th><th>Страница</th></tr>
+<tr><td>/</td><td>Главная</td></tr>
+<tr><td>/zajmy</td><td>Займы с фильтрами</td></tr>
+<tr><td>/kredity</td><td>Кредиты</td></tr>
+<tr><td>/karty/kreditnye</td><td>Кредитные карты</td></tr>
+<tr><td>/karty/debetovye</td><td>Дебетовые карты</td></tr>
+<tr><td>/zajmy/type/{slug}</td><td>Страница тега (тип займа)</td></tr>
+<tr><td>/zajmy/{город}</td><td>Займы по городу</td></tr>
+<tr><td>/offer/{slug}</td><td>Страница оффера</td></tr>
+<tr><td>/articles</td><td>Список статей</td></tr>
+<tr><td>/articles/{slug}</td><td>Статья</td></tr>
+<tr><td>/calculator</td><td>Калькулятор</td></tr>
+<tr><td>/compare</td><td>Сравнение офферов</td></tr>
+<tr><td>/faq</td><td>Частые вопросы</td></tr>
+<tr><td>/sitemap.xml</td><td>Карта сайта</td></tr>
+</table>
+
+<h1>29. Сервер лицензий</h1>
+<p>Отдельный сервер для управления лицензиями KosmoEngine.</p>
+<ul>
+<li>Устанавливается на отдельный домен/поддомен</li>
+<li>Управление лицензиями: создание, блокировка, продление</li>
+<li>Тарифные планы: Trial, Starter, Professional, Business, Unlimited</li>
+<li>Привязка к домену при первой активации</li>
+<li>Блокировка при смене домена</li>
+<li>2FA, защита от брутфорса, аудит</li>
+</ul>
+
+<h1>30. Часто задаваемые вопросы</h1>
+
+<h3>Как сменить пароль администратора?</h3>
+<p>Шапка админки → 🔑 Пароль → введите текущий и новый пароль.</p>
+
+<h3>Как включить 2FA?</h3>
+<p>Шапка → 🔐 2FA → отсканируйте QR-код в Google Authenticator или Yandex.Key.</p>
+
+<h3>Как очистить кэш?</h3>
+<p>Шапка → 🗑 Сбросить кэш. Также: ⚡ API-кэш для обновления данных API.</p>
+
+<h3>Сайт показывает «Лицензия не активирована»</h3>
+<p>Войдите в <code>/admin/login</code>, затем перейдите на <code>/admin/license</code> и введите ключ.</p>
+
+<h3>500 ошибка после установки</h3>
+<p>Проверьте: версия PHP (нужна 8.1+), корректность данных в .env, наличие .htaccess.</p>
+
+<h3>Как добавить город для SEO?</h3>
+<p>Города хранятся в файле <code>data/cities.php</code>. Добавьте запись в массив.</p>
+
+<h3>Как настроить Postback?</h3>
+<p>Админка → Конверсии → внизу страницы будет URL для postback. Скопируйте его и вставьте в настройки партнёрской программы.</p>
+
+<div class="note" style="margin-top:30px">
+<strong>Техническая поддержка</strong><br>
+Разработчик: Рудаков Юрий<br>
+Страница «О системе»: /admin/about
+</div>
+</div>
+
+</body>
+</html>
