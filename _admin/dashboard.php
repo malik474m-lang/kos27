@@ -1818,7 +1818,7 @@ var inp=document.getElementById(targetInputId);
 ap('/media?dir='+dir).then(function(d){
 if(d.error){alert(d.error);return;}
 var files=d.files||[];
-var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📁 Выбрать картинку</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>';
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📁 Выбрать картинку</h3><button onclick="cm2()" class="text-gray-400 text-xl">&times;</button></div>';
 
 // Upload form
 h+='<div class="border-2 border-dashed border-gray-300 rounded-xl p-4 mb-4 text-center" id="media-drop-zone">';
