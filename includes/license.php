@@ -5,7 +5,7 @@
  */
 
 // Зашифрованный адрес сервера лицензий (base64 + reverse)
-define('_LS_ENC', 'dXIuYW1pemFvbXNvay52cmVz'); // serv.kosmozaim.ru в base64 reversed
+define('_LS_ENC', 'dXIubWlhem9tc29rLnZyZXM='); // serv.kosmozaim.ru в base64 reversed
 
 function _lsUrl(): string {
     return 'https://' . strrev(base64_decode(_LS_ENC));

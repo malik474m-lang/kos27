@@ -12,6 +12,8 @@ if ($adminUri === '/check') { require __DIR__ . '/admin/check.php'; exit; }
 
 // Всё остальное — только для авторизованных
 requireAdmin();
+// Лицензия
+if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.php"; exit; }
 
 // Офферы
 if ($adminUri === '/offers' && $method === 'GET') { require __DIR__ . '/admin/offers-list.php'; exit; }
@@ -202,4 +204,3 @@ http_response_code(404);
 echo json_encode(['error' => 'Not found']);
 
 // Лицензия
-if (str_starts_with($adminUri, '/license')) { require __DIR__ . '/admin/license.php'; exit; }
