@@ -78,6 +78,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-security" class="tp hidden"></div>
 </div>
 <div id="M"></div>
+<div id="M2"></div>
 <script>
 const A='/api/admin';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
@@ -89,6 +90,7 @@ function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.j
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
 function modal(h){document.getElementById('M').innerHTML='<div class="modal-bg" onclick="if(event.target===this)cm()"><div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl">'+h+'</div></div>';}
 function cm(){document.getElementById('M').innerHTML='';}
+function cm2(){document.getElementById('M2').innerHTML='';}
 const CL={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
 const BL={any:'Любой',employed:'Работающий',unemployed:'Безработный',pensioner:'Пенсионер',student:'Студент',self_employed:'Самозанятый'};
 
@@ -1811,6 +1813,7 @@ cm();bulkFinish('offers');
 
 /* ============ MEDIA MANAGER ============ */
 function mediaPicker(targetInputId, dir){
+var useM2=true;
 var inp=document.getElementById(targetInputId);
 ap('/media?dir='+dir).then(function(d){
 if(d.error){alert(d.error);return;}
@@ -1844,7 +1847,7 @@ h+='</div>';
 });
 }
 h+='</div>';
-modal(h);
+document.getElementById('M2').innerHTML='<div class="modal-bg" style="z-index:60" onclick="if(event.target===this)cm2()"><div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl">'+h+'</div></div>';
 
 // Drag & drop
 setTimeout(function(){
@@ -1867,10 +1870,9 @@ mediaUpload(dir,targetInputId);
 function mediaSelect(url, targetInputId){
 var inp=document.getElementById(targetInputId);
 if(inp)inp.value=url;
-// Update preview if exists
 var prev=document.getElementById(targetInputId+'-preview');
 if(prev)prev.innerHTML='<img src="'+url+'" class="w-16 h-16 object-contain rounded border bg-white">';
-cm();
+cm2();
 }
 
 function mediaUpload(dir, targetInputId){
