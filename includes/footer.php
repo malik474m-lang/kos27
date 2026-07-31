@@ -78,9 +78,6 @@ $topCities = [
                 <a href="/disclaimer" class="hover:text-white transition-colors">Отказ от ответственности</a>
             </div>
         </div>
-        <div class="border-t border-gray-800 mt-4 pt-4 text-center text-xs text-gray-600">
-            <p>Разработчик: Рудаков Юрий | Работает на <a href="https://kosmozaim.ru" class="text-gray-500 hover:text-white">KosmoEngine</a></p>
-        </div>
     </div>
 </footer>
 
