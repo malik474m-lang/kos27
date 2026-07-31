@@ -1,182 +1,88 @@
 <?php
-/**
- * Конфигурация сервера лицензирования
- * serv.kosmozaim.ru
- */
+define('LS_VERSION', '1.0.0');
 
-// UTF-8
-mb_internal_encoding('UTF-8');
-ini_set('default_charset', 'UTF-8');
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if ($line && $line[0] !== '#' && strpos($line, '=') !== false) {
+            putenv(trim($line));
+        }
+    }
+}
 
-// Подключение к MySQL
+define('API_SECRET', getenv('API_SECRET') ?: 'change_this_secret');
+
 function getDB(): PDO {
     static $pdo = null;
     if ($pdo) return $pdo;
-    
-    $host = getenv('LIC_DB_HOST') ?: 'localhost';
-    $port = getenv('LIC_DB_PORT') ?: '3306';
-    $name = getenv('LIC_DB_NAME') ?: 'license_server';
-    $user = getenv('LIC_DB_USER') ?: 'root';
-    $pass = getenv('LIC_DB_PASS') ?: '';
-    
-    $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
-    $pdo = new PDO($dsn, $user, $pass, [
+    $host = getenv('DB_HOST') ?: 'localhost';
+    $name = getenv('DB_NAME') ?: 'license_server';
+    $user = getenv('DB_USER') ?: 'root';
+    $pass = getenv('DB_PASS') ?: '';
+    $pdo = new PDO("mysql:host=$host;dbname=$name;charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
-    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
     return $pdo;
 }
 
-// === БЕЗОПАСНОСТЬ ===
+function e($s) { return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+function jsonResponse($data, $code = 200) { http_response_code($code); header('Content-Type: application/json'); echo json_encode($data, JSON_UNESCAPED_UNICODE); exit; }
+function getClientIp() { return trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')[0]); }
 
-// Секретный ключ для подписи ответов (СМЕНИТЬ!)
-define('LICENSE_SIGN_KEY', getenv('LICENSE_SIGN_KEY') ?: 'KzM!s3rv#2024$xQ9pLw&vR7');
-
-// Секретный ключ для шифрования данных между клиентом и сервером
-define('LICENSE_ENCRYPT_KEY', getenv('LICENSE_ENCRYPT_KEY') ?: 'Ks28#mNx$7qPdL!wR4vE9jYz');
-
-// Соль для хэширования
-define('LICENSE_SALT', getenv('LICENSE_SALT') ?: 'k0sm0za1m_l1c_s4lt_2024');
-
-// Админский токен для API (СМЕНИТЬ!)
-define('ADMIN_API_TOKEN', getenv('LIC_ADMIN_TOKEN') ?: 'lac_admin_t0k3n_ch4ng3_m3');
-
-/**
- * Подписать данные HMAC-SHA256
- */
-function signResponse(array $data): string {
-    $json = json_encode($data, JSON_UNESCAPED_UNICODE);
-    return hash_hmac('sha256', $json, LICENSE_SIGN_KEY);
+function generateLicenseKey() {
+    $c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $s = [];
+    for ($i = 0; $i < 4; $i++) { $p = ''; for ($j = 0; $j < 4; $j++) $p .= $c[random_int(0, 31)]; $s[] = $p; }
+    return implode('-', $s);
 }
 
-/**
- * Зашифровать строку (AES-256-CBC)
- */
-function encryptData(string $plaintext): string {
-    $key = hash('sha256', LICENSE_ENCRYPT_KEY, true);
-    $iv = random_bytes(16);
-    $encrypted = openssl_encrypt($plaintext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
-    return base64_encode($iv . $encrypted);
+function normalizeDomain($d) {
+    $d = strtolower(trim($d));
+    $d = preg_replace('#^https?://#', '', $d);
+    $d = preg_replace('#^www\.#', '', $d);
+    return explode('/', rtrim($d, '/'))[0];
 }
 
-/**
- * Расшифровать строку
- */
-function decryptData(string $ciphertext): ?string {
-    $key = hash('sha256', LICENSE_ENCRYPT_KEY, true);
-    $raw = base64_decode($ciphertext);
-    if (strlen($raw) < 17) return null;
-    $iv = substr($raw, 0, 16);
-    $encrypted = substr($raw, 16);
-    $decrypted = openssl_decrypt($encrypted, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
-    return $decrypted !== false ? $decrypted : null;
+function generateTotpSecret() { $c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; $s = ''; for ($i = 0; $i < 16; $i++) $s .= $c[random_int(0, 31)]; return $s; }
+
+function verifyTotp($secret, $code) {
+    $code = preg_replace('/\s+/', '', $code);
+    if (!preg_match('/^\d{6}$/', $code)) return false;
+    $t = floor(time() / 30);
+    for ($i = -1; $i <= 1; $i++) if (hash_equals(calcTotp($secret, $t + $i), $code)) return true;
+    return false;
 }
 
-/**
- * Генерировать лицензионный ключ
- */
-function generateLicenseKey(): string {
-    $parts = [];
-    for ($i = 0; $i < 4; $i++) {
-        $parts[] = strtoupper(bin2hex(random_bytes(3)));
-    }
-    return 'KZM-' . implode('-', $parts);
+function calcTotp($secret, $t) {
+    $key = base32Dec($secret);
+    $hash = hash_hmac('sha1', pack('N*', 0, $t), $key, true);
+    $o = ord($hash[19]) & 0xF;
+    $code = ((ord($hash[$o]) & 0x7F) << 24 | (ord($hash[$o+1]) & 0xFF) << 16 | (ord($hash[$o+2]) & 0xFF) << 8 | (ord($hash[$o+3]) & 0xFF)) % 1000000;
+    return str_pad($code, 6, '0', STR_PAD_LEFT);
 }
 
-/**
- * Нормализовать домен: убрать www, протокол, слэш
- */
-function normalizeDomain(string $domain): string {
-    $domain = trim(strtolower($domain));
-    $domain = preg_replace('#^https?://#', '', $domain);
-    $domain = preg_replace('#^www\.#', '', $domain);
-    $domain = rtrim($domain, '/');
-    return $domain;
+function base32Dec($in) {
+    $map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; $b = $bl = 0; $r = '';
+    for ($i = 0; $i < strlen($in); $i++) { $n = strpos($map, strtoupper($in[$i])); if ($n === false) continue; $b = ($b << 5) | $n; $bl += 5; if ($bl >= 8) { $bl -= 8; $r .= chr(($b >> $bl) & 0xFF); } }
+    return $r;
 }
 
-/**
- * Получить IP клиента
- */
-function getClientIp(): string {
-    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    return trim(explode(',', $ip)[0]);
-}
+function generateBackupCodes() { $c = []; for ($i = 0; $i < 8; $i++) $c[] = strtoupper(bin2hex(random_bytes(4))); return $c; }
 
-/**
- * Rate-limit: проверить и посчитать
- * @return array ['allowed' => bool, 'remaining' => int]
- */
-function checkRateLimit(string $endpoint, int $maxAttempts = 30, int $windowSec = 60): array {
-    $ip = getClientIp();
-    $db = getDB();
-    
-    // Очистка старых записей
-    $db->prepare("DELETE FROM rate_limits WHERE window_start < DATE_SUB(NOW(), INTERVAL ? SECOND)")
-       ->execute([$windowSec]);
-    
-    $stmt = $db->prepare("SELECT attempts, window_start FROM rate_limits WHERE ip = ? AND endpoint = ?");
-    $stmt->execute([$ip, $endpoint]);
-    $row = $stmt->fetch();
-    
-    if (!$row) {
-        $db->prepare("INSERT INTO rate_limits (ip, endpoint, attempts) VALUES (?, ?, 1)")->execute([$ip, $endpoint]);
-        return ['allowed' => true, 'remaining' => $maxAttempts - 1];
-    }
-    
-    $attempts = (int)$row['attempts'];
-    
-    if ($attempts >= $maxAttempts) {
-        return ['allowed' => false, 'remaining' => 0];
-    }
-    
-    $db->prepare("UPDATE rate_limits SET attempts = attempts + 1 WHERE ip = ? AND endpoint = ?")
-       ->execute([$ip, $endpoint]);
-    
-    return ['allowed' => true, 'remaining' => $maxAttempts - $attempts - 1];
-}
-
-/**
- * Записать лог
- */
-function logAction(string $action, ?int $licenseId, ?string $licenseKey, ?string $domain, int $responseCode, ?string $message = null): void {
+function isIpBlocked($ip) {
     try {
         $db = getDB();
-        $db->prepare("INSERT INTO license_log (license_id, license_key, action, domain, ip, user_agent, response_code, message) VALUES (?,?,?,?,?,?,?,?)")
-           ->execute([
-               $licenseId,
-               $licenseKey,
-               $action,
-               $domain,
-               getClientIp(),
-               mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-               $responseCode,
-               $message ? mb_substr($message, 0, 500) : null,
-           ]);
-    } catch (Exception $e) {}
+        $stmt = $db->prepare("SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)");
+        $stmt->execute([$ip]);
+        return ['blocked' => $stmt->fetchColumn() >= 10, 'remaining' => 900];
+    } catch (Exception $e) { return ['blocked' => false]; }
 }
 
-/**
- * JSON-ответ с подписью
- */
-function jsonResponse(array $data, int $code = 200): void {
-    http_response_code($code);
-    $data['timestamp'] = time();
-    $data['signature'] = signResponse($data);
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
-    exit;
-}
+function logLoginAttempt($u, $ip, $ok) { try { getDB()->prepare("INSERT INTO login_attempts (username, ip, success) VALUES (?,?,?)")->execute([$u, $ip, $ok ? 1 : 0]); } catch (Exception $e) {} }
+function auditLog($action, $type = null, $id = null, $old = null, $new = null) { try { startSession(); getDB()->prepare("INSERT INTO audit_log (admin_id, action, entity_type, entity_id, old_data, new_data, ip) VALUES (?,?,?,?,?,?,?)")->execute([$_SESSION['admin_id'] ?? null, $action, $type, $id, $old ? json_encode($old) : null, $new ? json_encode($new) : null, getClientIp()]); } catch (Exception $e) {} }
 
-/**
- * Ошибка
- */
-function jsonError(string $message, int $code = 400): void {
-    jsonResponse(['error' => $message, 'valid' => false], $code);
-}
-
-/**
- * htmlspecialchars helper
- */
-function e(string $s): string {
-    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
-}
+function startSession() { if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['lifetime' => 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict']); session_start(); } }
+function isAdmin() { startSession(); return !empty($_SESSION['admin_id']); }
+function requireAdmin() { if (!isAdmin()) { if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) jsonResponse(['error' => 'Unauthorized'], 401); header('Location: /admin/login'); exit; } }
+function getCurrentAdmin() { if (!isAdmin()) return null; try { $s = getDB()->prepare("SELECT id, username, totp_enabled FROM admins WHERE id = ?"); $s->execute([$_SESSION['admin_id']]); return $s->fetch(); } catch (Exception $e) { return null; } }
