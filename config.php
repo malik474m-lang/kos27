@@ -5,6 +5,26 @@ $GLOBALS['page_start_time'] = microtime(true);
 mb_internal_encoding('UTF-8');
 mb_regex_encoding('UTF-8');
 ini_set('default_charset', 'UTF-8');
+
+// PHP 7.4 compatibility polyfills
+if (!function_exists('str_contains')) {
+    function str_contains($haystack, $needle) {
+        return $needle !== '' && mb_strpos((string)$haystack, (string)$needle) !== false;
+    }
+}
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        return $needle === '' || strncmp((string)$haystack, (string)$needle, strlen((string)$needle)) === 0;
+    }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($haystack, $needle) {
+        if ($needle === '') return true;
+        $haystack = (string)$haystack;
+        $needle = (string)$needle;
+        return substr($haystack, -strlen($needle)) === $needle;
+    }
+}
 // Конфигурация Космозайм
 // Этот файл загружает .env и создаёт подключение к MySQL
 
