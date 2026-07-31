@@ -82,6 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <script>
 const A='/api/admin';
 var siteName='<?= e(SITE_NAME) ?>';
+var SITE_URL='<?= e(SITE_URL) ?>';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
@@ -1264,7 +1265,7 @@ function nlPreviewInline(){
 var box=document.getElementById('nl-preview-box');
 var body=document.getElementById('nl-body').value;
 var offersPlaceholder='<div style="background:#f0fdf4;border:2px dashed #86efac;border-radius:12px;padding:16px;margin:16px 0;text-align:center"><p style="color:#166534;font-size:13px;margin:0">📋 Карточки офферов (логотип + название + кнопка «Оформить»)</p></div>';
-var brandHeader='<div style="margin:0 0 24px 0;text-align:center;background:#f8fafc;border-radius:12px;overflow:hidden"><img src="https://kosmozaim.ru/images/kosmo-rassil.jpg" alt=""+siteName+"" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin:0 auto"></div>';
+var brandHeader='<div style="margin:0 0 24px 0;text-align:center;background:#f8fafc;border-radius:12px;overflow:hidden"><img src="'+SITE_URL+'/images/kosmo-rassil.jpg" alt="'+siteName+'" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin:0 auto"></div>';
 body=brandHeader+body.replace(/\{\{offers\}\}/g, offersPlaceholder);
 if(box.classList.contains('hidden')){box.classList.remove('hidden');box.innerHTML=body;}
 else{box.classList.add('hidden');}}
