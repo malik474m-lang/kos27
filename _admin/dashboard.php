@@ -7,7 +7,7 @@ ob_start('minifyHtmlOutput');
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Админ-панель — Космозайм</title>
+<title>Админ-панель — <?= e(SITE_NAME) ?></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
 <script>tailwind.config={theme:{extend:{colors:{primary:'#1a56db','primary-dark':'#1244af',accent:'#059669',danger:'#dc2626'}}}}</script>
@@ -25,7 +25,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель Космозайм</h1></div><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm mr-4">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm mr-4">⚡ API-кэш</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm mr-4">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm mr-4">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm mr-4">⚡ API-кэш</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm mr-4">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
 <div class="bg-white shadow-sm border-b"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-4 overflow-x-auto">
 <button onclick="sw('settings')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="settings">⚙️ Настройки</button>
 <button onclick="sw('offers')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="offers">📋 Предложения</button>
@@ -81,6 +81,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="M2"></div>
 <script>
 const A='/api/admin';
+var siteName='<?= e(SITE_NAME) ?>';
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
@@ -665,7 +666,7 @@ h+='</div>';
 if(t.content)h+='<div class="px-6 py-4 border-t prose prose-sm text-gray-600">'+e(t.content)+'</div>';
 h+='</div>';
 h+='<div class="mt-4 bg-gray-50 rounded-lg p-4 text-xs space-y-1"><h4 class="font-semibold text-gray-500 mb-2">SEO</h4>';
-h+='<div><span class="text-gray-400">Title:</span> <span class="text-blue-700">'+(e(t.meta_title)||((e(t.h1)||e(t.title))+' — Космозайм'))+'</span></div>';
+h+='<div><span class="text-gray-400">Title:</span> <span class="text-blue-700">'+(e(t.meta_title)||((e(t.h1)||e(t.title))+' — '+siteName))+'</span></div>';
 h+='<div><span class="text-gray-400">Description:</span> <span class="text-green-700">'+(e(t.meta_description)||e(t.description)||'—')+'</span></div>';
 h+='<div><span class="text-gray-400">URL:</span> <span class="font-mono text-gray-600">'+url+'</span></div>';
 h+='<div><span class="text-gray-400">Статус:</span> '+(t.is_active?'<span class="text-green-600">Активен</span>':'<span class="text-red-500">Выключен</span>')+'</div></div>';
@@ -1263,7 +1264,7 @@ function nlPreviewInline(){
 var box=document.getElementById('nl-preview-box');
 var body=document.getElementById('nl-body').value;
 var offersPlaceholder='<div style="background:#f0fdf4;border:2px dashed #86efac;border-radius:12px;padding:16px;margin:16px 0;text-align:center"><p style="color:#166534;font-size:13px;margin:0">📋 Карточки офферов (логотип + название + кнопка «Оформить»)</p></div>';
-var brandHeader='<div style="margin:0 0 24px 0;text-align:center;background:#f8fafc;border-radius:12px;overflow:hidden"><img src="https://kosmozaim.ru/images/kosmo-rassil.jpg" alt="Космозайм" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin:0 auto"></div>';
+var brandHeader='<div style="margin:0 0 24px 0;text-align:center;background:#f8fafc;border-radius:12px;overflow:hidden"><img src="https://kosmozaim.ru/images/kosmo-rassil.jpg" alt=""+siteName+"" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin:0 auto"></div>';
 body=brandHeader+body.replace(/\{\{offers\}\}/g, offersPlaceholder);
 if(box.classList.contains('hidden')){box.classList.remove('hidden');box.innerHTML=body;}
 else{box.classList.add('hidden');}}
@@ -1279,7 +1280,7 @@ var body=n.body_html||'';
 var offersPlaceholder='<div style="background:#f9fafb;border:2px dashed #d1d5db;border-radius:12px;padding:16px;margin:16px 0;text-align:center"><p style="color:#6b7280;font-size:13px;margin:0">📋 Здесь будут карточки офферов с логотипами и кнопками «Оформить»</p></div>';
 body=body.replace(/\{\{offers\}\}/g, offersPlaceholder);
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Превью: '+e(n.subject)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
-'<div class="border rounded-xl p-6 bg-white" style="max-width:600px;margin:0 auto;font-family:-apple-system,sans-serif">'+body+'<br><hr style="border:none;border-top:1px solid #eee;margin:24px 0"><p style="font-size:12px;color:#999;text-align:center">Вы получили это письмо от Космозайм.<br><a href="#" style="color:#999">Отписаться от рассылки</a></p></div>');}
+'<div class="border rounded-xl p-6 bg-white" style="max-width:600px;margin:0 auto;font-family:-apple-system,sans-serif">'+body+'<br><hr style="border:none;border-top:1px solid #eee;margin:24px 0"><p style="font-size:12px;color:#999;text-align:center">Вы получили это письмо от "+siteName+".<br><a href="#" style="color:#999">Отписаться от рассылки</a></p></div>');}
 function nlDel(id){if(confirm('Удалить рассылку?'))ap('/newsletters/'+id,{method:'DELETE'}).then(()=>lSu());}
 function nlTest(id){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Тестовая отправка</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
@@ -1340,7 +1341,7 @@ function nlQuickTest(){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Быстрая тестовая рассылка</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<div class="space-y-4">'+
 '<div><label class="block text-sm font-medium mb-1">Тема письма</label><input id="qt-subj" class="input-f" value="Тестовая рассылка" placeholder="Тема письма"></div>'+
-'<div><label class="block text-sm font-medium mb-1">Содержание (HTML)</label><textarea id="qt-body" class="input-f font-mono text-xs" rows="6" placeholder="<h2>Заголовок</h2><p>Текст...</p>"><h2>Тестовое письмо</h2><p>Проверка рассылки Космозайм.</p><p>{{offers}}</p></textarea></div>'+
+'<div><label class="block text-sm font-medium mb-1">Содержание (HTML)</label><textarea id="qt-body" class="input-f font-mono text-xs" rows="6" placeholder="<h2>Заголовок</h2><p>Текст...</p>"><h2>Тестовое письмо</h2><p>Проверка рассылки "+siteName+".</p><p>{{offers}}</p></textarea></div>'+
 '<div><label class="block text-sm font-medium mb-1">Email получателя *</label><input id="qt-email" class="input-f" type="email" placeholder="ваш@email.ru" required></div>'+
 '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">⚠️ Создаст черновик и сразу отправит тестовое письмо с пометкой [ТЕСТ].</div>'+
 '<div class="flex justify-end gap-3"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="nlQuickTestSend()" id="qt-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">🚀 Отправить тест</button></div>'+
@@ -2547,7 +2548,7 @@ h+='<form onsubmit="return setSave(event)" class="space-y-6">';
 // Основные
 h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">🌐 Основные настройки</h3>';
 h+='<div class="grid md:grid-cols-2 gap-4">';
-h+='<div><label class="block text-sm font-medium mb-1">Название сайта</label><input type="text" id="set-name" class="input-f" value="'+e(siteSettings.site_name||'Космозайм')+'" placeholder="Космозайм"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Название сайта</label><input type="text" id="set-name" class="input-f" value="'+e(siteSettings.site_name||'Космозайм')+'" placeholder=""+e(siteSettings.site_name||'')+""></div>';
 h+='<div><label class="block text-sm font-medium mb-1">URL сайта</label><input type="url" id="set-url" class="input-f" value="'+e(siteSettings.site_url||'')+'" placeholder="https://example.com"></div>';
 h+='</div>';
 
