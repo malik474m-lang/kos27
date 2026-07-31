@@ -71,6 +71,16 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo=new PDO("mysql:host=$dbHost;charset=utf8mb4",$dbUser,$dbPass,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
         $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
         $pdo->exec("USE `$dbName`");
+        $pdo->exec("SET FOREIGN_KEY_CHECKS=0");
+        foreach ([
+            'newsletter_events','newsletter_send_log','offer_link_checks','postback_conversions','postback_profiles',
+            'user_applications','user_favorites','user_login_log','users','city_seo_texts','admin_audit_log',
+            'admin_ip_whitelist','admin_login_log','page_views','offer_tag_links','offer_tags','geo_redirects',
+            'subscribers','click_stats','reviews','articles','offers','categories','ab_variants','ab_tests','newsletters','admin_users'
+        ] as $tbl) {
+            $pdo->exec("DROP TABLE IF EXISTS `{$tbl}`");
+        }
+        $pdo->exec("SET FOREIGN_KEY_CHECKS=1");
         foreach(array_filter(array_map('trim',preg_split('/;\s*[\r\n]+/',getDbSchema())))as$q){if($q&&$q[0]!=='-')$pdo->exec($q);}
         $pdo->prepare("INSERT INTO admin_users (username,password_hash) VALUES (?,?) ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash)")->execute([$adminUser,password_hash($adminPass,PASSWORD_DEFAULT)]);
         $cats=[['zajmy','Займы','Займы онлайн','microloans',1,'products'],['kredity','Кредиты','Кредиты наличными','credits',2,'products'],['karty-kreditnye','Кредитные карты','Кредитные карты','credit_cards',3,'products'],['karty-debetovye','Дебетовые карты','Дебетовые карты','debit_cards',4,'products'],['calculator','Калькулятор','Кредитный калькулятор','microloans',1,'tools'],['compare','Сравнение','Сравнение предложений','microloans',2,'tools'],['articles','Статьи','Финансовые статьи','microloans',3,'tools']];
@@ -118,7 +128,7 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <div><label class="block text-sm mb-1">Название</label><input name="site_name" value="Космозайм" required class="w-full border rounded-lg px-3 py-2"></div>
 <div><label class="block text-sm mb-1">URL сайта</label><input type="url" name="site_url" value="https://<?=htmlspecialchars($domain)?>" required class="w-full border rounded-lg px-3 py-2"></div>
 </div>
-<button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">🚀 Установить</button>
+<div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">⚠️ Перед установкой существующие таблицы проекта в выбранной базе будут очищены и созданы заново.</div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">🚀 Установить</button>
 </form>
 <?php else:?><div class="mt-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4">Устраните проблемы</div><?php endif;?>
 <?php elseif($step==='done'):?>
