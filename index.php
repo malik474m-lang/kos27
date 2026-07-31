@@ -3,6 +3,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/seo.php';
 require_once __DIR__ . '/includes/canonical.php';
 require_once __DIR__ . '/includes/page-cache.php';
+require_once __DIR__ . '/includes/license.php';
 
 // Гео-редирект (до любого вывода)
 require_once __DIR__ . '/includes/geo-redirect.php';
@@ -10,6 +11,11 @@ require_once __DIR__ . '/includes/geo-redirect.php';
 // Роутинг
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/';
+
+// Проверка лицензии (кроме API и страницы лицензии в админке)
+if (!str_starts_with($uri, '/api/')) {
+    requireLicense();
+}
 
 // Сохраняем UTM в куки
 foreach (['utm_source','utm_medium','utm_campaign','utm_content','utm_term'] as $utm) {

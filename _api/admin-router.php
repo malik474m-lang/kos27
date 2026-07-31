@@ -200,3 +200,6 @@ if ($adminUri === '/analytics') { require __DIR__ . '/admin/analytics.php'; exit
 
 http_response_code(404);
 echo json_encode(['error' => 'Not found']);
+
+// Лицензия
+if (str_starts_with($adminUri, '/license')) { require __DIR__ . '/admin/license.php'; exit; }

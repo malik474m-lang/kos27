@@ -6,6 +6,12 @@ if ($adminPath === '/login' || $adminPath === '/login/') {
     exit;
 }
 
+// Страница лицензии — доступна всегда (для активации)
+if ($adminPath === '/license' || $adminPath === '/license/') {
+    require __DIR__ . '/license.php';
+    exit;
+}
+
 // Проверка IP whitelist для всей админки
 $adminIp = getClientIp();
 if (!checkIpWhitelist($adminIp)) {
