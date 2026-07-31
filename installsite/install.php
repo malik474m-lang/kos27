@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `click_stats` (`id` int AUTO_INCREMENT PRIMARY KEY, `
 
 CREATE TABLE IF NOT EXISTS `subscribers` (`id` int AUTO_INCREMENT PRIMARY KEY, `email` varchar(255) NOT NULL UNIQUE, `is_active` tinyint(1) DEFAULT 1, `unsubscribe_token` varchar(64), `source` varchar(50) DEFAULT 'footer', `created_at` timestamp DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS `geo_redirects` (`id` int AUTO_INCREMENT PRIMARY KEY, `city_name` varchar(255) NOT NULL, `slug` varchar(255) NOT NULL UNIQUE, `region` varchar(255), `is_active` tinyint(1) DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE IF NOT EXISTS `geo_redirects` (`id` int AUTO_INCREMENT PRIMARY KEY, `country_code` varchar(10) NOT NULL UNIQUE, `country_name` varchar(255) NOT NULL, `redirect_url` text, `is_active` tinyint(1) DEFAULT 1, `created_at` timestamp DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `offer_tags` (`id` int AUTO_INCREMENT PRIMARY KEY, `slug` varchar(255) NOT NULL UNIQUE, `title` varchar(255) NOT NULL, `h1` varchar(500), `description` text, `meta_title` varchar(500), `meta_description` text, `content` text, `icon` varchar(10), `category` varchar(100) DEFAULT 'microloans', `features` text, `is_active` tinyint(1) DEFAULT 1, `sort_order` int DEFAULT 0, `search_queries` text, `created_at` timestamp DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -118,9 +118,7 @@ $offers=[['Пример МФО 1','microloans',1000,30000,0.8,'day',14,'Быст
 $st=$pdo->prepare("INSERT INTO offers (title,slug,category,amount_min,amount_max,rate,rate_unit,free_term_days,affiliate_url,description,is_active,sort_order) VALUES (?,?,?,?,?,?,?,?,'',?,1,?)");
 foreach($offers as $i=>$o)$st->execute([$o[0],slugify($o[0]),$o[1],$o[2],$o[3],$o[4],$o[5],$o[6],$o[7],$i+1]);
 $pdo->exec("INSERT IGNORE INTO offer_tag_links (offer_id,tag_id) SELECT o.id,t.id FROM offers o,offer_tags t WHERE o.category='microloans' AND t.category='microloans'");
-$cities=[['Москва','moskva','Московская область'],['Санкт-Петербург','sankt-peterburg','Ленинградская область'],['Новосибирск','novosibirsk','Новосибирская область'],['Екатеринбург','ekaterinburg','Свердловская область'],['Казань','kazan','Республика Татарстан'],['Нижний Новгород','nizhnij-novgorod','Нижегородская область'],['Челябинск','chelyabinsk','Челябинская область'],['Самара','samara','Самарская область'],['Омск','omsk','Омская область'],['Ростов-на-Дону','rostov-na-donu','Ростовская область'],['Уфа','ufa','Республика Башкортостан'],['Красноярск','krasnoyarsk','Красноярский край'],['Воронеж','voronezh','Воронежская область'],['Пермь','perm','Пермский край'],['Волгоград','volgograd','Волгоградская область']];
-$st=$pdo->prepare("INSERT IGNORE INTO geo_redirects (city_name,slug,region,is_active) VALUES (?,?,?,1)");
-foreach($cities as $c)$st->execute($c);
+// Города берутся из data/cities.php, geo_redirects — для перенаправления по странам
 $step='done';
 }catch(Exception $e){$error=$e->getMessage();@unlink(__DIR__.'/_kosmo_tmp.tar.gz');}}}
 ?>
