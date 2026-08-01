@@ -3086,7 +3086,7 @@ h+='<div class="mb-4"><p class="text-sm text-gray-500 mb-2">Скопируйте
 h+='<textarea id="idx-urls-textarea" class="input-f w-full h-64 font-mono text-xs" readonly>'+e(d.text)+'</textarea></div>';
 h+='<div class="flex gap-3"><button onclick="idxCopyUrls()" class="btn-p">📋 Скопировать</button>';
 if(service==='yandex'){
-h+='<a href="https://webmaster.yandex.ru/site/indexed-pages/recrawl/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
+h+='<a href="https://webmaster.yandex.ru/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
 }else{
 h+='<a href="https://search.google.com/search-console" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Google Search Console</a>';
 }
@@ -3238,7 +3238,7 @@ h+='<div class="mb-4"><p class="text-sm text-gray-500 mb-2">Скопируйте
 h+='<textarea id="idx-urls-textarea" class="input-f w-full h-64 font-mono text-xs" readonly>'+e(d.text)+'</textarea></div>';
 h+='<div class="flex gap-3"><button onclick="idxCopyUrls()" class="btn-p">📋 Скопировать</button>';
 if(service==='yandex'){
-h+='<a href="https://webmaster.yandex.ru/site/indexed-pages/recrawl/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
+h+='<a href="https://webmaster.yandex.ru/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
 }else{
 h+='<a href="https://search.google.com/search-console" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Google Search Console</a>';
 }
