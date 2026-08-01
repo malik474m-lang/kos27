@@ -1,0 +1,147 @@
+<?php
+/**
+ * Генерация FAQ для оффера — YandexGPT + шаблонный fallback
+ */
+$data = json_decode(file_get_contents('php://input'), true) ?: [];
+$offerId = (int)($data['offer_id'] ?? 0);
+
+if (!$offerId) { echo json_encode(['error' => 'offer_id required']); exit; }
+
+$db = getDB();
+
+// Создаём таблицу если нет
+try { $db->query("SELECT 1 FROM offer_faqs LIMIT 1"); } catch (Exception $e) {
+    $db->exec("CREATE TABLE IF NOT EXISTS `offer_faqs` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `offer_id` int(11) NOT NULL,
+        `question` varchar(500) NOT NULL,
+        `answer` text NOT NULL,
+        `sort_order` int(11) NOT NULL DEFAULT 0,
+        `is_active` tinyint(1) NOT NULL DEFAULT 1,
+        `generated_by` enum('template','yandexgpt','manual') NOT NULL DEFAULT 'template',
+        `created_at` timestamp NULL DEFAULT current_timestamp(),
+        `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+        PRIMARY KEY (`id`),
+        KEY `idx_offer` (`offer_id`, `is_active`, `sort_order`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+}
+
+$stmt = $db->prepare("SELECT * FROM offers WHERE id = ? LIMIT 1");
+$stmt->execute([$offerId]);
+$offer = $stmt->fetch();
+if (!$offer) { echo json_encode(['error' => 'Оффер не найден']); exit; }
+
+$catNames = ['microloans'=>'микрозайм','credits'=>'кредит','credit_cards'=>'кредитная карта','debit_cards'=>'дебетовая карта'];
+$catName = $catNames[$offer['category']] ?? 'финансовый продукт';
+$title = $offer['title'];
+$amountMin = number_format($offer['amount_min'], 0, '', ' ');
+$amountMax = number_format($offer['amount_max'], 0, '', ' ');
+$rate = $offer['rate'];
+$freeTerm = (int)$offer['free_term_days'];
+$termMin = (int)$offer['term_min_days'];
+$termMax = (int)$offer['term_max_days'];
+
+$provider = 'template';
+$faqs = [];
+
+// Пробуем YandexGPT
+$apiKey = YANDEX_GPT_API_KEY;
+$folderId = YANDEX_FOLDER_ID;
+
+if ($apiKey && $folderId) {
+    $prompt = "Сгенерируй 6 вопросов и ответов (FAQ) для страницы финансового продукта \"{$title}\".
+Тип продукта: {$catName}.
+Сумма: от {$amountMin} до {$amountMax} рублей.
+Ставка: от {$rate}% в день.
+Срок: от {$termMin} до {$termMax} дней.
+" . ($freeTerm > 0 ? "Беспроцентный период: {$freeTerm} дней.\n" : "") . "
+Вопросы должны быть полезными для реальных заёмщиков.
+Включи вопросы о:
+1. Как оформить заявку
+2. Условия одобрения
+3. Сроки рассмотрения и получения денег
+4. Как вернуть займ
+5. Что будет при просрочке
+6. Безопасность и проверка организации
+
+Ответы 2-4 предложения, конкретные, без воды.
+
+Верни строго JSON массив объектов [{\"q\":\"вопрос\",\"a\":\"ответ\"}] без markdown.";
+
+    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key {$apiKey}\r\n",
+            'content' => json_encode([
+                'modelUri' => "gpt://{$folderId}/yandexgpt/latest",
+                'completionOptions' => ['stream' => false, 'temperature' => 0.5, 'maxTokens' => 2000],
+                'messages' => [
+                    ['role' => 'system', 'text' => 'Ты SEO-копирайтер финансового сайта. Генерируешь FAQ. Отвечай только валидным JSON массивом без markdown.'],
+                    ['role' => 'user', 'text' => $prompt]
+                ]
+            ]),
+            'timeout' => 30,
+            'ignore_errors' => true,
+        ]
+    ]));
+
+    if ($response) {
+        $json = json_decode($response, true);
+        $text = $json['result']['alternatives'][0]['message']['text'] ?? '';
+        // Извлекаем JSON из ответа
+        $text = trim($text);
+        $text = preg_replace('/^```json\s*/i', '', $text);
+        $text = preg_replace('/\s*```$/i', '', $text);
+        $parsed = json_decode($text, true);
+        if (is_array($parsed) && count($parsed) >= 3) {
+            $faqs = $parsed;
+            $provider = 'yandexgpt';
+        }
+    }
+}
+
+// Fallback — шаблонные FAQ
+if (empty($faqs)) {
+    $faqs = [];
+
+    $faqs[] = ['q' => "Как оформить {$catName} в {$title}?",
+               'a' => "Для оформления перейдите на сайт {$title}, заполните онлайн-заявку, указав паспортные данные и номер банковской карты. Решение обычно приходит в течение нескольких минут."];
+
+    $faqs[] = ['q' => "Какая сумма доступна в {$title}?",
+               'a' => "В {$title} можно оформить {$catName} на сумму от {$amountMin} ₽ до {$amountMax} ₽. Точная сумма зависит от вашей кредитной истории и платёжеспособности."];
+
+    $faqs[] = ['q' => "Какая процентная ставка в {$title}?",
+               'a' => "Процентная ставка составляет от {$rate}% в день. Полная стоимость кредита (ПСК) — {$offer['psk']}% годовых. Рекомендуем внимательно изучить условия договора."];
+
+    if ($freeTerm > 0) {
+        $faqs[] = ['q' => "Есть ли беспроцентный период в {$title}?",
+                   'a' => "Да, {$title} предлагает беспроцентный период {$freeTerm} дней для новых клиентов. При погашении в этот срок проценты не начисляются."];
+    }
+
+    $faqs[] = ['q' => "Как быстро придут деньги после одобрения?",
+               'a' => "После одобрения заявки деньги обычно поступают на банковскую карту в течение 5-15 минут. В некоторых случаях перевод может занять до нескольких часов."];
+
+    $faqs[] = ['q' => "Что делать при просрочке платежа в {$title}?",
+               'a' => "При просрочке начисляются штрафные проценты. Рекомендуем связаться с {$title} заранее — многие организации идут навстречу и предлагают пролонгацию или реструктуризацию долга."];
+
+    $faqs[] = ['q' => "Как проверить, что {$title} — надёжная организация?",
+               'a' => "Проверьте наличие лицензии в реестре Центрального Банка России (cbr.ru). Все МФО обязаны быть зарегистрированы в реестре ЦБ РФ. {$title} является партнёром сервиса " . SITE_NAME . "."];
+}
+
+// Удаляем старые FAQ для этого оффера
+$db->prepare("DELETE FROM offer_faqs WHERE offer_id = ?")->execute([$offerId]);
+
+// Сохраняем
+$insertStmt = $db->prepare("INSERT INTO offer_faqs (offer_id, question, answer, sort_order, generated_by) VALUES (?, ?, ?, ?, ?)");
+foreach ($faqs as $i => $faq) {
+    $insertStmt->execute([$offerId, $faq['q'], $faq['a'], $i, $provider]);
+}
+
+echo json_encode([
+    'success' => true,
+    'offer_id' => $offerId,
+    'offer_title' => $title,
+    'count' => count($faqs),
+    'provider' => $provider,
+    'faqs' => $faqs
+]);

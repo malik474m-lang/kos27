@@ -16,6 +16,13 @@ requireAdmin();
 if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.php"; exit; }
 
 // Индексация
+
+// FAQ офферов
+if ($adminUri === '/faq' && $method === 'GET') { require __DIR__ . '/admin/faq-list.php'; exit; }
+if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/admin/faq-generate.php'; exit; }
+if ($adminUri === '/faq/bulk-generate' && $method === 'POST') { require __DIR__ . '/admin/faq-bulk-generate.php'; exit; }
+if ($adminUri === '/faq/update' && $method === 'PUT') { require __DIR__ . '/admin/faq-update.php'; exit; }
+if ($adminUri === '/faq/delete' && $method === 'DELETE') { require __DIR__ . '/admin/faq-delete.php'; exit; }
 if (str_starts_with($adminUri, "/indexing")) { require __DIR__ . "/admin/indexing.php"; exit; }
 
 // Офферы

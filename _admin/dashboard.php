@@ -117,7 +117,7 @@ function lO(){ap('/offers').then(list=>{
 let state=getOffersUiState();
 let currentFilter=state.filter||'all';
 let currentSearch=state.search||'';
-let h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Сортировка отдельно внутри каждой категории</p></div><div class="flex flex-wrap gap-2"><button onclick="bulkToggle(\'offers\')" id="bulk-offers-toggle" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать</button><button onclick="oForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
+let h='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">Предложения ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Сортировка отдельно внутри каждой категории</p></div><div class="flex flex-wrap gap-2"><button onclick="bulkToggle(\'offers\')" id="bulk-offers-toggle" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать</button><button onclick="faqBulkGen()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-semibold">❓ FAQ всем</button><button onclick="oForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
 
 h+='<div class="bg-white rounded-xl border p-4 mb-6"><div class="grid sm:grid-cols-[1fr_220px_auto] gap-3 items-end">';
 h+='<div><label class="block text-xs font-medium text-gray-500 mb-1">Поиск по названию</label><input id="offers-search" class="input-f" placeholder="Например, Вебзайм" value="'+e(currentSearch)+'" oninput="applyOffersFilters()"></div>';
@@ -166,6 +166,7 @@ orderedKeys.forEach(function(key){
     h+='<div class="text-right text-xs text-gray-500 min-w-[86px]"><div>30 дн: <strong>'+Number(o.clicks_30d||0)+'</strong></div><div>всего: <strong>'+Number(o.clicks_total||0)+'</strong></div></div>';
     h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
     h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
+    h+='<button onclick="event.stopPropagation();faqGen('+o.id+',e(o.title))" class="text-purple-600 hover:underline text-sm">FAQ</button>';
     h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button>';
     h+='</div>';
   });
@@ -3199,6 +3200,64 @@ h+='<p class="text-xs text-gray-500">'+(typeNames[c.type]||c.type)+' • '+new D
 h+='</div>';
 box.innerHTML=h;
 }).catch(function(){ box.innerHTML='<p class="text-gray-500 text-sm">Ошибка загрузки</p>'; });
+}
+
+
+/* ============ FAQ ============ */
+function faqGen(offerId, offerTitle){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">❓ FAQ для '+e(offerTitle)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><div id="faq-modal-content"><p class="text-gray-500">⏳ Загрузка текущих FAQ...</p></div>');
+faqLoadModal(offerId, offerTitle);
+}
+
+function faqLoadModal(offerId, offerTitle){
+var box=document.getElementById('faq-modal-content');
+ap('/faq?offer_id='+offerId).then(function(list){
+var h='';
+if(list&&list.length){
+h+='<div class="space-y-3 mb-4 max-h-64 overflow-y-auto">';
+list.forEach(function(f){
+h+='<div class="bg-gray-50 rounded-lg p-3"><div class="flex justify-between items-start gap-2"><p class="text-sm font-semibold text-gray-900 flex-1">'+e(f.question)+'</p><div class="flex gap-1"><button onclick="faqDel('+f.id+','+offerId+',&#39;'+e(offerTitle).replace(/'/g,"")+'&#39;)" class="text-red-400 hover:text-red-600 text-xs">✕</button></div></div><p class="text-xs text-gray-600 mt-1">'+e(f.answer)+'</p><p class="text-xs text-gray-400 mt-1">'+f.generated_by+'</p></div>';
+});
+h+='</div>';
+h+='<p class="text-sm text-gray-500 mb-4">Вопросов: '+list.length+'</p>';
+}else{
+h+='<p class="text-sm text-gray-500 mb-4">FAQ ещё не сгенерированы</p>';
+}
+
+h+='<div class="flex flex-wrap gap-2">';
+h+='<button onclick="faqDoGen('+offerId+',&#39;'+e(offerTitle).replace(/'/g,"")+'&#39;)" id="faq-gen-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🤖 '+(list&&list.length?'Перегенерировать':'Сгенерировать')+' FAQ</button>';
+h+='<a href="/offer/'+offerId+'" target="_blank" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">👁 Предпросмотр</a>';
+h+='</div>';
+
+box.innerHTML=h;
+}).catch(function(){ box.innerHTML='<p class="text-red-500">Ошибка загрузки</p>'; });
+}
+
+function faqDoGen(offerId, offerTitle){
+var btn=document.getElementById('faq-gen-btn');
+if(btn){ btn.disabled=true; btn.textContent='⏳ Генерация...'; }
+
+ap('/faq/generate',{method:'POST',body:JSON.stringify({offer_id:offerId})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); if(btn){btn.disabled=false;btn.textContent='🤖 Сгенерировать FAQ';} return; }
+alert('✅ Сгенерировано '+d.count+' вопросов ('+d.provider+')');
+faqLoadModal(offerId, offerTitle);
+}).catch(function(){ alert('Ошибка'); if(btn){btn.disabled=false;btn.textContent='🤖 Сгенерировать FAQ';} });
+}
+
+function faqDel(id, offerId, offerTitle){
+if(!confirm('Удалить вопрос?')) return;
+ap('/faq/delete',{method:'DELETE',body:JSON.stringify({id:id})}).then(function(d){
+if(d.success) faqLoadModal(offerId, offerTitle);
+else alert('Ошибка');
+});
+}
+
+function faqBulkGen(){
+if(!confirm('Сгенерировать FAQ для всех офферов без FAQ? Будет использован шаблон.')) return;
+ap('/faq/bulk-generate',{method:'POST'}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✅ FAQ сгенерированы для '+d.generated+' офферов');
+}).catch(function(){ alert('Ошибка'); });
 }
 
 

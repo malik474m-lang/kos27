@@ -440,6 +440,36 @@ ob_start();
     }
     </script>
 
+
+    <!-- FAQ -->
+    <?php
+    $offerFaqs = [];
+    try {
+        $faqStmt = $db->prepare("SELECT question, answer FROM offer_faqs WHERE offer_id = ? AND is_active = 1 ORDER BY sort_order ASC");
+        $faqStmt->execute([$offer['id']]);
+        $offerFaqs = $faqStmt->fetchAll();
+    } catch (Exception $e) {}
+    
+    if ($offerFaqs):
+    ?>
+    <div class="mt-12">
+        <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Частые вопросы о <?= e($offer['title']) ?></h2>
+        <div class="space-y-3" itemscope itemtype="https://schema.org/FAQPage">
+            <?php foreach ($offerFaqs as $fi => $faq): ?>
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                <button onclick="this.nextElementSibling.classList.toggle('hidden');this.querySelector('svg').classList.toggle('rotate-180')" class="w-full text-left p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <span class="font-semibold text-gray-900 pr-4" itemprop="name"><?= e($faq['question']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform flex-shrink-0 <?= $fi === 0 ? 'rotate-180' : '' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="<?= $fi === 0 ? '' : 'hidden' ?> px-5 pb-5 text-gray-600 leading-relaxed" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                    <span itemprop="text"><?= e($faq['answer']) ?></span>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Похожие -->
     <?php if ($similarOffers): ?>
     <div class="mt-12">
