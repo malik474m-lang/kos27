@@ -135,6 +135,10 @@ $headerCats = getHeaderCategories();
         var filtered=citiesData.filter(function(c){
             return !q || c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q) || (c.region||'').toLowerCase().includes(q);
         });
+        if(!filtered.length){
+            pickerList.innerHTML='<div class="sm:col-span-2 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400">Ничего не найдено. Попробуйте другой город.</div>';
+            return;
+        }
         pickerList.innerHTML=filtered.slice(0,60).map(cityCard).join('');
     };
 
@@ -143,7 +147,20 @@ $headerCats = getHeaderCategories();
         if(pickerOverlay) pickerOverlay.classList.remove('hidden');
         renderCityPickerList('');
         var inp=document.getElementById('city-picker-search');
-        if(inp){ inp.value=''; setTimeout(function(){inp.focus();},50); }
+        if(inp){
+            inp.value='';
+            inp.onkeydown=function(ev){
+                if(ev.key==='Enter'){
+                    ev.preventDefault();
+                    var q=(inp.value||'').toLowerCase().trim();
+                    var first=citiesData.find(function(c){
+                        return !q || c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q) || (c.region||'').toLowerCase().includes(q);
+                    });
+                    if(first){ location.href = buildGeoTarget(first.slug)||('/zajmy/'+first.slug); }
+                }
+            };
+            setTimeout(function(){inp.focus();},50);
+        }
     };
 
     window.closeCityPicker=function(){
