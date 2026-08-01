@@ -1,5 +1,7 @@
 <?php
 $pageTitle = 'Регистрация — ' . SITE_NAME;
+$metaDescription = 'Регистрация личного кабинета на сайте ' . SITE_NAME . ' для сохранения избранного, сравнения предложений и отслеживания заявок.';
+$pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-md mx-auto px-4 py-12">

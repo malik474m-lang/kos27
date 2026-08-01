@@ -1,5 +1,7 @@
 <?php
 $pageTitle = 'Вход — ' . SITE_NAME;
+$metaDescription = 'Вход в личный кабинет сайта ' . SITE_NAME . ' для управления избранными предложениями и заявками.';
+$pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-md mx-auto px-4 py-12">

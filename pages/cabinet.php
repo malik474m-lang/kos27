@@ -4,6 +4,8 @@ $user = getUser();
 if (!$user) { header('Location: /login'); exit; }
 
 $pageTitle = 'Личный кабинет — ' . SITE_NAME;
+$metaDescription = 'Личный кабинет пользователя сайта ' . SITE_NAME . ': избранные предложения, история заявок и настройки аккаунта.';
+$pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

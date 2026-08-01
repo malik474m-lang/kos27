@@ -1,5 +1,6 @@
 <?php
-$pageTitle = 'Политика конфиденциальности — Космозайм';
+$pageTitle = 'Политика конфиденциальности — ' . SITE_NAME;
+$metaDescription = 'Политика конфиденциальности сайта ' . SITE_NAME . '. Порядок обработки персональных данных, cookies и пользовательской информации.';
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -1,5 +1,7 @@
 <?php
-$pageTitle = 'Избранное — Космозайм';
+$pageTitle = 'Избранное — ' . SITE_NAME;
+$metaDescription = 'Избранные предложения пользователя на сайте ' . SITE_NAME . '. Сохранённые займы, кредиты и карты для быстрого сравнения.';
+$pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

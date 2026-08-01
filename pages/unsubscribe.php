@@ -1,6 +1,8 @@
 <?php
 $token = $_GET['token'] ?? '';
 $pageTitle = 'Отписка от рассылки — ' . SITE_NAME;
+$metaDescription = 'Страница отписки от email-рассылки сайта ' . SITE_NAME . '. Управление подпиской на уведомления и предложения.';
+$pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 $message = '';
 
 if ($token) {
