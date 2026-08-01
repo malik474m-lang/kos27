@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/autolinks.php';
 
-$pageTitle = 'Частые вопросы — Космозайм';
+$pageTitle = 'Частые вопросы — ' . SITE_NAME;
 $metaDescription = 'Ответы на популярные вопросы о займах, кредитах и банковских картах.';
 
 $faqs = [

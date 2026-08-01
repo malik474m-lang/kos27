@@ -14,7 +14,7 @@ $nearbyCities = array_filter($cities, fn($c) => $c['slug'] !== $citySlug);
 shuffle($nearbyCities);
 $nearbyCities = array_slice($nearbyCities, 0, 8);
 
-$pageTitle = ($citySeo['meta_title'] ?? '') ?: (($citySeo['seo_h1'] ?? '') ?: "Кредиты в {$city['prep']} — Космозайм");
+$pageTitle = ($citySeo['meta_title'] ?? '') ?: (($citySeo['seo_h1'] ?? '') ?: "Кредиты в {$city['prep']} — " . SITE_NAME);
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Кредиты в {$city['prep']}. Сравните условия банков.";
 
 ob_start();

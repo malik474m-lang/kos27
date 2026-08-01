@@ -2771,6 +2771,43 @@ function goHealthFix(tab, itemType, itemId){
 }
 
 /* ============ HEALTH CHECK ============ */
+function lSeoDuplicates(){
+var el=document.getElementById('p-health');
+var existing=el.innerHTML;
+el.innerHTML=existing+'<div id="seo-dup-loading" class="bg-white rounded-xl border p-6 mt-6"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div>';
+ap('/seo-duplicates').then(function(d){
+var box=document.getElementById('seo-dup-loading');
+if(!box)return;
+var h='<div class="bg-white rounded-xl border p-6 mt-6">';
+h+='<h3 class="text-lg font-bold mb-4">🔍 SEO: Дубли title и description</h3>';
+h+='<div class="grid grid-cols-3 gap-4 mb-4">';
+h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-2xl font-bold text-blue-600">'+d.total_pages+'</p><p class="text-xs text-gray-500">Всего страниц</p></div>';
+h+='<div class="'+(d.duplicate_titles>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(d.duplicate_titles>0?'text-red-600':'text-green-600')+'">'+d.duplicate_titles+'</p><p class="text-xs text-gray-500">Дублей title</p></div>';
+h+='<div class="'+(d.duplicate_descriptions>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(d.duplicate_descriptions>0?'text-red-600':'text-green-600')+'">'+d.duplicate_descriptions+'</p><p class="text-xs text-gray-500">Дублей description</p></div>';
+h+='</div>';
+if(d.titles&&d.titles.length){
+h+='<div class="mb-4"><h4 class="font-semibold text-red-700 mb-2">⚠️ Дублирующиеся Title ('+d.titles.length+'):</h4>';
+d.titles.forEach(function(dup){
+h+='<div class="bg-red-50 rounded-lg p-3 mb-2"><p class="text-sm font-medium text-red-800">'+e(dup.title)+'</p><p class="text-xs text-red-600 mt-1">Найдено на '+dup.count+' страницах:</p><ul class="mt-1">';
+dup.pages.forEach(function(pg){h+='<li class="text-xs text-gray-600">• <span class="font-mono">'+e(pg.url)+'</span> <span class="text-gray-400">('+pg.type+')</span></li>';});
+h+='</ul></div>';});
+h+='</div>';}
+if(d.descriptions&&d.descriptions.length){
+h+='<div><h4 class="font-semibold text-red-700 mb-2">⚠️ Дублирующиеся Description ('+d.descriptions.length+'):</h4>';
+d.descriptions.forEach(function(dup){
+h+='<div class="bg-yellow-50 rounded-lg p-3 mb-2"><p class="text-sm font-medium text-yellow-800">'+e(dup.description)+'</p><p class="text-xs text-yellow-600 mt-1">Найдено на '+dup.count+' страницах:</p><ul class="mt-1">';
+dup.pages.forEach(function(pg){h+='<li class="text-xs text-gray-600">• <span class="font-mono">'+e(pg.url)+'</span> <span class="text-gray-400">('+pg.type+')</span></li>';});
+h+='</ul></div>';});
+h+='</div>';}
+if(!d.duplicate_titles&&!d.duplicate_descriptions){
+h+='<div class="bg-green-50 rounded-lg p-4 text-center"><p class="text-green-700 font-semibold">✅ Дублей не найдено!</p></div>';}
+h+='</div>';
+box.outerHTML=h;
+}).catch(function(err){
+var box=document.getElementById('seo-dup-loading');
+if(box)box.outerHTML='<div class="bg-red-50 rounded-xl border p-6 mt-6"><p class="text-red-600">Ошибка проверки SEO: '+e(err.message||'')+'</p></div>';
+});}
+
 function lHealth(){
 var el=document.getElementById('p-health');
 el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Проверка...</p></div>';

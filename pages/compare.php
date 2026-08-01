@@ -2,7 +2,7 @@
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
 
-$pageTitle = 'Сравнение предложений — Космозайм';
+$pageTitle = 'Сравнение предложений — ' . SITE_NAME;
 $metaDescription = 'Сравните условия займов, кредитов и банковских карт. Выберите до 4 предложений для сравнения.';
 
 ob_start();

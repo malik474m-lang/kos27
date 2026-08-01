@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../data/glossary.php';
 
-$pageTitle = 'Глоссарий финансовых терминов — Космозайм';
+$pageTitle = 'Глоссарий финансовых терминов — ' . SITE_NAME;
 $metaDescription = 'Словарь финансовых терминов: ПСК, грейс-период, кредитная история и другие.';
 
 ob_start();

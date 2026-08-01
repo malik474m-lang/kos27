@@ -2,7 +2,7 @@
 $db = getDB();
 $articles = $db->query("SELECT * FROM articles WHERE is_published = 1 ORDER BY created_at DESC")->fetchAll();
 
-$pageTitle = 'Полезные статьи — Космозайм';
+$pageTitle = 'Полезные статьи — ' . SITE_NAME;
 $metaDescription = 'Статьи о займах, кредитах и финансовой грамотности.';
 
 ob_start();

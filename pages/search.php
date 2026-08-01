@@ -12,7 +12,7 @@ if ($q) {
     $results = $stmt->fetchAll();
 }
 
-$pageTitle = $q ? "Поиск: $q — Космозайм" : 'Поиск — Космозайм';
+$pageTitle = $q ? "Поиск: $q — " . SITE_NAME : 'Поиск — ' . SITE_NAME;
 
 ob_start();
 ?>

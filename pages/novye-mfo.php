@@ -7,7 +7,7 @@ $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'microloans' ORDER BY created_at DESC, sort_order ASC")->fetchAll();
 $latestDate = $offers && !empty($offers[0]['created_at']) ? date('d.m.Y', strtotime($offers[0]['created_at'])) : null;
 
-$pageTitle = 'Новые МФО — последние добавленные займы | Космозайм';
+$pageTitle = 'Новые МФО — последние добавленные займы | ' . SITE_NAME;
 $metaDescription = 'Новые МФО и последние добавленные предложения по займам на сайте Космозайм. Сравните условия, ставки, суммы и сроки оформления онлайн.';
 $metaKeywords = 'новые мфо, новые займы, последние мфо, новые микрозаймы, новые предложения мфо';
 
