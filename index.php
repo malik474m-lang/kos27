@@ -151,6 +151,38 @@ if (isset($routes[$uri])) {
 }
 
 // Динамические роуты
+if (preg_match('#^/zajmy/([a-z0-9-]+)/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    $typeSlug = $m[2];
+    $cityTypeCategory = 'microloans';
+    require __DIR__ . '/pages/city-type.php';
+    exit;
+}
+
+if (preg_match('#^/kredity/([a-z0-9-]+)/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    $typeSlug = $m[2];
+    $cityTypeCategory = 'credits';
+    require __DIR__ . '/pages/city-type.php';
+    exit;
+}
+
+if (preg_match('#^/karty/kreditnye/([a-z0-9-]+)/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    $typeSlug = $m[2];
+    $cityTypeCategory = 'credit_cards';
+    require __DIR__ . '/pages/city-type.php';
+    exit;
+}
+
+if (preg_match('#^/karty/debetovye/([a-z0-9-]+)/type/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    $typeSlug = $m[2];
+    $cityTypeCategory = 'debit_cards';
+    require __DIR__ . '/pages/city-type.php';
+    exit;
+}
+
 if (preg_match('#^/zajmy/type/([a-z0-9-]+)$#', $uri, $m)) {
     $typeSlug = $m[1];
     require __DIR__ . '/pages/zajmy-type.php';
