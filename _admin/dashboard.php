@@ -2949,6 +2949,7 @@ if(box)box.innerHTML='<div class="bg-red-50 rounded-lg p-4"><h4 class="font-semi
 function lHealth(){
 var el=document.getElementById('p-health');
 el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Проверка...</p></div>';
+setTimeout(function(){try{lSeoDuplicates();}catch(e){}},0);
 ap('/health-check').then(d=>{
 var s=d.score||0;
 var barColor=s>=80?'bg-green-500':s>=50?'bg-yellow-500':'bg-red-500';
@@ -2981,7 +2982,7 @@ h+='<div class="bg-gray-50 border border-gray-200 rounded-xl p-4"><h3 class="fon
 infos.forEach(c=>{h+='<div class="text-sm text-gray-600">• '+e(c.msg)+'</div>';});
 h+='</div>';}
 
-el.innerHTML=h;el.querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});lSeoDuplicates();});}
+el.innerHTML=h;el.querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});});}
 
 
 </script>
