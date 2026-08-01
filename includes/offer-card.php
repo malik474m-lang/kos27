@@ -130,7 +130,7 @@ function renderOfferCard(array $offer): string {
         <p class="offer-card-desc text-sm text-gray-600 mt-3 sm:mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
         <?php endif; ?>
 
-        <div class="offer-card-actions mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+        <div class="offer-card-actions mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
                 <a href="/offer/<?= e($offer['slug']) ?>" class="text-primary hover:underline text-sm font-medium">Подробнее →</a>
                 <button type="button"
