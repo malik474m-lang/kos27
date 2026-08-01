@@ -2843,7 +2843,7 @@ h+='<div class="bg-gray-50 border border-gray-200 rounded-xl p-4"><h3 class="fon
 infos.forEach(c=>{h+='<div class="text-sm text-gray-600">• '+e(c.msg)+'</div>';});
 h+='</div>';}
 
-el.innerHTML=h;el.querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});});}
+el.innerHTML=h;el.querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});lSeoDuplicates();});}
 
 
 </script>
