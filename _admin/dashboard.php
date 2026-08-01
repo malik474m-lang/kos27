@@ -2906,19 +2906,24 @@ fetch(A+'/seo-duplicates/fix',{method:'POST',headers:{'Content-Type':'applicatio
 function lSeoDuplicates(){
 var el=document.getElementById('p-health');
 var existing=el.innerHTML;
-el.innerHTML=existing+'<div id="seo-dup-loading" class="bg-white rounded-xl border p-6 mt-6"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div>';
+var shell='';
+shell+='<div id="seo-dup-shell" class="bg-white rounded-xl border p-6 mt-6">';
+shell+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><h3 class="text-lg font-bold">🔍 SEO: Дубли title и description</h3><div class="flex flex-wrap gap-2"><button type="button" onclick="seoDupFix('titles')" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-50">🤖 Исправить title</button><button type="button" onclick="seoDupFix('descriptions')" class="bg-white border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-50">🤖 Исправить description</button><button type="button" onclick="seoDupFix('all')" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700">🤖 Исправить всё</button></div></div>';
+shell+='<div class="text-xs text-gray-500 mb-4">Исправление использует YandexGPT, если API-ключ настроен. Иначе применяется шаблонный fallback для снятия дублей.</div>';
+shell+='<div id="seo-dup-loading"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div>';
+shell+='</div>';
+el.innerHTML=existing+shell;
 ap('/seo-duplicates').then(function(d){
 var box=document.getElementById('seo-dup-loading');
 if(!box)return;
-if(d.error){ box.outerHTML='<div class="bg-red-50 rounded-xl border p-6 mt-6"><h3 class="text-lg font-bold text-red-700 mb-2">Ошибка проверки SEO</h3><p class="text-sm text-red-600">'+e(d.error)+'</p></div>'; return; }
+if(d.error){ box.innerHTML='<div class="bg-red-50 rounded-lg p-4"><h4 class="font-semibold text-red-700 mb-2">Ошибка проверки SEO</h4><p class="text-sm text-red-600">'+e(d.error)+'</p></div>'; return; }
 var totalPages=Number(d.total_pages||0), dupTitles=Number(d.duplicate_titles||0), dupDescriptions=Number(d.duplicate_descriptions||0);
-var h='<div class="bg-white rounded-xl border p-6 mt-6">';
-h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><h3 class="text-lg font-bold">🔍 SEO: Дубли title и description</h3><div class="flex flex-wrap gap-2"><button type="button" onclick="seoDupFix(\'titles\')" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-50">🤖 Исправить title</button><button type="button" onclick="seoDupFix(\'descriptions\')" class="bg-white border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-50">🤖 Исправить description</button><button type="button" onclick="seoDupFix(\'all\')" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700">🤖 Исправить всё</button></div></div>';
+var h='';
 h+='<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">';
 h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-2xl font-bold text-blue-600">'+totalPages+'</p><p class="text-xs text-gray-500">Всего страниц</p></div>';
 h+='<div class="'+(dupTitles>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(dupTitles>0?'text-red-600':'text-green-600')+'">'+dupTitles+'</p><p class="text-xs text-gray-500">Дублей title</p></div>';
 h+='<div class="'+(dupDescriptions>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(dupDescriptions>0?'text-red-600':'text-green-600')+'">'+dupDescriptions+'</p><p class="text-xs text-gray-500">Дублей description</p></div>';
-h+='<div class="text-xs text-gray-500 mb-4">Исправление использует YandexGPT, если API-ключ настроен. Иначе применяется шаблонный fallback для снятия дублей.</div></div>';
+h+='</div>';
 if(d.titles&&d.titles.length){
 h+='<div class="mb-4"><h4 class="font-semibold text-red-700 mb-2">⚠️ Дублирующиеся Title ('+d.titles.length+'):</h4>';
 d.titles.forEach(function(dup){
@@ -2935,11 +2940,10 @@ h+='</ul></div>';});
 h+='</div>';}
 if(!dupTitles&&!dupDescriptions){
 h+='<div class="bg-green-50 rounded-lg p-4 text-center"><p class="text-green-700 font-semibold">✅ Дублей не найдено!</p></div>';}
-h+='</div>';
-box.outerHTML=h;
+box.innerHTML=h;
 }).catch(function(err){
 var box=document.getElementById('seo-dup-loading');
-if(box)box.outerHTML='<div class="bg-red-50 rounded-xl border p-6 mt-6"><p class="text-red-600">Ошибка проверки SEO: '+e(err.message||'')+'</p></div>';
+if(box)box.innerHTML='<div class="bg-red-50 rounded-lg p-4"><h4 class="font-semibold text-red-700 mb-2">Ошибка проверки SEO</h4><p class="text-sm text-red-600">'+e(err.message||'')+'</p></div>';
 });}
 
 function lHealth(){
