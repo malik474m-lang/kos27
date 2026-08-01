@@ -5,42 +5,55 @@ require_once __DIR__ . '/../../includes/city-seo.php';
 $data = json_decode(file_get_contents('php://input'), true);
 $category = $data['category'] ?? 'microloans';
 $useGPT = !empty($data['useGPT']);
-$citySlug = $data['citySlug'] ?? null; // null = все города
+$citySlug = $data['citySlug'] ?? null;
+$citySlugs = is_array($data['citySlugs'] ?? null) ? array_values(array_filter($data['citySlugs'])) : [];
+$overwrite = !empty($data['overwrite']);
 
 $db = getDB();
 $generated = 0;
+$skipped = 0;
 $errors = 0;
 
-$targetCities = $citySlug ? [findCityBySlug($citySlug)] : $cities;
-$targetCities = array_filter($targetCities);
+if ($citySlugs) {
+    $targetCities = [];
+    foreach ($citySlugs as $slug) {
+        $city = findCityBySlug($slug);
+        if ($city) $targetCities[] = $city;
+    }
+} else {
+    $targetCities = $citySlug ? [findCityBySlug($citySlug)] : $cities;
+}
+$targetCities = array_values(array_filter($targetCities));
 
 foreach ($targetCities as $city) {
-    // Проверяем есть ли уже текст
     $existing = getCitySeoText($city, $category);
-    if ($existing && !($data['overwrite'] ?? false)) continue;
+    if ($existing && !$overwrite) { $skipped++; continue; }
 
-    $seo = null;
-
-    // Пробуем GPT
-    if ($useGPT) {
-        $seo = generateCitySeoGPT($city, $category);
-        if ($seo) {
-            saveCitySeo($city['slug'], $category, $seo);
-            $generated++;
-            // Пауза между запросами к API
-            if (!$citySlug) usleep(500000); // 0.5 сек
-            continue;
+    try {
+        $seo = null;
+        if ($useGPT) {
+            $seo = generateCitySeoGPT($city, $category);
+            if ($seo) {
+                saveCitySeo($city['slug'], $category, $seo);
+                $generated++;
+                if (!$citySlug && !$citySlugs) usleep(500000);
+                continue;
+            }
         }
-    }
 
-    // Fallback на шаблон
-    $seo = generateCitySeoTemplate($city, $category);
-    saveCitySeo($city['slug'], $category, $seo);
-    $generated++;
+        $seo = generateCitySeoTemplate($city, $category);
+        saveCitySeo($city['slug'], $category, $seo);
+        $generated++;
+    } catch (Throwable $e) {
+        $errors++;
+    }
 }
 
+apiCacheClear();
 echo json_encode([
     'success' => true,
     'generated' => $generated,
+    'skipped' => $skipped,
+    'errors' => $errors,
     'total' => count($targetCities),
-]);
+], JSON_UNESCAPED_UNICODE);

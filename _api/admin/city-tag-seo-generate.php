@@ -7,6 +7,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 $category = $data['category'] ?? 'microloans';
 $useGPT = !empty($data['useGPT']);
 $citySlug = $data['citySlug'] ?? null;
+$citySlugs = is_array($data['citySlugs'] ?? null) ? array_values(array_filter($data['citySlugs'])) : [];
 $tagSlug = $data['tagSlug'] ?? null;
 $overwrite = !empty($data['overwrite']);
 
@@ -15,7 +16,15 @@ $generated = 0;
 $skipped = 0;
 $errors = 0;
 
-$targetCities = $citySlug ? [findCityBySlug($citySlug)] : getCities();
+if ($citySlugs) {
+    $targetCities = [];
+    foreach ($citySlugs as $slug) {
+        $city = findCityBySlug($slug);
+        if ($city) $targetCities[] = $city;
+    }
+} else {
+    $targetCities = $citySlug ? [findCityBySlug($citySlug)] : getCities();
+}
 $targetCities = array_values(array_filter($targetCities));
 
 $tagStmt = $db->prepare("SELECT * FROM offer_tags WHERE is_active = 1 AND category = ?" . ($tagSlug ? " AND slug = ?" : "") . " ORDER BY sort_order ASC");
@@ -33,7 +42,7 @@ foreach ($targetCities as $city) {
                 if ($seo) {
                     saveCityTagSeo($city['slug'], $category, $tag['slug'], $seo);
                     $generated++;
-                    if (!$citySlug || !$tagSlug) usleep(400000);
+                    if (!$citySlug && !$citySlugs && !$tagSlug) usleep(400000);
                     continue;
                 }
             }
