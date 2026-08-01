@@ -86,7 +86,7 @@ ob_start();
 
     <?php if (!empty($type['content'])): ?>
     <div class="bg-white rounded-xl border border-gray-100 p-8 mt-8 prose max-w-none text-gray-700">
-        <?= safeAutoLink($type['content'], 8) ?>
+        <?= autoLinkText($type['content'], 8) ?>
     </div>
     <?php endif; ?>
 

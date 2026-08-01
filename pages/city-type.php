@@ -106,11 +106,11 @@ ob_start();
 
     <?php if (!empty($cityTagSeo['seo_text'])): ?>
     <div class="bg-white rounded-xl border border-gray-100 p-8 mt-8 prose max-w-none text-gray-700">
-        <?= safeAutoLink($cityTagSeo['seo_text'], 8) ?>
+        <?= autoLinkText($cityTagSeo['seo_text'], 8) ?>
     </div>
     <?php elseif (!empty($type['content'])): ?>
     <div class="bg-white rounded-xl border border-gray-100 p-8 mt-8 prose max-w-none text-gray-700">
-        <?= safeAutoLink($type['content'], 8) ?>
+        <?= autoLinkText($type['content'], 8) ?>
     </div>
     <?php endif; ?>
 
