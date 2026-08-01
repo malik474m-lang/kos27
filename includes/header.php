@@ -5,17 +5,17 @@ $headerCats = getHeaderCategories();
 ?>
 <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-3">
-                <a href="/" class="flex items-center space-x-2">
+        <div class="flex items-center justify-between min-h-[64px] py-2 gap-3">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <a href="/" class="flex items-center space-x-2 min-w-0 max-w-full">
                     <?php if (defined('SITE_LOGO') && SITE_LOGO): ?>
-                    <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-10 max-w-[160px] object-contain" decoding="async" fetchpriority="high">
+                    <img src="<?= e(SITE_LOGO) ?>" alt="<?= e(SITE_NAME) ?>" class="h-9 sm:h-10 max-w-[120px] sm:max-w-[160px] object-contain" decoding="async" fetchpriority="high">
                     <?php else: ?>
                     <span class="text-2xl">🚀</span>
-                    <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"><?= e(SITE_NAME) ?></span>
+                    <span class="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[48vw] sm:max-w-none"><?= e(SITE_NAME) ?></span>
                     <?php endif; ?>
                 </a>
-                <span id="geo-city" class="text-xs text-gray-400">📍 ...</span>
+                <span id="geo-city" class="hidden sm:inline text-xs text-gray-400 truncate max-w-[120px]">📍 ...</span>
             </div>
 
             <nav class="hidden lg:flex items-center space-x-6">
@@ -46,22 +46,30 @@ $headerCats = getHeaderCategories();
                 <?php endif; ?>
             </nav>
 
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                 <a href="/search" class="p-2 text-gray-500 hover:text-blue-600 transition-colors" aria-label="Поиск">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </a>
-                <button class="lg:hidden p-2" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" aria-label="Меню">
+                <button class="lg:hidden p-2 rounded-lg hover:bg-gray-100" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" aria-label="Меню">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
         </div>
 
-        <nav id="mobile-menu" class="lg:hidden hidden pb-4 space-y-2">
+        <nav id="mobile-menu" class="lg:hidden hidden pb-4 space-y-1 border-t border-gray-100 pt-3 mt-2">
             <?php foreach ($headerCats as $hc): ?>
-            <a href="<?= getCategoryUrl($hc) ?>" class="block py-2 text-gray-700 hover:text-blue-600 font-medium"><?= e($hc['name']) ?></a>
+            <a href="<?= getCategoryUrl($hc) ?>" class="block py-2.5 px-1 text-gray-700 hover:text-blue-600 font-medium rounded-lg"><?= e($hc['name']) ?></a>
             <?php foreach (getSubcategories((int)$hc['id']) as $sub): ?>
-            <a href="<?= getCategoryUrl($sub) ?>" class="block py-2 pl-4 text-gray-600 hover:text-blue-600 text-sm"><?= e($sub['name']) ?></a>
+            <a href="<?= getCategoryUrl($sub) ?>" class="block py-2 pl-4 text-gray-600 hover:text-blue-600 text-sm rounded-lg"><?= e($sub['name']) ?></a>
             <?php endforeach; endforeach; ?>
+            <div class="pt-2 mt-2 border-t border-gray-100 flex items-center gap-3">
+                <a href="/favorites" class="text-sm text-gray-600 hover:text-blue-600">❤️ Избранное</a>
+                <?php if (isLoggedIn()): ?>
+                <a href="/cabinet" class="text-sm text-gray-600 hover:text-blue-600">👤 Кабинет</a>
+                <?php else: ?>
+                <a href="/login" class="text-sm text-gray-600 hover:text-blue-600">Войти</a>
+                <?php endif; ?>
+            </div>
 
         </nav>
     </div>

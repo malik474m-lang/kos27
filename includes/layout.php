@@ -133,12 +133,14 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         .prose-lg p { font-size:1.1rem; }
         .offer-card-box{background:#fff;border:1px solid #f1f5f9;border-radius:1rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
         .offer-card-logo{background:#f8fafc;border:1px solid #eef2f7}
-        .offer-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+        .offer-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;min-width:0}
+        .offer-card-head,.offer-card-actions{min-width:0}
+        .offer-card-box *{min-width:0}
         .offer-card-grid p{word-break:break-word}
         .offer-card-desc{line-height:1.6}
         .offer-card-actions a,.offer-card-actions button{min-height:44px}
         @media(min-width:640px){.offer-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-        @media(max-width:639px){.offer-card-box{padding:1rem}.offer-card-grid{gap:.75rem}.offer-card-actions{gap:.75rem}}
+        @media(max-width:639px){.offer-card-box{padding:0.9rem;border-radius:0.9rem}.offer-card-head{gap:.75rem}.offer-card-logo{width:3.5rem;height:3.5rem}.offer-card-grid{gap:.625rem;grid-template-columns:repeat(2,minmax(0,1fr))}.offer-card-actions{gap:.625rem;flex-direction:column}.offer-card-actions a,.offer-card-actions button{width:100%;justify-content:center}.offer-card-box .text-2xl{font-size:1.1rem}.offer-card-box .text-sm{font-size:.875rem}.offer-card-box .text-xs{font-size:.75rem}.offer-card-box .line-clamp-2{display:block;overflow:visible}}
 
         /* Глобальный fallback для страницы оффера */
         .offer-page-wrap{max-width:80rem;margin:0 auto;padding:2rem 1rem}
