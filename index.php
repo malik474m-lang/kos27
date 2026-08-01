@@ -64,6 +64,7 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
     $offer->execute([$m[1]]);
     $row = $offer->fetch();
     if ($row) {
+        header("X-Robots-Tag: noindex, nofollow");
         $clickIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
         $clickIp = trim(explode(',', $clickIp)[0]);
         $abVarId = isset($_GET['ab']) ? (int)$_GET['ab'] : null;
@@ -100,6 +101,7 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
         $affUrl = $row['affiliate_url'];
         $separator = str_contains($affUrl, '?') ? '&' : '?';
         $affUrl .= $separator . 'aff_sub=' . $lastClickId;
+        header("X-Robots-Tag: noindex, nofollow");
         header("Location: {$affUrl}");
     } else {
         header("Location: /");
