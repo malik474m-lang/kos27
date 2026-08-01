@@ -2,6 +2,19 @@
 $pageTitle = 'Калькулятор займа — ' . SITE_NAME;
 $metaDescription = 'Рассчитайте стоимость займа онлайн. Калькулятор процентов, переплаты и подбор подходящих предложений.';
 
+$pageHeadHtml = <<<'HTML'
+<style>
+@media (max-width: 639px){
+  .calc-result-grid{gap:.75rem !important;}
+  .calc-result-grid p.text-xl{font-size:1.05rem !important;line-height:1.3 !important;}
+  .calc-result-grid p.text-lg{font-size:.95rem !important;line-height:1.3 !important;}
+  .calc-offer-card{padding:1rem !important;}
+  .calc-offer-grid{gap:.5rem !important;}
+  .calc-links-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+}
+</style>
+HTML;
+
 $db = getDB();
 $allOffers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
 
@@ -45,7 +58,7 @@ ob_start();
 
             <div class="bg-gray-50 rounded-xl p-6">
                 <h3 class="font-bold text-gray-900 mb-4">Результат расчёта</h3>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="calc-result-grid grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-xs text-gray-500 uppercase">Сумма к возврату</p>
                         <p id="res-total" class="text-xl font-bold text-gray-900">39 000 ₽</p>
@@ -82,7 +95,7 @@ ob_start();
     <!-- Перелинковка -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-12">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Полезные разделы</h2>
-        <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="calc-links-grid grid grid-cols-2 md:grid-cols-4 gap-3">
             <a href="/zajmy" class="bg-gray-50 rounded-lg p-4 text-center card-hover block">
                 <span class="text-2xl block mb-1">💵</span>
                 <span class="font-semibold text-gray-900 text-sm">Займы</span>
@@ -156,12 +169,12 @@ function filterOffers(amount, term) {
         var cats = {microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
         var freeHtml = o.free_term_days > 0 ? '<div><span class="text-green-600 font-semibold">Без % ' + fmtDays(o.free_term_days) + '</span></div>' : '';
 
-        html += '<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 card-hover">' +
+        html += '<div class="calc-offer-card bg-white rounded-xl shadow-sm border border-gray-100 p-5 card-hover">' +
             '<div class="flex items-center gap-3 mb-3">' +
             '<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">' + logoHtml + '</div>' +
             '<div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-sm">' + o.title + '</h3><p class="text-xs text-gray-500">' + (cats[o.category] || o.category) + '</p></div>' +
             '</div>' +
-            '<div class="grid grid-cols-2 gap-2 text-sm mb-3">' +
+            '<div class="calc-offer-grid grid grid-cols-2 gap-2 text-sm mb-3">' +
             '<div><span class="text-gray-500">Ставка:</span> <span class="font-semibold">от ' + o.rate + '% ' + ((o.rate_unit==='year')?'в год':'в день') + '</span></div>' +
             '<div><span class="text-gray-500">ПСК:</span> <span class="font-semibold">' + o.psk + '%</span></div>' +
             '<div><span class="text-gray-500">Сумма:</span> <span class="font-semibold">до ' + fmt(o.amount_max) + '</span></div>' +

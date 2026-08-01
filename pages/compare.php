@@ -5,6 +5,16 @@ $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_ord
 $pageTitle = 'Сравнение предложений — ' . SITE_NAME;
 $metaDescription = 'Сравните условия займов, кредитов и банковских карт. Выберите до 4 предложений для сравнения.';
 
+$pageHeadHtml = <<<'HTML'
+<style>
+@media (max-width: 639px){
+  .cmp-select-card{position:static !important;padding:1rem !important;}
+  .cmp-table-wrap table{min-width:720px !important;}
+  .cmp-table-wrap th,.cmp-table-wrap td{padding:.75rem !important;}
+}
+</style>
+HTML;
+
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -14,7 +24,7 @@ ob_start();
     <div class="grid lg:grid-cols-3 gap-8">
         <!-- Левая часть: выбор -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sticky top-20">
+            <div class="cmp-select-card bg-white rounded-xl shadow-sm border border-gray-100 p-4 sticky top-20">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="font-bold text-gray-900">Выберите предложения</h2>
                     <span id="cmp-count" class="text-sm text-gray-500">0/4</span>
@@ -103,7 +113,7 @@ function cmpRender() {
 
     var sel = allOffers.filter(function(o) { return selected.indexOf(o.id) !== -1; });
 
-    var h = '<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm">';
+    var h = '<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cmp-table-wrap"><div class="overflow-x-auto"><table class="w-full text-sm" style="min-width:820px">';
 
     // Header
     h += '<thead><tr class="border-b"><th class="text-left p-4 bg-gray-50 font-medium text-gray-600 w-32">Параметр</th>';
@@ -111,7 +121,7 @@ function cmpRender() {
         var logo = o.logo_url || '';
         if (logo.indexOf('/public/') === 0) logo = logo.substring(7);
         var logoHtml = logo ? '<img src="' + logo + '" alt="" class="w-full h-full object-contain p-1" loading="lazy" decoding="async">' : '<span class="text-xl">🏦</span>';
-        h += '<th class="p-4 text-center min-w-[150px]"><div class="flex flex-col items-center gap-2"><div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">' + logoHtml + '</div><span class="font-bold text-gray-900 text-sm">' + o.title + '</span><button onclick="cmpToggle(' + o.id + ')" class="text-xs text-gray-400 hover:text-red-500">✕ Убрать</button></div></th>';
+        h += '<th class="p-4 text-center min-w-[130px]"><div class="flex flex-col items-center gap-2"><div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">' + logoHtml + '</div><span class="font-bold text-gray-900 text-sm">' + o.title + '</span><button onclick="cmpToggle(' + o.id + ')" class="text-xs text-gray-400 hover:text-red-500">✕ Убрать</button></div></th>';
     });
     h += '</tr></thead><tbody>';
 

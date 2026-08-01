@@ -90,7 +90,7 @@ $pageHeadHtml = <<<'HTML'
 .offer-calc-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:2rem;align-items:start}.offer-calc-side{background:#f9fafb;border:1px solid #f1f5f9;border-radius:1rem;padding:1.5rem}
 @media (min-width:768px){.offer-main-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:1023px){.offer-calc-grid{grid-template-columns:1fr}}
-@media (max-width:639px){.offer-page-wrap{padding:1.5rem 1rem}.offer-main-card{padding:1.25rem}.offer-calc-card{padding:1.25rem}.offer-top{gap:1rem;align-items:flex-start}.offer-logo{width:4.25rem;height:4.25rem}.offer-main-grid,.offer-main-grid-4{grid-template-columns:1fr 1fr;gap:.75rem}.offer-metric-value{font-size:1rem}.offer-cta{width:100%;justify-content:center}}
+@media (max-width:639px){.offer-page-wrap{padding:1.25rem .875rem}.offer-main-card{padding:1rem}.offer-calc-card,.offer-form-card,.offer-related-card{padding:1rem}.offer-top{gap:.875rem;align-items:flex-start}.offer-logo{width:4rem;height:4rem}.offer-main-grid,.offer-main-grid-4{grid-template-columns:1fr 1fr;gap:.625rem}.offer-metric{padding:.875rem}.offer-metric-value{font-size:.95rem;line-height:1.35;word-break:break-word}.offer-title-2{font-size:1.2rem;margin-bottom:1rem}.offer-cta{width:100%;justify-content:center;padding:.9rem 1rem}.offer-main-card .flex.flex-wrap.gap-2{gap:.375rem}.offer-main-card .rounded-full{max-width:100%}.offer-main-card .rounded-full span,.offer-main-card .rounded-full{white-space:normal}.prose table{display:block;overflow-x:auto;white-space:nowrap}}
 </style>
 HTML;
 
