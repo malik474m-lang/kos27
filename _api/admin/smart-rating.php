@@ -26,7 +26,7 @@ function collectOfferMetrics(PDO $db, int $period): array {
 
         $approved = 0; $rejected = 0; $payout = 0.0;
         try {
-            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
+            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
             $pstmt->execute([$oid]);
             foreach ($pstmt->fetchAll() as $row) {
                 if ($row['status'] === 'approved') { $approved = (int)$row['cnt']; $payout = (float)$row['total']; }

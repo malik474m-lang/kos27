@@ -933,7 +933,7 @@ Object.keys(groups).forEach(function(cat){
   h+='</div></div>';
 });
 
-document.getElementById('p-smart').innerHTML=h;});}
+document.getElementById('p-smart').innerHTML=h;}).catch(function(err){document.getElementById('p-smart').innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-6"><h2 class="text-xl font-bold text-red-700 mb-2">Ошибка загрузки умного рейтинга</h2><p class="text-sm text-red-600">'+e((err&&err.message)?err.message:'Неизвестная ошибка')+'</p></div>';});}
 function smartApply(){if(!confirm('Применить умную сортировку ко всем офферам? Текущий ручной порядок будет перезаписан внутри каждой категории.'))return;ap('/smart-rating?period='+_smartPeriod,{method:'POST'}).then(function(d){if(d.success){alert(d.message);lSmart();}else alert(d.error||'Ошибка');});}
 
 /* ============ FUNNEL ============ */
@@ -1225,7 +1225,7 @@ h+='<div class="bg-white rounded-xl border shadow-sm"><div class="p-4 border-b f
 if(subs.length){
 h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Email</th><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
 subs.forEach(s=>{
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-mono text-xs">'+e(s.email)+'</td><td class="p-3 text-xs text-gray-500">'+new Date(s.subscribed_at).toLocaleDateString('ru-RU')+'</td><td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Активен':'Отписан')+'</span></td>';
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-mono text-xs">'+e(s.email)+'</td><td class="p-3 text-xs text-gray-500">'+((s.created_at||s.subscribed_at)?new Date((s.created_at||s.subscribed_at).replace(' ','T')).toLocaleDateString('ru-RU'):'—')+'</td><td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Активен':'Отписан')+'</span></td>';
 h+='<td class="p-3 text-right space-x-2">';
 h+='<button onclick="subToggle('+s.id+','+(s.is_active?0:1)+')" class="text-blue-600 hover:underline text-xs">'+(s.is_active?'Отключить':'Включить')+'</button>';
 h+='<button onclick="subDel('+s.id+',\''+e(s.email)+'\')" class="text-red-500 hover:underline text-xs">Удалить</button>';
@@ -1234,7 +1234,7 @@ h+='</tbody></table></div>';
 }else{h+='<p class="p-4 text-gray-500 text-sm">Нет подписчиков</p>';}
 h+='</div>';
 
-document.getElementById('p-subs').innerHTML=h;});}
+document.getElementById('p-subs').innerHTML=h;}).catch(function(err){document.getElementById('p-subs').innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-6"><h2 class="text-xl font-bold text-red-700 mb-2">Ошибка загрузки подписчиков</h2><p class="text-sm text-red-600">'+e((err&&err.message)?err.message:'Неизвестная ошибка')+'</p></div>';});}
 
 // Форма рассылки
 function nlForm(n){
