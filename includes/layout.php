@@ -87,7 +87,22 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     </script>
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
     <style>
+        html, body { max-width:100%; overflow-x:hidden; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        main { max-width:100%; overflow-x:hidden; }
+        img, svg, video, canvas, iframe { max-width:100%; height:auto; }
+        .prose table { display:block; max-width:100%; overflow-x:auto; white-space:nowrap; }
+        #exit-popup { max-width:calc(100vw - 24px); max-height:calc(100vh - 24px); overflow-y:auto; }
+        #exit-popup-form-row { display:flex; gap:10px; margin-bottom:12px; }
+        #exit-popup-features { display:flex; gap:12px; margin-top:16px; }
+        @media (max-width: 640px) {
+            #exit-popup { width:calc(100vw - 24px) !important; border-radius:18px !important; }
+            #exit-popup-form-row { flex-direction:column; gap:12px !important; }
+            #exit-popup-email { width:100% !important; min-width:0 !important; }
+            #exit-popup-btn { width:100% !important; display:block !important; }
+            #exit-popup-features { gap:8px !important; }
+            #exit-popup-features > div { padding:10px 8px !important; }
+        }
         .gradient-hero { background: linear-gradient(135deg, #1a56db 0%, #7e3af2 100%); }
         .card-hover { transition: transform .2s, box-shadow .2s; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,.1); }
@@ -263,13 +278,13 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         </div>
         <div style="padding:24px">
             <form id="exit-popup-form" onsubmit="return exitPopupSubmit(event)">
-                <div style="display:flex;gap:10px;margin-bottom:12px">
+                <div id="exit-popup-form-row" style="display:flex;gap:10px;margin-bottom:12px">
                     <input type="email" id="exit-popup-email" placeholder="Ваш email" required style="flex:1;border:2px solid #e5e7eb;border-radius:12px;padding:14px 16px;font-size:15px;outline:none;transition:border .2s" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#e5e7eb'">
                     <button type="submit" id="exit-popup-btn" style="background:#059669;color:#fff;border:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap">Получить</button>
                 </div>
                 <div id="exit-popup-msg" style="display:none;text-align:center;padding:8px;border-radius:8px;font-size:13px;margin-bottom:8px"></div>
             </form>
-            <div style="display:flex;gap:12px;margin-top:16px">
+            <div id="exit-popup-features" style="display:flex;gap:12px;margin-top:16px">
                 <div style="flex:1;background:#f0fdf4;border-radius:12px;padding:12px;text-align:center">
                     <div style="font-size:20px">💰</div>
                     <div style="font-size:11px;color:#166534;font-weight:600;margin-top:4px">Лучшие ставки</div>
