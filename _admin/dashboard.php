@@ -2904,15 +2904,16 @@ fetch(A+'/seo-duplicates/fix',{method:'POST',headers:{'Content-Type':'applicatio
 }
 
 function lSeoDuplicates(){
-var el=document.getElementById('p-health');
-var existing=el.innerHTML;
+var slot=document.getElementById('seo-dup-slot');
+if(!slot) slot=document.getElementById('p-health');
+if(!slot) return;
 var shell='';
 shell+='<div id="seo-dup-shell" class="bg-white rounded-xl border p-6 mt-6">';
 shell+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><h3 class="text-lg font-bold">🔍 SEO: Дубли title и description</h3><div class="flex flex-wrap gap-2"><button type="button" onclick="seoDupFix('titles')" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-50">🤖 Исправить title</button><button type="button" onclick="seoDupFix('descriptions')" class="bg-white border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-50">🤖 Исправить description</button><button type="button" onclick="seoDupFix('all')" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700">🤖 Исправить всё</button></div></div>';
 shell+='<div class="text-xs text-gray-500 mb-4">Исправление использует YandexGPT, если API-ключ настроен. Иначе применяется шаблонный fallback для снятия дублей.</div>';
 shell+='<div id="seo-dup-loading"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div>';
 shell+='</div>';
-el.innerHTML=existing+shell;
+slot.innerHTML=shell;
 ap('/seo-duplicates').then(function(d){
 var box=document.getElementById('seo-dup-loading');
 if(!box)return;
@@ -2948,7 +2949,7 @@ if(box)box.innerHTML='<div class="bg-red-50 rounded-lg p-4"><h4 class="font-semi
 
 function lHealth(){
 var el=document.getElementById('p-health');
-el.innerHTML='<div class="text-center py-12"><p class="text-gray-500">⏳ Проверка...</p></div>';
+el.innerHTML='<div id="health-main-loading" class="text-center py-12"><p class="text-gray-500">⏳ Проверка...</p></div><div id="seo-dup-slot"></div>';
 setTimeout(function(){try{lSeoDuplicates();}catch(e){}},0);
 ap('/health-check').then(d=>{
 var s=d.score||0;
@@ -2982,7 +2983,7 @@ h+='<div class="bg-gray-50 border border-gray-200 rounded-xl p-4"><h3 class="fon
 infos.forEach(c=>{h+='<div class="text-sm text-gray-600">• '+e(c.msg)+'</div>';});
 h+='</div>';}
 
-el.innerHTML=h;el.querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});});}
+var hm=document.getElementById('health-main-loading'); if(hm){ hm.outerHTML='<div id="health-main">'+h+'</div>'; } else { el.innerHTML='<div id="health-main">'+h+'</div><div id="seo-dup-slot"></div>'; } document.getElementById('health-main').querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});});}
 
 
 </script>
