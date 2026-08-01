@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/minify.php';
+require_once __DIR__ . '/../data/cities.php';
 ob_start('minifyHtmlOutput');
 ?>
 <!DOCTYPE html>
@@ -82,6 +83,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 const A='/api/admin';
 var siteName='<?= e(SITE_NAME) ?>';
 var SITE_URL='<?= e(SITE_URL) ?>';
+var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
@@ -750,6 +752,8 @@ function gD(id){if(confirm('Удалить?'))ap('/geo-redirects/'+id,{method:'D
 
 /* ============ CITY SEO ============ */
 var _csCat='microloans';
+var _ctsCityFilter='';
+var _ctsTagFilter='';
 function lCS(){
 var cat=_csCat;
 Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), ap('/tags')]).then(([list, cityTagList, allTags])=>{
@@ -807,24 +811,27 @@ ap('/city-seo/'+id,{method:'PUT',body:JSON.stringify({metaTitle:document.getElem
 function csDel(id){if(confirm('Удалить SEO-текст? (будет регенерирован автоматически)'))ap('/city-seo/'+id,{method:'DELETE'}).then(()=>lCS());}
 
 function renderCityTagSeoBlock(list, allTags, cat){
+var cityOptions='<option value="">Все города</option>'+adminCities.map(function(c){return '<option value="'+e(c.slug)+'"'+(_ctsCityFilter===c.slug?' selected':'')+'>'+e(c.name)+'</option>';}).join('');
+var tagOptions='<option value="">Все теги</option>'+allTags.filter(function(t){return t.category===cat;}).map(function(t){return '<option value="'+e(t.slug)+'"'+(_ctsTagFilter===t.slug?' selected':'')+'>'+e(t.title)+'</option>';}).join('');
+var filtered=list.filter(function(item){
+  return (!_ctsCityFilter || item.city_slug===_ctsCityFilter) && (!_ctsTagFilter || item.tag_slug===_ctsTagFilter);
+});
 var h='';
-h+='<div class="mt-10 flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏷️ SEO-тексты для страниц город + тег</h2><div class="flex gap-2">';
-h+='<button onclick="ctsGen(false)" class="btn-p text-sm" id="cts-gen-btn">⚡ Шаблоны</button>';
-h+='<button onclick="ctsGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cts-gpt-btn">🤖 YandexGPT</button>';
-h+='</div></div>';
+h+='<div class="mt-10 flex flex-col gap-4 mb-6"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"><h2 class="text-xl font-bold">🏷️ SEO-тексты для страниц город + тег</h2><div class="flex gap-2"><button onclick="ctsGen(false)" class="btn-p text-sm" id="cts-gen-btn">⚡ Шаблоны</button><button onclick="ctsGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cts-gpt-btn">🤖 YandexGPT</button></div></div>';
+h+='<div class="grid md:grid-cols-2 gap-3 bg-white rounded-xl border p-4"><div><label class="block text-xs font-medium mb-1">Фильтр по городу</label><select id="cts-city-filter" onchange="_ctsCityFilter=this.value;lCS()" class="sel-f text-sm">'+cityOptions+'</select></div><div><label class="block text-xs font-medium mb-1">Фильтр по тегу</label><select id="cts-tag-filter" onchange="_ctsTagFilter=this.value;lCS()" class="sel-f text-sm">'+tagOptions+'</select></div></div></div>';
 h+='<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 text-sm text-indigo-700">';
-h+='<strong>Что генерируется:</strong> title, H1, description и SEO-текст для страниц вида <code>/город/type/тег</code>. Например: <code>/zajmy/tyumen/type/bez-otkaza</code>.';
+h+='<strong>Что генерируется:</strong> title, H1, description и SEO-текст для страниц вида <code>/город/type/тег</code>. Например: <code>/zajmy/tyumen/type/bez-otkaza</code>. Фильтры выше можно использовать и для выборочной генерации.';
 h+='</div>';
-h+='<p class="text-sm text-gray-500 mb-4">Сгенерировано city+tag страниц: <strong>'+(list.length||0)+'</strong></p>';
-if(list.length){
+h+='<p class="text-sm text-gray-500 mb-4">Сгенерировано city+tag страниц: <strong>'+(list.length||0)+'</strong>'+(filtered.length!==list.length?' <span class="text-gray-400">(показано: '+filtered.length+')</span>':'')+'</p>';
+if(filtered.length){
 h+='<div class="bg-white rounded-xl border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">Тег</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-24">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
-list.forEach(function(s){
+filtered.forEach(function(s){
 var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
 h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3">'+e(s.tag_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,70))+(s.seo_h1&&s.seo_h1.length>70?'...':'')+'</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="ctsEdit('+s.id+','+JSON.stringify(s).replace(/"/g,'&quot;')+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="ctsDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
 });
 h+='</tbody></table></div></div>';
 }else{
-h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет city+tag SEO-текстов. Нажмите ⚡ Шаблоны для генерации.</p></div>';
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет city+tag SEO-текстов для выбранных фильтров. Используйте ⚡ Шаблоны или 🤖 YandexGPT.</p></div>';
 }
 return h;
 }
@@ -833,7 +840,7 @@ function ctsGen(useGPT){
 var btn=document.getElementById(useGPT?'cts-gpt-btn':'cts-gen-btn');
 var oldText=btn.textContent;
 btn.disabled=true;btn.textContent='⏳ Генерация...';
-ap('/city-tag-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:false})}).then(d=>{
+ap('/city-tag-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:false,citySlug:_ctsCityFilter||null,tagSlug:_ctsTagFilter||null})}).then(d=>{
 btn.disabled=false;btn.textContent=oldText;
 if(d.success)alert('Сгенерировано: '+d.generated+'; пропущено: '+d.skipped+'; ошибок: '+d.errors+'; всего: '+d.total);
 else alert(d.error||'Ошибка');
