@@ -114,7 +114,7 @@ try {
 } catch (Exception $e) {}
 
 // === БД ===
-$requiredTables = ['offers','articles','reviews','subscribers','click_stats','offer_tags','offer_tag_links','categories','users','postback_conversions','newsletters','ab_tests','ab_variants','page_views','admin_users'];
+$requiredTables = ['offers','articles','reviews','subscribers','click_stats','offer_tags','offer_tag_links','categories','users','postback_conversions','newsletters','ab_tests','ab_variants','page_views','admin_users','city_tag_seo_texts'];
 $existingTables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
 $missingTables = array_diff($requiredTables, $existingTables);
 if ($missingTables) { $checks[] = ['level'=>'error','msg'=>count($missingTables).' таблиц не найдено (миграции?)','items'=>array_values($missingTables)]; $score -= 10; }

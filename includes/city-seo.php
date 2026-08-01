@@ -55,6 +55,32 @@ function cleanGptHtml(string $text): string {
     return trim($result);
 }
 
+
+function ensureCityTagSeoTable(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        getDB()->exec("CREATE TABLE IF NOT EXISTS `city_tag_seo_texts` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `city_slug` varchar(255) NOT NULL,
+          `category` varchar(100) NOT NULL DEFAULT 'microloans',
+          `tag_slug` varchar(255) NOT NULL,
+          `meta_title` varchar(500) DEFAULT NULL,
+          `seo_h1` varchar(500) DEFAULT NULL,
+          `seo_text` text DEFAULT NULL,
+          `meta_description` text DEFAULT NULL,
+          `generated_by` enum('template','yandexgpt','manual') NOT NULL DEFAULT 'template',
+          `created_at` timestamp NULL DEFAULT current_timestamp(),
+          `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `city_tag_cat` (`city_slug`,`category`,`tag_slug`),
+          KEY `idx_city_slug` (`city_slug`),
+          KEY `idx_tag_slug` (`tag_slug`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+    } catch (Exception $e) {}
+}
+
 function getCitySeoText(array $city, string $category = 'microloans'): ?array {
     $db = getDB();
     $stmt = $db->prepare("SELECT * FROM city_seo_texts WHERE city_slug = ? AND category = ? LIMIT 1");
@@ -203,5 +229,109 @@ function getOrGenerateCitySeo(array $city, string $category = 'microloans'): arr
     if ($existing) return $existing;
     $seo = generateCitySeoTemplate($city, $category);
     try { saveCitySeo($city['slug'], $category, $seo); } catch (Exception $e) {}
+    return $seo;
+}
+
+function getCityTagSeoText(array $city, array $tag, string $category = 'microloans'): ?array {
+    ensureCityTagSeoTable();
+    $db = getDB();
+    try {
+        $stmt = $db->prepare("SELECT * FROM city_tag_seo_texts WHERE city_slug = ? AND category = ? AND tag_slug = ? LIMIT 1");
+        $stmt->execute([$city['slug'], $category, $tag['slug']]);
+        return $stmt->fetch() ?: null;
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+function generateCityTagSeoTemplate(array $city, array $tag, string $category = 'microloans'): array {
+    $name = $city['name'];
+    $prep = $city['prep'];
+    $region = $city['region'];
+    $tagTitle = $tag['title'] ?? ($tag['h1'] ?? 'Подборка');
+    $tagH1Base = $tag['h1'] ?: $tagTitle;
+    $tagDesc = trim((string)($tag['description'] ?? ''));
+    $catLabels = ['microloans'=>'займы','credits'=>'кредиты','credit_cards'=>'кредитные карты','debit_cards'=>'дебетовые карты'];
+    $catLabel = $catLabels[$category] ?? 'финансовые предложения';
+
+    $h1 = $tagH1Base . ' в ' . $prep;
+    $metaTitle = ($tag['meta_title'] ?? $tagTitle) . ' в ' . $prep . ' | ' . SITE_NAME;
+    $metaDescription = ($tag['meta_description'] ?? $tagDesc) ?: ($tagTitle . ' в ' . $prep . '. Сравните лучшие ' . $catLabel . ' и оформите онлайн.');
+    $body = "<h3>{$tagTitle} в {$prep}</h3>\n"
+        . "<p>Жителям {$name} ({$region}) доступны {$tagTitle} с онлайн-оформлением и быстрым решением. Мы собрали предложения, которые подходят под запрос пользователя и позволяют сравнить условия, ставки и лимиты.</p>\n"
+        . "<h3>Что важно проверить перед оформлением</h3>\n"
+        . "<ul><li>Ставку и полную стоимость услуги</li><li>Максимальную доступную сумму</li><li>Срок возврата и возможность досрочного погашения</li><li>Требования к заёмщику и документам</li></ul>\n"
+        . "<h3>Как выбрать лучший вариант</h3>\n"
+        . "<p>Если вы ищете {$tagTitle} в {$prep}, сравните несколько предложений, обратите внимание на одобрение, отзывы и условия акций для новых клиентов. Используйте подборку на этой странице, чтобы быстро найти подходящий вариант.</p>";
+
+    return [
+        'meta_title' => mb_substr($metaTitle, 0, 500),
+        'seo_h1' => $h1,
+        'seo_text' => $body,
+        'meta_description' => mb_substr($metaDescription, 0, 500),
+        'generated_by' => 'template',
+    ];
+}
+
+function generateCityTagSeoGPT(array $city, array $tag, string $category = 'microloans'): ?array {
+    if (!YANDEX_GPT_API_KEY || !YANDEX_FOLDER_ID) return null;
+
+    $catLabels = ['microloans'=>'займы','credits'=>'кредиты','credit_cards'=>'кредитные карты','debit_cards'=>'дебетовые карты'];
+    $catLabel = $catLabels[$category] ?? 'финансовые предложения';
+    $tagTitle = $tag['title'] ?? ($tag['h1'] ?? 'подборка');
+
+    $prompt = "Напиши уникальный SEO-комплект для страницы \"{$tagTitle} в {$city['prep']}\" на русском языке. "
+        . "Категория: {$catLabel}. Город: {$city['name']}, регион: {$city['region']}. "
+        . "Верни только JSON с полями meta_title, seo_h1, meta_description, seo_text. "
+        . "seo_text — 300-500 слов в HTML с абзацами и 2-3 подзаголовками. Без markdown. Без тройных кавычек. "
+        . "Избегай дублей и канцелярита. Упомяни онлайн-оформление, сравнение условий и особенности запроса пользователя.";
+
+    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
+            'content' => json_encode([
+                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
+                'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 3000],
+                'messages' => [
+                    ['role' => 'system', 'text' => 'Ты SEO-редактор финансового сайта. Отвечаешь только валидным JSON без markdown.'],
+                    ['role' => 'user', 'text' => $prompt],
+                ],
+            ]),
+            'timeout' => 90,
+        ],
+    ]));
+    if (!$response) return null;
+
+    $result = json_decode($response, true);
+    $text = trim((string)($result['result']['alternatives'][0]['message']['text'] ?? ''));
+    if (!$text) return null;
+
+    $text = preg_replace('/^```\s*json\s*/i', '', $text);
+    $text = preg_replace('/```$/', '', $text);
+    $parsed = json_decode(trim($text), true);
+    if (!is_array($parsed) || empty($parsed['seo_h1'])) return null;
+
+    return [
+        'meta_title' => mb_substr((string)($parsed['meta_title'] ?? ($tagTitle . ' в ' . $city['prep'] . ' | ' . SITE_NAME)), 0, 500),
+        'seo_h1' => mb_substr((string)$parsed['seo_h1'], 0, 500),
+        'seo_text' => cleanGptHtml((string)($parsed['seo_text'] ?? '')),
+        'meta_description' => mb_substr((string)($parsed['meta_description'] ?? ''), 0, 500),
+        'generated_by' => 'yandexgpt',
+    ];
+}
+
+function saveCityTagSeo(string $citySlug, string $category, string $tagSlug, array $seoData): void {
+    ensureCityTagSeoTable();
+    $db = getDB();
+    $db->prepare("INSERT INTO city_tag_seo_texts (city_slug, category, tag_slug, meta_title, seo_h1, seo_text, meta_description, generated_by) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE meta_title=VALUES(meta_title), seo_h1=VALUES(seo_h1), seo_text=VALUES(seo_text), meta_description=VALUES(meta_description), generated_by=VALUES(generated_by)")
+       ->execute([$citySlug, $category, $tagSlug, $seoData['meta_title'] ?? null, $seoData['seo_h1'] ?? null, $seoData['seo_text'] ?? null, $seoData['meta_description'] ?? null, $seoData['generated_by'] ?? 'template']);
+}
+
+function getOrGenerateCityTagSeo(array $city, array $tag, string $category = 'microloans'): array {
+    $existing = getCityTagSeoText($city, $tag, $category);
+    if ($existing) return $existing;
+    $seo = generateCityTagSeoTemplate($city, $tag, $category);
+    try { saveCityTagSeo($city['slug'], $category, $tag['slug'], $seo); } catch (Exception $e) {}
     return $seo;
 }

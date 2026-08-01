@@ -752,7 +752,7 @@ function gD(id){if(confirm('Удалить?'))ap('/geo-redirects/'+id,{method:'D
 var _csCat='microloans';
 function lCS(){
 var cat=_csCat;
-ap('/city-seo?category='+cat).then(list=>{
+Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), ap('/tags')]).then(([list, cityTagList, allTags])=>{
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏙️ SEO-тексты для городов</h2><div class="flex gap-2">';
 h+='<select id="cs-cat" onchange="_csCat=this.value;lCS()" class="sel-f text-sm w-auto"><option value="microloans"'+(cat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(cat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(cat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(cat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select>';
 h+='<button onclick="csGen(false)" class="btn-p text-sm" id="cs-gen-btn">⚡ Шаблоны</button>';
@@ -776,6 +776,7 @@ h+='</tbody></table></div>';
 }else{
 h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет сгенерированных текстов. Нажмите ⚡ Шаблоны для генерации.</p></div>';
 }
+h+=renderCityTagSeoBlock(cityTagList, allTags, cat);
 document.getElementById('p-cityseo').innerHTML=h;
 });}
 
@@ -804,6 +805,52 @@ function csSave(ev,id){ev.preventDefault();
 ap('/city-seo/'+id,{method:'PUT',body:JSON.stringify({metaTitle:document.getElementById('cs-mt').value,seoH1:document.getElementById('cs-h1').value,seoText:document.getElementById('cs-text').value,metaDescription:document.getElementById('cs-md').value})}).then(()=>{cm();lCS();});return false;}
 
 function csDel(id){if(confirm('Удалить SEO-текст? (будет регенерирован автоматически)'))ap('/city-seo/'+id,{method:'DELETE'}).then(()=>lCS());}
+
+function renderCityTagSeoBlock(list, allTags, cat){
+var h='';
+h+='<div class="mt-10 flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏷️ SEO-тексты для страниц город + тег</h2><div class="flex gap-2">';
+h+='<button onclick="ctsGen(false)" class="btn-p text-sm" id="cts-gen-btn">⚡ Шаблоны</button>';
+h+='<button onclick="ctsGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cts-gpt-btn">🤖 YandexGPT</button>';
+h+='</div></div>';
+h+='<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 text-sm text-indigo-700">';
+h+='<strong>Что генерируется:</strong> title, H1, description и SEO-текст для страниц вида <code>/город/type/тег</code>. Например: <code>/zajmy/tyumen/type/bez-otkaza</code>.';
+h+='</div>';
+h+='<p class="text-sm text-gray-500 mb-4">Сгенерировано city+tag страниц: <strong>'+(list.length||0)+'</strong></p>';
+if(list.length){
+h+='<div class="bg-white rounded-xl border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">Тег</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-24">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
+list.forEach(function(s){
+var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3">'+e(s.tag_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,70))+(s.seo_h1&&s.seo_h1.length>70?'...':'')+'</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="ctsEdit('+s.id+','+JSON.stringify(s).replace(/"/g,'&quot;')+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="ctsDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
+});
+h+='</tbody></table></div></div>';
+}else{
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет city+tag SEO-текстов. Нажмите ⚡ Шаблоны для генерации.</p></div>';
+}
+return h;
+}
+
+function ctsGen(useGPT){
+var btn=document.getElementById(useGPT?'cts-gpt-btn':'cts-gen-btn');
+var oldText=btn.textContent;
+btn.disabled=true;btn.textContent='⏳ Генерация...';
+ap('/city-tag-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:false})}).then(d=>{
+btn.disabled=false;btn.textContent=oldText;
+if(d.success)alert('Сгенерировано: '+d.generated+'; пропущено: '+d.skipped+'; ошибок: '+d.errors+'; всего: '+d.total);
+else alert(d.error||'Ошибка');
+lCS();
+}).catch(()=>{btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
+
+function ctsEdit(id,s){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать city+tag SEO: '+e(s.city_slug)+' / '+e(s.tag_slug)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return ctsSave(event,'+id+')">'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">H1</label><input id="cts-h1" class="input-f" value="'+e(s.seo_h1||'')+'"></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Title</label><input id="cts-mt" class="input-f" value="'+e(s.meta_title||'')+'"></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="cts-md" class="input-f" value="'+e(s.meta_description||'')+'"></div>'+
+'<div class="mb-3"><label class="block text-xs font-medium mb-1">SEO-текст (HTML)</label><textarea id="cts-text" class="input-f font-mono text-xs" rows="12">'+e(s.seo_text||'')+'</textarea></div>'+
+'<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
+}
+function ctsSave(ev,id){ev.preventDefault();ap('/city-tag-seo/'+id,{method:'PUT',body:JSON.stringify({metaTitle:document.getElementById('cts-mt').value,seoH1:document.getElementById('cts-h1').value,seoText:document.getElementById('cts-text').value,metaDescription:document.getElementById('cts-md').value})}).then(()=>{cm();lCS();});return false;}
+function ctsDel(id){if(confirm('Удалить city+tag SEO-текст?'))ap('/city-tag-seo/'+id,{method:'DELETE'}).then(()=>lCS());}
 
 
 /* ============ STATS ============ */

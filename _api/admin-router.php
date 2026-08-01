@@ -77,6 +77,14 @@ if (preg_match('#^/city-seo/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/city-seo-delete.php'; exit; }
 }
 
+if ($adminUri === '/city-tag-seo' && $method === 'GET') { require __DIR__ . '/admin/city-tag-seo-list.php'; exit; }
+if ($adminUri === '/city-tag-seo/generate' && $method === 'POST') { require __DIR__ . '/admin/city-tag-seo-generate.php'; exit; }
+if (preg_match('#^/city-tag-seo/(\d+)$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'PUT') { require __DIR__ . '/admin/city-tag-seo-update.php'; exit; }
+    if ($method === 'DELETE') { require __DIR__ . '/admin/city-tag-seo-delete.php'; exit; }
+}
+
 
 // Сортировка (drag-and-drop)
 if ($adminUri === '/reorder' && $method === 'POST') { require __DIR__ . '/admin/reorder.php'; exit; }

@@ -56,6 +56,21 @@ try {
         }
     } catch (Exception $e) {}
     
+    // Город + тег SEO
+    try {
+        $stmt = $db->query("SELECT id, city_slug, category, tag_slug, seo_h1, meta_title, meta_description FROM city_tag_seo_texts");
+        foreach ($stmt->fetchAll() as $row) {
+            $t = $row['meta_title'] ?: ($row['seo_h1'] ?: '');
+            $d = $row['meta_description'] ?: '';
+            if ($t) {
+                $base = $catUrls[$row['category']] ?? '/zajmy';
+                if ($row['category'] === 'credit_cards') $base = '/karty/kreditnye';
+                elseif ($row['category'] === 'debit_cards') $base = '/karty/debetovye';
+                $pages[] = ['type' => 'city_tag_seo', 'url' => $base . '/' . $row['city_slug'] . '/type/' . $row['tag_slug'], 'name' => $row['city_slug'] . ' / ' . $row['tag_slug'], 'title' => $t, 'description' => $d, 'id' => $row['id']];
+            }
+        }
+    } catch (Exception $e) {}
+
     // Ищем дубли title
     $titleMap = [];
     foreach ($pages as $p) {

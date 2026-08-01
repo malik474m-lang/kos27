@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../data/cities.php';
+require_once __DIR__ . '/../includes/city-seo.php';
 
 $city = findCityBySlug($citySlug);
 if (!$city) {
@@ -65,9 +66,10 @@ $catLabels = ['microloans'=>'Займы','credits'=>'Кредиты','credit_car
 $catUrl = $catUrls[$cityTypeCategory] ?? '/zajmy';
 $catLabel = $catLabels[$cityTypeCategory] ?? 'Предложения';
 
-$cityTagTitle = ($type['h1'] ?: $type['title']) . ' в ' . $city['prep'];
-$pageTitle = ($type['meta_title'] ? ($type['meta_title'] . ' в ' . $city['prep']) : ($cityTagTitle . ' | ' . SITE_NAME));
-$metaDescription = ($type['meta_description'] ?: $type['description'] ?: '') ?: ($type['title'] . ' в ' . $city['prep'] . '. Сравните ' . count($offers) . ' предложений и выберите лучший вариант.');
+$cityTagSeo = getOrGenerateCityTagSeo($city, $type, $cityTypeCategory);
+$cityTagTitle = ($cityTagSeo['seo_h1'] ?? '') ?: (($type['h1'] ?: $type['title']) . ' в ' . $city['prep']);
+$pageTitle = ($cityTagSeo['meta_title'] ?? '') ?: ($cityTagTitle . ' | ' . SITE_NAME);
+$metaDescription = ($cityTagSeo['meta_description'] ?? '') ?: (($type['title'] . ' в ' . $city['prep'] . '. Сравните ' . count($offers) . ' предложений и выберите лучший вариант.'));
 
 ob_start();
 ?>
@@ -102,7 +104,11 @@ ob_start();
         <?php foreach ($offers as $offer): echo renderOfferCard($offer); endforeach; ?>
     </div>
 
-    <?php if (!empty($type['content'])): ?>
+    <?php if (!empty($cityTagSeo['seo_text'])): ?>
+    <div class="bg-white rounded-xl border border-gray-100 p-8 mt-8 prose max-w-none text-gray-700">
+        <?= safeAutoLink($cityTagSeo['seo_text'], 8) ?>
+    </div>
+    <?php elseif (!empty($type['content'])): ?>
     <div class="bg-white rounded-xl border border-gray-100 p-8 mt-8 prose max-w-none text-gray-700">
         <?= safeAutoLink($type['content'], 8) ?>
     </div>
