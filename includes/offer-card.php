@@ -83,10 +83,16 @@ function renderOfferCard(array $offer): string {
                         } catch (Exception $ex) { $offerTagsCache[$oid] = []; }
                     }
                     $catTagUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+                    $cityContext = $GLOBALS['current_city_context'] ?? null;
+                    $cityContextType = $GLOBALS['current_city_context_type'] ?? '';
                     foreach ($offerTagsCache[$oid] as $otag):
                         $tagUrl = ($catTagUrls[$otag['category']] ?? '/zajmy') . '/type/' . $otag['slug'];
+                        $tagLabel = $otag['title'];
+                        if ($cityContextType === 'city' && is_array($cityContext) && !empty($cityContext['prep'])) {
+                            $tagLabel .= ' в ' . $cityContext['prep'];
+                        }
                     ?>
-                    <a href="<?= $tagUrl ?>" class="inline-flex items-center gap-0.5 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"><?= $otag['icon'] ?? '🏷️' ?> <?= e($otag['title']) ?></a>
+                    <a href="<?= $tagUrl ?>" class="inline-flex items-center gap-0.5 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"><?= $otag['icon'] ?? '🏷️' ?> <?= e($tagLabel) ?></a>
                     <?php endforeach; ?>
                 </div>
             </div>

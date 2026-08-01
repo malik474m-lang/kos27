@@ -7,6 +7,9 @@ require_once __DIR__ . '/../includes/city-seo.php';
 $city = findCityBySlug($citySlug);
 if (!$city) { http_response_code(404); $pageTitle='Город не найден — кредиты'; $metaDescription='Страница кредитов для выбранного города не найдена.'; $pageHeadHtml = '<meta name="robots" content="noindex,follow">'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Город не найден</h1></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
 
+$GLOBALS['current_city_context'] = $city;
+$GLOBALS['current_city_context_type'] = 'city';
+
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'credits' ORDER BY sort_order ASC")->fetchAll();
 $citySeo = getOrGenerateCitySeo($city, 'credits');
