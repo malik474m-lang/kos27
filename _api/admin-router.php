@@ -160,6 +160,7 @@ if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/
 
 // SEO дубли
 if ($adminUri === '/seo-duplicates') { require __DIR__ . '/admin/seo-duplicates.php'; exit; }
+if ($adminUri === '/seo-duplicates/fix' && $method === 'POST') { require __DIR__ . '/admin/seo-duplicates-fix.php'; exit; }
 
 // Здоровье сайта
 if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'; exit; }
