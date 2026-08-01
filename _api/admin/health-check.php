@@ -74,7 +74,12 @@ if ($noCoverArticles) { $checks[] = ['level'=>'warning','msg'=>"$noCoverArticles
 
 // === SEO ГОРОДОВ ===
 $totalCities = 41;
-$seoCount = (int)$db->query("SELECT COUNT(DISTINCT city_slug) FROM city_seo_texts")->fetchColumn();
+try {
+    $seoCityRows = $db->query("SELECT city_slug FROM city_seo_texts WHERE city_slug IS NOT NULL AND city_slug != '' LIMIT 1000")->fetchAll(PDO::FETCH_COLUMN);
+    $seoCount = count(array_unique($seoCityRows));
+} catch (Exception $e) {
+    $seoCount = 0;
+}
 $missingCitySeo = $totalCities - $seoCount;
 if ($missingCitySeo > 0) { $checks[] = ['level'=>'warning','msg'=>"$missingCitySeo городов без SEO-текста",'fixTab'=>'cityseo','fixItemType'=>'cityseo']; $score -= min(5, $missingCitySeo); }
 else { $checks[] = ['level'=>'ok','msg'=>'SEO-тексты для всех городов сгенерированы']; }
