@@ -49,6 +49,20 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     <url><loc><?= SITE_URL ?><?= $tagCatUrl ?>/type/<?= e($tag['slug']) ?></loc><lastmod><?= date('Y-m-d', strtotime($tag['created_at'])) ?></lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
     <?php endforeach; ?>
 
+
+    <!-- City + Tag pages -->
+    <?php foreach ($cities as $c): foreach ($allTags as $tag):
+        $tagCatUrl = $catUrls[$tag['category']] ?? '/zajmy';
+        $cityTagUrl = $tagCatUrl . '/' . $c['slug'] . '/type/' . $tag['slug'];
+        if ($tag['category'] === 'credit_cards') {
+            $cityTagUrl = '/karty/kreditnye/' . $c['slug'] . '/type/' . $tag['slug'];
+        } elseif ($tag['category'] === 'debit_cards') {
+            $cityTagUrl = '/karty/debetovye/' . $c['slug'] . '/type/' . $tag['slug'];
+        }
+    ?>
+    <url><loc><?= SITE_URL ?><?= $cityTagUrl ?></loc><lastmod><?= date('Y-m-d', strtotime($tag['created_at'])) ?></lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+    <?php endforeach; endforeach; ?>
+
     <!-- Займы по городам -->
     <?php foreach ($cities as $c): ?>
     <url><loc><?= SITE_URL ?>/zajmy/<?= e($c['slug']) ?></loc><changefreq>weekly</changefreq><priority>0.5</priority></url>

@@ -12,6 +12,7 @@ $GLOBALS['current_city_context_type'] = 'city';
 
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC")->fetchAll();
+$cityTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'microloans' ORDER BY sort_order ASC LIMIT 8")->fetchAll();
 $year = date('Y');
 
 $citySeoMeta = getCitySeoText($city, 'microloans');
@@ -35,6 +36,17 @@ ob_start();
 
     <h1 class="text-3xl font-bold text-gray-900 mb-3">Займы в <?= e($city['prep']) ?> на карту онлайн</h1>
     <p class="text-gray-600 text-lg mb-8">Получите займ в <?= e($city['prep']) ?> за 15 минут. Сравните <?= count($offers) ?> предложений от проверенных МФО. Первый займ под 0%!</p>
+
+    <?php if (!empty($cityTags)): ?>
+    <div class="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Популярные подборки в <?= e($city['prep']) ?></h2>
+        <div class="flex flex-wrap gap-2">
+            <?php foreach ($cityTags as $tag): ?>
+            <a href="/zajmy/<?= e($city['slug']) ?>/type/<?= e($tag['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-100 transition-colors"><?php if (!empty($tag['icon'])): ?><span><?= $tag['icon'] ?></span><?php endif; ?><?= e($tag['title']) ?> в <?= e($city['prep']) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Преимущества -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

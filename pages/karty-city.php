@@ -12,6 +12,8 @@ $GLOBALS['current_city_context_type'] = 'city';
 
 $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category IN ('credit_cards','debit_cards') ORDER BY sort_order ASC")->fetchAll();
+$creditCardTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'credit_cards' ORDER BY sort_order ASC LIMIT 6")->fetchAll();
+$debitCardTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'debit_cards' ORDER BY sort_order ASC LIMIT 6")->fetchAll();
 $citySeo = getOrGenerateCitySeo($city, 'credit_cards');
 $nearbyCities = array_filter($cities, fn($c) => $c['slug'] !== $citySlug);
 shuffle($nearbyCities);
@@ -25,6 +27,32 @@ ob_start();
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Карты → <?= e($city['name']) ?></nav>
     <h1 class="text-3xl font-bold text-gray-900 mb-8"><?= e($citySeo['seo_h1'] ?? "Банковские карты в {$city['prep']}") ?></h1>
+    <?php if (!empty($creditCardTags) || !empty($debitCardTags)): ?>
+    <div class="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Популярные подборки карт в <?= e($city['prep']) ?></h2>
+        <?php if (!empty($creditCardTags)): ?>
+        <div class="mb-4">
+            <p class="text-sm font-semibold text-gray-700 mb-2">Кредитные карты</p>
+            <div class="flex flex-wrap gap-2">
+                <?php foreach ($creditCardTags as $tag): ?>
+                <a href="/karty/kreditnye/<?= e($city['slug']) ?>/type/<?= e($tag['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-100 transition-colors"><?php if (!empty($tag['icon'])): ?><span><?= $tag['icon'] ?></span><?php endif; ?><?= e($tag['title']) ?> в <?= e($city['prep']) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($debitCardTags)): ?>
+        <div>
+            <p class="text-sm font-semibold text-gray-700 mb-2">Дебетовые карты</p>
+            <div class="flex flex-wrap gap-2">
+                <?php foreach ($debitCardTags as $tag): ?>
+                <a href="/karty/debetovye/<?= e($city['slug']) ?>/type/<?= e($tag['slug']) ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-100 transition-colors"><?php if (!empty($tag['icon'])): ?><span><?= $tag['icon'] ?></span><?php endif; ?><?= e($tag['title']) ?> в <?= e($city['prep']) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <div class="grid gap-4">
         <?php foreach ($offers as $offer): echo renderOfferCard($offer); endforeach; ?>
     </div>
