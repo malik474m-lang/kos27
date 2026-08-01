@@ -864,6 +864,9 @@ if(_statsTimer)clearInterval(_statsTimer);
 _statsTimer=setInterval(function(){ap('/stats?period='+_statsPeriod).then(function(ns){
 document.querySelector('#p-stats .text-3xl.font-bold')&&lS();
 });},30000);
+}).catch(function(err){
+if(_statsTimer)clearInterval(_statsTimer);
+document.getElementById('p-stats').innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-6"><h2 class="text-xl font-bold text-red-700 mb-2">Ошибка загрузки статистики</h2><p class="text-sm text-red-600 mb-3">'+e((err&&err.message)?err.message:'Неизвестная ошибка')+'</p><p class="text-xs text-red-500">Проверьте API /api/admin/stats и обновите страницу.</p></div>';
 });}
 
 function stChart(s){
