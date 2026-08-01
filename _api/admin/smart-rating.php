@@ -8,7 +8,7 @@ $pageViewDateColumn = dbDateColumn('page_views', ['viewed_at', 'created_at']);
 $method = $_SERVER['REQUEST_METHOD'];
 $period = max(1, min(365, (int)($_GET['period'] ?? 30)));
 
-function collectOfferMetrics(PDO $db, int $period): array {
+function collectOfferMetrics(PDO $db, int $period, string $clickDateColumn, string $pageViewDateColumn): array {
     $offers = $db->query("SELECT id, title, slug, category, logo_url, rating, review_count, sort_order, created_at FROM offers WHERE is_active = 1 ORDER BY category ASC, sort_order ASC, id ASC")->fetchAll();
     $result = [];
 
@@ -114,13 +114,13 @@ function scoreOffersByCategory(array $rows): array {
 }
 
 if ($method === 'GET') {
-    $scored = scoreOffersByCategory(collectOfferMetrics($db, $period));
+    $scored = scoreOffersByCategory(collectOfferMetrics($db, $period, $clickDateColumn, $pageViewDateColumn));
     apiCacheEnd(['period' => $period, 'items' => $scored]);
     exit;
 }
 
 if ($method === 'POST') {
-    $scored = scoreOffersByCategory(collectOfferMetrics($db, $period));
+    $scored = scoreOffersByCategory(collectOfferMetrics($db, $period, $clickDateColumn, $pageViewDateColumn));
     $byCategory = [];
     foreach ($scored as $row) $byCategory[$row['category']][] = $row;
 
