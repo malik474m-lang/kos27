@@ -34,6 +34,7 @@ function getSiteSettings(): array {
         'site_name' => 'Космозайм',
         'site_url' => getenv('NEXT_PUBLIC_SITE_URL') ?: 'https://kosmozaim.ru',
         'site_logo' => '',
+        'site_favicon' => '',
         'yandex_gpt_api_key' => getenv('YANDEX_GPT_API_KEY') ?: '',
         'yandex_folder_id' => getenv('YANDEX_FOLDER_ID') ?: '',
         'yandex_metrika_id' => getenv('NEXT_PUBLIC_YANDEX_METRIKA_ID') ?: '',

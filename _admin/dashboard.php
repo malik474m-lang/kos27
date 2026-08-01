@@ -2563,6 +2563,17 @@ h+='<div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-cente
 }
 h+='<div><input type="file" id="set-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="text-sm" onchange="setUploadLogo(this)"><p class="text-xs text-gray-500 mt-1">PNG, JPG, SVG или WebP. Рекомендуемый размер: <strong>200×60 px</strong> (или пропорционально). Макс. 2 МБ.</p></div>';
 h+='</div></div>';
+
+// Favicon
+h+='<div class="mt-4"><label class="block text-sm font-medium mb-2">Favicon сайта</label>';
+h+='<div class="flex items-center gap-4">';
+if(siteSettings.site_favicon){
+h+='<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border"><img src="'+siteSettings.site_favicon+'" class="max-w-full max-h-full object-contain"></div>';
+}else{
+h+='<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center border text-lg">🌐</div>';
+}
+h+='<div><input type="file" id="set-favicon-file" accept="image/png,image/svg+xml,image/x-icon" class="text-sm" onchange="setUploadFavicon(this)"><p class="text-xs text-gray-500 mt-1">PNG, SVG или ICO. Рекомендуемый размер: <strong>32×32</strong> или <strong>64×64 px</strong>. Макс. 1 МБ.</p></div>';
+h+='</div></div>';
 h+='</div>';
 
 // YandexGPT
@@ -2605,6 +2616,17 @@ ap('/settings',{method:'POST',body:JSON.stringify(data)}).then(d=>{
 if(d.success){alert('✅ Настройки сохранены!\n\nРекомендуем сбросить кэш страниц.');lSet();}
 else alert('❌ '+(d.error||'Ошибка'));
 });return false;}
+
+function setUploadFavicon(input){
+if(!input.files||!input.files[0])return;
+var file=input.files[0];
+if(file.size>1*1024*1024){alert('Файл слишком большой (макс. 1 МБ)');return;}
+var fd=new FormData();
+fd.append('favicon',file);
+fetch(A+'/settings',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+if(d.success){alert('✅ Favicon загружен! Обновите страницу.');lSet();}
+else alert('❌ '+(d.error||'Ошибка'));
+}).catch(()=>alert('Ошибка загрузки'));}
 
 function setUploadLogo(input){
 if(!input.files||!input.files[0])return;

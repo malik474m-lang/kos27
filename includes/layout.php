@@ -58,7 +58,13 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta name="twitter:image" content="<?= e(str_starts_with($ogImage, 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
     <?php endif; ?>
 
+    <?php
+    $siteFavicon = $_siteSettings['site_favicon'] ?? '';
+    if ($siteFavicon && file_exists(__DIR__ . '/..' . $siteFavicon)): ?>
+    <link rel="icon" href="<?= e($siteFavicon) ?>" type="<?= str_ends_with($siteFavicon, '.svg') ? 'image/svg+xml' : (str_ends_with($siteFavicon, '.png') ? 'image/png' : 'image/x-icon') ?>">
+    <?php else: ?>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <?php endif; ?>
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
     <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>

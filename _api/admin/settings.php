@@ -17,6 +17,7 @@ function loadSettings(): array {
         'site_name' => 'Космозайм',
         'site_url' => 'https://kosmozaim.ru',
         'site_logo' => '',
+        'site_favicon' => '',
         'yandex_gpt_api_key' => '',
         'yandex_folder_id' => '',
         'yandex_metrika_id' => '',
@@ -56,6 +57,44 @@ if ($method === 'GET') {
 
 // POST — сохранить настройки или загрузить логотип
 if ($method === 'POST') {
+    
+    // Загрузка favicon
+    if (!empty($_FILES['favicon'])) {
+        $file = $_FILES['favicon'];
+        $allowed = ['image/png', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'];
+        
+        if (!in_array($file['type'], $allowed)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Разрешены: PNG, SVG, ICO']);
+            exit;
+        }
+        
+        if ($file['size'] > 1024 * 1024) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Максимальный размер 1 МБ']);
+            exit;
+        }
+        
+        $ext = match($file['type']) {
+            'image/png' => 'png',
+            'image/svg+xml' => 'svg',
+            default => 'ico'
+        };
+        
+        $filename = 'favicon.' . $ext;
+        $destPath = __DIR__ . '/../../' . $filename;
+        
+        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+            $settings = loadSettings();
+            $settings['site_favicon'] = '/' . $filename;
+            file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            echo json_encode(['success' => true, 'favicon' => '/' . $filename]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Ошибка загрузки']);
+        }
+        exit;
+    }
     
     // Загрузка логотипа
     if (!empty($_FILES['logo'])) {
@@ -118,7 +157,7 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id'];
     
     foreach ($allowedFields as $field) {
         if (isset($data[$field])) {
