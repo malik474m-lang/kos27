@@ -130,7 +130,7 @@ function renderBestOfferRecommendation(?array $offer, string $title = 'Самы�
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 min-w-[240px]">
+            <div class="grid grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[240px]">
                 <div class="rounded-xl bg-white/10 p-4 text-center">
                     <p class="text-xs uppercase tracking-wide text-blue-100">Smart score</p>
                     <p class="mt-1 text-2xl font-bold"><?= e((string)($offer['_smart_score'] ?? '0')) ?></p>
@@ -150,9 +150,9 @@ function renderBestOfferRecommendation(?array $offer, string $title = 'Самы�
             </div>
         </div>
 
-        <div class="mt-6 flex flex-wrap gap-3">
-            <a href="/offer/<?= e($offer['slug']) ?>" class="inline-flex items-center rounded-xl bg-white px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50 transition-colors">Подробнее</a>
-            <a href="/click/<?= (int)$offer['id'] ?>?src=best-choice" target="_blank" rel="noopener noreferrer nofollow sponsored" class="inline-flex items-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors">Оформить</a>
+        <div class="mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <a href="/offer/<?= e($offer['slug']) ?>" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-white px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50 transition-colors">Подробнее</a>
+            <a href="/click/<?= (int)$offer['id'] ?>?src=best-choice" target="_blank" rel="noopener noreferrer nofollow sponsored" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors">Оформить</a>
         </div>
     </section>
     <?php

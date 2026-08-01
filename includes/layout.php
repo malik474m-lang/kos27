@@ -407,8 +407,8 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <div id="cookie-consent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:0;margin:0">
         <div style="max-width:600px;margin:0 auto 16px;background:#1f2937;color:#f3f4f6;border-radius:16px;padding:20px 24px;box-shadow:0 -4px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">
             <span style="font-size:24px;flex-shrink:0">🍪</span>
-            <p style="flex:1;min-width:200px;margin:0">Мы используем cookie для корректной работы сайта и аналитики. Продолжая пользоваться сайтом, вы соглашаетесь с <a href="/privacy" style="color:#93c5fd;text-decoration:underline">политикой конфиденциальности</a>.</p>
-            <button onclick="acceptCookies()" style="background:#3b82f6;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">Принять</button>
+            <p style="flex:1;min-width:0;margin:0">Мы используем cookie для корректной работы сайта и аналитики. Продолжая пользоваться сайтом, вы соглашаетесь с <a href="/privacy" style="color:#93c5fd;text-decoration:underline">политикой конфиденциальности</a>.</p>
+            <button onclick="acceptCookies()" style="background:#3b82f6;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;width:100%;max-width:180px">Принять</button>
         </div>
     </div>
     <script>

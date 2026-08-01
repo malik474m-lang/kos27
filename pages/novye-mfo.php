@@ -27,7 +27,7 @@ ob_start();
                 <h1 class="mt-2 text-3xl sm:text-4xl font-bold text-gray-900">Новые МФО</h1>
                 <p class="mt-3 text-gray-600 max-w-3xl">На этой странице собраны последние добавленные микрофинансовые организации и свежие предложения по займам. Сравнивайте условия, лимиты, льготные периоды и выбирайте подходящий вариант.</p>
             </div>
-            <div class="grid grid-cols-2 gap-3 min-w-[240px]">
+            <div class="grid grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[240px]">
                 <div class="rounded-xl bg-blue-50 p-4 border border-blue-100">
                     <p class="text-xs uppercase tracking-wide text-blue-500">Всего МФО</p>
                     <p class="mt-1 text-2xl font-bold text-blue-700"><?= count($offers) ?></p>
