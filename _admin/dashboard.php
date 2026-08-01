@@ -3021,6 +3021,17 @@ var typeLabels={offer:'Офферы',article:'Статьи',city:'Города',
 });
 h+='</div></div>';
 
+// SEO-файлы (автогенерация)
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📁 SEO-файлы (автогенерация)</h3>';
+h+='<div class="grid sm:grid-cols-3 gap-4">';
+h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-blue-600">📄 sitemap.xml</h4><a href="/sitemap.xml" target="_blank" class="text-xs text-blue-500 hover:underline">Открыть →</a></div><p class="text-xs text-gray-500">Автоматически генерируется из БД</p><div id="sitemap-stats" class="mt-2 text-xs text-gray-400">Загрузка...</div></div>';
+h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-green-600">🤖 robots.txt</h4><a href="/robots.txt" target="_blank" class="text-xs text-green-500 hover:underline">Открыть →</a></div><p class="text-xs text-gray-500">Правила для поисковых роботов</p><button onclick="idxPreviewRobots()" class="mt-2 text-xs text-green-600 hover:underline">Предпросмотр</button></div>';
+h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-purple-600">🧠 llms.txt</h4><a href="/llms.txt" target="_blank" class="text-xs text-purple-500 hover:underline">Открыть →</a></div><p class="text-xs text-gray-500">Для AI-систем (ChatGPT, Claude)</p><button onclick="idxPreviewLlms()" class="mt-2 text-xs text-purple-600 hover:underline">Предпросмотр</button></div>';
+h+='</div></div>';
+
+// Изменения контента
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">📝 Последние изменения контента</h3><select id="idx-changes-days" onchange="idxLoadChanges()" class="text-sm border rounded px-2 py-1"><option value="7">7 дней</option><option value="14">14 дней</option><option value="30">30 дней</option></select></div><div id="idx-changes" class="p-4"><p class="text-gray-500 text-sm">⏳ Загрузка...</p></div></div>';
+
 // Экспорт URL
 h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📤 Экспорт URL для переобхода</h3>';
 h+='<div class="grid sm:grid-cols-2 gap-4">';
@@ -3292,6 +3303,67 @@ h+='</div>';
 box.innerHTML=h;
 });
 }
+function idxLoadSeoStats(){
+ap('/indexing?action=seo-files').then(function(d){
+var box=document.getElementById('sitemap-stats');
+if(box && d.sitemap){
+box.innerHTML='URL: <strong>'+d.sitemap.total_urls+'</strong> • Офферы: '+d.sitemap.offers+' • Статьи: '+d.sitemap.articles+' • Город+Тег: '+d.sitemap.city_tag_pages;
+}
+});
+}
+
+function idxPreviewLlms(){
+ap('/indexing?action=preview-llms').then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧠 Предпросмотр llms.txt</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto"><pre class="text-xs text-gray-700 whitespace-pre-wrap">'+e(d.content)+'</pre></div>';
+h+='<div class="flex justify-end mt-4"><a href="/llms.txt" target="_blank" class="btn-p">Открыть файл →</a></div>';
+modal(h);
+});
+}
+
+function idxPreviewRobots(){
+ap('/indexing?action=preview-robots').then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🤖 Предпросмотр robots.txt</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="bg-gray-50 rounded-lg p-4"><pre class="text-sm text-gray-700 whitespace-pre-wrap">'+e(d.content)+'</pre></div>';
+h+='<div class="flex justify-end mt-4"><a href="/robots.txt" target="_blank" class="btn-p">Открыть файл →</a></div>';
+modal(h);
+});
+}
+
+function idxLoadChanges(){
+var days=document.getElementById('idx-changes-days').value||7;
+var box=document.getElementById('idx-changes');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка...</p>';
+
+ap('/indexing?action=changes&days='+days).then(function(d){
+if(!d.changes||!d.changes.length){ box.innerHTML='<p class="text-gray-500 text-sm">Нет изменений за выбранный период</p>'; return; }
+
+var typeIcons={offer:'📋',article:'📰',tag:'🏷️',city_seo:'🏙️',city_tag_seo:'🗺️'};
+var typeNames={offer:'Оффер',article:'Статья',tag:'Тег',city_seo:'SEO города',city_tag_seo:'SEO город+тег'};
+
+var h='<div class="space-y-2 max-h-64 overflow-y-auto">';
+d.changes.forEach(function(c){
+var icon=typeIcons[c.type]||'📄';
+var typeName=typeNames[c.type]||c.type;
+h+='<div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">';
+h+='<span class="text-lg">'+icon+'</span>';
+h+='<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-900 truncate">'+e(c.title)+'</p><p class="text-xs text-gray-500">'+typeName+' • '+new Date(c.updated_at).toLocaleString("ru-RU")+'</p></div>';
+h+='</div>';
+});
+h+='</div>';
+box.innerHTML=h;
+});
+}
+
+// Автозагрузка статистики SEO-файлов при открытии вкладки
+var _origLIndexing = lIndexing;
+lIndexing = function(){
+_origLIndexing();
+setTimeout(function(){ idxLoadSeoStats(); idxLoadChanges(); }, 500);
+};
+
 
 </script>
 </body>

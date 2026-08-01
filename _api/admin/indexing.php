@@ -361,3 +361,123 @@ switch ($action) {
     default:
         echo json_encode(['error' => 'Unknown action']);
 }
+
+    case 'seo-files':
+        // Статистика по SEO-файлам
+        $siteUrl = SITE_URL;
+        
+        // Проверяем sitemap
+        $sitemapUrl = $siteUrl . '/sitemap.xml';
+        $robotsUrl = $siteUrl . '/robots.txt';
+        $llmsUrl = $siteUrl . '/llms.txt';
+        
+        // Считаем элементы
+        $offersCount = $db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
+        $articlesCount = $db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
+        $tagsCount = $db->query("SELECT COUNT(*) as cnt FROM offer_tags WHERE is_active = 1")->fetch()['cnt'];
+        
+        require_once __DIR__ . '/../../data/cities.php';
+        $citiesCount = count(getCities());
+        
+        // Примерное количество URL в sitemap
+        $staticPages = 15;
+        $cityPages = $citiesCount * 3; // zajmy, kredity, karty
+        $cityTagPages = $citiesCount * $tagsCount;
+        $totalSitemapUrls = $staticPages + $offersCount + $articlesCount + $tagsCount + $cityPages + $cityTagPages;
+        
+        // Последние изменения
+        $lastOfferUpdate = $db->query("SELECT MAX(updated_at) as dt FROM offers WHERE is_active = 1")->fetch()['dt'];
+        $lastArticleUpdate = $db->query("SELECT MAX(updated_at) as dt FROM articles WHERE is_published = 1")->fetch()['dt'];
+        $lastTagUpdate = $db->query("SELECT MAX(created_at) as dt FROM offer_tags WHERE is_active = 1")->fetch()['dt'];
+        
+        $lastUpdate = max(
+            strtotime($lastOfferUpdate ?? '2020-01-01'),
+            strtotime($lastArticleUpdate ?? '2020-01-01'),
+            strtotime($lastTagUpdate ?? '2020-01-01')
+        );
+        
+        echo json_encode([
+            'sitemap' => [
+                'url' => $sitemapUrl,
+                'total_urls' => (int)$totalSitemapUrls,
+                'offers' => (int)$offersCount,
+                'articles' => (int)$articlesCount,
+                'tags' => (int)$tagsCount,
+                'cities' => (int)$citiesCount,
+                'city_tag_pages' => (int)$cityTagPages,
+                'last_update' => date('Y-m-d H:i:s', $lastUpdate)
+            ],
+            'robots' => [
+                'url' => $robotsUrl,
+                'disallow' => ['/admin/', '/api/', '/click/', '/favorites', '/compare', '/search']
+            ],
+            'llms' => [
+                'url' => $llmsUrl,
+                'offers' => (int)$offersCount,
+                'articles' => (int)$articlesCount,
+                'tags' => (int)$tagsCount,
+                'auto_generated' => true
+            ]
+        ]);
+        break;
+        
+    case 'preview-llms':
+        // Предпросмотр llms.txt
+        ob_start();
+        require __DIR__ . '/../../pages/llms.php';
+        $content = ob_get_clean();
+        echo json_encode(['content' => $content]);
+        break;
+        
+    case 'preview-robots':
+        // Предпросмотр robots.txt
+        ob_start();
+        require __DIR__ . '/../../pages/robots.php';
+        $content = ob_get_clean();
+        echo json_encode(['content' => $content]);
+        break;
+        
+    case 'changes':
+        // Последние изменения контента
+        $days = (int)($_GET['days'] ?? 7);
+        
+        $changes = [];
+        
+        // Офферы
+        $stmt = $db->prepare("SELECT 'offer' as type, title, slug, updated_at FROM offers WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+        $stmt->execute([$days]);
+        $changes = array_merge($changes, $stmt->fetchAll());
+        
+        // Статьи
+        $stmt = $db->prepare("SELECT 'article' as type, title, slug, updated_at FROM articles WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+        $stmt->execute([$days]);
+        $changes = array_merge($changes, $stmt->fetchAll());
+        
+        // Теги
+        $stmt = $db->prepare("SELECT 'tag' as type, title, slug, created_at as updated_at FROM offer_tags WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY created_at DESC LIMIT 20");
+        $stmt->execute([$days]);
+        $changes = array_merge($changes, $stmt->fetchAll());
+        
+        // City SEO
+        try {
+            $stmt = $db->prepare("SELECT 'city_seo' as type, CONCAT(city_slug, ' (', category, ')') as title, city_slug as slug, updated_at FROM city_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+            $stmt->execute([$days]);
+            $changes = array_merge($changes, $stmt->fetchAll());
+        } catch (Exception $e) {}
+        
+        // City+Tag SEO
+        try {
+            $stmt = $db->prepare("SELECT 'city_tag_seo' as type, CONCAT(city_slug, ' + ', tag_slug) as title, CONCAT(city_slug, '/', tag_slug) as slug, updated_at FROM city_tag_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+            $stmt->execute([$days]);
+            $changes = array_merge($changes, $stmt->fetchAll());
+        } catch (Exception $e) {}
+        
+        // Сортируем по дате
+        usort($changes, fn($a, $b) => strtotime($b['updated_at']) - strtotime($a['updated_at']));
+        
+        echo json_encode([
+            'days' => $days,
+            'count' => count($changes),
+            'changes' => array_slice($changes, 0, 50)
+        ]);
+        break;
