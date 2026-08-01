@@ -2090,18 +2090,26 @@ h+='<h3 class="font-bold mb-4">💵 Доход по офферам</h3>';
 h+='<div class="overflow-x-auto max-h-80 overflow-y-auto">';
 h+='<table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
 h+='<th class="px-3 py-2 text-left">Оффер</th>';
+h+='<th class="px-3 py-2 text-right">Клики</th>';
+h+='<th class="px-3 py-2 text-right">✅</th>';
+h+='<th class="px-3 py-2 text-right">❌</th>';
+h+='<th class="px-3 py-2 text-right">⏳</th>';
 h+='<th class="px-3 py-2 text-right">Доход</th>';
 h+='<th class="px-3 py-2 text-right">EPC</th>';
 h+='<th class="px-3 py-2 text-right">AR%</th>';
 h+='</tr></thead><tbody>';
 if(!d.by_offer||!d.by_offer.length){
-h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+h+='<tr><td colspan="8" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
 }else{
 d.by_offer.forEach(function(o){
 h+='<tr class="border-t hover:bg-gray-50">';
 h+='<td class="px-3 py-2"><div class="flex items-center gap-2">';
 if(o.logo_url)h+='<img src="'+e(o.logo_url)+'" class="w-6 h-6 rounded object-contain bg-gray-100">';
 h+='<span class="truncate max-w-32" title="'+e(o.title)+'">'+e(o.title)+'</span></div></td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+formatNum(o.clicks)+'</td>';
+h+='<td class="px-3 py-2 text-right text-green-600 font-medium">'+formatNum(o.approved)+'</td>';
+h+='<td class="px-3 py-2 text-right '+(Number(o.rejected)>0?'text-red-600 font-medium':'text-gray-400')+'">'+formatNum(o.rejected)+'</td>';
+h+='<td class="px-3 py-2 text-right text-yellow-600">'+formatNum(o.pending)+'</td>';
 h+='<td class="px-3 py-2 text-right font-medium text-green-600">'+formatMoney(o.revenue)+'</td>';
 h+='<td class="px-3 py-2 text-right">'+formatMoney(o.epc)+'</td>';
 h+='<td class="px-3 py-2 text-right">'+(o.approval_rate||0)+'%</td>';
@@ -2145,7 +2153,7 @@ h+='<th class="px-3 py-2 text-right">Одобр.</th>';
 h+='<th class="px-3 py-2 text-right">AR%</th>';
 h+='</tr></thead><tbody>';
 if(!d.by_partner||!d.by_partner.length){
-h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+h+='<tr><td colspan="8" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
 }else{
 d.by_partner.forEach(function(p){
 h+='<tr class="border-t hover:bg-gray-50">';
@@ -2169,7 +2177,7 @@ h+='<th class="px-3 py-2 text-right">Доход</th>';
 h+='<th class="px-3 py-2 text-right">EPC</th>';
 h+='</tr></thead><tbody>';
 if(!d.by_source||!d.by_source.length){
-h+='<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
+h+='<tr><td colspan="8" class="px-3 py-4 text-center text-gray-400">Нет данных</td></tr>';
 }else{
 d.by_source.forEach(function(s){
 h+='<tr class="border-t hover:bg-gray-50">';
@@ -2183,6 +2191,40 @@ h+='</tr>';
 h+='</tbody></table></div></div>';
 
 h+='</div>'; // end grid
+
+// Блок отклонённых конверсий
+var rejOffers=(d.by_offer||[]).filter(function(o){ return Number(o.rejected)>0; });
+if(rejOffers.length){
+h+='<div class="bg-white rounded-xl border p-6 mt-6">';
+h+='<h3 class="font-bold mb-4">❌ Отклонённые конверсии по офферам</h3>';
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-red-50"><tr>';
+h+='<th class="px-3 py-2 text-left">Оффер</th>';
+h+='<th class="px-3 py-2 text-right">Отклонено</th>';
+h+='<th class="px-3 py-2 text-right">Одобрено</th>';
+h+='<th class="px-3 py-2 text-right">Всего</th>';
+h+='<th class="px-3 py-2 text-right">AR%</th>';
+h+='<th class="px-3 py-2 text-right">Потеряно</th>';
+h+='</tr></thead><tbody>';
+rejOffers.sort(function(a,b){ return Number(b.rejected)-Number(a.rejected); });
+rejOffers.forEach(function(o){
+var total=Number(o.approved)+Number(o.rejected);
+var avgPayout=Number(o.approved)>0?(Number(o.revenue)/Number(o.approved)):0;
+var lost=Number(o.rejected)*avgPayout;
+h+='<tr class="border-t hover:bg-red-50/50">';
+h+='<td class="px-3 py-2"><div class="flex items-center gap-2">';
+if(o.logo_url)h+='<img src="'+e(o.logo_url)+'" class="w-6 h-6 rounded object-contain bg-gray-100">';
+h+='<span class="font-medium">'+e(o.title)+'</span></div></td>';
+h+='<td class="px-3 py-2 text-right text-red-600 font-bold">'+formatNum(o.rejected)+'</td>';
+h+='<td class="px-3 py-2 text-right text-green-600">'+formatNum(o.approved)+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+total+'</td>';
+h+='<td class="px-3 py-2 text-right"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(Number(o.approval_rate)>=50?'bg-green-100 text-green-700':'bg-red-100 text-red-700')+'">'+(o.approval_rate||0)+'%</span></td>';
+h+='<td class="px-3 py-2 text-right text-red-500">~'+formatMoney(lost)+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+h+='<p class="text-xs text-gray-400 mt-3">💡 «Потеряно» — примерная сумма, рассчитана по среднему вознаграждению за одобренные конверсии этого оффера.</p>';
+h+='</div>';
+}
 
 document.getElementById('p-analytics').innerHTML=h;
 
