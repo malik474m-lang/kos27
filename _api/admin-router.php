@@ -15,6 +15,9 @@ requireAdmin();
 // Лицензия
 if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.php"; exit; }
 
+// Индексация
+if (str_starts_with($adminUri, "/indexing")) { require __DIR__ . "/admin/indexing.php"; exit; }
+
 // Офферы
 if ($adminUri === '/offers' && $method === 'GET') { require __DIR__ . '/admin/offers-list.php'; exit; }
 if ($adminUri === '/offers' && $method === 'POST') { require __DIR__ . '/admin/offers-create.php'; exit; }

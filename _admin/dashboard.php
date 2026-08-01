@@ -49,6 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
+<button onclick="sw('indexing')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="indexing">🔍 Индексация</button>
 <button onclick="sw('security')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="security">🔒 Безопасность</button>
 </div></div></div>
 <div class="bg-gray-50 border-b"><div class="max-w-7xl mx-auto px-4 py-3 text-sm text-gray-500" id="admin-breadcrumb">Админка</div></div>
@@ -76,6 +77,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
+<div id="p-indexing" class="tp hidden"></div>
 </div>
 <div id="M"></div>
 <div id="M2"></div>
@@ -86,8 +88,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth})[t]?.();}
+const TAB_LABELS={indexing:'Индексация',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -2985,6 +2987,311 @@ h+='</div>';}
 
 var hm=document.getElementById('health-main-loading'); if(hm){ hm.outerHTML='<div id="health-main">'+h+'</div>'; } else { el.innerHTML='<div id="health-main">'+h+'</div><div id="seo-dup-slot"></div>'; } document.getElementById('health-main').querySelectorAll('.health-fix-btn').forEach(function(btn){btn.addEventListener('click',function(){goHealthFix(btn.getAttribute('data-fix-tab'), btn.getAttribute('data-fix-item-type')||'', btn.getAttribute('data-fix-item-id')||'');});});});}
 
+
+
+/* ============ INDEXING / SEO ============ */
+function lIndexing(){
+var el=document.getElementById('p-indexing');
+el.innerHTML='<div class="bg-white rounded-xl border p-6"><p class="text-gray-500">⏳ Загрузка...</p></div>';
+
+ap('/indexing?action=stats').then(function(d){
+if(d.error){ el.innerHTML='<div class="bg-red-50 rounded-xl p-6 text-red-700">'+e(d.error)+'</div>'; return; }
+
+var h='<div class="space-y-6">';
+
+// Заголовок
+h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">';
+h+='<div><h2 class="text-xl font-bold text-gray-900">🔍 Индексация и SEO</h2><p class="text-sm text-gray-500 mt-1">Ускорение индексации в Яндекс и Google</p></div>';
+h+='<div class="flex gap-2"><button onclick="idxSync()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🔄 Синхронизировать URL</button></div>';
+h+='</div>';
+
+// Статистика
+h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">';
+h+='<div class="bg-blue-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-blue-600">'+d.total_urls+'</p><p class="text-xs text-gray-500 mt-1">Всего URL</p></div>';
+h+='<div class="bg-yellow-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-yellow-600">'+d.recently_modified+'</p><p class="text-xs text-gray-500 mt-1">Изменено за 7 дней</p></div>';
+h+='<div class="bg-orange-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-orange-600">'+d.pending_yandex+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Яндекс</p></div>';
+h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-green-600">'+d.pending_google+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Google</p></div>';
+h+='</div>';
+
+// По типам
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📊 URL по типам</h3><div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">';
+var typeLabels={offer:'Офферы',article:'Статьи',city:'Города',city_tag:'Город+Тег',category:'Категории',static:'Статические'};
+(d.by_type||[]).forEach(function(t){
+  h+='<div class="bg-gray-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-gray-700">'+t.cnt+'</p><p class="text-xs text-gray-500">'+(typeLabels[t.url_type]||t.url_type)+'</p></div>';
+});
+h+='</div></div>';
+
+// Экспорт URL
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📤 Экспорт URL для переобхода</h3>';
+h+='<div class="grid sm:grid-cols-2 gap-4">';
+
+// Яндекс
+h+='<div class="border rounded-lg p-4"><h4 class="font-semibold text-red-600 mb-2">🔴 Яндекс.Вебмастер</h4>';
+h+='<p class="text-xs text-gray-500 mb-3">Скопируйте URL и вставьте в раздел "Переобход страниц"</p>';
+h+='<div class="space-y-2">';
+h+='<button onclick="idxExport(&#39;yandex&#39;,&#39;pending&#39;)" class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Ожидающие индексации ('+d.pending_yandex+')</button>';
+h+='<button onclick="idxExport(&#39;yandex&#39;,&#39;recent&#39;)" class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Изменённые за 7 дней ('+d.recently_modified+')</button>';
+h+='</div></div>';
+
+// Google
+h+='<div class="border rounded-lg p-4"><h4 class="font-semibold text-blue-600 mb-2">🔵 Google Search Console</h4>';
+h+='<p class="text-xs text-gray-500 mb-3">Скопируйте URL и используйте "Проверка URL"</p>';
+h+='<div class="space-y-2">';
+h+='<button onclick="idxExport(&#39;google&#39;,&#39;pending&#39;)" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Ожидающие индексации ('+d.pending_google+')</button>';
+h+='<button onclick="idxExport(&#39;google&#39;,&#39;recent&#39;)" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Изменённые за 7 дней</button>';
+h+='</div></div>';
+
+h+='</div></div>';
+
+// Недавние URL
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">🕐 Недавно изменённые URL</h3><button onclick="idxLoadRecent()" class="text-sm text-blue-600 hover:underline">Обновить</button></div><div id="idx-recent" class="p-4"><p class="text-gray-500 text-sm">Нажмите "Обновить" для загрузки</p></div></div>';
+
+// Лог
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">📜 Лог отправок</h3></div>';
+if(d.recent_logs&&d.recent_logs.length){
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Сервис</th><th class="p-3 text-left">Действие</th><th class="p-3 text-left">URL</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+d.recent_logs.forEach(function(log){
+  var svc=log.service==='yandex'?'🔴 Яндекс':'🔵 Google';
+  var status=log.status==='success'?'<span class="text-green-600">✓</span>':'<span class="text-red-600">✗</span>';
+  h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(log.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+svc+'</td><td class="p-3">'+e(log.action)+'</td><td class="p-3">'+log.urls_count+'</td><td class="p-3">'+status+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}else{
+h+='<p class="p-4 text-gray-500 text-sm">Нет записей</p>';
+}
+h+='</div>';
+
+h+='</div>';
+el.innerHTML=h;
+});
+}
+
+function idxSync(){
+if(!confirm('Синхронизировать все URL из базы данных?')) return;
+ap('/indexing?action=sync',{method:'POST'}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✓ Синхронизировано URL: '+d.synced);
+lIndexing();
+});
+}
+
+function idxExport(service,type){
+ap('/indexing?action=export-urls&service='+service+'&type='+type).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+if(d.count===0){ alert('Нет URL для экспорта'); return; }
+
+// Показываем модальное окно с URL
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📤 URL для '+(service==='yandex'?'Яндекс.Вебмастера':'Google Search Console')+' ('+d.count+')</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="mb-4"><p class="text-sm text-gray-500 mb-2">Скопируйте список URL:</p>';
+h+='<textarea id="idx-urls-textarea" class="input-f w-full h-64 font-mono text-xs" readonly>'+e(d.text)+'</textarea></div>';
+h+='<div class="flex gap-3"><button onclick="idxCopyUrls()" class="btn-p">📋 Скопировать</button>';
+if(service==='yandex'){
+h+='<a href="https://webmaster.yandex.ru/site/indexed-pages/recrawl/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
+}else{
+h+='<a href="https://search.google.com/search-console" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Google Search Console</a>';
+}
+h+='<button onclick="idxMarkSubmitted(&#39;'+service+'&#39;)" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">✓ Отметить отправленными</button></div>';
+modal(h);
+
+// Сохраняем URL для отметки
+window._idxExportedUrls=d.urls.map(function(u){ return u.replace(SITE_URL,''); });
+});
+}
+
+function idxCopyUrls(){
+var ta=document.getElementById('idx-urls-textarea');
+ta.select();
+document.execCommand('copy');
+alert('✓ Скопировано!');
+}
+
+function idxMarkSubmitted(service){
+var urls=window._idxExportedUrls||[];
+if(!urls.length){ alert('Нет URL'); return; }
+if(!confirm('Отметить '+urls.length+' URL как отправленные в '+(service==='yandex'?'Яндекс':'Google')+'?')) return;
+
+ap('/indexing?action=mark-submitted',{method:'POST',body:JSON.stringify({service:service,urls:urls})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✓ Отмечено: '+d.marked);
+cm();
+lIndexing();
+});
+}
+
+function idxLoadRecent(){
+var box=document.getElementById('idx-recent');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка...</p>';
+
+ap('/indexing?action=recent&days=7').then(function(urls){
+if(!urls||!urls.length){ box.innerHTML='<p class="text-gray-500 text-sm">Нет изменений за последние 7 дней</p>'; return; }
+
+var h='<div class="space-y-1 max-h-64 overflow-y-auto">';
+urls.slice(0,50).forEach(function(u){
+var yIcon=u.indexed_yandex?'🟢':'🔴';
+var gIcon=u.indexed_google?'🟢':'🔵';
+h+='<div class="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">';
+h+='<span class="text-sm font-mono text-gray-600 truncate flex-1">'+e(u.url)+'</span>';
+h+='<span class="text-xs text-gray-400 ml-2">'+new Date(u.last_modified).toLocaleDateString('ru-RU')+'</span>';
+h+='<span class="ml-2" title="Яндекс/Google">'+yIcon+gIcon+'</span>';
+h+='</div>';
+});
+if(urls.length>50) h+='<p class="text-xs text-gray-400 mt-2">...и ещё '+(urls.length-50)+' URL</p>';
+h+='</div>';
+box.innerHTML=h;
+});
+}
+
+/* ============ INDEXING / SEO ============ */
+function lIndexing(){
+var el=document.getElementById('p-indexing');
+el.innerHTML='<div class="bg-white rounded-xl border p-6"><p class="text-gray-500">⏳ Загрузка...</p></div>';
+
+ap('/indexing?action=stats').then(function(d){
+if(d.error){ el.innerHTML='<div class="bg-red-50 rounded-xl p-6 text-red-700">'+e(d.error)+'</div>'; return; }
+
+var h='<div class="space-y-6">';
+
+// Заголовок
+h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">';
+h+='<div><h2 class="text-xl font-bold text-gray-900">🔍 Индексация и SEO</h2><p class="text-sm text-gray-500 mt-1">Ускорение индексации в Яндекс и Google</p></div>';
+h+='<div class="flex gap-2"><button onclick="idxSync()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🔄 Синхронизировать URL</button></div>';
+h+='</div>';
+
+// Статистика
+h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">';
+h+='<div class="bg-blue-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-blue-600">'+d.total_urls+'</p><p class="text-xs text-gray-500 mt-1">Всего URL</p></div>';
+h+='<div class="bg-yellow-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-yellow-600">'+d.recently_modified+'</p><p class="text-xs text-gray-500 mt-1">Изменено за 7 дней</p></div>';
+h+='<div class="bg-orange-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-orange-600">'+d.pending_yandex+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Яндекс</p></div>';
+h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-green-600">'+d.pending_google+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Google</p></div>';
+h+='</div>';
+
+// По типам
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📊 URL по типам</h3><div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">';
+var typeLabels={offer:'Офферы',article:'Статьи',city:'Города',city_tag:'Город+Тег',category:'Категории',static:'Статические'};
+(d.by_type||[]).forEach(function(t){
+  h+='<div class="bg-gray-50 rounded-lg p-3 text-center"><p class="text-lg font-bold text-gray-700">'+t.cnt+'</p><p class="text-xs text-gray-500">'+(typeLabels[t.url_type]||t.url_type)+'</p></div>';
+});
+h+='</div></div>';
+
+// Экспорт URL
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📤 Экспорт URL для переобхода</h3>';
+h+='<div class="grid sm:grid-cols-2 gap-4">';
+
+// Яндекс
+h+='<div class="border rounded-lg p-4"><h4 class="font-semibold text-red-600 mb-2">🔴 Яндекс.Вебмастер</h4>';
+h+='<p class="text-xs text-gray-500 mb-3">Скопируйте URL и вставьте в раздел "Переобход страниц"</p>';
+h+='<div class="space-y-2">';
+h+='<button onclick="idxExport(&#39;yandex&#39;,&#39;pending&#39;)" class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Ожидающие индексации ('+d.pending_yandex+')</button>';
+h+='<button onclick="idxExport(&#39;yandex&#39;,&#39;recent&#39;)" class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Изменённые за 7 дней ('+d.recently_modified+')</button>';
+h+='</div></div>';
+
+// Google
+h+='<div class="border rounded-lg p-4"><h4 class="font-semibold text-blue-600 mb-2">🔵 Google Search Console</h4>';
+h+='<p class="text-xs text-gray-500 mb-3">Скопируйте URL и используйте "Проверка URL"</p>';
+h+='<div class="space-y-2">';
+h+='<button onclick="idxExport(&#39;google&#39;,&#39;pending&#39;)" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Ожидающие индексации ('+d.pending_google+')</button>';
+h+='<button onclick="idxExport(&#39;google&#39;,&#39;recent&#39;)" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium">📋 Изменённые за 7 дней</button>';
+h+='</div></div>';
+
+h+='</div></div>';
+
+// Недавние URL
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">🕐 Недавно изменённые URL</h3><button onclick="idxLoadRecent()" class="text-sm text-blue-600 hover:underline">Обновить</button></div><div id="idx-recent" class="p-4"><p class="text-gray-500 text-sm">Нажмите "Обновить" для загрузки</p></div></div>';
+
+// Лог
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">📜 Лог отправок</h3></div>';
+if(d.recent_logs&&d.recent_logs.length){
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Сервис</th><th class="p-3 text-left">Действие</th><th class="p-3 text-left">URL</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+d.recent_logs.forEach(function(log){
+  var svc=log.service==='yandex'?'🔴 Яндекс':'🔵 Google';
+  var status=log.status==='success'?'<span class="text-green-600">✓</span>':'<span class="text-red-600">✗</span>';
+  h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(log.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+svc+'</td><td class="p-3">'+e(log.action)+'</td><td class="p-3">'+log.urls_count+'</td><td class="p-3">'+status+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}else{
+h+='<p class="p-4 text-gray-500 text-sm">Нет записей</p>';
+}
+h+='</div>';
+
+h+='</div>';
+el.innerHTML=h;
+});
+}
+
+function idxSync(){
+if(!confirm('Синхронизировать все URL из базы данных?')) return;
+ap('/indexing?action=sync',{method:'POST'}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✓ Синхронизировано URL: '+d.synced);
+lIndexing();
+});
+}
+
+function idxExport(service,type){
+ap('/indexing?action=export-urls&service='+service+'&type='+type).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+if(d.count===0){ alert('Нет URL для экспорта'); return; }
+
+// Показываем модальное окно с URL
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📤 URL для '+(service==='yandex'?'Яндекс.Вебмастера':'Google Search Console')+' ('+d.count+')</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="mb-4"><p class="text-sm text-gray-500 mb-2">Скопируйте список URL:</p>';
+h+='<textarea id="idx-urls-textarea" class="input-f w-full h-64 font-mono text-xs" readonly>'+e(d.text)+'</textarea></div>';
+h+='<div class="flex gap-3"><button onclick="idxCopyUrls()" class="btn-p">📋 Скопировать</button>';
+if(service==='yandex'){
+h+='<a href="https://webmaster.yandex.ru/site/indexed-pages/recrawl/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Яндекс.Вебмастер</a>';
+}else{
+h+='<a href="https://search.google.com/search-console" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">→ Открыть Google Search Console</a>';
+}
+h+='<button onclick="idxMarkSubmitted(&#39;'+service+'&#39;)" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">✓ Отметить отправленными</button></div>';
+modal(h);
+
+// Сохраняем URL для отметки
+window._idxExportedUrls=d.urls.map(function(u){ return u.replace(SITE_URL,''); });
+});
+}
+
+function idxCopyUrls(){
+var ta=document.getElementById('idx-urls-textarea');
+ta.select();
+document.execCommand('copy');
+alert('✓ Скопировано!');
+}
+
+function idxMarkSubmitted(service){
+var urls=window._idxExportedUrls||[];
+if(!urls.length){ alert('Нет URL'); return; }
+if(!confirm('Отметить '+urls.length+' URL как отправленные в '+(service==='yandex'?'Яндекс':'Google')+'?')) return;
+
+ap('/indexing?action=mark-submitted',{method:'POST',body:JSON.stringify({service:service,urls:urls})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✓ Отмечено: '+d.marked);
+cm();
+lIndexing();
+});
+}
+
+function idxLoadRecent(){
+var box=document.getElementById('idx-recent');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка...</p>';
+
+ap('/indexing?action=recent&days=7').then(function(urls){
+if(!urls||!urls.length){ box.innerHTML='<p class="text-gray-500 text-sm">Нет изменений за последние 7 дней</p>'; return; }
+
+var h='<div class="space-y-1 max-h-64 overflow-y-auto">';
+urls.slice(0,50).forEach(function(u){
+var yIcon=u.indexed_yandex?'🟢':'🔴';
+var gIcon=u.indexed_google?'🟢':'🔵';
+h+='<div class="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">';
+h+='<span class="text-sm font-mono text-gray-600 truncate flex-1">'+e(u.url)+'</span>';
+h+='<span class="text-xs text-gray-400 ml-2">'+new Date(u.last_modified).toLocaleDateString('ru-RU')+'</span>';
+h+='<span class="ml-2" title="Яндекс/Google">'+yIcon+gIcon+'</span>';
+h+='</div>';
+});
+if(urls.length>50) h+='<p class="text-xs text-gray-400 mt-2">...и ещё '+(urls.length-50)+' URL</p>';
+h+='</div>';
+box.innerHTML=h;
+});
+}
 
 </script>
 </body>
