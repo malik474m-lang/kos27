@@ -1,7 +1,6 @@
 <?php
 /**
  * API для модуля индексации
- * Получение списка URL, статистики, отправка на индексацию
  */
 requireAdmin();
 
@@ -13,7 +12,6 @@ $action = $_GET['action'] ?? 'stats';
 try {
     $db->query("SELECT 1 FROM url_index_tracker LIMIT 1");
 } catch (Exception $e) {
-    // Создаём таблицы если не существуют
     $db->exec("CREATE TABLE IF NOT EXISTS `url_index_tracker` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `url` varchar(500) NOT NULL,
@@ -31,7 +29,6 @@ try {
         KEY `idx_type` (`url_type`),
         KEY `idx_last_modified` (`last_modified`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
-    
     $db->exec("CREATE TABLE IF NOT EXISTS `indexing_log` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `service` enum('yandex','google','bing') NOT NULL,
@@ -45,439 +42,181 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 }
 
-// Синхронизация URL из БД
 function syncUrlsFromDb(): array {
     global $db;
-    
     require_once __DIR__ . '/../../data/cities.php';
-    
-    $stats = ['added' => 0, 'updated' => 0];
-    $siteUrl = SITE_URL;
-    
-    $catUrls = [
-        'microloans' => '/zajmy',
-        'credits' => '/kredity',
-        'credit_cards' => '/karty/kreditnye',
-        'debit_cards' => '/karty/debetovye'
-    ];
-    
-    // Офферы
+    $stats = ['added' => 0];
+    $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+
     $offers = $db->query("SELECT slug, updated_at FROM offers WHERE is_active = 1")->fetchAll();
-    foreach ($offers as $o) {
-        $url = "/offer/{$o['slug']}";
-        upsertUrl($url, 'offer', $o['updated_at'], 0.8);
-        $stats['added']++;
-    }
-    
-    // Статьи
+    foreach ($offers as $o) { upsertUrl("/offer/{$o['slug']}", 'offer', $o['updated_at'], 0.8); $stats['added']++; }
+
     $articles = $db->query("SELECT slug, updated_at FROM articles WHERE is_published = 1")->fetchAll();
-    foreach ($articles as $a) {
-        $url = "/articles/{$a['slug']}";
-        upsertUrl($url, 'article', $a['updated_at'], 0.6);
-        $stats['added']++;
-    }
-    
-    // Теги
+    foreach ($articles as $a) { upsertUrl("/articles/{$a['slug']}", 'article', $a['updated_at'], 0.6); $stats['added']++; }
+
     $tags = $db->query("SELECT slug, category, created_at FROM offer_tags WHERE is_active = 1")->fetchAll();
-    foreach ($tags as $t) {
-        $catUrl = $catUrls[$t['category']] ?? '/zajmy';
-        $url = "{$catUrl}/type/{$t['slug']}";
-        upsertUrl($url, 'category', $t['created_at'], 0.7);
-        $stats['added']++;
-    }
-    
-    // Города
+    foreach ($tags as $t) { upsertUrl(($catUrls[$t['category']] ?? '/zajmy')."/type/{$t['slug']}", 'category', $t['created_at'], 0.7); $stats['added']++; }
+
     $cities = getCities();
     foreach ($cities as $c) {
-        // Займы
         upsertUrl("/zajmy/{$c['slug']}", 'city', date('Y-m-d H:i:s'), 0.6);
-        // Кредиты
         upsertUrl("/kredity/{$c['slug']}", 'city', date('Y-m-d H:i:s'), 0.5);
-        // Карты
         upsertUrl("/karty/{$c['slug']}", 'city', date('Y-m-d H:i:s'), 0.5);
         $stats['added'] += 3;
-        
-        // City + Tag
         foreach ($tags as $t) {
             $catUrl = $catUrls[$t['category']] ?? '/zajmy';
-            $url = "{$catUrl}/{$c['slug']}/type/{$t['slug']}";
-            
-            // Проверяем lastmod из city_tag_seo_texts
             try {
-                $stmt = $db->prepare("SELECT updated_at FROM city_tag_seo_texts WHERE city_slug = ? AND category = ? AND tag_slug = ?");
+                $stmt = $db->prepare("SELECT updated_at FROM city_tag_seo_texts WHERE city_slug=? AND category=? AND tag_slug=?");
                 $stmt->execute([$c['slug'], $t['category'], $t['slug']]);
                 $seo = $stmt->fetch();
                 $lastmod = $seo ? $seo['updated_at'] : $t['created_at'];
-            } catch (Exception $e) {
-                $lastmod = $t['created_at'];
-            }
-            
-            upsertUrl($url, 'city_tag', $lastmod, 0.5);
+            } catch (Exception $e) { $lastmod = $t['created_at']; }
+            upsertUrl("{$catUrl}/{$c['slug']}/type/{$t['slug']}", 'city_tag', $lastmod, 0.5);
             $stats['added']++;
         }
     }
-    
-    // Статические страницы
-    $staticPages = [
-        ['/', 'static', 1.0],
-        ['/zajmy', 'category', 0.9],
-        ['/kredity', 'category', 0.9],
-        ['/karty/kreditnye', 'category', 0.8],
-        ['/karty/debetovye', 'category', 0.8],
-        ['/novye-mfo', 'category', 0.8],
-        ['/calculator', 'static', 0.7],
-        ['/compare', 'static', 0.7],
-        ['/articles', 'static', 0.7],
-    ];
-    
-    foreach ($staticPages as $p) {
-        upsertUrl($p[0], $p[1], date('Y-m-d H:i:s'), $p[2]);
+
+    foreach (['/' => ['static',1.0], '/zajmy' => ['category',0.9], '/kredity' => ['category',0.9], '/karty/kreditnye' => ['category',0.8], '/karty/debetovye' => ['category',0.8], '/novye-mfo' => ['category',0.8], '/calculator' => ['static',0.7], '/compare' => ['static',0.7], '/articles' => ['static',0.7]] as $url => $p) {
+        upsertUrl($url, $p[0], date('Y-m-d H:i:s'), $p[1]);
         $stats['added']++;
     }
-    
     return $stats;
 }
 
 function upsertUrl(string $url, string $type, string $lastmod, float $priority): void {
     global $db;
     try {
-        $stmt = $db->prepare("INSERT INTO url_index_tracker (url, url_type, last_modified, priority) 
-            VALUES (?, ?, ?, ?) 
-            ON DUPLICATE KEY UPDATE last_modified = VALUES(last_modified), priority = VALUES(priority)");
-        $stmt->execute([$url, $type, $lastmod, $priority]);
+        $db->prepare("INSERT INTO url_index_tracker (url, url_type, last_modified, priority) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE last_modified=VALUES(last_modified), priority=VALUES(priority)")
+           ->execute([$url, $type, $lastmod, $priority]);
     } catch (Exception $e) {}
 }
 
-// Обработка действий
 switch ($action) {
-    case 'stats':
-        // Общая статистика
-        $total = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker")->fetch()['cnt'];
-        $byType = $db->query("SELECT url_type, COUNT(*) as cnt FROM url_index_tracker GROUP BY url_type")->fetchAll();
-        
-        $notIndexedYandex = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE indexed_yandex = 0")->fetch()['cnt'];
-        $notIndexedGoogle = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE indexed_google = 0")->fetch()['cnt'];
-        
-        $recentlyModified = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE last_modified > DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch()['cnt'];
-        
-        $notSubmittedYandex = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE submitted_yandex IS NULL OR last_modified > submitted_yandex")->fetch()['cnt'];
-        $notSubmittedGoogle = $db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE submitted_google IS NULL OR last_modified > submitted_google")->fetch()['cnt'];
-        
-        // Последние логи
-        $recentLogs = $db->query("SELECT * FROM indexing_log ORDER BY created_at DESC LIMIT 10")->fetchAll();
-        
-        echo json_encode([
-            'total_urls' => (int)$total,
-            'by_type' => $byType,
-            'not_indexed_yandex' => (int)$notIndexedYandex,
-            'not_indexed_google' => (int)$notIndexedGoogle,
-            'recently_modified' => (int)$recentlyModified,
-            'pending_yandex' => (int)$notSubmittedYandex,
-            'pending_google' => (int)$notSubmittedGoogle,
-            'recent_logs' => $recentLogs
-        ]);
-        break;
-        
-    case 'sync':
-        // Синхронизировать URL из БД
-        $stats = syncUrlsFromDb();
-        echo json_encode(['success' => true, 'synced' => $stats['added']]);
-        break;
-        
-    case 'pending':
-        // Получить список URL для отправки на индексацию
-        $service = $_GET['service'] ?? 'yandex';
-        $limit = min((int)($_GET['limit'] ?? 100), 500);
-        
-        $submittedCol = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
-        
-        $stmt = $db->prepare("SELECT url, url_type, last_modified, priority 
-            FROM url_index_tracker 
-            WHERE {$submittedCol} IS NULL OR last_modified > {$submittedCol}
-            ORDER BY priority DESC, last_modified DESC 
-            LIMIT ?");
-        $stmt->execute([$limit]);
-        $urls = $stmt->fetchAll();
-        
-        echo json_encode([
-            'service' => $service,
-            'count' => count($urls),
-            'urls' => $urls
-        ]);
-        break;
-        
-    case 'recent':
-        // Недавно обновлённые URL
-        $days = (int)($_GET['days'] ?? 7);
-        $stmt = $db->prepare("SELECT url, url_type, last_modified, priority, indexed_yandex, indexed_google
-            FROM url_index_tracker 
-            WHERE last_modified > DATE_SUB(NOW(), INTERVAL ? DAY)
-            ORDER BY last_modified DESC 
-            LIMIT 200");
-        $stmt->execute([$days]);
-        
-        echo json_encode($stmt->fetchAll());
-        break;
-        
-    case 'mark-submitted':
-        // Отметить URL как отправленные
-        if ($method !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'POST required']);
-            exit;
-        }
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        $service = $data['service'] ?? 'yandex';
-        $urls = $data['urls'] ?? [];
-        
-        if (empty($urls)) {
-            echo json_encode(['error' => 'No URLs provided']);
-            exit;
-        }
-        
-        $submittedCol = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
-        $placeholders = str_repeat('?,', count($urls) - 1) . '?';
-        
-        $stmt = $db->prepare("UPDATE url_index_tracker SET {$submittedCol} = NOW() WHERE url IN ({$placeholders})");
-        $stmt->execute($urls);
-        
-        // Логируем
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status) VALUES (?, 'submit', ?, 'success')")
-           ->execute([$service, count($urls)]);
-        
-        echo json_encode(['success' => true, 'marked' => count($urls)]);
-        break;
-        
-    case 'mark-indexed':
-        // Отметить URL как проиндексированные
-        if ($method !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'POST required']);
-            exit;
-        }
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        $service = $data['service'] ?? 'yandex';
-        $urls = $data['urls'] ?? [];
-        
-        $indexedCol = $service === 'google' ? 'indexed_google' : 'indexed_yandex';
-        $placeholders = str_repeat('?,', count($urls) - 1) . '?';
-        
-        $stmt = $db->prepare("UPDATE url_index_tracker SET {$indexedCol} = 1 WHERE url IN ({$placeholders})");
-        $stmt->execute($urls);
-        
-        echo json_encode(['success' => true, 'marked' => count($urls)]);
-        break;
-        
-    case 'export-urls':
-        // Экспорт URL для Яндекс.Вебмастера или Google Search Console
-        $service = $_GET['service'] ?? 'yandex';
-        $type = $_GET['type'] ?? 'pending'; // pending | recent | all
-        
-        $submittedCol = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
-        
-        if ($type === 'pending') {
-            $urls = $db->query("SELECT url FROM url_index_tracker WHERE {$submittedCol} IS NULL OR last_modified > {$submittedCol} ORDER BY priority DESC LIMIT 200")->fetchAll(PDO::FETCH_COLUMN);
-        } elseif ($type === 'recent') {
-            $urls = $db->query("SELECT url FROM url_index_tracker WHERE last_modified > DATE_SUB(NOW(), INTERVAL 7 DAY) ORDER BY last_modified DESC LIMIT 200")->fetchAll(PDO::FETCH_COLUMN);
-        } else {
-            $urls = $db->query("SELECT url FROM url_index_tracker ORDER BY priority DESC LIMIT 500")->fetchAll(PDO::FETCH_COLUMN);
-        }
-        
-        // Полные URL
-        $fullUrls = array_map(fn($u) => SITE_URL . $u, $urls);
-        
-        echo json_encode([
-            'count' => count($fullUrls),
-            'urls' => $fullUrls,
-            'text' => implode("\n", $fullUrls)
-        ]);
-        break;
-        
-    case 'yandex-api':
-        // Отправка через Яндекс.Вебмастер API (если есть токен)
-        $settings = getSiteSettings();
-        $yandexToken = $settings['yandex_webmaster_token'] ?? '';
-        $yandexHostId = $settings['yandex_webmaster_host_id'] ?? '';
-        
-        if (!$yandexToken || !$yandexHostId) {
-            echo json_encode(['error' => 'Yandex Webmaster API not configured', 'need_config' => true]);
-            exit;
-        }
-        
-        // Получаем pending URLs
-        $urls = $db->query("SELECT url FROM url_index_tracker WHERE submitted_yandex IS NULL OR last_modified > submitted_yandex ORDER BY priority DESC LIMIT 10")->fetchAll(PDO::FETCH_COLUMN);
-        
-        if (empty($urls)) {
-            echo json_encode(['success' => true, 'message' => 'No pending URLs']);
-            exit;
-        }
-        
-        $results = [];
-        foreach ($urls as $url) {
-            $fullUrl = SITE_URL . $url;
-            
-            // Yandex Webmaster API: reindex request
-            $ch = curl_init("https://api.webmaster.yandex.net/v4/user/{$yandexHostId}/hosts/{$yandexHostId}/recrawl/queue");
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode(['url' => $fullUrl]),
-                CURLOPT_HTTPHEADER => [
-                    'Authorization: OAuth ' . $yandexToken,
-                    'Content-Type: application/json'
-                ],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 10
-            ]);
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            $results[] = [
-                'url' => $url,
-                'status' => $httpCode,
-                'response' => json_decode($response, true)
-            ];
-            
-            if ($httpCode === 200 || $httpCode === 201) {
-                $db->prepare("UPDATE url_index_tracker SET submitted_yandex = NOW() WHERE url = ?")->execute([$url]);
-            }
-        }
-        
-        // Логируем
-        $successCount = count(array_filter($results, fn($r) => $r['status'] === 200 || $r['status'] === 201));
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('yandex', 'submit', ?, ?, ?)")
-           ->execute([$successCount, $successCount === count($results) ? 'success' : 'partial', json_encode($results)]);
-        
-        echo json_encode([
-            'success' => true,
-            'submitted' => $successCount,
-            'total' => count($results),
-            'results' => $results
-        ]);
-        break;
-        
-    default:
-        echo json_encode(['error' => 'Unknown action']);
-}
 
-    case 'seo-files':
-        // Статистика по SEO-файлам
-        $siteUrl = SITE_URL;
-        
-        // Проверяем sitemap
-        $sitemapUrl = $siteUrl . '/sitemap.xml';
-        $robotsUrl = $siteUrl . '/robots.txt';
-        $llmsUrl = $siteUrl . '/llms.txt';
-        
-        // Считаем элементы
-        $offersCount = $db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
-        $articlesCount = $db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
-        $tagsCount = $db->query("SELECT COUNT(*) as cnt FROM offer_tags WHERE is_active = 1")->fetch()['cnt'];
-        
-        require_once __DIR__ . '/../../data/cities.php';
-        $citiesCount = count(getCities());
-        
-        // Примерное количество URL в sitemap
-        $staticPages = 15;
-        $cityPages = $citiesCount * 3; // zajmy, kredity, karty
-        $cityTagPages = $citiesCount * $tagsCount;
-        $totalSitemapUrls = $staticPages + $offersCount + $articlesCount + $tagsCount + $cityPages + $cityTagPages;
-        
-        // Последние изменения
-        $lastOfferUpdate = $db->query("SELECT MAX(updated_at) as dt FROM offers WHERE is_active = 1")->fetch()['dt'];
-        $lastArticleUpdate = $db->query("SELECT MAX(updated_at) as dt FROM articles WHERE is_published = 1")->fetch()['dt'];
-        $lastTagUpdate = $db->query("SELECT MAX(created_at) as dt FROM offer_tags WHERE is_active = 1")->fetch()['dt'];
-        
-        $lastUpdate = max(
-            strtotime($lastOfferUpdate ?? '2020-01-01'),
-            strtotime($lastArticleUpdate ?? '2020-01-01'),
-            strtotime($lastTagUpdate ?? '2020-01-01')
-        );
-        
-        echo json_encode([
-            'sitemap' => [
-                'url' => $sitemapUrl,
-                'total_urls' => (int)$totalSitemapUrls,
-                'offers' => (int)$offersCount,
-                'articles' => (int)$articlesCount,
-                'tags' => (int)$tagsCount,
-                'cities' => (int)$citiesCount,
-                'city_tag_pages' => (int)$cityTagPages,
-                'last_update' => date('Y-m-d H:i:s', $lastUpdate)
-            ],
-            'robots' => [
-                'url' => $robotsUrl,
-                'disallow' => ['/admin/', '/api/', '/click/', '/favorites', '/compare', '/search']
-            ],
-            'llms' => [
-                'url' => $llmsUrl,
-                'offers' => (int)$offersCount,
-                'articles' => (int)$articlesCount,
-                'tags' => (int)$tagsCount,
-                'auto_generated' => true
-            ]
-        ]);
-        break;
-        
-    case 'preview-llms':
-        // Предпросмотр llms.txt
-        ob_start();
-        require __DIR__ . '/../../pages/llms.php';
-        $content = ob_get_clean();
-        echo json_encode(['content' => $content]);
-        break;
-        
-    case 'preview-robots':
-        // Предпросмотр robots.txt
-        ob_start();
-        require __DIR__ . '/../../pages/robots.php';
-        $content = ob_get_clean();
-        echo json_encode(['content' => $content]);
-        break;
-        
-    case 'changes':
-        // Последние изменения контента
-        $days = (int)($_GET['days'] ?? 7);
-        
-        $changes = [];
-        
-        // Офферы
-        $stmt = $db->prepare("SELECT 'offer' as type, title, slug, updated_at FROM offers WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
-        $stmt->execute([$days]);
-        $changes = array_merge($changes, $stmt->fetchAll());
-        
-        // Статьи
-        $stmt = $db->prepare("SELECT 'article' as type, title, slug, updated_at FROM articles WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
-        $stmt->execute([$days]);
-        $changes = array_merge($changes, $stmt->fetchAll());
-        
-        // Теги
-        $stmt = $db->prepare("SELECT 'tag' as type, title, slug, created_at as updated_at FROM offer_tags WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY created_at DESC LIMIT 20");
-        $stmt->execute([$days]);
-        $changes = array_merge($changes, $stmt->fetchAll());
-        
-        // City SEO
-        try {
-            $stmt = $db->prepare("SELECT 'city_seo' as type, CONCAT(city_slug, ' (', category, ')') as title, city_slug as slug, updated_at FROM city_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
-            $stmt->execute([$days]);
-            $changes = array_merge($changes, $stmt->fetchAll());
-        } catch (Exception $e) {}
-        
-        // City+Tag SEO
-        try {
-            $stmt = $db->prepare("SELECT 'city_tag_seo' as type, CONCAT(city_slug, ' + ', tag_slug) as title, CONCAT(city_slug, '/', tag_slug) as slug, updated_at FROM city_tag_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
-            $stmt->execute([$days]);
-            $changes = array_merge($changes, $stmt->fetchAll());
-        } catch (Exception $e) {}
-        
-        // Сортируем по дате
-        usort($changes, fn($a, $b) => strtotime($b['updated_at']) - strtotime($a['updated_at']));
-        
-        echo json_encode([
-            'days' => $days,
-            'count' => count($changes),
-            'changes' => array_slice($changes, 0, 50)
-        ]);
-        break;
+case 'stats':
+    $total = (int)$db->query("SELECT COUNT(*) as cnt FROM url_index_tracker")->fetch()['cnt'];
+    $byType = $db->query("SELECT url_type, COUNT(*) as cnt FROM url_index_tracker GROUP BY url_type")->fetchAll();
+    $recentlyModified = (int)$db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE last_modified > DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch()['cnt'];
+    $notSubmittedYandex = (int)$db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE submitted_yandex IS NULL OR last_modified > submitted_yandex")->fetch()['cnt'];
+    $notSubmittedGoogle = (int)$db->query("SELECT COUNT(*) as cnt FROM url_index_tracker WHERE submitted_google IS NULL OR last_modified > submitted_google")->fetch()['cnt'];
+    $recentLogs = $db->query("SELECT * FROM indexing_log ORDER BY created_at DESC LIMIT 10")->fetchAll();
+    echo json_encode([
+        'total_urls' => $total, 'by_type' => $byType,
+        'recently_modified' => $recentlyModified,
+        'pending_yandex' => $notSubmittedYandex, 'pending_google' => $notSubmittedGoogle,
+        'recent_logs' => $recentLogs
+    ]);
+    break;
+
+case 'sync':
+    echo json_encode(['success' => true, 'synced' => syncUrlsFromDb()['added']]);
+    break;
+
+case 'pending':
+    $service = $_GET['service'] ?? 'yandex';
+    $limit = min((int)($_GET['limit'] ?? 100), 500);
+    $col = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
+    $stmt = $db->prepare("SELECT url, url_type, last_modified, priority FROM url_index_tracker WHERE {$col} IS NULL OR last_modified > {$col} ORDER BY priority DESC, last_modified DESC LIMIT ?");
+    $stmt->execute([$limit]);
+    echo json_encode(['service' => $service, 'count' => $stmt->rowCount(), 'urls' => $stmt->fetchAll()]);
+    break;
+
+case 'recent':
+    $days = (int)($_GET['days'] ?? 7);
+    $stmt = $db->prepare("SELECT url, url_type, last_modified, priority, indexed_yandex, indexed_google FROM url_index_tracker WHERE last_modified > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY last_modified DESC LIMIT 200");
+    $stmt->execute([$days]);
+    echo json_encode($stmt->fetchAll());
+    break;
+
+case 'mark-submitted':
+    if ($method !== 'POST') { http_response_code(405); echo json_encode(['error'=>'POST required']); exit; }
+    $data = json_decode(file_get_contents('php://input'), true);
+    $service = $data['service'] ?? 'yandex';
+    $urls = $data['urls'] ?? [];
+    if (empty($urls)) { echo json_encode(['error'=>'No URLs']); exit; }
+    $col = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
+    $ph = str_repeat('?,', count($urls) - 1) . '?';
+    $db->prepare("UPDATE url_index_tracker SET {$col}=NOW() WHERE url IN ({$ph})")->execute($urls);
+    $db->prepare("INSERT INTO indexing_log (service,action,urls_count,status) VALUES (?,'submit',?,'success')")->execute([$service, count($urls)]);
+    echo json_encode(['success' => true, 'marked' => count($urls)]);
+    break;
+
+case 'mark-indexed':
+    if ($method !== 'POST') { http_response_code(405); echo json_encode(['error'=>'POST required']); exit; }
+    $data = json_decode(file_get_contents('php://input'), true);
+    $service = $data['service'] ?? 'yandex';
+    $urls = $data['urls'] ?? [];
+    $col = $service === 'google' ? 'indexed_google' : 'indexed_yandex';
+    $ph = str_repeat('?,', count($urls) - 1) . '?';
+    $db->prepare("UPDATE url_index_tracker SET {$col}=1 WHERE url IN ({$ph})")->execute($urls);
+    echo json_encode(['success' => true, 'marked' => count($urls)]);
+    break;
+
+case 'export-urls':
+    $service = $_GET['service'] ?? 'yandex';
+    $type = $_GET['type'] ?? 'pending';
+    $col = $service === 'google' ? 'submitted_google' : 'submitted_yandex';
+    if ($type === 'pending') {
+        $urls = $db->query("SELECT url FROM url_index_tracker WHERE {$col} IS NULL OR last_modified > {$col} ORDER BY priority DESC LIMIT 200")->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($type === 'recent') {
+        $urls = $db->query("SELECT url FROM url_index_tracker WHERE last_modified > DATE_SUB(NOW(), INTERVAL 7 DAY) ORDER BY last_modified DESC LIMIT 200")->fetchAll(PDO::FETCH_COLUMN);
+    } else {
+        $urls = $db->query("SELECT url FROM url_index_tracker ORDER BY priority DESC LIMIT 500")->fetchAll(PDO::FETCH_COLUMN);
+    }
+    $fullUrls = array_map(fn($u) => SITE_URL . $u, $urls);
+    echo json_encode(['count' => count($fullUrls), 'urls' => $fullUrls, 'text' => implode("\n", $fullUrls)]);
+    break;
+
+case 'seo-files':
+    $offersCount = (int)$db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
+    $articlesCount = (int)$db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
+    $tagsCount = (int)$db->query("SELECT COUNT(*) as cnt FROM offer_tags WHERE is_active = 1")->fetch()['cnt'];
+    require_once __DIR__ . '/../../data/cities.php';
+    $citiesCount = count(getCities());
+    $cityTagPages = $citiesCount * $tagsCount;
+    $totalSitemapUrls = 15 + $offersCount + $articlesCount + $tagsCount + ($citiesCount * 3) + $cityTagPages;
+    $lastOfferUpdate = $db->query("SELECT MAX(updated_at) as dt FROM offers WHERE is_active = 1")->fetch()['dt'];
+    $lastArticleUpdate = $db->query("SELECT MAX(updated_at) as dt FROM articles WHERE is_published = 1")->fetch()['dt'];
+    echo json_encode([
+        'sitemap' => ['url' => SITE_URL.'/sitemap.xml', 'total_urls' => $totalSitemapUrls, 'offers' => $offersCount, 'articles' => $articlesCount, 'tags' => $tagsCount, 'cities' => $citiesCount, 'city_tag_pages' => $cityTagPages],
+        'robots' => ['url' => SITE_URL.'/robots.txt'],
+        'llms' => ['url' => SITE_URL.'/llms.txt', 'offers' => $offersCount, 'articles' => $articlesCount, 'tags' => $tagsCount, 'auto_generated' => true]
+    ]);
+    break;
+
+case 'preview-llms':
+    ob_start();
+    require __DIR__ . '/../../pages/llms.php';
+    echo json_encode(['content' => ob_get_clean()]);
+    break;
+
+case 'preview-robots':
+    ob_start();
+    require __DIR__ . '/../../pages/robots.php';
+    echo json_encode(['content' => ob_get_clean()]);
+    break;
+
+case 'changes':
+    $days = (int)($_GET['days'] ?? 7);
+    $changes = [];
+    $stmt = $db->prepare("SELECT 'offer' as type, title, slug, updated_at FROM offers WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+    $stmt->execute([$days]); $changes = array_merge($changes, $stmt->fetchAll());
+    $stmt = $db->prepare("SELECT 'article' as type, title, slug, updated_at FROM articles WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+    $stmt->execute([$days]); $changes = array_merge($changes, $stmt->fetchAll());
+    $stmt = $db->prepare("SELECT 'tag' as type, title, slug, created_at as updated_at FROM offer_tags WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY created_at DESC LIMIT 20");
+    $stmt->execute([$days]); $changes = array_merge($changes, $stmt->fetchAll());
+    try {
+        $stmt = $db->prepare("SELECT 'city_seo' as type, CONCAT(city_slug,' (',category,')') as title, city_slug as slug, updated_at FROM city_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+        $stmt->execute([$days]); $changes = array_merge($changes, $stmt->fetchAll());
+    } catch (Exception $e) {}
+    try {
+        $stmt = $db->prepare("SELECT 'city_tag_seo' as type, CONCAT(city_slug,' + ',tag_slug) as title, CONCAT(city_slug,'/',tag_slug) as slug, updated_at FROM city_tag_seo_texts WHERE updated_at > DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY updated_at DESC LIMIT 20");
+        $stmt->execute([$days]); $changes = array_merge($changes, $stmt->fetchAll());
+    } catch (Exception $e) {}
+    usort($changes, fn($a,$b) => strtotime($b['updated_at']) - strtotime($a['updated_at']));
+    echo json_encode(['days' => $days, 'count' => count($changes), 'changes' => array_slice($changes, 0, 50)]);
+    break;
+
+default:
+    echo json_encode(['error' => 'Unknown action']);
+}
