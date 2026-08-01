@@ -47,9 +47,9 @@ function renderOfferCard(array $offer): string {
 
     ob_start();
     ?>
-    <article class="offer-card-box bg-white rounded-xl shadow-sm border border-gray-100 p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
-        <div class="offer-card-head flex flex-col sm:flex-row sm:items-center gap-4">
-            <div class="offer-card-logo flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+    <article class="offer-card-box bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
+        <div class="offer-card-head flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div class="offer-card-logo flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                 <?php if ($logo): ?>
                 <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="w-full h-full object-contain p-1" loading="lazy">
                 <?php else: ?>
@@ -58,7 +58,7 @@ function renderOfferCard(array $offer): string {
             </div>
             <div class="flex-1 min-w-0">
                 <a href="/offer/<?= e($offer['slug']) ?>" class="hover:text-primary transition-colors">
-                    <h3 class="text-lg font-bold text-gray-900 mb-1" itemprop="name"><?= e($offer['title']) ?></h3>
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight" itemprop="name"><?= e($offer['title']) ?></h3>
                 </a>
                 <div class="flex items-center gap-2 flex-wrap">
                     <?php if ($rating > 0): ?>
@@ -101,7 +101,7 @@ function renderOfferCard(array $offer): string {
         </div>
 
         <?php if ($fieldCards): ?>
-        <div class="offer-card-grid grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
+        <div class="offer-card-grid grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-5">
             <?php foreach ($fieldCards as $fc): ?>
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wide"><?= e($fc['label']) ?></p>
@@ -127,11 +127,11 @@ function renderOfferCard(array $offer): string {
         <?php endif; ?>
 
         <?php if (!empty($offer['description'])): ?>
-        <p class="offer-card-desc text-sm text-gray-600 mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
+        <p class="offer-card-desc text-sm text-gray-600 mt-3 sm:mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
         <?php endif; ?>
 
-        <div class="offer-card-actions mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="flex items-center gap-4 flex-wrap">
+        <div class="offer-card-actions mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
                 <a href="/offer/<?= e($offer['slug']) ?>" class="text-primary hover:underline text-sm font-medium">Подробнее →</a>
                 <button type="button"
                         class="offer-fav-btn inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-pink-300 hover:bg-pink-50 hover:text-pink-600"
@@ -144,7 +144,7 @@ function renderOfferCard(array $offer): string {
             </div>
             <a href="/click/<?= (int)$offer['id'] ?>?ab=<?= $abVid ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
                style="background:<?= e($btnColor) ?>"
-               class="inline-flex items-center justify-center space-x-2 text-white px-6 py-3 rounded-lg font-semibold transition-all text-sm hover:opacity-90 hover:shadow-lg">
+               class="inline-flex w-full sm:w-auto items-center justify-center space-x-2 text-white px-5 py-3 rounded-lg font-semibold transition-all text-sm hover:opacity-90 hover:shadow-lg">
                 <span><?= e($btnLabel) ?></span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>

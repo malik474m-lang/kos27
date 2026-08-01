@@ -96,12 +96,13 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
         #exit-popup-form-row { display:flex; gap:10px; margin-bottom:12px; }
         #exit-popup-features { display:flex; gap:12px; margin-top:16px; }
         @media (max-width: 640px) {
-            #exit-popup { width:calc(100vw - 24px) !important; border-radius:18px !important; }
+            #exit-popup { width:calc(100vw - 24px) !important; border-radius:18px !important; top:50% !important; left:50% !important; transform:translate(-50%,-50%) !important; }
             #exit-popup-form-row { flex-direction:column; gap:12px !important; }
             #exit-popup-email { width:100% !important; min-width:0 !important; }
-            #exit-popup-btn { width:100% !important; display:block !important; }
+            #exit-popup-btn { width:100% !important; display:flex !important; justify-content:center !important; }
             #exit-popup-features { gap:8px !important; }
             #exit-popup-features > div { padding:10px 8px !important; }
+            #geo-switch-prompt { top:74px !important; width:calc(100vw - 16px) !important; }
         }
         .gradient-hero { background: linear-gradient(135deg, #1a56db 0%, #7e3af2 100%); }
         .card-hover { transition: transform .2s, box-shadow .2s; }

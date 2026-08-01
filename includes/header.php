@@ -15,7 +15,7 @@ $headerCats = getHeaderCategories();
                     <span class="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[48vw] sm:max-w-none"><?= e(SITE_NAME) ?></span>
                     <?php endif; ?>
                 </a>
-                <span id="geo-city" class="hidden sm:inline text-xs text-gray-400 truncate max-w-[120px]">📍 ...</span>
+                <span id="geo-city" class="hidden md:inline text-xs text-gray-400 truncate max-w-[120px]">📍 ...</span>
             </div>
 
             <nav class="hidden lg:flex items-center space-x-6">
@@ -56,7 +56,7 @@ $headerCats = getHeaderCategories();
             </div>
         </div>
 
-        <nav id="mobile-menu" class="lg:hidden hidden pb-4 space-y-1 border-t border-gray-100 pt-3 mt-2">
+        <nav id="mobile-menu" class="lg:hidden hidden pb-4 space-y-1 border-t border-gray-100 pt-3 mt-2 bg-white">
             <?php foreach ($headerCats as $hc): ?>
             <a href="<?= getCategoryUrl($hc) ?>" class="block py-2.5 px-1 text-gray-700 hover:text-blue-600 font-medium rounded-lg"><?= e($hc['name']) ?></a>
             <?php foreach (getSubcategories((int)$hc['id']) as $sub): ?>
@@ -75,9 +75,9 @@ $headerCats = getHeaderCategories();
     </div>
 </header>
 
-<div id="geo-switch-prompt" class="hidden fixed left-1/2 z-[9996] w-[min(92vw,560px)] -translate-x-1/2 rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_20px_50px_rgba(15,23,42,0.18)]" style="top:88px;">
-    <div class="flex items-start gap-3"><div class="mt-0.5 text-2xl">📍</div><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900">Похоже, вы из города <span id="geo-switch-city-name"></span>?</p><p class="mt-1 text-sm text-gray-500">Показать актуальную страницу для вашего региона.</p></div><button type="button" onclick="hideGeoSwitchPrompt(true)" class="text-xl leading-none text-gray-300 hover:text-gray-500">×</button></div>
-    <div class="mt-4 flex flex-wrap gap-2"><a id="geo-switch-link" href="#" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Да, показать мой город</a><button type="button" onclick="hideGeoSwitchPrompt(true)" class="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Нет, остаться здесь</button></div>
+<div id="geo-switch-prompt" class="hidden fixed left-1/2 z-[9996] w-[min(92vw,560px)] -translate-x-1/2 rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_20px_50px_rgba(15,23,42,0.18)]" style="top:88px;max-width:calc(100vw - 16px);">
+    <div class="flex items-start gap-3"><div class="mt-0.5 text-2xl">📍</div><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900">Похоже, вы из города <span id="geo-switch-city-name"></span>?</p><p class="mt-1 text-sm text-gray-500">Показать актуальную страницу для вашего региона.</p></div><button type="button" onclick="hideGeoSwitchPrompt(true)" class="text-xl leading-none text-gray-300 hover:text-gray-500 flex-shrink-0">×</button></div>
+    <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2"><a id="geo-switch-link" href="#" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Да, показать мой город</a><button type="button" onclick="hideGeoSwitchPrompt(true)" class="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Нет, остаться здесь</button></div>
 </div>
 
 <script>
