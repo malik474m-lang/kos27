@@ -10,6 +10,7 @@ try {
     
     $period = max(1, min(365, (int)($_GET['period'] ?? 30)));
     $compareWith = $_GET['compare'] ?? '';
+$clickDateColumn = dbDateColumn('click_stats', ['clicked_at', 'created_at']);
     
     // ========== 1. ДОХОД ПО ОФФЕРАМ ==========
     // Клики и конверсии считаем ОТДЕЛЬНО, потом объединяем
@@ -29,7 +30,7 @@ try {
         LEFT JOIN (
             SELECT offer_id, COUNT(*) as clicks
             FROM click_stats
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)
+            WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)
             GROUP BY offer_id
         ) cs ON cs.offer_id = o.id
         LEFT JOIN (
@@ -66,7 +67,7 @@ try {
         LEFT JOIN (
             SELECT offer_id, COUNT(*) as clicks
             FROM click_stats
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)
+            WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)
             GROUP BY offer_id
         ) cs ON cs.offer_id = o.id
         LEFT JOIN (
@@ -134,7 +135,7 @@ try {
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)
             GROUP BY click_id
         ) pc ON pc.click_id = c.id
-        WHERE c.created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)
+        WHERE c.{$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)
         GROUP BY COALESCE(NULLIF(c.utm_source, ''), 'direct')
         HAVING clicks >= 3
         ORDER BY revenue DESC
@@ -162,10 +163,10 @@ try {
             WHERE n < $period
         ) d
         LEFT JOIN (
-            SELECT DATE(created_at) as dt, COUNT(*) as clicks
+            SELECT DATE({$clickDateColumn}) as dt, COUNT(*) as clicks
             FROM click_stats
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)
-            GROUP BY DATE(created_at)
+            WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)
+            GROUP BY DATE({$clickDateColumn})
         ) cs ON cs.dt = d.date
         LEFT JOIN (
             SELECT DATE(created_at) as dt,
@@ -188,14 +189,14 @@ try {
         
         $cur = $db->query("
             SELECT 
-                (SELECT COUNT(*) FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as clicks,
+                (SELECT COUNT(*) FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)) as clicks,
                 (SELECT SUM(status = 'approved') FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as approved,
                 (SELECT SUM(CASE WHEN status = 'approved' THEN payout ELSE 0 END) FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as revenue
         ")->fetch();
         
         $prev = $db->query("
             SELECT 
-                (SELECT COUNT(*) FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period2 DAY) AND created_at < DATE_SUB(NOW(), INTERVAL $period DAY)) as clicks,
+                (SELECT COUNT(*) FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period2 DAY) AND {$clickDateColumn} < DATE_SUB(NOW(), INTERVAL $period DAY)) as clicks,
                 (SELECT SUM(status = 'approved') FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period2 DAY) AND created_at < DATE_SUB(NOW(), INTERVAL $period DAY)) as approved,
                 (SELECT SUM(CASE WHEN status = 'approved' THEN payout ELSE 0 END) FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period2 DAY) AND created_at < DATE_SUB(NOW(), INTERVAL $period DAY)) as revenue
         ")->fetch();
@@ -221,7 +222,7 @@ try {
     // ========== 7. ИТОГО ==========
     $totals = $db->query("
         SELECT 
-            (SELECT COUNT(*) FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as total_clicks,
+            (SELECT COUNT(*) FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)) as total_clicks,
             (SELECT SUM(status = 'approved') FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as total_approved,
             (SELECT SUM(status = 'rejected') FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as total_rejected,
             (SELECT SUM(status = 'pending') FROM postback_conversions WHERE created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)) as total_pending,

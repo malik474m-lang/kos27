@@ -4,25 +4,27 @@ if (apiCacheStart('admin_stats', 20)) exit;
 $db = getDB();
 $period = $_GET['period'] ?? '30';
 $period = max(1, min(365, (int)$period));
+$clickDateColumn = dbDateColumn('click_stats', ['clicked_at', 'created_at']);
+$pageViewDateColumn = dbDateColumn('page_views', ['viewed_at', 'created_at']);
 
 // Основные счётчики
 $offers = $db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
 $articles = $db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
 $reviews = $db->query("SELECT COUNT(*) as cnt FROM reviews")->fetch()['cnt'];
 $subscribers = $db->query("SELECT COUNT(*) as cnt FROM subscribers WHERE is_active = 1")->fetch()['cnt'];
-$clicksToday = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE created_at >= CURDATE()")->fetch()['cnt'];
-$clicksWeek = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch()['cnt'];
-$clicksMonth = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")->fetch()['cnt'];
+$clicksToday = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE {$clickDateColumn} >= CURDATE()")->fetch()['cnt'];
+$clicksWeek = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch()['cnt'];
+$clicksMonth = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")->fetch()['cnt'];
 $clicksTotal = $db->query("SELECT COUNT(*) as cnt FROM click_stats")->fetch()['cnt'];
 
 // Топ офферов с конверсией
 $topOffers = $db->query("
     SELECT o.id, o.title,
         COUNT(c.id) as clicks,
-        (SELECT COUNT(*) FROM page_views pv WHERE pv.page = CONCAT('/offer/', o.slug) AND pv.viewed_at >= DATE_SUB(CURDATE(), INTERVAL {$period} DAY)) as views
+        (SELECT COUNT(*) FROM page_views pv WHERE pv.page = CONCAT('/offer/', o.slug) AND pv.{$pageViewDateColumn} >= DATE_SUB(CURDATE(), INTERVAL {$period} DAY)) as views
     FROM click_stats c
     JOIN offers o ON c.offer_id = o.id
-    WHERE c.created_at >= DATE_SUB(CURDATE(), INTERVAL {$period} DAY)
+    WHERE c.{$clickDateColumn} >= DATE_SUB(CURDATE(), INTERVAL {$period} DAY)
     GROUP BY o.id, o.title
     ORDER BY clicks DESC LIMIT 20
 ")->fetchAll();
@@ -47,10 +49,10 @@ $chartData = $chartClicks->fetchAll();
 $chartViews = [];
 try {
     $pvStmt = $db->prepare("
-        SELECT DATE(viewed_at) as day, COUNT(*) as cnt
+        SELECT DATE({$pageViewDateColumn}) as day, COUNT(*) as cnt
         FROM page_views
-        WHERE viewed_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-        GROUP BY DATE(viewed_at)
+        WHERE {$pageViewDateColumn} >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+        GROUP BY DATE({$pageViewDateColumn})
         ORDER BY day ASC
     ");
     $pvStmt->execute([$period]);
@@ -71,13 +73,13 @@ $utmData = $utmSources->fetchAll();
 $hourly = $db->query("
     SELECT HOUR(created_at) as h, COUNT(*) as cnt
     FROM click_stats
-    WHERE created_at >= CURDATE()
+    WHERE {$clickDateColumn} >= CURDATE()
     GROUP BY HOUR(created_at)
     ORDER BY h ASC
 ")->fetchAll();
 
-$lastHour = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)")->fetch()['cnt'];
-$last5min = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)")->fetch()['cnt'];
+$lastHour = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL 1 HOUR)")->fetch()['cnt'];
+$last5min = $db->query("SELECT COUNT(*) as cnt FROM click_stats WHERE {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)")->fetch()['cnt'];
 
 $statsPayload = [
     'offers' => (int)$offers,

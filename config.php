@@ -249,3 +249,24 @@ function requireAdminWithIpCheck(): void {
     }
     requireAdmin();
 }
+
+function dbTableHasColumn(string $table, string $column): bool {
+    static $cache = [];
+    $key = $table . '.' . $column;
+    if (array_key_exists($key, $cache)) return $cache[$key];
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+        $stmt->execute([$table, $column]);
+        return $cache[$key] = ((int)$stmt->fetch()['cnt'] > 0);
+    } catch (Exception $e) {
+        return $cache[$key] = false;
+    }
+}
+
+function dbDateColumn(string $table, array $preferredColumns): string {
+    foreach ($preferredColumns as $column) {
+        if (dbTableHasColumn($table, $column)) return $column;
+    }
+    return $preferredColumns[0];
+}

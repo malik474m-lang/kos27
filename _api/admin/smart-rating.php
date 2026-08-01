@@ -3,6 +3,8 @@ require_once __DIR__ . '/../../includes/audit-log.php';
 require_once __DIR__ . '/../../includes/page-cache.php';
 
 $db = getDB();
+$clickDateColumn = dbDateColumn('click_stats', ['clicked_at', 'created_at']);
+$pageViewDateColumn = dbDateColumn('page_views', ['viewed_at', 'created_at']);
 $method = $_SERVER['REQUEST_METHOD'];
 $period = max(1, min(365, (int)($_GET['period'] ?? 30)));
 
@@ -14,17 +16,17 @@ function collectOfferMetrics(PDO $db, int $period): array {
         $oid = (int)$o['id'];
         $slug = $o['slug'];
 
-        $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND viewed_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+        $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND {$pageViewDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
         $vstmt->execute(['/offer/' . $slug]);
         $views = (int)$vstmt->fetch()['cnt'];
 
-        $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+        $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
         $cstmt->execute([$oid]);
         $clicks = (int)$cstmt->fetch()['cnt'];
 
         $approved = 0; $rejected = 0; $payout = 0.0;
         try {
-            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
+            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
             $pstmt->execute([$oid]);
             foreach ($pstmt->fetchAll() as $row) {
                 if ($row['status'] === 'approved') { $approved = (int)$row['cnt']; $payout = (float)$row['total']; }

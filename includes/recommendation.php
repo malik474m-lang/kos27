@@ -6,6 +6,8 @@
 
 function getBestOfferByCategory(string $category, array $filters = []): ?array {
     $db = getDB();
+    $clickDateColumn = dbDateColumn('click_stats', ['clicked_at', 'created_at']);
+    $pageViewDateColumn = dbDateColumn('page_views', ['viewed_at', 'created_at']);
 
     $sql = "SELECT * FROM offers WHERE is_active = 1 AND category = ?";
     $params = [$category];
@@ -41,12 +43,12 @@ function getBestOfferByCategory(string $category, array $filters = []): ?array {
 
         $views = 0;
         try {
-            $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND viewed_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+            $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND {$pageViewDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
             $vstmt->execute(['/offer/' . $slug]);
             $views = (int)$vstmt->fetch()['cnt'];
         } catch (Exception $e) {
             try {
-                $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+                $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND {$pageViewDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
                 $vstmt->execute(['/offer/' . $slug]);
                 $views = (int)$vstmt->fetch()['cnt'];
             } catch (Exception $e) {}
@@ -54,12 +56,12 @@ function getBestOfferByCategory(string $category, array $filters = []): ?array {
 
         $clicks = 0;
         try {
-            $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+            $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
             $cstmt->execute([$oid]);
             $clicks = (int)$cstmt->fetch()['cnt'];
         } catch (Exception $e) {
             try {
-                $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY)");
+                $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY)");
                 $cstmt->execute([$oid]);
                 $clicks = (int)$cstmt->fetch()['cnt'];
             } catch (Exception $e) {}
@@ -67,7 +69,7 @@ function getBestOfferByCategory(string $category, array $filters = []): ?array {
 
         $approved = 0; $rejected = 0; $payout = 0.0;
         try {
-            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
+            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL $period DAY) GROUP BY status");
             $pstmt->execute([$oid]);
             foreach ($pstmt->fetchAll() as $row) {
                 if ($row['status'] === 'approved') { $approved = (int)$row['cnt']; $payout = (float)$row['total']; }
