@@ -1,0 +1,27 @@
+{
+  "name": "kos27",
+  "version": "1.0.0",
+  "description": "KosmoEngine PHP site build tools",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i ./assets/tailwind.input.css -o ./assets/tailwind.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i ./assets/tailwind.input.css -o ./assets/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malik474m-lang/kos27.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/malik474m-lang/kos27/issues"
+  },
+  "homepage": "https://github.com/malik474m-lang/kos27#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

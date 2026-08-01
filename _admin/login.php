@@ -9,7 +9,7 @@ ob_start('minifyHtmlOutput');
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Вход — KosmoEngine</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
+    <link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
     <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">

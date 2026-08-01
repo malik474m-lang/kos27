@@ -65,26 +65,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <?php else: ?>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <?php endif; ?>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
-    <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
-    <script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    primary: '#1a56db',
-                    'primary-dark': '#1244af',
-                    'primary-light': '#e1effe',
-                    accent: '#059669',
-                    'accent-dark': '#047857',
-                    danger: '#dc2626',
-                    warning: '#f59e0b',
-                }
-            }
-        }
-    }
-    </script>
+    <link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
     <style>
         html, body { max-width:100%; overflow-x:hidden; }

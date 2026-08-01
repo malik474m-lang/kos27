@@ -37,8 +37,7 @@ ob_start('minifyHtmlOutput');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>О системе — KosmoEngine</title>
-    <script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#1a56db','primary-dark':'#1244af',accent:'#059669'}}}}</script>
+    <link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
     <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}</style>
 </head>
 <body class="bg-gray-100 min-h-screen">

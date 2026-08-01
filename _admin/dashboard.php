@@ -9,8 +9,7 @@ ob_start('minifyHtmlOutput');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Админ-панель — <?= e(SITE_NAME) ?></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script src="https://cdn.tailwindcss.com?v=3.4.17"></script>
-<script>tailwind.config={theme:{extend:{colors:{primary:'#1a56db','primary-dark':'#1244af',accent:'#059669',danger:'#dc2626'}}}}</script>
+<link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;}
