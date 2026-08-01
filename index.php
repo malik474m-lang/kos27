@@ -133,6 +133,7 @@ $routes = [
     '/unsubscribe' => 'unsubscribe',
     '/sitemap.xml' => 'sitemap',
     '/robots.txt' => 'robots',
+    '/llms.txt' => 'llms',
 ];
 
 // Точное совпадение
@@ -146,6 +147,11 @@ if (isset($routes[$uri])) {
     if ($page === 'robots') {
         header('Content-Type: text/plain; charset=UTF-8');
         require __DIR__ . '/pages/robots.php';
+        exit;
+    }
+    if ($page === 'llms') {
+        header('Content-Type: text/plain; charset=UTF-8');
+        readfile(__DIR__ . '/llms.txt');
         exit;
     }
     require __DIR__ . "/pages/$page.php";
