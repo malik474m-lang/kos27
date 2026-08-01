@@ -166,7 +166,7 @@ orderedKeys.forEach(function(key){
     h+='<div class="text-right text-xs text-gray-500 min-w-[86px]"><div>30 дн: <strong>'+Number(o.clicks_30d||0)+'</strong></div><div>всего: <strong>'+Number(o.clicks_total||0)+'</strong></div></div>';
     h+='<span class="px-2 py-0.5 rounded text-xs font-semibold '+(o.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(o.is_active?'Вкл':'Выкл')+'</span>';
     h+='<button onclick="event.stopPropagation();oForm('+JSON.stringify(o).replace(/'/g,"&#39;").replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm">Ред.</button>';
-    h+='<button onclick="event.stopPropagation();faqGen('+o.id+',e(o.title))" class="text-purple-600 hover:underline text-sm">FAQ</button>';
+    h+='<button onclick="event.stopPropagation();faqGen('+o.id+',&#39;'+e(o.title).replace(/'/g,'')+'&#39;)" class="text-purple-600 hover:underline text-sm">FAQ</button>';
     h+='<button onclick="event.stopPropagation();oD('+o.id+')" class="text-red-500 hover:underline text-sm">Уд.</button>';
     h+='</div>';
   });
