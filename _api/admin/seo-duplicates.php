@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=UTF-8');
 try {
     $db = getDB();
     $duplicates = ['titles' => [], 'descriptions' => []];
+    $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
     
     // Собираем все title и description из офферов, статей, тегов, категорий, городских SEO
     $pages = [];
@@ -52,7 +53,7 @@ try {
         foreach ($stmt->fetchAll() as $row) {
             $t = $row['meta_title'] ?: ($row['seo_h1'] ?: '');
             $d = $row['meta_description'] ?: '';
-            if ($t) $pages[] = ['type' => 'city_seo', 'url' => '/' . $row['category'] . '/' . $row['city_slug'], 'name' => $row['city_slug'], 'title' => $t, 'description' => $d, 'id' => $row['id']];
+            if ($t) { $base = $catUrls[$row['category']] ?? '/zajmy'; $pages[] = ['type' => 'city_seo', 'url' => $base . '/' . $row['city_slug'], 'name' => $row['city_slug'], 'title' => $t, 'description' => $d, 'id' => $row['id']]; }
         }
     } catch (Exception $e) {}
     

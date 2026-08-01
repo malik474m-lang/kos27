@@ -2898,12 +2898,14 @@ el.innerHTML=existing+'<div id="seo-dup-loading" class="bg-white rounded-xl bord
 ap('/seo-duplicates').then(function(d){
 var box=document.getElementById('seo-dup-loading');
 if(!box)return;
+if(d.error){ box.outerHTML='<div class="bg-red-50 rounded-xl border p-6 mt-6"><h3 class="text-lg font-bold text-red-700 mb-2">Ошибка проверки SEO</h3><p class="text-sm text-red-600">'+e(d.error)+'</p></div>'; return; }
+var totalPages=Number(d.total_pages||0), dupTitles=Number(d.duplicate_titles||0), dupDescriptions=Number(d.duplicate_descriptions||0);
 var h='<div class="bg-white rounded-xl border p-6 mt-6">';
 h+='<h3 class="text-lg font-bold mb-4">🔍 SEO: Дубли title и description</h3>';
-h+='<div class="grid grid-cols-3 gap-4 mb-4">';
-h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-2xl font-bold text-blue-600">'+d.total_pages+'</p><p class="text-xs text-gray-500">Всего страниц</p></div>';
-h+='<div class="'+(d.duplicate_titles>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(d.duplicate_titles>0?'text-red-600':'text-green-600')+'">'+d.duplicate_titles+'</p><p class="text-xs text-gray-500">Дублей title</p></div>';
-h+='<div class="'+(d.duplicate_descriptions>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(d.duplicate_descriptions>0?'text-red-600':'text-green-600')+'">'+d.duplicate_descriptions+'</p><p class="text-xs text-gray-500">Дублей description</p></div>';
+h+='<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">';
+h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-2xl font-bold text-blue-600">'+totalPages+'</p><p class="text-xs text-gray-500">Всего страниц</p></div>';
+h+='<div class="'+(dupTitles>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(dupTitles>0?'text-red-600':'text-green-600')+'">'+dupTitles+'</p><p class="text-xs text-gray-500">Дублей title</p></div>';
+h+='<div class="'+(dupDescriptions>0?'bg-red-50':'bg-green-50')+' rounded-lg p-3 text-center"><p class="text-2xl font-bold '+(dupDescriptions>0?'text-red-600':'text-green-600')+'">'+dupDescriptions+'</p><p class="text-xs text-gray-500">Дублей description</p></div>';
 h+='</div>';
 if(d.titles&&d.titles.length){
 h+='<div class="mb-4"><h4 class="font-semibold text-red-700 mb-2">⚠️ Дублирующиеся Title ('+d.titles.length+'):</h4>';
@@ -2919,7 +2921,7 @@ h+='<div class="bg-yellow-50 rounded-lg p-3 mb-2"><p class="text-sm font-medium 
 dup.pages.forEach(function(pg){h+='<li class="text-xs text-gray-600">• <span class="font-mono">'+e(pg.url)+'</span> <span class="text-gray-400">('+pg.type+')</span></li>';});
 h+='</ul></div>';});
 h+='</div>';}
-if(!d.duplicate_titles&&!d.duplicate_descriptions){
+if(!dupTitles&&!dupDescriptions){
 h+='<div class="bg-green-50 rounded-lg p-4 text-center"><p class="text-green-700 font-semibold">✅ Дублей не найдено!</p></div>';}
 h+='</div>';
 box.outerHTML=h;
