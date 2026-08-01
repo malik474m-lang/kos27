@@ -37,10 +37,10 @@ foreach ($topOffers as &$o) {
 unset($o);
 
 $chartClicks = $db->prepare("
-    SELECT DATE(created_at) as day, COUNT(*) as cnt
+    SELECT DATE({$clickDateColumn}) as day, COUNT(*) as cnt
     FROM click_stats
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-    GROUP BY DATE(created_at)
+    WHERE {$clickDateColumn} >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    GROUP BY DATE({$clickDateColumn})
     ORDER BY day ASC
 ");
 $chartClicks->execute([$period]);
@@ -62,7 +62,7 @@ try {
 $utmSources = $db->prepare("
     SELECT utm_source, utm_medium, utm_campaign, COUNT(*) as clicks
     FROM click_stats
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    WHERE {$clickDateColumn} >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
       AND utm_source IS NOT NULL AND utm_source != ''
     GROUP BY utm_source, utm_medium, utm_campaign
     ORDER BY clicks DESC LIMIT 30
@@ -71,10 +71,10 @@ $utmSources->execute([$period]);
 $utmData = $utmSources->fetchAll();
 
 $hourly = $db->query("
-    SELECT HOUR(created_at) as h, COUNT(*) as cnt
+    SELECT HOUR({$clickDateColumn}) as h, COUNT(*) as cnt
     FROM click_stats
     WHERE {$clickDateColumn} >= CURDATE()
-    GROUP BY HOUR(created_at)
+    GROUP BY HOUR({$clickDateColumn})
     ORDER BY h ASC
 ")->fetchAll();
 
