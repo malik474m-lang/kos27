@@ -270,3 +270,11 @@ function dbDateColumn(string $table, array $preferredColumns): string {
     }
     return $preferredColumns[0];
 }
+
+
+function dbFirstExistingColumn(string $table, array $preferredColumns): string {
+    foreach ($preferredColumns as $column) {
+        if (dbTableHasColumn($table, $column)) return $column;
+    }
+    return $preferredColumns[0];
+}

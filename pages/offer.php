@@ -45,7 +45,8 @@ $similar->execute([
 $similarOffers = $similar->fetchAll();
 
 // Отзывы
-$reviewsStmt = $db->prepare("SELECT * FROM reviews WHERE offer_id = ? AND is_approved = 1 ORDER BY created_at DESC LIMIT 10");
+$reviewTextColumn = function_exists('dbFirstExistingColumn') ? dbFirstExistingColumn('reviews', ['comment', 'text']) : 'comment';
+$reviewsStmt = $db->prepare("SELECT *, `{$reviewTextColumn}` AS comment FROM reviews WHERE offer_id = ? AND is_approved = 1 ORDER BY created_at DESC LIMIT 10");
 $reviewsStmt->execute([$offer['id']]);
 $offerReviews = $reviewsStmt->fetchAll();
 

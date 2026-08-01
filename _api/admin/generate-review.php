@@ -71,7 +71,8 @@ if (!$comment) {
     $comment = $gender === 'male' ? $maleFallbacks[array_rand($maleFallbacks)] : $femaleFallbacks[array_rand($femaleFallbacks)];
 }
 
-$db->prepare("INSERT INTO reviews (offer_id, author_name, rating, comment, is_approved) VALUES (?,?,?,?,1)")
+$reviewTextColumn = function_exists('dbFirstExistingColumn') ? dbFirstExistingColumn('reviews', ['comment', 'text']) : 'comment';
+$db->prepare("INSERT INTO reviews (offer_id, author_name, rating, {$reviewTextColumn}, is_approved) VALUES (?,?,?,?,1)")
    ->execute([$offer['id'], $name, $rating, $comment]);
 
 $db->prepare("UPDATE offers SET rating = (SELECT COALESCE(ROUND(AVG(r.rating),1),0) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1), review_count = (SELECT COUNT(*) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1) WHERE id = ?")

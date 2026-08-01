@@ -12,6 +12,7 @@ if (!$offerId || !$authorName || !$comment) {
 }
 
 $db = getDB();
-$db->prepare("INSERT INTO reviews (offer_id, author_name, rating, comment, is_approved) VALUES (?, ?, ?, ?, 0)")
+$reviewTextColumn = function_exists('dbFirstExistingColumn') ? dbFirstExistingColumn('reviews', ['comment', 'text']) : 'comment';
+$db->prepare("INSERT INTO reviews (offer_id, author_name, rating, {$reviewTextColumn}, is_approved) VALUES (?, ?, ?, ?, 0)")
    ->execute([$offerId, $authorName, $rating, $comment]);
 echo json_encode(['success' => true, 'message' => 'Отзыв отправлен на модерацию']);
