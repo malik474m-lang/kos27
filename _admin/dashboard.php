@@ -3154,6 +3154,53 @@ box.innerHTML=h;
 }
 
 
+function idxLoadSeoStats(){
+ap('/indexing?action=seo-files').then(function(d){
+var box=document.getElementById('sitemap-stats');
+if(!box) return;
+if(d.error){ box.innerHTML='<span class="text-red-500">Ошибка</span>'; return; }
+if(d.sitemap){
+box.innerHTML='URL: <strong>'+d.sitemap.total_urls+'</strong> (офферы: '+d.sitemap.offers+', статьи: '+d.sitemap.articles+', город+тег: '+d.sitemap.city_tag_pages+')';
+}
+}).catch(function(){ var b=document.getElementById('sitemap-stats'); if(b) b.innerHTML='—'; });
+}
+
+function idxPreviewLlms(){
+ap('/indexing?action=preview-llms').then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧠 llms.txt</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><div class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto"><pre class="text-xs text-gray-700 whitespace-pre-wrap">'+e(d.content)+'</pre></div><div class="flex justify-end mt-4"><a href="/llms.txt" target="_blank" class="btn-p">Открыть →</a></div>');
+}).catch(function(){ alert('Ошибка загрузки'); });
+}
+
+function idxPreviewRobots(){
+ap('/indexing?action=preview-robots').then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🤖 robots.txt</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><div class="bg-gray-50 rounded-lg p-4"><pre class="text-sm text-gray-700 whitespace-pre-wrap">'+e(d.content)+'</pre></div><div class="flex justify-end mt-4"><a href="/robots.txt" target="_blank" class="btn-p">Открыть →</a></div>');
+}).catch(function(){ alert('Ошибка загрузки'); });
+}
+
+function idxLoadChanges(){
+var sel=document.getElementById('idx-changes-days');
+var days=sel?sel.value:7;
+var box=document.getElementById('idx-changes');
+if(!box) return;
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка...</p>';
+ap('/indexing?action=changes&days='+days).then(function(d){
+if(!d.changes||!d.changes.length){ box.innerHTML='<p class="text-gray-500 text-sm">Нет изменений за выбранный период</p>'; return; }
+var typeIcons={offer:'📋',article:'📰',tag:'🏷️',city_seo:'🏙️',city_tag_seo:'🗺️'};
+var typeNames={offer:'Оффер',article:'Статья',tag:'Тег',city_seo:'SEO города',city_tag_seo:'Город+тег'};
+var h='<div class="space-y-2 max-h-64 overflow-y-auto">';
+d.changes.forEach(function(c){
+h+='<div class="flex items-center gap-3 py-2 border-b border-gray-100">';
+h+='<span class="text-lg">'+(typeIcons[c.type]||'📄')+'</span>';
+h+='<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-900 truncate">'+e(c.title)+'</p>';
+h+='<p class="text-xs text-gray-500">'+(typeNames[c.type]||c.type)+' • '+new Date(c.updated_at).toLocaleString("ru-RU")+'</p></div></div>';
+});
+h+='</div>';
+box.innerHTML=h;
+}).catch(function(){ box.innerHTML='<p class="text-gray-500 text-sm">Ошибка загрузки</p>'; });
+}
+
 
 </script>
 </body>
