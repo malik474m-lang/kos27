@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../includes/city-seo.php';
 
 $db = getDB();
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
+$mode = trim((string)($data['mode'] ?? 'markdown'));
+if (!in_array($mode, ['markdown','plain'], true)) $mode = 'markdown';
 $category = trim((string)($data['category'] ?? ''));
 $citySlugs = $data['citySlugs'] ?? [];
 if (!is_array($citySlugs)) $citySlugs = [];
@@ -35,7 +37,7 @@ $updatedMetaDescription = 0;
 $updateStmt = $db->prepare("UPDATE city_seo_texts SET seo_h1 = ?, seo_text = ?, meta_title = ?, meta_description = ? WHERE id = ?");
 
 foreach ($rows as $row) {
-    $newSeoText = cleanSeoTextToPlain((string)($row['seo_text'] ?? ''));
+    $newSeoText = $mode === 'plain' ? cleanSeoTextToPlain((string)($row['seo_text'] ?? '')) : cleanGptHtml((string)($row['seo_text'] ?? ''));
     $newSeoH1 = cleanGptPlain((string)($row['seo_h1'] ?? ''));
     $newMetaTitle = cleanGptPlain((string)($row['meta_title'] ?? ''));
     $newMetaDescription = cleanGptPlain((string)($row['meta_description'] ?? ''));
@@ -73,6 +75,7 @@ echo json_encode([
     'updated_seo_h1' => $updatedSeoH1,
     'updated_meta_title' => $updatedMetaTitle,
     'updated_meta_description' => $updatedMetaDescription,
+    'mode' => $mode,
     'total' => count($rows),
     'category' => $category,
     'city_slugs' => $citySlugs,
