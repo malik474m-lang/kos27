@@ -151,7 +151,7 @@ if (isset($routes[$uri])) {
     }
     if ($page === 'llms') {
         header('Content-Type: text/plain; charset=UTF-8');
-        readfile(__DIR__ . '/llms.txt');
+        require __DIR__ . '/pages/llms.php';
         exit;
     }
     require __DIR__ . "/pages/$page.php";

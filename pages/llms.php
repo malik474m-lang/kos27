@@ -10,12 +10,14 @@ $siteName = $settings['site_name'] ?? 'Космозайм';
 $siteUrl = SITE_URL;
 
 // Получаем данные из БД
-$offers = $db->query("SELECT title, slug, category, description FROM offers WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 20")->fetchAll();
-$articles = $db->query("SELECT title, slug, excerpt FROM articles WHERE is_published = 1 ORDER BY created_at DESC LIMIT 10")->fetchAll();
-$tags = $db->query("SELECT title, slug, category, icon FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
-
-// Динамические категории
-$categories = $db->query("SELECT name, slug, description FROM categories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+$offers = [];
+$articles = [];
+$tags = [];
+$categories = [];
+try { $offers = $db->query("SELECT title, slug, category, description FROM offers WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 20")->fetchAll(); } catch (Exception $e) {}
+try { $articles = $db->query("SELECT title, slug, excerpt FROM articles WHERE is_published = 1 ORDER BY created_at DESC LIMIT 10")->fetchAll(); } catch (Exception $e) {}
+try { $tags = $db->query("SELECT title, slug, category, icon FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll(); } catch (Exception $e) {}
+try { $categories = $db->query("SELECT name, slug, description FROM categories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll(); } catch (Exception $e) {}
 
 // Группируем теги по категориям
 $tagsByCategory = [];
@@ -38,8 +40,10 @@ $catUrls = [
 ];
 
 // Статистика
-$totalOffers = $db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
-$totalArticles = $db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
+$totalOffers = 0;
+$totalArticles = 0;
+try { $totalOffers = (int)($db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'] ?? 0); } catch (Exception $e) {}
+try { $totalArticles = (int)($db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'] ?? 0); } catch (Exception $e) {}
 
 ?>
 # <?= $siteName ?> — сервис подбора финансовых продуктов
