@@ -163,7 +163,48 @@ function buildAutoLinkMap(): array {
     return $linkMap;
 }
 
+function plainTextToHtml(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+    $text = str_replace(["
+", ""], "
+", $text);
+    $blocks = preg_split('/
+{2,}/', $text);
+    $htmlBlocks = [];
+    foreach ($blocks as $block) {
+        $block = trim($block);
+        if ($block === '') continue;
+        $lines = array_values(array_filter(array_map('trim', explode("
+", $block)), fn($v) => $v !== ''));
+        if (!$lines) continue;
+        $allList = true;
+        foreach ($lines as $line) {
+            if (!preg_match('/^[-*]\s+/', $line)) { $allList = false; break; }
+        }
+        if ($allList) {
+            $items = '';
+            foreach ($lines as $line) {
+                $item = preg_replace('/^[-*]\s+/', '', $line);
+                $items .= '<li>' . htmlspecialchars($item, ENT_QUOTES, 'UTF-8') . '</li>';
+            }
+            $htmlBlocks[] = '<ul>' . $items . '</ul>';
+            continue;
+        }
+        if (count($lines) === 1 && mb_strlen($lines[0]) < 120) {
+            $htmlBlocks[] = '<h3>' . htmlspecialchars($lines[0], ENT_QUOTES, 'UTF-8') . '</h3>';
+            continue;
+        }
+        $htmlBlocks[] = '<p>' . htmlspecialchars(implode(' ', $lines), ENT_QUOTES, 'UTF-8') . '</p>';
+    }
+    return implode("
+", $htmlBlocks);
+}
+
 function autoLinkText(string $html, int $maxLinks = 10): string {
+    if (!preg_match('/<[^>]+>/', $html)) {
+        $html = plainTextToHtml($html);
+    }
     $linkMap = buildAutoLinkMap();
     $usedUrls = [];
     $usedPhrases = [];

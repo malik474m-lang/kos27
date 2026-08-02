@@ -24,6 +24,43 @@ function cleanGptPlain(string $text): string {
     return trim($text, " \t\n\r\0\x0B\"'");
 }
 
+function cleanSeoTextToPlain(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+    $text = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
+    $text = preg_replace('/\n?```\s*$/', '', $text);
+    $text = preg_replace('/```/', '', $text);
+    $text = str_replace(["\r\n", "\r"], "\n", $text);
+    $text = str_replace(["&nbsp;", "\xC2\xA0"], ' ', $text);
+    if (preg_match('/&lt;\/?(?:h[1-6]|p|ul|ol|li|div|strong|em|br)\b/i', $text)) {
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    $text = preg_replace('/<\s*br\s*\/?\s*>/i', "\n", $text);
+    $text = preg_replace('/<\s*\/\s*(p|div|h[1-6])\s*>/i', "\n\n", $text);
+    $text = preg_replace('/<\s*li\b[^>]*>/i', "- ", $text);
+    $text = preg_replace('/<\s*\/\s*li\s*>/i', "\n", $text);
+    $text = preg_replace('/<\s*\/?\s*(ul|ol|table|tbody|thead|tr|td|th|html|body|head|meta|title)\b[^>]*>/i', "\n", $text);
+    $text = strip_tags($text);
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = preg_replace('/[ \t]+/u', ' ', $text);
+    $text = preg_replace('/ *\n */u', "\n", $text);
+    $lines = array_map('trim', explode("\n", $text));
+    $out = [];
+    $prevBlank = false;
+    foreach ($lines as $line) {
+        if ($line === '') {
+            if (!$prevBlank && $out) {
+                $out[] = '';
+                $prevBlank = true;
+            }
+            continue;
+        }
+        $out[] = $line;
+        $prevBlank = false;
+    }
+    return trim(implode("\n", $out));
+}
+
 function cleanGptHtml(string $text): string {
     $text = trim($text);
     if ($text === '') return '';

@@ -41,7 +41,7 @@ $updatedMetaDescription = 0;
 $updateStmt = $db->prepare("UPDATE city_tag_seo_texts SET seo_h1 = ?, seo_text = ?, meta_title = ?, meta_description = ? WHERE id = ?");
 
 foreach ($rows as $row) {
-    $newSeoText = cleanGptHtml((string)($row['seo_text'] ?? ''));
+    $newSeoText = cleanSeoTextToPlain((string)($row['seo_text'] ?? ''));
     $newSeoH1 = cleanGptPlain((string)($row['seo_h1'] ?? ''));
     $newMetaTitle = cleanGptPlain((string)($row['meta_title'] ?? ''));
     $newMetaDescription = cleanGptPlain((string)($row['meta_description'] ?? ''));
