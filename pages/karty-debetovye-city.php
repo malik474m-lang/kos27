@@ -47,7 +47,7 @@ ob_start();
     <?php endif; ?>
 
     <?php if (!empty($citySeo['seo_text'])): ?>
-    <div class="bg-white rounded-xl border p-6 mt-8 prose prose-sm max-w-none"><?= safeAutoLink($citySeo['seo_text'], 3) ?></div>
+    <div class="bg-white rounded-xl border p-6 mt-8 prose prose-sm max-w-none"><?= autoLinkText($citySeo['seo_text'], 8) ?></div>
     <?php endif; ?>
 
     <div class="bg-gray-50 rounded-xl p-6 mt-8">
