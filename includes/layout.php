@@ -144,9 +144,8 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <!-- JSON-LD SEO разметка -->
     <?= renderJsonLd(...$jsonLdSchemas) ?>
 </head>
-<?php \$_giveawayBanner = renderGiveawayBanner(); ?>
 <body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col">
-<?= $_giveawayBanner ?>
+<?php $giveawayBanner = renderGiveawayBanner(); echo $giveawayBanner; ?>
     <?php require __DIR__ . '/header.php'; ?>
 
     <main class="flex-1">
