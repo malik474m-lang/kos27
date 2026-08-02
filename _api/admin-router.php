@@ -17,6 +17,9 @@ if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.
 
 // Индексация
 
+// Города
+if (str_starts_with($adminUri, "/cities")) { require __DIR__ . "/admin/cities.php"; exit; }
+
 // FAQ офферов
 if ($adminUri === '/faq' && $method === 'GET') { require __DIR__ . '/admin/faq-list.php'; exit; }
 if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/admin/faq-generate.php'; exit; }

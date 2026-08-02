@@ -35,6 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('reviews')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="reviews">⭐ Отзывы</button>
 <button onclick="sw('tags')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="tags">🏷️ Теги</button>
 <button onclick="sw('geo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="geo">🌍 Гео-редиректы</button>
+<button onclick="sw('cities')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cities">🏘️ Города</button>
 <button onclick="sw('cityseo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cityseo">🏙️ SEO городов</button>
 <button onclick="sw('stats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="stats">📊 Статистика</button>
 <button onclick="sw('funnel')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="funnel">🔻 Воронка</button>
@@ -62,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-reviews" class="tp hidden"></div>
 <div id="p-tags" class="tp hidden"></div>
 <div id="p-geo" class="tp hidden"></div>
+<div id="p-cities" class="tp hidden"></div>
 <div id="p-cityseo" class="tp hidden"></div>
 <div id="p-stats" class="tp hidden"></div>
 <div id="p-funnel" class="tp hidden"></div>
@@ -88,8 +90,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={indexing:'Индексация',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing})[t]?.();}
+const TAB_LABELS={indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -3299,6 +3301,104 @@ if(!confirm('Сгенерировать FAQ для всех офферов бе�
 ap('/faq/bulk-generate',{method:'POST'}).then(function(d){
 if(d.error){ alert('Ошибка: '+d.error); return; }
 alert('✅ FAQ сгенерированы для '+d.generated+' офферов');
+}).catch(function(){ alert('Ошибка'); });
+}
+
+
+/* ============ CITIES ============ */
+function lCities(){
+var el=document.getElementById('p-cities');
+el.innerHTML='<p class="text-gray-500">⏳ Загрузка...</p>';
+
+ap('/cities?action=list').then(function(list){
+if(!Array.isArray(list)){ el.innerHTML='<p class="text-red-500">Ошибка загрузки</p>'; return; }
+
+var h='<div class="space-y-6">';
+
+// Заголовок
+h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">';
+h+='<div><h2 class="text-xl font-bold">🏘️ Города ('+list.length+')</h2><p class="text-sm text-gray-500 mt-1">Управление списком городов для SEO-страниц</p></div>';
+h+='<div class="flex gap-2"><button onclick="cityForm()" class="btn-p text-sm">+ Добавить город</button></div>';
+h+='</div>';
+
+// Поиск
+h+='<div><input id="city-search" class="input-f" placeholder="🔍 Поиск города..." oninput="cityFilter()"></div>';
+
+// Таблица
+h+='<div class="bg-white rounded-xl border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm" id="cities-table"><thead class="bg-gray-50"><tr>';
+h+='<th class="px-4 py-3 text-left">Город</th>';
+h+='<th class="px-4 py-3 text-left">Slug</th>';
+h+='<th class="px-4 py-3 text-left">Регион</th>';
+h+='<th class="px-4 py-3 text-left">Предложный</th>';
+h+='<th class="px-4 py-3 text-right">Действия</th>';
+h+='</tr></thead><tbody>';
+
+list.forEach(function(c){
+h+='<tr class="border-t hover:bg-gray-50 city-row" data-search="'+(c.name+' '+c.slug+' '+c.region+' '+c.prep).toLowerCase()+'">';
+h+='<td class="px-4 py-3 font-medium">'+e(c.name)+'</td>';
+h+='<td class="px-4 py-3 font-mono text-xs text-gray-500">'+e(c.slug)+'</td>';
+h+='<td class="px-4 py-3 text-gray-600">'+e(c.region)+'</td>';
+h+='<td class="px-4 py-3 text-gray-600">в '+e(c.prep)+'</td>';
+h+='<td class="px-4 py-3 text-right space-x-2">';
+h+='<button onclick="cityForm({name:&#39;'+e(c.name).replace(/'/g,'')+'&#39;,slug:&#39;'+e(c.slug)+'&#39;,region:&#39;'+e(c.region).replace(/'/g,'')+'&#39;,prep:&#39;'+e(c.prep).replace(/'/g,'')+'&#39;})" class="text-blue-600 hover:underline text-sm">Ред.</button>';
+h+='<button onclick="cityDel(&#39;'+e(c.slug)+'&#39;,&#39;'+e(c.name).replace(/'/g,'')+'&#39;)" class="text-red-500 hover:underline text-sm">Уд.</button>';
+h+='</td></tr>';
+});
+
+h+='</tbody></table></div></div>';
+h+='</div>';
+el.innerHTML=h;
+}).catch(function(err){ el.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>'; });
+}
+
+function cityFilter(){
+var q=(document.getElementById('city-search').value||'').toLowerCase();
+document.querySelectorAll('.city-row').forEach(function(row){
+row.style.display=(!q||row.dataset.search.indexOf(q)>=0)?'':'none';
+});
+}
+
+function cityForm(c){
+var isEdit=!!c;
+var f=c||{name:'',slug:'',region:'',prep:''};
+var oldSlug=f.slug;
+
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(isEdit?'Редактировать город':'Новый город')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="space-y-3">';
+h+='<div><label class="block text-xs font-medium mb-1">Название *</label><input id="city-name" class="input-f" value="'+e(f.name)+'" placeholder="Новосибирск"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Slug * (латиница, для URL)</label><input id="city-slug" class="input-f font-mono" value="'+e(f.slug)+'" placeholder="novosibirsk"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Регион</label><input id="city-region" class="input-f" value="'+e(f.region)+'" placeholder="Новосибирская область"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Предложный падеж * (в ...)</label><input id="city-prep" class="input-f" value="'+e(f.prep)+'" placeholder="Новосибирске"></div>';
+h+='<p class="text-xs text-gray-400">Предложный падеж используется в текстах: «Займы в <strong>Новосибирске</strong>»</p>';
+h+='</div>';
+h+='<div class="flex justify-end gap-3 mt-4"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="citySave('+(isEdit?"true":"false")+',&#39;'+e(oldSlug)+'&#39;)" class="btn-p">Сохранить</button></div>';
+modal(h);
+}
+
+function citySave(isEdit, oldSlug){
+var name=document.getElementById('city-name').value.trim();
+var slug=document.getElementById('city-slug').value.trim();
+var region=document.getElementById('city-region').value.trim();
+var prep=document.getElementById('city-prep').value.trim();
+
+if(!name||!slug||!prep){ alert('Заполните название, slug и предложный падеж'); return; }
+
+var url=isEdit?'/cities?action=update':'/cities?action=add';
+var body={name:name,slug:slug,region:region,prep:prep};
+if(isEdit) body.old_slug=oldSlug;
+
+ap(url,{method:isEdit?'PUT':'POST',body:JSON.stringify(body)}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+cm();
+lCities();
+}).catch(function(){ alert('Ошибка сохранения'); });
+}
+
+function cityDel(slug, name){
+if(!confirm('Удалить город «'+name+'»? SEO-тексты для этого города останутся в БД.')) return;
+ap('/cities?action=delete',{method:'POST',body:JSON.stringify({slug:slug})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+lCities();
 }).catch(function(){ alert('Ошибка'); });
 }
 
