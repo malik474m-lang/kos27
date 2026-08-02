@@ -30,6 +30,7 @@ function renderGiveawayBanner(): string {
              . '<span>👥 ' . $participants . ' участников</span>'
              . '<span>📅 До ' . $endDate . '</span>'
              . '<span>🎬 Розыгрыш: ' . $drawDate . '</span>'
+             . '<a href="/giveaway" style="background:#ffd700;color:#1a1a2e;padding:4px 12px;border-radius:6px;font-weight:700;font-size:12px;text-decoration:none">Подробнее →</a>'
              . '</div>'
              . '</div></div>';
     } catch (Exception $e) {
