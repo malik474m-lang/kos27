@@ -6,14 +6,12 @@ function renderGiveawayBanner(): string {
     try {
         $db = getDB();
         $db->query("SELECT 1 FROM giveaways LIMIT 1");
-        $now = date('Y-m-d H:i:s');
-        $stmt = $db->prepare("SELECT * FROM giveaways WHERE status IN ('active','drawing') AND start_at <= ? AND end_at >= ? LIMIT 1");
-        $stmt->execute([$now, $now]);
+        $stmt = $db->query("SELECT * FROM giveaways WHERE status IN ('active','drawing') ORDER BY created_at DESC LIMIT 1");
         $gw = $stmt->fetch();
         if (!$gw) return '';
 
         $prize = number_format((float)$gw['prize_amount'], 0, '', ' ');
-        $endDate = date('d.m.Y', strtotime($gw['end_at']));
+        $endDate = $gw['end_at'] ? date('d.m.Y', strtotime($gw['end_at'])) : '—';
         $drawDate = $gw['draw_at'] ? date('d.m.Y в H:i', strtotime($gw['draw_at'])) : $endDate;
         $title = htmlspecialchars($gw['title'], ENT_QUOTES, 'UTF-8');
 

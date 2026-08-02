@@ -156,9 +156,7 @@ case 'draw':
 
 case 'active':
     // Получить активный розыгрыш (для плашки на сайте)
-    $now = date('Y-m-d H:i:s');
-    $stmt = $db->prepare("SELECT * FROM giveaways WHERE status IN ('active','drawing') AND start_at <= ? AND end_at >= ? ORDER BY start_at DESC LIMIT 1");
-    $stmt->execute([$now, $now]);
+    $stmt = $db->query("SELECT * FROM giveaways WHERE status IN ('active','drawing') AND start_at <= NOW() AND end_at >= NOW() ORDER BY start_at DESC LIMIT 1");
     $active = $stmt->fetch();
     if ($active) {
         $cnt = $db->prepare("SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
@@ -167,9 +165,7 @@ case 'active':
         recalcGiveaway($db, (int)$active['id']);
         $active = $db->prepare("SELECT * FROM giveaways WHERE id = ?"); $active->execute([$active['id'] ?? 0]);
         // re-fetch
-        $now2 = date('Y-m-d H:i:s');
-        $stmt2 = $db->prepare("SELECT * FROM giveaways WHERE status IN ('active','drawing') AND start_at <= ? AND end_at >= ? ORDER BY start_at DESC LIMIT 1");
-        $stmt2->execute([$now2, $now2]);
+        $stmt2 = $db->query("SELECT * FROM giveaways WHERE status IN ('active','drawing') AND start_at <= NOW() AND end_at >= NOW() ORDER BY start_at DESC LIMIT 1");
         $active = $stmt2->fetch();
         if ($active) {
             $cnt2 = $db->prepare("SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
