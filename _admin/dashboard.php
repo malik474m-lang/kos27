@@ -779,13 +779,21 @@ h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm te
 h+='<strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов (бесплатно). 🤖 YandexGPT — уникальные AI-тексты (нужен API-ключ в настройках). Можно генерировать только отсутствующие записи или перезаписывать уже существующие.';
 h+='</div>';
 
-h+='<p class="text-sm text-gray-500 mb-4">Сгенерировано: <strong>'+list.length+'</strong> из 41 города</p>';
+h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">';
+h+='<p class="text-sm text-gray-500">Сгенерировано: <strong>'+list.length+'</strong></p>';
+h+='<div class="flex gap-2 items-center">';
+h+='<select id="cs-city-filter" onchange="csFilterCity()" class="sel-f text-sm w-auto"><option value="">Все города</option>';
+var seenSlugs={};
+list.forEach(function(s){ if(!seenSlugs[s.city_slug]){ seenSlugs[s.city_slug]=1; h+='<option value="'+e(s.city_slug)+'">'+e(s.city_slug)+'</option>'; }});
+h+='</select>';
+h+='<input id="cs-city-search" class="input-f text-sm" placeholder="🔍 Поиск..." oninput="csFilterCity()" style="width:160px">';
+h+='</div></div>';
 
 if(list.length){
 h+='<div class="bg-white rounded-xl border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-20">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
 list.forEach(s=>{
 var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,60))+'...</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="csEdit('+s.id+','+JSON.stringify(s).replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="csDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
+h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,60))+'...</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="csEdit('+s.id+','+JSON.stringify(s).replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="csDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
 });
 h+='</tbody></table></div>';
 }else{
@@ -899,7 +907,7 @@ if(filtered.length){
 h+='<div class="bg-white rounded-xl border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">Тег</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-24">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
 filtered.forEach(function(s){
 var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3">'+e(s.tag_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,70))+(s.seo_h1&&s.seo_h1.length>70?'...':'')+'</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="ctsEdit('+s.id+','+JSON.stringify(s).replace(/"/g,'&quot;')+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="ctsDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
+h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3">'+e(s.tag_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,70))+(s.seo_h1&&s.seo_h1.length>70?'...':'')+'</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="ctsEdit('+s.id+','+JSON.stringify(s).replace(/"/g,'&quot;')+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="ctsDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
 });
 h+='</tbody></table></div></div>';
 }else{
@@ -3471,6 +3479,20 @@ h+='<p class="text-green-600 text-sm font-medium">✅ Все страницы д
 }
 h+='</div>';
 box.innerHTML=h;
+}
+
+
+function csFilterCity(){
+var sel=document.getElementById('cs-city-filter');
+var search=document.getElementById('cs-city-search');
+var filterVal=sel?sel.value:'';
+var searchVal=search?(search.value||'').toLowerCase():'';
+document.querySelectorAll('.cs-row').forEach(function(row){
+var city=row.dataset.city||'';
+var matchFilter=!filterVal||city===filterVal;
+var matchSearch=!searchVal||city.indexOf(searchVal)>=0;
+row.style.display=(matchFilter&&matchSearch)?'':'none';
+});
 }
 
 
