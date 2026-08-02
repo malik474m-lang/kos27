@@ -816,7 +816,7 @@ else alert(d.error||'Ошибка');
 lCS();
 }).catch(()=>{btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
 
-function csClean(){var cityFilterEl=document.getElementById('cs-city-filter');var cityFilter=cityFilterEl&&cityFilterEl.value?cityFilterEl.value:'';var citySlugs=Array.isArray(_csCitySlugs)?_csCitySlugs.slice():[];if(cityFilter) citySlugs=[cityFilter];var scopeText=citySlugs.length?(' для '+citySlugs.join(', ')):' для всех городов';if(!confirm('Очистить тексты от markdown-мусора в категории '+_csCat+scopeText+'?'))return;ap('/city-seo/clean',{method:'POST',body:JSON.stringify({category:_csCat,citySlugs:citySlugs})}).then(d=>{if(d.success)alert('Очищено записей: '+d.cleaned+' из '+d.total+'; полей обновлено: '+(d.updated_fields||0));else alert(d.error||'Ошибка');lCS();}).catch(()=>alert('Ошибка'));}
+function csClean(){var cityFilterEl=document.getElementById('cs-city-filter');var cityFilter=cityFilterEl&&cityFilterEl.value?cityFilterEl.value:'';var citySlugs=Array.isArray(_csCitySlugs)?_csCitySlugs.slice():[];if(cityFilter) citySlugs=[cityFilter];var scopeText=citySlugs.length?(' для '+citySlugs.join(', ')):' для всех городов';if(!confirm('Очистить тексты от markdown-мусора в категории '+_csCat+scopeText+'?'))return;ap('/city-seo/clean',{method:'POST',body:JSON.stringify({category:_csCat,citySlugs:citySlugs})}).then(d=>{if(d.success)alert('Очищено записей: '+d.cleaned+' из '+d.total+'; SEO-текст: '+(d.updated_seo_text||0)+'; H1: '+(d.updated_seo_h1||0)+'; Meta title: '+(d.updated_meta_title||0)+'; Meta description: '+(d.updated_meta_description||0));else alert(d.error||'Ошибка');lCS();}).catch(()=>alert('Ошибка'));}
 function csEdit(id,s){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать SEO: '+e(s.city_slug)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return csSave(event,'+id+')">'+
@@ -936,7 +936,7 @@ var scopeText=citySlugs.length?(' для '+citySlugs.join(', ')):' для все
 var tagText=_ctsTagFilter?(' и тега '+_ctsTagFilter):'';
 if(!confirm('Очистить city+tag тексты от markdown-мусора в категории '+_csCat+scopeText+tagText+'?')) return;
 ap('/city-tag-seo/clean',{method:'POST',body:JSON.stringify({category:_csCat,citySlugs:citySlugs,tagSlug:_ctsTagFilter||''})}).then(function(d){
-if(d.success) alert('Очищено записей: '+d.cleaned+' из '+d.total+'; полей обновлено: '+(d.updated_fields||0));
+if(d.success) alert('Очищено записей: '+d.cleaned+' из '+d.total+'; SEO-текст: '+(d.updated_seo_text||0)+'; H1: '+(d.updated_seo_h1||0)+'; Meta title: '+(d.updated_meta_title||0)+'; Meta description: '+(d.updated_meta_description||0));
 else alert(d.error||'Ошибка');
 lCS();
 }).catch(function(){ alert('Ошибка'); });}

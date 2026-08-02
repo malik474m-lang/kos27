@@ -28,6 +28,10 @@ $rows = $stmt->fetchAll();
 
 $cleaned = 0;
 $updatedFields = 0;
+$updatedSeoText = 0;
+$updatedSeoH1 = 0;
+$updatedMetaTitle = 0;
+$updatedMetaDescription = 0;
 $updateStmt = $db->prepare("UPDATE city_seo_texts SET seo_h1 = ?, seo_text = ?, meta_title = ?, meta_description = ? WHERE id = ?");
 
 foreach ($rows as $row) {
@@ -37,15 +41,23 @@ foreach ($rows as $row) {
     $newMetaDescription = cleanGptPlain((string)($row['meta_description'] ?? ''));
 
     $fieldChanges = 0;
-    if ($newSeoText !== (string)($row['seo_text'] ?? '')) $fieldChanges++;
-    if ($newSeoH1 !== (string)($row['seo_h1'] ?? '')) $fieldChanges++;
-    if ($newMetaTitle !== (string)($row['meta_title'] ?? '')) $fieldChanges++;
-    if ($newMetaDescription !== (string)($row['meta_description'] ?? '')) $fieldChanges++;
+    $seoTextChanged = $newSeoText !== (string)($row['seo_text'] ?? '');
+    $seoH1Changed = $newSeoH1 !== (string)($row['seo_h1'] ?? '');
+    $metaTitleChanged = $newMetaTitle !== (string)($row['meta_title'] ?? '');
+    $metaDescriptionChanged = $newMetaDescription !== (string)($row['meta_description'] ?? '');
+    if ($seoTextChanged) $fieldChanges++;
+    if ($seoH1Changed) $fieldChanges++;
+    if ($metaTitleChanged) $fieldChanges++;
+    if ($metaDescriptionChanged) $fieldChanges++;
 
     if ($fieldChanges > 0) {
         $updateStmt->execute([$newSeoH1, $newSeoText, $newMetaTitle, $newMetaDescription, $row['id']]);
         $cleaned++;
         $updatedFields += $fieldChanges;
+        if ($seoTextChanged) $updatedSeoText++;
+        if ($seoH1Changed) $updatedSeoH1++;
+        if ($metaTitleChanged) $updatedMetaTitle++;
+        if ($metaDescriptionChanged) $updatedMetaDescription++;
     }
 }
 
@@ -57,6 +69,10 @@ echo json_encode([
     'success' => true,
     'cleaned' => $cleaned,
     'updated_fields' => $updatedFields,
+    'updated_seo_text' => $updatedSeoText,
+    'updated_seo_h1' => $updatedSeoH1,
+    'updated_meta_title' => $updatedMetaTitle,
+    'updated_meta_description' => $updatedMetaDescription,
     'total' => count($rows),
     'category' => $category,
     'city_slugs' => $citySlugs,
