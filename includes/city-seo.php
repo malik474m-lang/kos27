@@ -6,28 +6,43 @@
 /**
  * Очистка ответа GPT от markdown-обёрток и мусора
  */
-function cleanGptHtml(string $text): string {
-    // Убираем ```html ... ``` и ```...```
+function cleanGptPlain(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
     $text = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
     $text = preg_replace('/\n?```\s*$/', '', $text);
     $text = preg_replace('/```/', '', $text);
+    $text = preg_replace('/^#+\s+/m', '', $text);
+    $text = preg_replace('/^\s*[-*]\s+/m', '', $text);
+    $text = str_replace(["\r\n", "\r"], "\n", $text);
+    $text = str_replace(["&nbsp;", "\xC2\xA0"], ' ', $text);
+    if (preg_match('/&lt;\/?(?:h[1-6]|p|ul|ol|li|div|strong|em|br)\b/i', $text)) {
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    $text = trim(strip_tags($text));
+    $text = preg_replace('/\s+/u', ' ', $text);
+    return trim($text, " \t\n\r\0\x0B\"'");
+}
 
-    // Убираем markdown-заголовки если GPT проигнорировал промт
-    // ## Заголовок → <h3>Заголовок</h3>
+function cleanGptHtml(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+    $text = str_replace(["\r\n", "\r"], "\n", $text);
+    $text = str_replace(["&nbsp;", "\xC2\xA0"], ' ', $text);
+    $text = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
+    $text = preg_replace('/\n?```\s*$/', '', $text);
+    $text = preg_replace('/```/', '', $text);
+    if (preg_match('/&lt;\/?(?:h[1-6]|p|ul|ol|li|div|strong|em|br)\b/i', $text)) {
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    $text = preg_replace('/<\/?(?:html|body|head|meta|title)[^>]*>/i', '', $text);
     $text = preg_replace('/^###\s+(.+)$/m', '<h3>$1</h3>', $text);
     $text = preg_replace('/^##\s+(.+)$/m', '<h3>$1</h3>', $text);
     $text = preg_replace('/^#\s+(.+)$/m', '<h3>$1</h3>', $text);
-
-    // Убираем **жирный** → <strong>
-    $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
-
-    // Убираем *курсив* → <em>
-    $text = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $text);
-
-    // Markdown списки → HTML
-    // Строки начинающиеся с "- " или "* " → <li>
+    $text = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $text);
+    $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '<em>$1</em>', $text);
     if (preg_match('/^[\-\*]\s+/m', $text)) {
-        $text = preg_replace('/(?:^[\-\*]\s+.+$\n?)+/m', function($m) {
+        $text = preg_replace_callback('/(?:^[\-\*]\s+.+$\n?)+/m', function($m) {
             $items = preg_split('/\n/', trim($m[0]));
             $lis = '';
             foreach ($items as $item) {
@@ -37,21 +52,17 @@ function cleanGptHtml(string $text): string {
             return '<ul>' . $lis . '</ul>';
         }, $text);
     }
-
-    // Оборачиваем голые строки текста в <p> (если ещё нет тегов)
     $lines = explode("\n", $text);
     $result = '';
     foreach ($lines as $line) {
         $trimmed = trim($line);
         if (!$trimmed) continue;
-        // Уже HTML-тег — оставляем как есть
-        if (preg_match('/^<(h[1-6]|p|ul|ol|li|div|table|strong|em|a|br)[\s>\/]/i', $trimmed)) {
+        if (preg_match('/^<(h[1-6]|p|ul|ol|li|div|table|tbody|thead|tr|td|th|strong|em|a|br|blockquote)[\s>\/]/i', $trimmed)) {
             $result .= $trimmed . "\n";
         } else {
             $result .= '<p>' . $trimmed . '</p>' . "\n";
         }
     }
-
     return trim($result);
 }
 

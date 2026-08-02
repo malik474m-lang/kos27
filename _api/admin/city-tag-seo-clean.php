@@ -1,15 +1,17 @@
 <?php
-// Очистка GPT/markdown мусора в SEO-текстах городов
 require_once __DIR__ . '/../../includes/city-seo.php';
+require_once __DIR__ . '/../../includes/page-cache.php';
+ensureCityTagSeoTable();
 
 $db = getDB();
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $category = trim((string)($data['category'] ?? ''));
 $citySlugs = $data['citySlugs'] ?? [];
+$tagSlug = trim((string)($data['tagSlug'] ?? ''));
 if (!is_array($citySlugs)) $citySlugs = [];
 $citySlugs = array_values(array_filter(array_map('strval', $citySlugs)));
 
-$sql = "SELECT id, city_slug, category, seo_h1, seo_text, meta_title, meta_description FROM city_seo_texts WHERE 1=1";
+$sql = "SELECT id, city_slug, category, tag_slug, seo_h1, seo_text, meta_title, meta_description FROM city_tag_seo_texts WHERE 1=1";
 $params = [];
 if ($category !== '') {
     $sql .= " AND category = ?";
@@ -20,7 +22,11 @@ if ($citySlugs) {
     $sql .= " AND city_slug IN ($placeholders)";
     foreach ($citySlugs as $slug) $params[] = $slug;
 }
-$sql .= " ORDER BY city_slug ASC";
+if ($tagSlug !== '') {
+    $sql .= " AND tag_slug = ?";
+    $params[] = $tagSlug;
+}
+$sql .= " ORDER BY city_slug ASC, tag_slug ASC";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
@@ -28,13 +34,13 @@ $rows = $stmt->fetchAll();
 
 $cleaned = 0;
 $updatedFields = 0;
-$updateStmt = $db->prepare("UPDATE city_seo_texts SET seo_h1 = ?, seo_text = ?, meta_title = ?, meta_description = ? WHERE id = ?");
+$updateStmt = $db->prepare("UPDATE city_tag_seo_texts SET seo_h1 = ?, seo_text = ?, meta_title = ?, meta_description = ? WHERE id = ?");
 
 foreach ($rows as $row) {
     $newSeoText = cleanGptHtml((string)($row['seo_text'] ?? ''));
     $newSeoH1 = cleanGptPlain((string)($row['seo_h1'] ?? ''));
-    $newMetaTitle = $cleanPlain($row['meta_title'] ?? '');
-    $newMetaDescription = $cleanPlain($row['meta_description'] ?? '');
+    $newMetaTitle = cleanGptPlain((string)($row['meta_title'] ?? ''));
+    $newMetaDescription = cleanGptPlain((string)($row['meta_description'] ?? ''));
 
     $fieldChanges = 0;
     if ($newSeoText !== (string)($row['seo_text'] ?? '')) $fieldChanges++;
@@ -49,7 +55,6 @@ foreach ($rows as $row) {
     }
 }
 
-require_once __DIR__ . '/../../includes/page-cache.php';
 apiCacheClear();
 pageCacheClear();
 
@@ -60,4 +65,5 @@ echo json_encode([
     'total' => count($rows),
     'category' => $category,
     'city_slugs' => $citySlugs,
+    'tag_slug' => $tagSlug,
 ]);
