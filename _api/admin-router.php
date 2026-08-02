@@ -72,6 +72,7 @@ if (preg_match('#^/geo-redirects/(\d+)$#', $adminUri, $m)) {
 
 
 // Теги (типы предложений)
+if ($adminUri === '/tag-seo-generate' && $method === 'POST') { require __DIR__ . '/admin/tag-seo-generate.php'; exit; }
 if ($adminUri === '/tags' && $method === 'GET') { require __DIR__ . '/admin/tags-list.php'; exit; }
 if ($adminUri === '/tags' && $method === 'POST') { require __DIR__ . '/admin/tags-create.php'; exit; }
 if (preg_match('#^/tags/(\d+)$#', $adminUri, $m)) {

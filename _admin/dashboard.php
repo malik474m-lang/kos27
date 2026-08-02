@@ -696,8 +696,8 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Порядок</label><input id="tg-sort" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">H1 заголовок</label><input id="tg-h1" class="input-f" value="'+e(f.h1||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Короткое описание</label><input id="tg-desc" class="input-f" value="'+e(f.description||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="tg-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="tg-meta-btn" onclick="fillMeta(&quot;tg&quot;,&quot;tag&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="3">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="4" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex flex-wrap gap-2"><input id="tg-mt" class="input-f flex-1 min-w-0" value="'+e(f.meta_title||'')+'"><button type="button" id="tg-meta-btn" onclick="fillMeta(&quot;tg&quot;,&quot;tag&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button><button type="button" id="tg-seo-btn" onclick="tgGenerateSeo()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ SEO</button></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="6">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="5" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><div class="flex gap-2 mb-2"><button type="button" onclick="tgAutoFeatures()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ Автофичи</button><span class="text-xs text-gray-400 self-center">Сгенерирует 4 карточки по категории и названию</span></div><textarea id="tg-feat" class="input-f font-mono text-xs" rows="5">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
@@ -712,6 +712,26 @@ var filtered=allOffers.filter(o=>o.category===f.category);
 box.innerHTML=filtered.map(o=>'<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer '+(linArr.includes(Number(o.id))?'bg-green-50 border-green-300':'bg-white border-gray-200')+' hover:border-green-400"><input type="checkbox" class="tg-off-cb w-3.5 h-3.5" value="'+o.id+'"'+(linArr.includes(Number(o.id))?' checked':'')+'> '+e(o.title)+'</label>').join('');
 if(!filtered.length)box.innerHTML='<span class="text-xs text-gray-400">Нет предложений этой категории</span>';
 });
+}
+
+function tgGenerateSeo(){
+var title=(document.getElementById('tg-title')?.value||'').trim();
+var category=document.getElementById('tg-cat')?.value||'microloans';
+if(!title){ alert('Сначала заполните название тега'); return; }
+var btn=document.getElementById('tg-seo-btn');
+var oldText=btn?btn.textContent:'';
+if(btn){ btn.disabled=true; btn.textContent='⏳ Генерация...'; }
+ap('/tag-seo-generate',{method:'POST',body:JSON.stringify({title:title,category:category})}).then(function(d){
+if(btn){ btn.disabled=false; btn.textContent=oldText||'✨ SEO'; }
+if(d.error){ alert(d.error); return; }
+var h1=document.getElementById('tg-h1'); if(h1 && d.h1) h1.value=d.h1;
+var desc=document.getElementById('tg-desc'); if(desc && d.description) desc.value=d.description;
+var mt=document.getElementById('tg-mt'); if(mt && d.metaTitle) mt.value=d.metaTitle;
+var md=document.getElementById('tg-md'); if(md && d.metaDescription) md.value=d.metaDescription;
+var co=document.getElementById('tg-content'); if(co && d.content) co.value=d.content;
+var q=document.getElementById('tg-queries'); if(q && d.searchQueries) q.value=d.searchQueries;
+alert('SEO сгенерировано ('+(d.provider||'template')+')');
+}).catch(function(){ if(btn){ btn.disabled=false; btn.textContent=oldText||'✨ SEO'; } alert('Ошибка генерации SEO'); });
 }
 
 function tS(ev,id){ev.preventDefault();
