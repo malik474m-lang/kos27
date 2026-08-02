@@ -227,6 +227,18 @@ if (preg_match('#^/kredity/([a-z0-9-]+)$#', $uri, $m)) {
     exit;
 }
 
+if (preg_match('#^/karty/kreditnye/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    require __DIR__ . '/pages/karty-kreditnye-city.php';
+    exit;
+}
+
+if (preg_match('#^/karty/debetovye/([a-z0-9-]+)$#', $uri, $m)) {
+    $citySlug = $m[1];
+    require __DIR__ . '/pages/karty-debetovye-city.php';
+    exit;
+}
+
 if (preg_match('#^/karty/([a-z0-9-]+)$#', $uri, $m) && !in_array($m[1], ['kreditnye', 'debetovye'])) {
     $citySlug = $m[1];
     require __DIR__ . '/pages/karty-city.php';

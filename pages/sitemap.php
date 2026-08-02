@@ -203,7 +203,31 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     </url>
 <?php endforeach; ?>
 
-    <!-- Карты по городам -->
+    <!-- Кредитные карты по городам -->
+<?php foreach ($cities as $c):
+    $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
+?>
+    <url>
+        <loc><?= SITE_URL ?>/karty/kreditnye/<?= e($c['slug']) ?></loc>
+        <lastmod><?= date('Y-m-d', strtotime($cityLastmod)) ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.5</priority>
+    </url>
+<?php endforeach; ?>
+
+    <!-- Дебетовые карты по городам -->
+<?php foreach ($cities as $c):
+    $cityLastmod = $citySeoData[$c['slug'] . '_debit_cards'] ?? $lastOfferUpdate;
+?>
+    <url>
+        <loc><?= SITE_URL ?>/karty/debetovye/<?= e($c['slug']) ?></loc>
+        <lastmod><?= date('Y-m-d', strtotime($cityLastmod)) ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.5</priority>
+    </url>
+<?php endforeach; ?>
+
+    <!-- Карты по городам (общие) -->
 <?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
 ?>
@@ -211,7 +235,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
         <loc><?= SITE_URL ?>/karty/<?= e($c['slug']) ?></loc>
         <lastmod><?= date('Y-m-d', strtotime($cityLastmod)) ?></lastmod>
         <changefreq>weekly</changefreq>
-        <priority>0.5</priority>
+        <priority>0.4</priority>
     </url>
 <?php endforeach; ?>
 

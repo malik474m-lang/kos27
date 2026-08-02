@@ -17,6 +17,9 @@ if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.
 
 // Индексация
 
+// Проверка страниц
+if (str_starts_with($adminUri, "/page-checker")) { require __DIR__ . "/admin/page-checker.php"; exit; }
+
 // Города
 if (str_starts_with($adminUri, "/cities")) { require __DIR__ . "/admin/cities.php"; exit; }
 

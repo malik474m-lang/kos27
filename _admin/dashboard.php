@@ -3074,6 +3074,17 @@ h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-bet
 h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-purple-600">🧠 llms.txt</h4><a href="/llms.txt" target="_blank" class="text-xs text-purple-500 hover:underline">Открыть →</a></div><p class="text-xs text-gray-500">Для AI-систем (ChatGPT, Claude)</p><button onclick="idxPreviewLlms()" class="mt-2 text-xs text-purple-600 hover:underline">Предпросмотр</button></div>';
 h+='</div></div>';
 
+// Проверка страниц
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔍 Проверка страниц</h3>';
+h+='<p class="text-xs text-gray-500 mb-3">Проверка доступности всех страниц из sitemap. Найдёт 404 и другие ошибки.</p>';
+h+='<div class="flex flex-wrap gap-2 mb-3">';
+h+='<button onclick="pageCheckSample()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">⚡ Быстрая проверка</button>';
+h+='<button onclick="pageCheckFull()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">🔄 Полная проверка</button>';
+h+='<div class="flex items-center gap-2"><input id="page-check-url" class="input-f text-sm" placeholder="/karty/kreditnye/moskva" style="width:260px"><button onclick="pageCheckOne()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">Проверить</button></div>';
+h+='</div>';
+h+='<div id="page-check-result"></div>';
+h+='</div>';
+
 // Изменения контента
 h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">📝 Последние изменения контента</h3><select id="idx-changes-days" onchange="idxLoadChanges()" class="text-sm border rounded px-2 py-1"><option value="7">7 дней</option><option value="14">14 дней</option><option value="30">30 дней</option></select></div><div id="idx-changes" class="p-4"><p class="text-gray-500 text-sm">⏳ Загрузка...</p></div></div>';
 
@@ -3400,6 +3411,66 @@ ap('/cities?action=delete',{method:'POST',body:JSON.stringify({slug:slug})}).the
 if(d.error){ alert('Ошибка: '+d.error); return; }
 lCities();
 }).catch(function(){ alert('Ошибка'); });
+}
+
+
+/* ============ PAGE CHECKER ============ */
+function pageCheckSample(){
+var box=document.getElementById('page-check-result');
+box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Быстрая проверка ключевых страниц...</p>';
+ap('/page-checker?action=check-sample').then(function(d){
+renderPageCheckResult(box, d);
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+err.message+'</p>'; });
+}
+
+function pageCheckFull(){
+if(!confirm('Полная проверка может занять 1-2 минуты. Продолжить?')) return;
+var box=document.getElementById('page-check-result');
+box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Полная проверка всех страниц из sitemap... Это может занять время.</p>';
+ap('/page-checker?action=check').then(function(d){
+renderPageCheckResult(box, d);
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+err.message+'</p>'; });
+}
+
+function pageCheckOne(){
+var url=document.getElementById('page-check-url').value.trim();
+if(!url){ alert('Введите URL'); return; }
+if(!url.startsWith('/')) url='/'+url;
+var box=document.getElementById('page-check-result');
+box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Проверка '+e(url)+'...</p>';
+ap('/page-checker?action=check-url&url='+encodeURIComponent(url)).then(function(d){
+var color=d.status===200?'green':d.status===301||d.status===302?'yellow':'red';
+var h='<div class="mt-2 p-3 bg-'+color+'-50 border border-'+color+'-200 rounded-lg">';
+h+='<p class="text-sm font-medium text-'+color+'-700">'+e(d.url)+' — HTTP '+d.status+'</p>';
+if(d.is_redirect) h+='<p class="text-xs text-'+color+'-600 mt-1">Редирект на: '+e(d.final_url)+'</p>';
+h+='</div>';
+box.innerHTML=h;
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
+}
+
+function renderPageCheckResult(box, d){
+var h='<div class="mt-2">';
+h+='<div class="flex gap-4 mb-3">';
+h+='<span class="text-sm"><strong>'+d.total+'</strong> проверено</span>';
+h+='<span class="text-sm text-green-600"><strong>'+d.ok+'</strong> ✅ OK</span>';
+h+='<span class="text-sm '+(d.broken_count>0?'text-red-600 font-bold':'text-gray-400')+'"><strong>'+d.broken_count+'</strong> ❌ ошибок</span>';
+h+='</div>';
+
+if(d.broken_count>0){
+h+='<div class="space-y-1 max-h-64 overflow-y-auto">';
+d.broken.forEach(function(b){
+var color=b.status===404?'red':b.status===500?'red':b.status===301||b.status===302?'yellow':'gray';
+h+='<div class="flex items-center justify-between py-1.5 px-3 bg-'+color+'-50 rounded border border-'+color+'-200">';
+h+='<span class="text-sm font-mono text-'+color+'-700 truncate flex-1">'+e(b.url)+'</span>';
+h+='<span class="text-xs font-bold text-'+color+'-600 ml-2">HTTP '+b.status+'</span>';
+h+='</div>';
+});
+h+='</div>';
+}else{
+h+='<p class="text-green-600 text-sm font-medium">✅ Все страницы доступны!</p>';
+}
+h+='</div>';
+box.innerHTML=h;
 }
 
 
