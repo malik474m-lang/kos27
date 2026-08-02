@@ -50,6 +50,8 @@ foreach ($targetCities as $city) {
 }
 
 apiCacheClear();
+require_once __DIR__ . '/../../includes/page-cache.php';
+pageCacheClear();
 echo json_encode([
     'success' => true,
     'generated' => $generated,

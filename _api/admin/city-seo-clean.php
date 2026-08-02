@@ -59,6 +59,10 @@ foreach ($rows as $row) {
     }
 }
 
+require_once __DIR__ . '/../../includes/page-cache.php';
+apiCacheClear();
+pageCacheClear();
+
 echo json_encode([
     'success' => true,
     'cleaned' => $cleaned,
