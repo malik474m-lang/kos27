@@ -50,6 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
+<button onclick="sw('giveaway')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="giveaway">🎁 Розыгрыши</button>
 <button onclick="sw('indexing')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="indexing">🔍 Индексация</button>
 <button onclick="sw('security')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="security">🔒 Безопасность</button>
 </div></div></div>
@@ -79,6 +80,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-users" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
+<div id="p-giveaway" class="tp hidden"></div>
 <div id="p-indexing" class="tp hidden"></div>
 </div>
 <div id="M"></div>
@@ -90,8 +92,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities})[t]?.();}
+const TAB_LABELS={giveaway:'Розыгрыши',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities,giveaway:lGiveaway})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -3509,6 +3511,140 @@ var city=row.dataset.city||'';
 var matchFilter=!filterVal||city===filterVal;
 var matchSearch=!searchVal||city.indexOf(searchVal)>=0;
 row.style.display=(matchFilter&&matchSearch)?'':'none';
+});
+}
+
+
+/* ============ GIVEAWAY ============ */
+function lGiveaway(){
+var el=document.getElementById('p-giveaway');
+el.innerHTML='<p class="text-gray-500">⏳ Загрузка...</p>';
+ap('/giveaway?action=list').then(function(list){
+if(!Array.isArray(list)){ el.innerHTML='<p class="text-red-500">Ошибка</p>'; return; }
+var h='<div class="space-y-6">';
+h+='<div class="flex justify-between items-center"><h2 class="text-xl font-bold">🎁 Розыгрыши</h2><button onclick="gwForm()" class="btn-p text-sm">+ Создать розыгрыш</button></div>';
+if(!list.length){
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет розыгрышей. Создайте первый!</p></div>';
+}else{
+list.forEach(function(g){
+var stColor=g.status==='active'?'green':g.status==='finished'?'blue':g.status==='cancelled'?'red':'yellow';
+var stLabel={planned:'Запланирован',active:'Активен',drawing:'Идёт розыгрыш',finished:'Завершён',cancelled:'Отменён'}[g.status]||g.status;
+var prize=Number(g.prize_amount||0).toLocaleString('ru-RU');
+h+='<div class="bg-white rounded-xl border p-6">';
+h+='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">';
+h+='<div><h3 class="text-lg font-bold">'+e(g.title)+'</h3>';
+h+='<p class="text-sm text-gray-500 mt-1">'+new Date(g.start_at).toLocaleDateString("ru-RU")+' — '+new Date(g.end_at).toLocaleDateString("ru-RU")+'</p></div>';
+h+='<span class="px-3 py-1 rounded-full text-sm font-semibold bg-'+stColor+'-100 text-'+stColor+'-700">'+stLabel+'</span></div>';
+h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">';
+h+='<div class="bg-yellow-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-yellow-600">'+prize+' ₽</p><p class="text-xs text-gray-500">Призовой фонд</p></div>';
+h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-blue-600">'+Number(g.total_conversions_amount||0).toLocaleString("ru-RU")+' ₽</p><p class="text-xs text-gray-500">Сумма конверсий</p></div>';
+h+='<div class="bg-green-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-green-600">'+g.prize_percent+'%</p><p class="text-xs text-gray-500">Процент приза</p></div>';
+h+='<div class="bg-purple-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-purple-600">'+(g.entries_count||0)+'</p><p class="text-xs text-gray-500">Участников</p></div>';
+h+='</div>';
+if(g.draw_at) h+='<p class="text-sm text-gray-600 mb-3">🎬 Розыгрыш в прямом эфире: <strong>'+new Date(g.draw_at).toLocaleString("ru-RU")+'</strong></p>';
+if(g.status==='finished'&&g.winner_id){
+  var wStmt=ap('/giveaway?action=entries&id='+g.id);
+  h+='<div id="gw-winner-'+g.id+'" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-3"><p class="text-green-700 font-semibold">🏆 Загрузка победителя...</p></div>';
+}
+h+='<div class="flex flex-wrap gap-2">';
+h+='<button onclick="gwEntries('+g.id+')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">👥 Участники</button>';
+h+='<button onclick="gwRecalc('+g.id+')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">🔄 Пересчитать</button>';
+if(g.status==='active'||g.status==='drawing') h+='<button onclick="gwDraw('+g.id+')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">🎰 Запустить розыгрыш</button>';
+h+='<button onclick="gwForm('+JSON.stringify(g).replace(/&#39;/g,"").replace(/"/g,"&quot;")+')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">✏️ Ред.</button>';
+h+='<button onclick="gwDel('+g.id+')" class="text-red-500 hover:underline text-sm px-2 py-2">Удалить</button>';
+h+='</div></div>';
+// Загрузим победителя если есть
+if(g.status==='finished'&&g.winner_id){
+  setTimeout(function(){ gwLoadWinner(g.id, g.winner_id); }, 200);
+}
+});
+}
+h+='</div>';
+el.innerHTML=h;
+}).catch(function(err){ el.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>'; });
+}
+
+function gwForm(g){
+var f=g||{title:'',description:'',prize_percent:10,start_at:'',end_at:'',draw_at:'',status:'planned'};
+var isEdit=!!g;
+var startVal=f.start_at?f.start_at.replace(' ','T').substring(0,16):'';
+var endVal=f.end_at?f.end_at.replace(' ','T').substring(0,16):'';
+var drawVal=f.draw_at?f.draw_at.replace(' ','T').substring(0,16):'';
+var statuses='<option value="planned"'+(f.status==='planned'?' selected':'')+'>Запланирован</option><option value="active"'+(f.status==='active'?' selected':'')+'>Активен</option><option value="drawing"'+(f.status==='drawing'?' selected':'')+'>Идёт розыгрыш</option><option value="finished"'+(f.status==='finished'?' selected':'')+'>Завершён</option><option value="cancelled"'+(f.status==='cancelled'?' selected':'')+'>Отменён</option>';
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(isEdit?'Редактировать':'Новый розыгрыш')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>'+
+'<div class="space-y-3">'+
+'<div><label class="block text-xs font-medium mb-1">Название *</label><input id="gw-title" class="input-f" value="'+e(f.title)+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Описание</label><textarea id="gw-desc" class="input-f" rows="2">'+e(f.description||'')+'</textarea></div>'+
+'<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Процент приза от конверсий</label><input id="gw-percent" type="number" step="0.1" min="1" max="100" class="input-f" value="'+(f.prize_percent||10)+'"></div><div><label class="block text-xs font-medium mb-1">Статус</label><select id="gw-status" class="sel-f">'+statuses+'</select></div></div>'+
+'<div class="grid grid-cols-3 gap-3"><div><label class="block text-xs font-medium mb-1">Начало *</label><input id="gw-start" type="datetime-local" class="input-f" value="'+startVal+'"></div><div><label class="block text-xs font-medium mb-1">Окончание *</label><input id="gw-end" type="datetime-local" class="input-f" value="'+endVal+'"></div><div><label class="block text-xs font-medium mb-1">Розыгрыш (прямой эфир)</label><input id="gw-draw" type="datetime-local" class="input-f" value="'+drawVal+'"></div></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="gwSave('+(isEdit?f.id:0)+')" class="btn-p">Сохранить</button></div>');
+}
+
+function gwSave(id){
+var body={title:document.getElementById('gw-title').value,description:document.getElementById('gw-desc').value,
+prize_percent:parseFloat(document.getElementById('gw-percent').value)||10,
+start_at:document.getElementById('gw-start').value.replace('T',' '),
+end_at:document.getElementById('gw-end').value.replace('T',' '),
+draw_at:document.getElementById('gw-draw').value?document.getElementById('gw-draw').value.replace('T',' '):'',
+status:document.getElementById('gw-status').value};
+if(!body.title||!body.start_at||!body.end_at){ alert('Заполните название и даты'); return; }
+if(id) body.id=id;
+ap('/giveaway?action='+(id?'update':'create'),{method:'POST',body:JSON.stringify(body)}).then(function(d){
+if(d.error){ alert(d.error); return; } cm(); lGiveaway();
+});
+}
+
+function gwDel(id){ if(!confirm('Удалить розыгрыш и всех участников?')) return;
+ap('/giveaway?action=delete',{method:'POST',body:JSON.stringify({id:id})}).then(function(){ lGiveaway(); }); }
+
+function gwRecalc(id){
+ap('/giveaway?action=recalc',{method:'POST',body:JSON.stringify({id:id})}).then(function(d){
+if(d.error){ alert(d.error); return; }
+alert('Пересчитано!\nОбщая сумма конверсий: '+Number(d.total_amount).toLocaleString('ru-RU')+' ₽\nПризовой фонд: '+Number(d.prize_amount).toLocaleString('ru-RU')+' ₽\nУчастников добавлено: '+d.entries);
+lGiveaway();
+});
+}
+
+function gwEntries(id){
+ap('/giveaway?action=entries&id='+id).then(function(list){
+if(!list||!list.length){ alert('Нет участников'); return; }
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">👥 Участники ('+list.length+')</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+h+='<div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr><th class="p-2 text-left">Имя</th><th class="p-2 text-left">Email</th><th class="p-2 text-left">Оффер</th><th class="p-2 text-right">Сумма</th><th class="p-2 text-left">IP</th><th class="p-2 text-left">Дата</th></tr></thead><tbody>';
+list.forEach(function(en){
+h+='<tr class="border-t"><td class="p-2 font-medium">'+e(en.user_name)+'</td><td class="p-2 text-gray-500 font-mono text-xs">'+e(en.user_email_masked)+'</td><td class="p-2 text-xs">'+e(en.offer_title||'—')+'</td><td class="p-2 text-right text-green-600">'+Number(en.payout||0).toLocaleString('ru-RU')+' ₽</td><td class="p-2 font-mono text-xs text-gray-400">'+e(en.ip_masked)+'</td><td class="p-2 text-xs text-gray-400">'+new Date(en.created_at).toLocaleDateString('ru-RU')+'</td></tr>';
+});
+h+='</tbody></table></div>';
+modal(h);
+});
+}
+
+function gwDraw(id){
+if(!confirm('🎰 Запустить розыгрыш? Будет случайно выбран победитель из участников. Это действие нельзя отменить!')) return;
+ap('/giveaway?action=draw',{method:'POST',body:JSON.stringify({id:id})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+var h='<div class="text-center py-8"><span class="text-6xl block mb-4">🏆</span>';
+h+='<h2 class="text-2xl font-bold text-gray-900 mb-2">Победитель определён!</h2>';
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 max-w-md mx-auto">';
+h+='<p class="text-xl font-bold text-gray-900">'+e(d.winner.name)+'</p>';
+h+='<p class="text-sm text-gray-500 mt-1">'+e(d.winner.email_masked)+'</p>';
+h+='<p class="text-sm text-gray-500 mt-1">Оффер: '+e(d.winner.offer)+'</p>';
+h+='<p class="text-2xl font-bold text-green-600 mt-3">'+Number(d.prize_amount).toLocaleString('ru-RU')+' ₽</p>';
+h+='<p class="text-xs text-gray-400 mt-2">Участников: '+d.total_entries+'</p>';
+h+='</div><button onclick="cm();lGiveaway();" class="btn-p mt-6">Закрыть</button></div>';
+modal(h);
+});
+}
+
+function gwLoadWinner(gwId, winnerId){
+ap('/giveaway?action=entries&id='+gwId).then(function(list){
+var box=document.getElementById('gw-winner-'+gwId);
+if(!box) return;
+var w=list.find(function(en){ return en.id===winnerId; });
+if(w){
+box.innerHTML='<p class="text-green-700 font-semibold">🏆 Победитель: <strong>'+e(w.user_name)+'</strong> ('+e(w.user_email_masked)+') — оффер: '+e(w.offer_title||'—')+'</p>';
+}else{
+box.innerHTML='<p class="text-green-700 font-semibold">🏆 Победитель определён (ID: '+winnerId+')</p>';
+}
 });
 }
 

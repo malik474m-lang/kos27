@@ -20,6 +20,19 @@ if (str_starts_with($apiUri, '/user/')) {
     if (file_exists($userFile)) { require $userFile; exit; }
 }
 if ($apiUri === '/cron-generate') { require __DIR__ . '/cron-generate.php'; exit; }
+if ($apiUri === '/giveaway/active') {
+    try {
+        $db = getDB();
+        $db->query('SELECT 1 FROM giveaways LIMIT 1');
+        $now = date('Y-m-d H:i:s');
+        $stmt = $db->prepare('SELECT id, title, prize_amount, start_at, end_at, draw_at, status FROM giveaways WHERE status IN (\'active\',\'drawing\') AND start_at <= ? AND end_at >= ? LIMIT 1');
+        $stmt->execute([$now, $now]);
+        $gw = $stmt->fetch();
+        if ($gw) { $cnt = $db->prepare('SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?'); $cnt->execute([$gw['id']]); $gw['entries_count'] = (int)$cnt->fetch()['cnt']; }
+        echo json_encode($gw ?: null);
+    } catch (Exception $e) { echo json_encode(null); }
+    exit;
+}
 if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 

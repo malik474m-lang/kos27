@@ -2,6 +2,7 @@
 // Главный шаблон сайта
 // Переменные: $pageTitle, $metaDescription, $metaKeywords, $content, $jsonLdSchemas, $canonicalUrl, $ogImage
 require_once __DIR__ . '/seo.php';
+require_once __DIR__ . '/giveaway-banner.php';
 
 $pageTitle = $pageTitle ?? SITE_NAME;
 $metaDescription = $metaDescription ?? 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам.';
@@ -143,7 +144,9 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <!-- JSON-LD SEO разметка -->
     <?= renderJsonLd(...$jsonLdSchemas) ?>
 </head>
+<?php \$_giveawayBanner = renderGiveawayBanner(); ?>
 <body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col">
+<?= $_giveawayBanner ?>
     <?php require __DIR__ . '/header.php'; ?>
 
     <main class="flex-1">
