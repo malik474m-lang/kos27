@@ -766,6 +766,7 @@ var _ctsCitySlugs=[];
 function lCS(){
 var cat=_csCat;
 Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), ap('/tags')]).then(([list, cityTagList, allTags])=>{
+var scopedList=(_csCitySlugs&&_csCitySlugs.length)?list.filter(function(item){return _csCitySlugs.indexOf(item.city_slug)!==-1;}):list;
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏙️ SEO-тексты для городов</h2><div class="flex gap-2">';
 h+='<select id="cs-cat" onchange="_csCat=this.value;lCS()" class="sel-f text-sm w-auto"><option value="microloans"'+(cat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(cat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(cat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(cat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select>';
 h+='<select id="cs-overwrite" onchange="_csOverwrite=this.value===\'1\'" class="sel-f text-sm w-auto"><option value="0"'+(!_csOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_csOverwrite?' selected':'')+'>Перезаписать существующие</option></select>';
@@ -780,27 +781,28 @@ h+='<strong>Как работает:</strong> ⚡ Шаблоны — мгнов�
 h+='</div>';
 
 h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">';
-h+='<p class="text-sm text-gray-500">Сгенерировано: <strong>'+list.length+'</strong></p>';
+h+='<p class="text-sm text-gray-500">Показано: <strong>'+scopedList.length+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
 h+='<div class="flex gap-2 items-center">';
 h+='<select id="cs-city-filter" onchange="csFilterCity()" class="sel-f text-sm w-auto"><option value="">Все города</option>';
 var seenSlugs={};
-list.forEach(function(s){ if(!seenSlugs[s.city_slug]){ seenSlugs[s.city_slug]=1; h+='<option value="'+e(s.city_slug)+'">'+e(s.city_slug)+'</option>'; }});
+scopedList.forEach(function(s){ if(!seenSlugs[s.city_slug]){ seenSlugs[s.city_slug]=1; h+='<option value="'+e(s.city_slug)+'">'+e(s.city_slug)+'</option>'; }});
 h+='</select>';
 h+='<input id="cs-city-search" class="input-f text-sm" placeholder="🔍 Поиск..." oninput="csFilterCity()" style="width:160px">';
 h+='</div></div>';
 
-if(list.length){
+if(scopedList.length){
 h+='<div class="bg-white rounded-xl border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-20">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
-list.forEach(s=>{
+scopedList.forEach(s=>{
 var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
 h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,60))+'...</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="csEdit('+s.id+','+JSON.stringify(s).replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="csDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
 });
 h+='</tbody></table></div>';
 }else{
-h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет сгенерированных текстов. Нажмите ⚡ Шаблоны для генерации.</p></div>';
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет сгенерированных текстов для выбранной категории/города. Нажмите ⚡ Шаблоны для генерации.</p></div>';
 }
 h+=renderCityTagSeoBlock(cityTagList, allTags, cat);
 document.getElementById('p-cityseo').innerHTML=h;
+csFilterCity();
 });}
 
 function csGen(useGPT){
@@ -814,7 +816,7 @@ else alert(d.error||'Ошибка');
 lCS();
 }).catch(()=>{btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
 
-function csClean(){if(!confirm('Очистить все тексты от markdown-мусора (```html``` и пр.)?'))return;ap('/city-seo/clean',{method:'POST'}).then(d=>{if(d.success)alert('Очищено: '+d.cleaned+' из '+d.total);lCS();});}
+function csClean(){var cityFilterEl=document.getElementById('cs-city-filter');var cityFilter=cityFilterEl&&cityFilterEl.value?cityFilterEl.value:'';var citySlugs=Array.isArray(_csCitySlugs)?_csCitySlugs.slice():[];if(cityFilter) citySlugs=[cityFilter];var scopeText=citySlugs.length?(' для '+citySlugs.join(', ')):' для всех городов';if(!confirm('Очистить тексты от markdown-мусора в категории '+_csCat+scopeText+'?'))return;ap('/city-seo/clean',{method:'POST',body:JSON.stringify({category:_csCat,citySlugs:citySlugs})}).then(d=>{if(d.success)alert('Очищено записей: '+d.cleaned+' из '+d.total+'; полей обновлено: '+(d.updated_fields||0));else alert(d.error||'Ошибка');lCS();}).catch(()=>alert('Ошибка'));}
 function csEdit(id,s){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать SEO: '+e(s.city_slug)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return csSave(event,'+id+')">'+
