@@ -33,8 +33,8 @@ $updateStmt = $db->prepare("UPDATE city_seo_texts SET seo_h1 = ?, seo_text = ?, 
 foreach ($rows as $row) {
     $newSeoText = cleanGptHtml((string)($row['seo_text'] ?? ''));
     $newSeoH1 = cleanGptPlain((string)($row['seo_h1'] ?? ''));
-    $newMetaTitle = $cleanPlain($row['meta_title'] ?? '');
-    $newMetaDescription = $cleanPlain($row['meta_description'] ?? '');
+    $newMetaTitle = cleanGptPlain((string)($row['meta_title'] ?? ''));
+    $newMetaDescription = cleanGptPlain((string)($row['meta_description'] ?? ''));
 
     $fieldChanges = 0;
     if ($newSeoText !== (string)($row['seo_text'] ?? '')) $fieldChanges++;
