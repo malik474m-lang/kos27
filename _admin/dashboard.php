@@ -593,66 +593,80 @@ function tgAutoIcon(){
   if(el) el.value=icon;
 }
 
-function tgFeatureTemplatesByCategory(category){
-  if(category==='microloans') return [
-    {icon:'⚡',title:'Быстрое решение',text:'Рассмотрение заявки за несколько минут'},
-    {icon:'📱',title:'Онлайн оформление',text:'Подача заявки без визита в офис'},
-    {icon:'💳',title:'На карту',text:'Перевод денег на банковскую карту'},
-    {icon:'✅',title:'Высокое одобрение',text:'Лояльные требования к заёмщикам'}
-  ];
-  if(category==='credits') return [
-    {icon:'🏦',title:'Надёжный банк',text:'Оформление через проверенные банки-партнёры'},
-    {icon:'📄',title:'Прозрачные условия',text:'Сравнение ставок и полной стоимости кредита'},
-    {icon:'💰',title:'Крупные суммы',text:'Подбор лимита под ваши задачи'},
-    {icon:'🧮',title:'Предварительный расчёт',text:'Оценка платежей перед отправкой заявки'}
-  ];
-  if(category==='credit_cards') return [
-    {icon:'💳',title:'Кредитный лимит',text:'Доступ к заёмным средствам на карте'},
-    {icon:'🗓️',title:'Льготный период',text:'Можно пользоваться лимитом без процентов'},
-    {icon:'🎁',title:'Бонусы и кэшбэк',text:'Дополнительная выгода при оплате покупок'},
-    {icon:'📦',title:'Доставка карты',text:'Многие банки доставляют карту на дом'}
-  ];
-  if(category==='debit_cards') return [
-    {icon:'🪪',title:'Повседневные платежи',text:'Удобная карта для покупок и переводов'},
-    {icon:'💸',title:'Кэшбэк',text:'Возврат части расходов рублями или бонусами'},
-    {icon:'📈',title:'Процент на остаток',text:'Можно получать доход на средства на счёте'},
-    {icon:'🆓',title:'Бесплатное обслуживание',text:'Есть предложения без абонентской платы'}
-  ];
-  return [
-    {icon:'⭐',title:'Удобный выбор',text:'Сравните условия и выберите подходящий вариант'},
-    {icon:'📋',title:'Прозрачные условия',text:'Основные параметры собраны в одном месте'},
-    {icon:'⚡',title:'Быстрый старт',text:'Переход к оформлению за пару кликов'},
-    {icon:'✅',title:'Актуальные данные',text:'Мы регулярно обновляем информацию по предложениям'}
-  ];
-}
-
 function tgAutoFeatures(){
-  var title=(document.getElementById('tg-title')?.value||'').toLowerCase();
+  var title=(document.getElementById('tg-title')?.value||'').trim();
   var category=document.getElementById('tg-cat')?.value||'microloans';
-  var features=tgFeatureTemplatesByCategory(category).map(function(x){return Object.assign({},x);});
+  if(!title){ alert('Сначала заполните название тега'); return; }
+  var t=title.toLowerCase();
 
-  if(title.includes('без отказ')){
-    features[0]={icon:'✅',title:'Высокий шанс одобрения',text:'Подбор предложений с лояльными требованиями'};
-    features[3]={icon:'📊',title:'Проверенные офферы',text:'Собраны предложения с хорошей конверсией'};
+  // Пул иконок по темам
+  var iconPool={
+    speed:['⚡','🚀','💨','🏃'],
+    money:['💰','💵','💲','🤑'],
+    card:['💳','🪪','📲','🏧'],
+    safe:['🛡️','🔒','✅','🏛️'],
+    gift:['🎁','🎉','💸','🎊'],
+    time:['⏰','🗓️','📅','⌛'],
+    doc:['📋','📄','📝','✍️'],
+    people:['👥','🧑','👤','🤝'],
+    calc:['🧮','📊','📈','🔢'],
+    online:['📱','💻','🌐','📡'],
+    free:['🆓','0️⃣','🎯','✨'],
+    star:['⭐','🌟','💎','🏆']
+  };
+
+  function pickIcon(pool, used){
+    for(var i=0;i<pool.length;i++){ if(used.indexOf(pool[i])===-1) return pool[i]; }
+    return pool[0];
   }
-  if(title.includes('кэшбэк') || title.includes('кешбек')){
-    features[1]={icon:'💸',title:'Повышенный кэшбэк',text:'Выгода за покупки в популярных категориях'};
+
+  var usedIcons=[];
+  var features=[];
+
+  function addFeat(pools, titleText, descText){
+    var icon='📌';
+    for(var p=0;p<pools.length;p++){
+      var pool=iconPool[pools[p]]||[];
+      var picked=pickIcon(pool, usedIcons);
+      if(picked && usedIcons.indexOf(picked)===-1){ icon=picked; break; }
+    }
+    usedIcons.push(icon);
+    features.push({icon:icon, title:titleText, text:descText});
   }
-  if(title.includes('без процент') || title.includes('0%')){
-    features[0]={icon:'🆓',title:'Без процентов',text:'Льготный период для новых клиентов'};
-    features[2]={icon:'📅',title:'Ограниченный срок',text:'Важно вернуть деньги в рамках акции'};
+
+  // Генерируем 4 фичи на основе названия тега и категории
+  // Фича 1: главное преимущество по названию
+  if(t.includes('без отказ')) addFeat(['safe','star'],'Высокий шанс одобрения','Подборка предложений с лояльными требованиями к «'+title+'»');
+  else if(t.includes('без процент')||t.includes('0%')||t.includes('под 0')) addFeat(['free','gift'],'Без процентов','Акции для новых клиентов по теме «'+title+'»');
+  else if(t.includes('кэшбэк')||t.includes('кешбек')) addFeat(['gift','money'],'Кэшбэк','Возврат части расходов по запросу «'+title+'»');
+  else if(t.includes('льгот')||t.includes('грейс')) addFeat(['time','free'],'Льготный период','Используйте средства без процентов по «'+title+'»');
+  else if(t.includes('студент')) addFeat(['people','star'],'Для студентов','Специальные условия по запросу «'+title+'»');
+  else if(t.includes('пенсион')) addFeat(['people','safe'],'Для пенсионеров','Предложения с повышенным возрастным лимитом');
+  else if(t.includes('на карту')) addFeat(['card','speed'],'Деньги на карту','Мгновенный перевод по «'+title+'»');
+  else if(t.includes('сроч')) addFeat(['speed','time'],'Срочное оформление','Быстрое решение по «'+title+'»');
+  else if(t.includes('наличн')) addFeat(['money','doc'],'Наличными','Выдача средств по запросу «'+title+'»');
+  else if(t.includes('рефинанс')) addFeat(['calc','money'],'Рефинансирование','Снижение нагрузки по «'+title+'»');
+  else if(t.includes('ипотек')) addFeat(['money','doc'],'Ипотека','Предложения по «'+title+'»');
+  else addFeat(['star','safe'],''+title,'Подборка лучших предложений');
+
+  // Фича 2: удобство
+  if(features.length<2){
+    if(t.includes('онлайн')||t.includes('на карту')) addFeat(['online','speed'],'Онлайн-оформление','Подача заявки без визита в офис');
+    else addFeat(['online','card'],'Удобная подача','Заявка онлайн за несколько минут');
   }
-  if(title.includes('студент')){
-    features[3]={icon:'🎓',title:'Для студентов',text:'Подходящие условия для молодых заёмщиков'};
+
+  // Фича 3: сравнение
+  if(features.length<3){
+    addFeat(['calc','doc'],'Сравнение условий','Ставки, суммы и сроки в одном месте');
   }
-  if(title.includes('пенсион')){
-    features[3]={icon:'👴',title:'Для пенсионеров',text:'Подбор предложений с лояльными возрастными условиями'};
-  }
-  if(title.includes('на карту')){
-    features[2]={icon:'💳',title:'Мгновенный перевод',text:'Деньги отправляются на карту после одобрения'};
-  }
-  if(title.includes('дебет')){
-    features[3]={icon:'📲',title:'Удобное приложение',text:'Контроль расходов и операций в мобильном банке'};
+
+  // Фича 4: по категории
+  if(features.length<4){
+    if(category==='microloans') addFeat(['speed','money'],'Быстрое решение','Одобрение заявки за 5-15 минут');
+    else if(category==='credits') addFeat(['money','doc'],'Прозрачные условия','ПСК и ставка указаны для каждого предложения');
+    else if(category==='credit_cards') addFeat(['time','card'],'Грейс-период','Льготный период на покупки');
+    else if(category==='debit_cards') addFeat(['gift','card'],'Бонусная программа','Кэшбэк и проценты на остаток');
+    else addFeat(['safe','star'],'Проверенные партнёры','Все организации в реестре ЦБ РФ');
   }
 
   document.getElementById('tg-feat').value = JSON.stringify(features, null, 2);
