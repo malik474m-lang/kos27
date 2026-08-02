@@ -1,11 +1,8 @@
 <?php
 /**
  * Крон-эндпоинт для автогенерации контента
- * POST /api/cron-generate?type=review&secret=...
- * POST /api/cron-generate?type=article&secret=...
- * 
- * Вызывается из auto-scheduler.php без авторизации,
- * проверяется по CRON_SECRET
+ * GET /api/cron-generate?type=review&secret=...
+ * GET /api/cron-generate?type=article&secret=...
  */
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -19,13 +16,30 @@ if ($secret !== CRON_SECRET) {
 $type = $_GET['type'] ?? '';
 
 if ($type === 'review') {
-    // Подключаем генерацию отзыва напрямую
-    require __DIR__ . '/admin/generate-review.php';
+    ob_start();
+    try {
+        require __DIR__ . '/../cron/review-cron.php';
+    } catch (Throwable $e) {
+        ob_end_clean();
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+    $output = ob_get_clean();
+    echo json_encode(['success' => true, 'type' => 'review', 'output' => trim($output)]);
     exit;
 }
 
 if ($type === 'article') {
-    require __DIR__ . '/admin/generate-article.php';
+    ob_start();
+    try {
+        require __DIR__ . '/../cron/article-cron.php';
+    } catch (Throwable $e) {
+        ob_end_clean();
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+    $output = ob_get_clean();
+    echo json_encode(['success' => true, 'type' => 'article', 'output' => trim($output)]);
     exit;
 }
 

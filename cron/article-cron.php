@@ -63,7 +63,7 @@ $excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : m
 $slug = slugify($topic) . '-' . time();
 
 $db = getDB();
-$db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,1)")
-   ->execute([$topic, $slug, $excerpt, $content, "$topic | Космозайм", mb_substr($excerpt, 0, 155)]);
+$db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,0)")
+   ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155)]);
 
 echo "[DONE] Статья создана ($provider): $topic\n";
