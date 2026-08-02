@@ -19,14 +19,14 @@ function renderGiveawayBanner(): string {
         $cnt->execute([$gw['id']]);
         $participants = (int)$cnt->fetch()['cnt'];
 
-        return '<div id="giveaway-banner" class="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white">'
+        return '<div id="giveaway-banner" style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)">'
              . '<div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">'
              . '<div class="flex items-center gap-3">'
              . '<span class="text-2xl">🎁</span>'
-             . '<div><strong>' . $title . '</strong>'
-             . '<span class="opacity-90 ml-2">Призовой фонд: <strong>' . $prize . ' ₽</strong></span></div>'
+             . '<div style="color:#fff"><strong style="color:#ffd700">' . $title . '</strong>'
+             . '<span style="color:#e0e0e0" class="ml-2">Призовой фонд: <strong style="color:#ffd700">' . $prize . ' ₽</strong></span></div>'
              . '</div>'
-             . '<div class="flex items-center gap-4 text-xs opacity-90">'
+             . '<div class="flex items-center gap-4 text-xs" style="color:#ccc">'
              . '<span>👥 ' . $participants . ' участников</span>'
              . '<span>📅 До ' . $endDate . '</span>'
              . '<span>🎬 Розыгрыш: ' . $drawDate . '</span>'
