@@ -8,7 +8,12 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? 'list';
 
 // Автосоздание таблиц
-try { $db->query("SELECT 1 FROM giveaways LIMIT 1"); } catch (Exception $e) {
+try { $db->query("SELECT 1 FROM giveaways LIMIT 1");
+    // Добавляем новые столбцы если нет
+    try { $db->query("SELECT page_subtitle FROM giveaways LIMIT 1"); } catch (Exception $e2) {
+        $db->exec("ALTER TABLE giveaways ADD COLUMN page_subtitle varchar(500) DEFAULT NULL AFTER description, ADD COLUMN page_steps text DEFAULT NULL AFTER page_subtitle, ADD COLUMN page_rules text DEFAULT NULL AFTER page_steps");
+    }
+} catch (Exception $e) {
     $migration = file_get_contents(__DIR__ . '/../../database-giveaway-migration.sql');
     foreach (explode(';', $migration) as $q) { $q = trim($q); if ($q) $db->exec($q); }
 }
@@ -80,8 +85,10 @@ case 'list':
 case 'create':
     if ($method !== 'POST') { echo json_encode(['error'=>'POST']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
-    $db->prepare("INSERT INTO giveaways (title, description, prize_percent, start_at, end_at, draw_at, status) VALUES (?,?,?,?,?,?,?)")
-       ->execute([$data['title']??'Розыгрыш', $data['description']??'', $data['prize_percent']??10,
+    $db->prepare("INSERT INTO giveaways (title, description, page_subtitle, page_steps, page_rules, prize_percent, start_at, end_at, draw_at, status) VALUES (?,?,?,?,?,?,?,?,?,?)")
+       ->execute([$data['title']??'Розыгрыш', $data['description']??'', $data['page_subtitle']??'',
+                  $data['page_steps']??'', $data['page_rules']??'',
+                  $data['prize_percent']??10,
                   $data['start_at']??date('Y-m-d H:i:s'), $data['end_at']??date('Y-m-d H:i:s', strtotime('+30 days')),
                   $data['draw_at']??null, 'planned']);
     echo json_encode(['success'=>true, 'id'=>$db->lastInsertId()]);
@@ -90,8 +97,9 @@ case 'create':
 case 'update':
     if ($method !== 'POST') { echo json_encode(['error'=>'POST']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
-    $db->prepare("UPDATE giveaways SET title=?, description=?, prize_percent=?, start_at=?, end_at=?, draw_at=?, status=? WHERE id=?")
-       ->execute([$data['title'], $data['description']??'', $data['prize_percent']??10,
+    $db->prepare("UPDATE giveaways SET title=?, description=?, page_subtitle=?, page_steps=?, page_rules=?, prize_percent=?, start_at=?, end_at=?, draw_at=?, status=? WHERE id=?")
+       ->execute([$data['title'], $data['description']??'', $data['page_subtitle']??'', $data['page_steps']??'', $data['page_rules']??'',
+                  $data['prize_percent']??10,
                   $data['start_at'], $data['end_at'], $data['draw_at']??null, $data['status']??'planned', $data['id']]);
     echo json_encode(['success'=>true]);
     break;

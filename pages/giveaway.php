@@ -52,8 +52,11 @@ ob_start();
         <div class="p-8 sm:p-12 text-center">
             <span class="text-5xl block mb-4">🎁</span>
             <h1 class="text-3xl sm:text-4xl font-extrabold mb-4" style="color:#ffd700"><?= e($activeGiveaway['title']) ?></h1>
-            <?php if (!empty($activeGiveaway['description'])): ?>
-            <p class="text-lg mb-6" style="color:#e0e0e0"><?= e($activeGiveaway['description']) ?></p>
+            <?php
+            $subtitle = $activeGiveaway['page_subtitle'] ?? '';
+            if (!$subtitle) $subtitle = $activeGiveaway['description'] ?? '';
+            if ($subtitle): ?>
+            <p class="text-lg mb-6" style="color:#e0e0e0"><?= e($subtitle) ?></p>
             <?php endif; ?>
             <div class="text-4xl font-bold mb-2" style="color:#ffd700"><?= number_format((float)$activeGiveaway['prize_amount'], 0, '', ' ') ?> ₽</div>
             <p class="text-sm mb-6" style="color:#aaa">Призовой фонд</p>
@@ -71,26 +74,25 @@ ob_start();
     <div class="bg-white rounded-xl border p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-900 mb-4">📋 Условия участия</h2>
         <div class="space-y-3">
+            <?php
+            $defaultSteps = [
+                'Зарегистрируйтесь на сайте ' . SITE_NAME,
+                'Оформите любой финансовый продукт через наш сайт',
+                'Получите одобрение заявки от партнёра',
+                'Ждите розыгрыш — победитель определяется случайно!'
+            ];
+            $customSteps = trim($activeGiveaway['page_steps'] ?? '');
+            $steps = $customSteps ? array_values(array_filter(array_map('trim', explode("\n", $customSteps)))) : $defaultSteps;
+            foreach ($steps as $si => $step):
+                $isLast = ($si === count($steps) - 1);
+                $badgeBg = $isLast ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
+                $badgeText = $isLast ? '✓' : ($si + 1);
+            ?>
             <div class="flex items-start gap-3">
-                <span class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">1</span>
-                <div><p class="font-semibold text-gray-900">Зарегистрируйтесь на сайте</p>
-                <p class="text-sm text-gray-600">Создайте аккаунт на <a href="/register" class="text-primary hover:underline"><?= SITE_NAME ?></a> — это бесплатно и займёт 1 минуту.</p></div>
+                <span class="<?= $badgeBg ?> w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"><?= $badgeText ?></span>
+                <p class="font-semibold text-gray-900 pt-1"><?= e($step) ?></p>
             </div>
-            <div class="flex items-start gap-3">
-                <span class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">2</span>
-                <div><p class="font-semibold text-gray-900">Оформите любой финансовый продукт</p>
-                <p class="text-sm text-gray-600">Выберите <a href="/zajmy" class="text-primary hover:underline">займ</a>, <a href="/kredity" class="text-primary hover:underline">кредит</a> или <a href="/karty/kreditnye" class="text-primary hover:underline">банковскую карту</a> и оформите заявку через наш сайт.</p></div>
-            </div>
-            <div class="flex items-start gap-3">
-                <span class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">3</span>
-                <div><p class="font-semibold text-gray-900">Получите одобрение</p>
-                <p class="text-sm text-gray-600">После одобрения вашей заявки партнёром вы <strong>автоматически</strong> становитесь участником розыгрыша.</p></div>
-            </div>
-            <div class="flex items-start gap-3">
-                <span class="bg-green-100 text-green-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">✓</span>
-                <div><p class="font-semibold text-gray-900">Ждите розыгрыш!</p>
-                <p class="text-sm text-gray-600">Победитель определяется случайным образом в прямом эфире. Чем больше одобренных заявок — тем выше шанс!</p></div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
@@ -98,11 +100,19 @@ ob_start();
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
         <h3 class="font-bold text-yellow-800 mb-2">⚠️ Обязательные условия</h3>
         <ul class="text-sm text-yellow-700 space-y-1 list-disc pl-5">
-            <li>Необходима <a href="/register" class="underline font-semibold">регистрация</a> на сайте <?= SITE_NAME ?></li>
-            <li>Минимум одна <strong>одобренная</strong> заявка на любой финансовый продукт через наш сайт</li>
-            <li>Заявка должна быть оформлена в период проведения конкурса</li>
-            <li>Один пользователь может быть участником несколько раз (за каждую одобренную заявку)</li>
-            <li>Призовой фонд формируется автоматически и может увеличиваться до момента розыгрыша</li>
+            <?php
+            $defaultRules = [
+                'Необходима регистрация на сайте ' . SITE_NAME,
+                'Минимум одна одобренная заявка на любой продукт через наш сайт',
+                'Заявка должна быть оформлена в период проведения конкурса',
+                'Один пользователь может участвовать несколько раз (за каждую одобренную заявку)',
+                'Призовой фонд формируется автоматически и может увеличиваться'
+            ];
+            $customRules = trim($activeGiveaway['page_rules'] ?? '');
+            $rules = $customRules ? array_values(array_filter(array_map('trim', explode("\n", $customRules)))) : $defaultRules;
+            foreach ($rules as $rule): ?>
+            <li><?= e($rule) ?></li>
+            <?php endforeach; ?>
         </ul>
     </div>
 
@@ -130,7 +140,7 @@ ob_start();
     <!-- CTA -->
     <div class="text-center bg-blue-50 rounded-xl border border-blue-200 p-8 mb-8">
         <h2 class="text-xl font-bold text-gray-900 mb-3">Хотите участвовать?</h2>
-        <p class="text-gray-600 mb-6">Зарегистрируйтесь и оформите любой продукт — вы автоматически попадёте в розыгрыш!</p>
+        <p class="text-gray-600 mb-6">Зарегистрируйтесь и оформите любое предложение — после одобрения вы автоматически попадёте в розыгрыш!</p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="/register" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">Зарегистрироваться</a>
             <a href="/zajmy" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">Выбрать продукт</a>
