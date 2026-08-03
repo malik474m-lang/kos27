@@ -104,13 +104,6 @@ if ($action === 'enable') {
 
 // --- Отключить 2FA ---
 if ($action === 'disable') {
-    $password = $data['password'] ?? '';
-    
-    if (!password_verify($password, $admin['password_hash'])) {
-        echo json_encode(['error' => 'Неверный пароль']);
-        exit;
-    }
-    
     $db->prepare("UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_backup_codes = NULL WHERE id = ?")
        ->execute([$adminId]);
     
@@ -122,13 +115,6 @@ if ($action === 'disable') {
 
 // --- Перегенерировать резервные коды ---
 if ($action === 'regenerate-backup') {
-    $password = $data['password'] ?? '';
-    
-    if (!password_verify($password, $admin['password_hash'])) {
-        echo json_encode(['error' => 'Неверный пароль']);
-        exit;
-    }
-    
     $backupCodes = TOTP::generateBackupCodes(10);
     $db->prepare("UPDATE admin_users SET totp_backup_codes = ? WHERE id = ?")
        ->execute([json_encode($backupCodes), $adminId]);

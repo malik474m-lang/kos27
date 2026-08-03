@@ -1859,19 +1859,18 @@ modal(h);
 function showTfaErr(msg){var el=document.getElementById('tfa-setup-err');if(el){el.textContent=msg;el.classList.remove('hidden');}}
 
 function tfa_disable(){
-var pw=prompt('Введите текущий пароль для отключения 2FA:');
-if(!pw)return;
-ap('/two-factor',{method:'POST',body:JSON.stringify({action:'disable',password:pw})}).then(function(d){
+if(!confirm('Отключить 2FA для текущего администратора?')) return;
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'disable'})}).then(function(d){
 if(d.error){alert('❌ '+d.error);return;}
 alert('✅ 2FA отключена');
 cm();
+show2FA();
 });
 }
 
 function tfa_regenBackup(){
-var pw=prompt('Введите текущий пароль:');
-if(!pw)return;
-ap('/two-factor',{method:'POST',body:JSON.stringify({action:'regenerate-backup',password:pw})}).then(function(d){
+if(!confirm('Сгенерировать новые резервные коды? Старые перестанут работать.')) return;
+ap('/two-factor',{method:'POST',body:JSON.stringify({action:'regenerate-backup'})}).then(function(d){
 if(d.error){alert('❌ '+d.error);return;}
 var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🔄 Новые резервные коды</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
 h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">';
