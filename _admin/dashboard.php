@@ -317,7 +317,6 @@ return '<div class="flex items-center gap-2 mb-2 of-ef-row">'+
 function ofAddExtraField(){
 var box=document.getElementById('of-extra-fields');if(!box)return;
 box.insertAdjacentHTML('beforeend','<div class="flex items-center gap-2 mb-2 of-ef-row"><label class="flex items-center gap-1 flex-shrink-0"><input type="checkbox" class="of-ef-vis w-3.5 h-3.5" checked title="Показывать"></label><input class="input-f text-xs of-ef-label flex-1" placeholder="Название поля"><input class="input-f text-xs of-ef-value flex-1" placeholder="Значение"><button type="button" onclick="this.closest(\'.of-ef-row\').remove()" class="text-red-400 hover:text-red-600 text-sm">&times;</button></div>');
-setTimeout(function(){ _gwLoadOffers(f.offer_id||''); }, 50);
 }
 function ofCollectExtraFields(){
 var fields=[];
@@ -3643,6 +3642,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Оффер (пусто = все офферы)</label><select id="gw-offer" class="sel-f"><option value="">Все офферы</option></select></div>'+
 '<div class="grid grid-cols-3 gap-3"><div><label class="block text-xs font-medium mb-1">Начало *</label><input id="gw-start" type="datetime-local" class="input-f" value="'+startVal+'"></div><div><label class="block text-xs font-medium mb-1">Окончание *</label><input id="gw-end" type="datetime-local" class="input-f" value="'+endVal+'"></div><div><label class="block text-xs font-medium mb-1">Розыгрыш (прямой эфир)</label><input id="gw-draw" type="datetime-local" class="input-f" value="'+drawVal+'"></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="gwSave('+(isEdit?f.id:0)+')" class="btn-p">Сохранить</button></div>');
+setTimeout(function(){ _gwLoadOffers(f.offer_id||''); }, 100);
 }
 
 function _gwLoadOffers(selectedId){
