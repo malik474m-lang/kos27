@@ -3173,8 +3173,13 @@ h+='<div id="page-check-result"></div>';
 h+='</div>';
 
 // Google Indexing API
+h+='<div class="grid lg:grid-cols-2 gap-6">';
 h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔵 Google Indexing API</h3>';
 h+='<div id="google-idx-status"><p class="text-gray-500 text-sm">⏳ Проверка...</p></div>';
+h+='</div>';
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔴 Яндекс.Вебмастер API</h3>';
+h+='<div id="yandex-wm-status"><p class="text-gray-500 text-sm">⏳ Проверка...</p></div>';
+h+='</div>';
 h+='</div>';
 
 // Изменения контента
@@ -3222,7 +3227,7 @@ h+='</div>';
 
 h+='</div>';
 el.innerHTML=h;
-setTimeout(function(){ idxLoadSeoStats(); idxLoadChanges(); gIdxLoadStatus(); }, 300);
+setTimeout(function(){ idxLoadSeoStats(); idxLoadChanges(); gIdxLoadStatus(); ywmLoadStatus(); }, 300);
 });
 }
 
@@ -3814,6 +3819,103 @@ box.innerHTML=r&&r.success?'<p class="text-green-600 text-sm">✅ '+e(r.url)+' �
 }).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
 }
 
+
+
+/* ============ YANDEX WEBMASTER ============ */
+function ywmLoadStatus(){
+ap('/yandex-webmaster?action=status').then(function(d){
+var box=document.getElementById('yandex-wm-status');
+if(!box) return;
+var h='';
+if(!d.available){
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">';
+h+='<p class="text-sm text-yellow-700 font-medium">⚠️ Яндекс.Вебмастер не настроен</p>';
+h+='<p class="text-xs text-yellow-600 mt-1">Сохраните OAuth-токен, user_id и host_id</p>';
+h+='<div class="grid gap-2 mt-3">';
+h+='<input id="ywm-client-id" class="input-f text-xs font-mono" placeholder="Client ID (необязательно)">';
+h+='<input id="ywm-user-id" class="input-f text-xs font-mono" placeholder="User ID, например 1193116462">';
+h+='<input id="ywm-host-id" class="input-f text-xs font-mono" placeholder="Host ID, например https:kosmozaim.ru:443">';
+h+='<textarea id="ywm-token" class="input-f text-xs font-mono" rows="3" placeholder="OAuth токен Яндекс.Вебмастера..."></textarea>';
+h+='<button onclick="ywmSaveConfig()" class="btn-p text-sm">💾 Сохранить настройки</button>';
+h+='</div></div>';
+}else{
+h+='<div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">';
+h+='<p class="text-sm text-green-700">✅ Подключено: user_id <span class="font-mono">'+e(String(d.user_id||''))+'</span></p>';
+h+='<p class="text-xs text-green-600 mt-1">host_id: <span class="font-mono">'+e(d.host_id||'')+'</span></p>';
+h+='</div>';
+h+='<div class="flex flex-wrap gap-2 mb-3">';
+h+='<button onclick="ywmTest()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">🔑 Тест авторизации</button>';
+h+='<button onclick="ywmSubmitNew()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🚀 Переобход новых URL</button>';
+h+='<div class="flex items-center gap-2"><input id="ywm-url" class="input-f text-sm" placeholder="/karty/kreditnye/moskva" style="width:240px"><button onclick="ywmSubmitOne()" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg text-sm font-semibold">Отправить</button></div>';
+h+='</div>';
+h+='<div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500"><strong>Важно:</strong> Яндекс позволяет ставить URL в очередь переобхода. Используйте для новых и обновлённых страниц.</div>';
+}
+h+='<div id="ywm-result" class="mt-3"></div>';
+box.innerHTML=h;
+}).catch(function(){ var b=document.getElementById('yandex-wm-status'); if(b) b.innerHTML='<p class="text-red-500 text-sm">Ошибка загрузки</p>'; });
+}
+
+function ywmSaveConfig(){
+var body={
+client_id:(document.getElementById('ywm-client-id')?.value||'').trim(),
+user_id:(document.getElementById('ywm-user-id')?.value||'').trim(),
+host_id:(document.getElementById('ywm-host-id')?.value||'').trim(),
+oauth_token:(document.getElementById('ywm-token')?.value||'').trim()
+};
+if(!body.oauth_token||!body.user_id||!body.host_id){ alert('Заполните OAuth токен, user_id и host_id'); return; }
+ap('/yandex-webmaster?action=save-config',{method:'POST',body:JSON.stringify(body)}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✅ Настройки Яндекс.Вебмастера сохранены');
+ywmLoadStatus();
+}).catch(function(){ alert('Ошибка'); });
+}
+
+function ywmTest(){
+var box=document.getElementById('ywm-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Тестирование...</p>';
+ap('/yandex-webmaster?action=test').then(function(d){
+if(d.success){
+  var hosts=(d.data&&d.data.hosts)?d.data.hosts.length:0;
+  box.innerHTML='<p class="text-green-600 text-sm">✅ Авторизация успешна! Найдено хостов: '+hosts+'</p>';
+}else{
+  box.innerHTML='<p class="text-red-500 text-sm">❌ Ошибка авторизации'+(d.status?' ('+d.status+')':'')+'</p>';
+}
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
+}
+
+function ywmSubmitNew(){
+if(!confirm('Отправить новые/обновлённые URL в Яндекс.Вебмастер? (макс. 20)')) return;
+var box=document.getElementById('ywm-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Отправка URL в Яндекс...</p>';
+ap('/yandex-webmaster?action=submit-new',{method:'POST'}).then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+e(d.error)+'</p>'; return; }
+if(d.total===0){ box.innerHTML='<p class="text-gray-500 text-sm">Нет URL для отправки.</p>'; return; }
+var h='<div class="bg-red-50 rounded-lg p-3"><p class="text-sm font-medium text-red-700">Отправлено: '+d.success+' из '+d.total+' (ошибок: '+d.failed+')</p>';
+if(d.results&&d.results.length){
+h+='<div class="mt-2 max-h-40 overflow-y-auto space-y-1">';
+d.results.forEach(function(r){
+h+='<div class="text-xs flex items-center gap-2">'+(r.success?'<span class="text-green-600">✅</span>':'<span class="text-red-500">❌ '+r.status+'</span>')+'<span class="font-mono truncate">'+e(r.url)+'</span></div>';
+});
+h+='</div>';
+}
+h+='</div>';
+box.innerHTML=h;
+lIndexing();
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка отправки</p>'; });
+}
+
+function ywmSubmitOne(){
+var url=(document.getElementById('ywm-url')?.value||'').trim();
+if(!url){ alert('Введите URL'); return; }
+if(!url.startsWith('/')) url='/'+url;
+var box=document.getElementById('ywm-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Отправка '+e(url)+'...</p>';
+ap('/yandex-webmaster?action=submit',{method:'POST',body:JSON.stringify({urls:[url]})}).then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+e(d.error)+'</p>'; return; }
+var r=d.results&&d.results[0];
+box.innerHTML=r&&r.success?'<p class="text-green-600 text-sm">✅ '+e(r.url)+' — поставлен в очередь переобхода!</p>':'<p class="text-red-500 text-sm">❌ Ошибка '+(r?r.status:'')+'</p>';
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
+}
 
 </script>
 </body>
