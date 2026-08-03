@@ -63,8 +63,13 @@ $excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : m
 $slug = slugify($topic) . '-' . time();
 
 $db = getDB();
-$db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,0)")
-   ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155)]);
+try { $db->query("SELECT content_status FROM articles LIMIT 1");
+    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published, content_status, quality_score) VALUES (?,?,?,?,?,?,?,?,?)")
+       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155), 0, 'draft', 0]);
+} catch (Exception $e) {
+    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,0)")
+       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155)]);
+}
 
 require_once __DIR__ . '/../includes/auto-indexing.php';
 autoSubmitUrl('/articles/' . $slug);

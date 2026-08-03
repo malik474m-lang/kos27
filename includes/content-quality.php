@@ -179,3 +179,18 @@ function cq_improve_fallback(string $text, string $entity = 'generic', string $t
 
     return trim($improved);
 }
+
+
+function cq_recommend_status(int $score): string {
+    if ($score >= 80) return 'ready';
+    if ($score >= 60) return 'reviewed';
+    return 'draft';
+}
+
+function cq_status_label(string $status): string {
+    return match ($status) {
+        'ready' => 'Готово к публикации',
+        'reviewed' => 'Проверено',
+        default => 'Черновик',
+    };
+}
