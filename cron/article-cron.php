@@ -42,12 +42,15 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
         $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
         if ($text) {
             // Убираем markdown мусор
-            $content = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
+            $content = preg_replace('/^```\s*\w*\s*\n?/i', '', $text);
             $content = preg_replace('/\n?```\s*$/', '', $content);
             $content = preg_replace('/```/', '', $content);
             $content = preg_replace('/\*\*(.+?)\*\*/', '$1', $content);
-            $content = preg_replace('/\*+/', '', $content);
-            $content = preg_replace('/^#{1,6}\s*/m', '', $content);
+            $content = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '$1', $content);
+            $content = preg_replace('/^#{1,6}\s+/m', '', $content);
+            $content = preg_replace('/__(.+?)__/s', '$1', $content);
+            $content = preg_replace('/~~(.+?)~~/s', '$1', $content);
+            $content = preg_replace('/^>\s?/m', '', $content);
             $content = trim($content);
             $provider = 'YandexGPT';
         }

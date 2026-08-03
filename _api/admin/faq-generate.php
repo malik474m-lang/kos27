@@ -94,6 +94,7 @@ if ($apiKey && $folderId) {
         $text = preg_replace('/\s*```$/i', '', $text);
         $parsed = json_decode($text, true);
         if (is_array($parsed) && count($parsed) >= 3) {
+            foreach ($parsed as &$_fq) { $_fq['q'] = preg_replace('/\*\*(.+?)\*\*/', '$1', $_fq['q'] ?? ''); $_fq['a'] = preg_replace('/\*\*(.+?)\*\*/', '$1', $_fq['a'] ?? ''); $_fq['q'] = preg_replace('/^#{1,6}\s+/m', '', $_fq['q']); $_fq['a'] = preg_replace('/^#{1,6}\s+/m', '', $_fq['a']); } unset($_fq);
             $faqs = $parsed;
             $provider = 'yandexgpt';
         }

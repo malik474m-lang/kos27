@@ -54,7 +54,8 @@ if ($action === 'improve') {
             $json = json_decode($response, true);
             $text = trim((string)($json['result']['alternatives'][0]['message']['text'] ?? ''));
             if ($text !== '') {
-                $improved = $text;
+                // GPT часто игнорирует "без markdown" — принудительно чистим
+                $improved = cq_strip_markdown($text);
                 $provider = 'YandexGPT';
             }
         }
@@ -63,6 +64,8 @@ if ($action === 'improve') {
     if ($improved === null) {
         $improved = cq_improve_fallback($content, $entity, $title, $description);
     }
+    // Финальная очистка от markdown-мусора
+    $improved = cq_strip_markdown($improved);
 
     echo json_encode([
         'success' => true,

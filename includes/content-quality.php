@@ -49,6 +49,35 @@ function cq_detect_repeated_phrases(string $text): array {
     return $found;
 }
 
+
+function cq_strip_markdown(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+    // Remove code fences
+    $text = preg_replace('/^```\s*\w*\s*\n?/mi', '', $text);
+    $text = preg_replace('/\n?```\s*$/m', '', $text);
+    $text = str_replace('```', '', $text);
+    // ### headers → plain text
+    $text = preg_replace('/^#{1,6}\s+/m', '', $text);
+    // **bold** → text
+    $text = preg_replace('/\*\*(.+?)\*\*/s', '$1', $text);
+    // *italic* → text
+    $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '$1', $text);
+    // __bold__ → text
+    $text = preg_replace('/__(.+?)__/s', '$1', $text);
+    // _italic_ → text (careful not to hit filenames)
+    $text = preg_replace('/(?<!\w)_([^_]+?)_(?!\w)/s', '$1', $text);
+    // ~~ strikethrough ~~
+    $text = preg_replace('/~~(.+?)~~/s', '$1', $text);
+    // > blockquote
+    $text = preg_replace('/^>\s?/m', '', $text);
+    // Remove horizontal rules
+    $text = preg_replace('/^\s*[-*_]{3,}\s*$/m', '', $text);
+    // Clean up excessive blank lines
+    $text = preg_replace('/\n{3,}/', "\n\n", $text);
+    return trim($text);
+}
+
 function cq_analyze(string $text, string $entity = 'generic', string $title = '', string $description = ''): array {
     $issues = [];
     $recommendations = [];

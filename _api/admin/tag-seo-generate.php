@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/content-quality.php';
 header('Content-Type: application/json; charset=UTF-8');
 requireAdmin();
 
@@ -113,7 +114,7 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
                 'description' => tag_mb_limit((string)($parsed['description'] ?? $fallback['description']), 220),
                 'metaTitle' => tag_mb_limit((string)($parsed['metaTitle'] ?? $fallback['metaTitle']), 70),
                 'metaDescription' => tag_mb_limit((string)($parsed['metaDescription'] ?? $fallback['metaDescription']), 160),
-                'content' => (string)($parsed['content'] ?? $fallback['content']),
+                'content' => cq_strip_markdown((string)($parsed['content'] ?? $fallback['content'])),
                 'searchQueries' => implode("\n", $queries ?: explode("\n", $fallback['searchQueries'])),
                 'provider' => 'YandexGPT',
             ]);

@@ -63,7 +63,11 @@ for ($i = 0; $i < $count; $i++) {
             $data = json_decode($response, true);
             $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
             if ($text) {
-                $comment = preg_replace('/\*/', '', $text);
+                $comment = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
+                $comment = preg_replace('/\*/', '', $comment);
+                $comment = preg_replace('/^```\s*\w*\s*/i', '', $comment);
+                $comment = preg_replace('/```/', '', $comment);
+                $comment = preg_replace('/^#{1,6}\s+/m', '', $comment);
                 $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
                 $comment = trim($comment);
                 if (mb_strlen($comment) < 20) $comment = null;
