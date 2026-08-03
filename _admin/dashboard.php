@@ -51,6 +51,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('giveaway')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="giveaway">🎁 Розыгрыши</button>
+<button onclick="sw('positions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="positions">📊 Позиции</button>
 <button onclick="sw('indexing')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="indexing">🔍 Индексация</button>
 <button onclick="sw('security')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="security">🔒 Безопасность</button>
 </div></div></div>
@@ -81,6 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
 <div id="p-giveaway" class="tp hidden"></div>
+<div id="p-positions" class="tp hidden"></div>
 <div id="p-indexing" class="tp hidden"></div>
 </div>
 <div id="M"></div>
@@ -92,8 +94,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={giveaway:'Розыгрыши',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities,giveaway:lGiveaway})[t]?.();}
+const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -3916,6 +3918,91 @@ var r=d.results&&d.results[0];
 box.innerHTML=r&&r.success?'<p class="text-green-600 text-sm">✅ '+e(r.url)+' — поставлен в очередь переобхода!</p>':'<p class="text-red-500 text-sm">❌ Ошибка '+(r?r.status:'')+'</p>';
 }).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
 }
+
+
+/* ============ POSITIONS ============ */
+var _posDays=7;
+var _posQuery='';
+function lPositions(){
+var el=document.getElementById('p-positions');
+el.innerHTML='<p class="text-gray-500">⏳ Загрузка позиций...</p>';
+
+var params='days='+_posDays+'&limit=100';
+if(_posQuery) params+='&query='+encodeURIComponent(_posQuery);
+
+ap('/positions?action=combined&'+params).then(function(d){
+var h='<div class="space-y-6">';
+h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">';
+h+='<h2 class="text-xl font-bold">📊 Позиции в поиске</h2>';
+h+='<div class="flex flex-wrap gap-2 items-center">';
+h+='<select id="pos-days" onchange="_posDays=Number(this.value);lPositions()" class="sel-f text-sm w-auto">';
+[7,14,28,30,60,90].forEach(function(v){ h+='<option value="'+v+'"'+(_posDays===v?' selected':'')+'>'+v+' дней</option>'; });
+h+='</select>';
+h+='<input id="pos-query" class="input-f text-sm" placeholder="🔍 Фильтр по запросу..." value="'+e(_posQuery)+'" style="width:220px">';
+h+='<button onclick="_posQuery=document.getElementById(&#39;pos-query&#39;).value;lPositions()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">Найти</button>';
+h+='</div></div>';
+
+// Яндекс
+h+='<div class="bg-white rounded-xl border p-4">';
+h+='<h3 class="font-bold text-gray-900 mb-3">🔴 Яндекс <span class="text-xs text-gray-400 font-normal">'+d.days+' дней</span></h3>';
+if(!d.yandex){ h+='<p class="text-yellow-600 text-sm">⚠️ Яндекс.Вебмастер не настроен</p>'; }
+else if(!d.yandex.length){ h+='<p class="text-gray-500 text-sm">Нет данных за выбранный период</p>'; }
+else{
+h+='<div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Запрос</th>';
+h+='<th class="px-3 py-2 text-right">Позиция</th>';
+h+='<th class="px-3 py-2 text-right">Показы</th>';
+h+='<th class="px-3 py-2 text-right">Клики</th>';
+h+='<th class="px-3 py-2 text-right">CTR</th>';
+h+='</tr></thead><tbody>';
+d.yandex.forEach(function(q){
+var posColor=q.position<=3?'text-green-600 font-bold':q.position<=10?'text-blue-600 font-medium':q.position<=30?'text-yellow-600':'text-gray-500';
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 max-w-xs truncate" title="'+e(q.query)+'">'+e(q.query)+'</td>';
+h+='<td class="px-3 py-2 text-right '+posColor+'">'+q.position+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+q.shows+'</td>';
+h+='<td class="px-3 py-2 text-right font-medium">'+q.clicks+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-500">'+q.ctr+'%</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+h+='<p class="text-xs text-gray-400 mt-2">Всего запросов: '+d.yandex.length+'</p>';
+}
+h+='</div>';
+
+// Google
+h+='<div class="bg-white rounded-xl border p-4">';
+h+='<h3 class="font-bold text-gray-900 mb-3">🔵 Google <span class="text-xs text-gray-400 font-normal">'+d.days+' дней</span></h3>';
+if(!d.google){ h+='<p class="text-yellow-600 text-sm">⚠️ Google Search Console не настроен</p>'; }
+else if(!d.google.length){ h+='<p class="text-gray-500 text-sm">Нет данных за выбранный период</p>'; }
+else{
+h+='<div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Запрос</th>';
+h+='<th class="px-3 py-2 text-right">Позиция</th>';
+h+='<th class="px-3 py-2 text-right">Показы</th>';
+h+='<th class="px-3 py-2 text-right">Клики</th>';
+h+='<th class="px-3 py-2 text-right">CTR</th>';
+h+='</tr></thead><tbody>';
+d.google.forEach(function(q){
+var posColor=q.position<=3?'text-green-600 font-bold':q.position<=10?'text-blue-600 font-medium':q.position<=30?'text-yellow-600':'text-gray-500';
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 max-w-xs truncate" title="'+e(q.query)+'">'+e(q.query)+'</td>';
+h+='<td class="px-3 py-2 text-right '+posColor+'">'+q.position+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+q.shows+'</td>';
+h+='<td class="px-3 py-2 text-right font-medium">'+q.clicks+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-500">'+q.ctr+'%</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+h+='<p class="text-xs text-gray-400 mt-2">Всего запросов: '+d.google.length+'</p>';
+}
+h+='</div>';
+
+h+='</div>';
+el.innerHTML=h;
+}).catch(function(err){ el.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>'; });
+}
+
 
 </script>
 </body>

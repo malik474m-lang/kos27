@@ -23,6 +23,9 @@ if (str_starts_with($adminUri, "/giveaway")) { require __DIR__ . "/admin/giveawa
 // Google Indexing
 if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/google-indexing.php"; exit; }
 
+// Позиции
+if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
+
 // Yandex Webmaster
 if (str_starts_with($adminUri, "/yandex-webmaster")) { require __DIR__ . "/admin/yandex-webmaster.php"; exit; }
 
