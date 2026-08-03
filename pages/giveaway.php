@@ -65,6 +65,9 @@ ob_start();
             <?php endif; ?>
             <div class="text-4xl font-bold mb-2" style="color:#ffd700"><?= number_format((float)$activeGiveaway['prize_amount'], 0, '', ' ') ?> ₽</div>
             <p class="text-sm mb-6" style="color:#aaa">Призовой фонд</p>
+            <?php if (!empty($activeGiveaway['offer_title'])): ?>
+            <p class="text-sm mb-4" style="color:#aaa">Оффер: <strong style="color:#ffd700"><?= e($activeGiveaway['offer_title']) ?></strong></p>
+            <?php endif; ?>
             <div class="flex flex-wrap items-center justify-center gap-6 text-sm" style="color:#ccc">
                 <span>👥 <?= $activeGiveaway['entries_count'] ?> участников</span>
                 <span>📅 До <?= $activeGiveaway['end_at'] ? date('d.m.Y', strtotime($activeGiveaway['end_at'])) : '—' ?></span>

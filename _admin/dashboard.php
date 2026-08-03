@@ -3652,6 +3652,8 @@ if(g.status==='finished'&&g.winner_id){
 }
 h+='<div class="flex flex-wrap gap-2">';
 h+='<button onclick="gwEntries('+g.id+')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">👥 Участники</button>';
+h+='<button onclick="gwStats('+g.id+')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-sm font-semibold">📊 Статистика</button>';
+h+='<a href="/api/admin/giveaway?action=export-csv&id='+g.id+'" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold inline-block">📥 CSV</a>';
 h+='<button onclick="gwRecalc('+g.id+')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">🔄 Пересчитать</button>';
 if(g.status==='active'||g.status==='drawing') h+='<button onclick="gwDraw('+g.id+')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">🎰 Запустить розыгрыш</button>';
 h+='<button onclick="gwForm('+JSON.stringify(g).replace(/&#39;/g,"").replace(/"/g,"&quot;")+')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">✏️ Ред.</button>';
@@ -4157,6 +4159,65 @@ ap('/test-mail',{method:'POST',body:JSON.stringify({email:email})}).then(functio
 if(d.ok) box.innerHTML='<p class="text-green-600 text-sm">✅ Письмо отправлено через <strong>'+e(d.method||'?')+'</strong>. Проверьте почту!</p>';
 else box.innerHTML='<p class="text-red-500 text-sm">❌ Ошибка: '+e(d.error||'неизвестная')+(d.smtp_error?' (SMTP: '+e(d.smtp_error)+')':'')+'</p>';
 }).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка отправки</p>'; });
+}
+
+
+function gwStats(id){
+ap('/giveaway?action=stats&id='+id).then(function(d){
+if(d.error){ alert(d.error); return; }
+var g=d.giveaway||{};
+var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📊 Статистика: '+e(g.title||'')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+
+// Общие показатели
+h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">';
+h+='<div class="bg-purple-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-purple-600">'+d.unique_users+'</p><p class="text-xs text-gray-500">Уникальных</p></div>';
+h+='<div class="bg-yellow-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-yellow-600">'+Number(g.prize_amount||0).toLocaleString("ru-RU")+' ₽</p><p class="text-xs text-gray-500">Призовой фонд</p></div>';
+h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-blue-600">'+Number(g.total_conversions_amount||0).toLocaleString("ru-RU")+' ₽</p><p class="text-xs text-gray-500">Конверсии</p></div>';
+h+='<div class="bg-green-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-green-600">'+g.prize_percent+'%</p><p class="text-xs text-gray-500">Процент</p></div>';
+h+='</div>';
+
+// По офферам
+if(d.by_offer&&d.by_offer.length){
+h+='<div class="mb-4"><h4 class="font-semibold text-sm text-gray-700 mb-2">По офферам</h4>';
+h+='<div class="space-y-1">';
+d.by_offer.forEach(function(o){
+h+='<div class="flex justify-between bg-gray-50 rounded px-3 py-1.5 text-sm"><span>'+e(o.offer_title||'—')+'</span><span><strong>'+o.cnt+'</strong> участников • '+Number(o.total_payout||0).toLocaleString("ru-RU")+' ₽</span></div>';
+});
+h+='</div></div>';
+}
+
+// По дням
+if(d.by_day&&d.by_day.length){
+h+='<div class="mb-4"><h4 class="font-semibold text-sm text-gray-700 mb-2">По дням</h4>';
+h+='<div class="space-y-1">';
+d.by_day.forEach(function(day){
+h+='<div class="flex justify-between bg-gray-50 rounded px-3 py-1.5 text-sm"><span>'+day.dt+'</span><span><strong>'+day.cnt+'</strong> участников</span></div>';
+});
+h+='</div></div>';
+}
+
+// Дубликаты
+if(d.duplicates&&d.duplicates.length){
+h+='<div class="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3"><h4 class="font-semibold text-sm text-yellow-700 mb-2">⚠️ Пользователи с несколькими заявками</h4>';
+h+='<div class="space-y-1">';
+d.duplicates.forEach(function(dup){
+h+='<div class="text-xs text-yellow-700">'+e(dup.user_name)+' ('+e(dup.user_email)+') — <strong>'+dup.entries_count+' заявок</strong></div>';
+});
+h+='</div></div>';
+}
+
+// Подозрительные IP
+if(d.suspicious_ips&&d.suspicious_ips.length){
+h+='<div class="bg-red-50 border border-red-200 rounded-lg p-3"><h4 class="font-semibold text-sm text-red-700 mb-2">🚨 Подозрительные IP (разные пользователи)</h4>';
+h+='<div class="space-y-1">';
+d.suspicious_ips.forEach(function(s){
+h+='<div class="text-xs text-red-700">IP '+e(s.ip)+' — <strong>'+s.user_count+' пользователей</strong>: '+e(s.names)+'</div>';
+});
+h+='</div></div>';
+}
+
+modal(h);
+});
 }
 
 

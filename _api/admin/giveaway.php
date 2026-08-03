@@ -195,6 +195,70 @@ case 'active':
     echo json_encode($active ?: null);
     break;
 
+case 'export-csv':
+    // Экспорт участников в CSV
+    $gwId = (int)($_GET['id'] ?? 0);
+    $entries = $db->prepare("SELECT ge.user_name, ge.user_email, ge.offer_title, ge.payout, ge.ip, ge.created_at FROM giveaway_entries ge WHERE ge.giveaway_id = ? ORDER BY ge.created_at ASC");
+    $entries->execute([$gwId]);
+    $rows = $entries->fetchAll();
+    
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="giveaway_' . $gwId . '_participants.csv"');
+    echo "ï»¿"; // BOM for Excel
+    echo "Имя;Email;Оффер;Сумма;IP;Дата\n";
+    foreach ($rows as $r) {
+        echo implode(';', [
+            $r['user_name'],
+            maskEmail($r['user_email']),
+            $r['offer_title'] ?: '—',
+            $r['payout'],
+            maskIp($r['ip'] ?? ''),
+            $r['created_at']
+        ]) . "\n";
+    }
+    exit;
+
+case 'stats':
+    // Подробная статистика розыгрыша
+    $gwId = (int)($_GET['id'] ?? 0);
+    $gw = $db->prepare("SELECT g.*, o.title as offer_title FROM giveaways g LEFT JOIN offers o ON g.offer_id = o.id WHERE g.id = ?");
+    $gw->execute([$gwId]); $gw = $gw->fetch();
+    if (!$gw) { echo json_encode(['error' => 'Not found']); exit; }
+    
+    // Участники по офферам
+    $byOffer = $db->prepare("SELECT offer_title, COUNT(*) as cnt, SUM(payout) as total_payout FROM giveaway_entries WHERE giveaway_id = ? GROUP BY offer_title ORDER BY cnt DESC");
+    $byOffer->execute([$gwId]);
+    
+    // Участники по дням
+    $byDay = $db->prepare("SELECT DATE(created_at) as dt, COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ? GROUP BY DATE(created_at) ORDER BY dt ASC");
+    $byDay->execute([$gwId]);
+    
+    // Уникальные пользователи
+    $uniqueUsers = $db->prepare("SELECT COUNT(DISTINCT user_id) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
+    $uniqueUsers->execute([$gwId]);
+    
+    // Дубликаты (один user_id с несколькими конверсиями)
+    $duplicates = $db->prepare("SELECT user_name, user_email, COUNT(*) as entries_count FROM giveaway_entries WHERE giveaway_id = ? GROUP BY user_id HAVING entries_count > 1 ORDER BY entries_count DESC LIMIT 10");
+    $duplicates->execute([$gwId]);
+    $dupes = $duplicates->fetchAll();
+    foreach ($dupes as &$d) { $d['user_email'] = maskEmail($d['user_email']); } unset($d);
+    
+    // Подозрительные IP (один IP — разные пользователи)
+    $suspiciousIps = $db->prepare("SELECT ip, COUNT(DISTINCT user_id) as user_count, GROUP_CONCAT(DISTINCT user_name SEPARATOR ', ') as names FROM giveaway_entries WHERE giveaway_id = ? AND ip != '' GROUP BY ip HAVING user_count > 1 ORDER BY user_count DESC LIMIT 10");
+    $suspiciousIps->execute([$gwId]);
+    $suspicious = $suspiciousIps->fetchAll();
+    foreach ($suspicious as &$s) { $s['ip'] = maskIp($s['ip']); } unset($s);
+    
+    echo json_encode([
+        'giveaway' => $gw,
+        'by_offer' => $byOffer->fetchAll(),
+        'by_day' => $byDay->fetchAll(),
+        'unique_users' => (int)$uniqueUsers->fetch()['cnt'],
+        'duplicates' => $dupes,
+        'suspicious_ips' => $suspicious,
+    ]);
+    break;
+
 default:
     echo json_encode(['error' => 'Unknown action']);
 }
