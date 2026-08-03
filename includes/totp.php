@@ -72,11 +72,11 @@ class TOTP {
     }
 
     /**
-     * Получить URL картинки QR через Google Charts API
+     * Получить URL картинки QR через QuickChart API
+     * Google Charts QR API работает нестабильно/устарел.
      */
     public static function getQrImageUrl(string $otpauthUrl, int $size = 200): string {
-        return 'https://chart.googleapis.com/chart?chs=' . $size . 'x' . $size 
-            . '&chld=M|0&cht=qr&chl=' . urlencode($otpauthUrl);
+        return 'https://quickchart.io/qr?size=' . (int)$size . '&margin=2&ecLevel=M&text=' . urlencode($otpauthUrl);
     }
 
     /**
