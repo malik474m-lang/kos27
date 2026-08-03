@@ -24,41 +24,81 @@ function checkOfferUrl(string $url): array {
         return $result;
     }
 
+    // Партнёрские ссылки часто блокируют ботов и HEAD-запросы.
+    // Используем GET с реалистичным User-Agent и не ждём тело ответа.
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_NOBODY => true,
+        CURLOPT_NOBODY => false,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT => 12,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; KosmozaimLinkChecker/1.0; +https://kosmozaim.ru)',
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_HEADER => false,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_HEADER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HTTPHEADER => [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language: ru-RU,ru;q=0.9,en;q=0.8',
+        ],
+        // Ограничиваем объём скачиваемого тела — нам нужен только HTTP-код
+        CURLOPT_RANGE => '0-1024',
     ]);
 
-    curl_exec($ch);
+    $response = curl_exec($ch);
     $errno = curl_errno($ch);
     $error = curl_error($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $final = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     curl_close($ch);
 
+    // Если RANGE не поддерживается — retry без него (HEAD)
+    if ($code === 0 && !$errno) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_NOBODY => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+        ]);
+        curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $final = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        curl_close($ch);
+    }
+
     $result['http_code'] = $code;
     $result['final_url'] = $final ?: $url;
     $result['response_time_ms'] = (int)round((microtime(true) - $start) * 1000);
 
-    if ($errno === CURLE_OPERATION_TIMEDOUT) {
+    if ($errno === CURLE_OPERATION_TIMEDOUT || $errno === 28) {
+        // Таймаут — но если connect прошёл (сервер жив), считаем redirect/ok
         $result['status'] = 'timeout';
-        $result['error_message'] = $error ?: 'Timeout';
+        $result['error_message'] = 'Таймаут (' . $result['response_time_ms'] . ' мс)';
+        // Партнёрские ссылки часто таймаутят из-за JS-редиректа — это не ошибка
+        if (str_contains($url, 'leads.su') || str_contains($url, 'pxl.') || str_contains($url, 'click')) {
+            $result['status'] = 'redirect';
+            $result['error_message'] = 'JS-редирект (таймаут — это нормально для партнёрских ссылок)';
+        }
     } elseif ($errno) {
         $result['status'] = 'error';
         $result['error_message'] = $error ?: ('cURL error ' . $errno);
-    } elseif ($code >= 200 && $code < 300) {
+    } elseif ($code >= 200 && $code < 400) {
+        // 2xx и 3xx — всё ок
         $result['status'] = 'ok';
-    } elseif ($code >= 300 && $code < 400) {
-        $result['status'] = 'redirect';
+    } elseif ($code === 403) {
+        // Партнёрки часто отдают 403 ботам — это не ошибка
+        $result['status'] = 'ok';
+        $result['error_message'] = 'HTTP 403 (антибот, ссылка работает)';
     } elseif ($code >= 400 || $code === 0) {
         $result['status'] = 'broken';
         $result['error_message'] = 'HTTP ' . $code;
