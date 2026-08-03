@@ -21,8 +21,14 @@ if ($noDesc) {
 try {
     $noFaq = $db->query("SELECT o.id, o.title FROM offers o WHERE o.is_active = 1 AND o.id NOT IN (SELECT DISTINCT offer_id FROM offer_faqs WHERE is_active = 1)")->fetchAll();
     if ($noFaq) {
-        $issues[] = ['level' => 'info', 'category' => 'offers', 'msg' => count($noFaq) . ' офферов без FAQ',
-            'items' => array_map(fn($o) => $o['title'], $noFaq)];
+        $issues[] = [
+            'level' => 'info',
+            'category' => 'offers',
+            'msg' => count($noFaq) . ' офферов без FAQ',
+            'items' => array_map(fn($o) => $o['title'], $noFaq),
+            'fix_action' => 'faq_bulk_generate',
+            'fix_label' => 'Создать FAQ',
+        ];
         $score -= min(5, count($noFaq));
     }
 } catch (Exception $e) {}

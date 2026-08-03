@@ -4228,6 +4228,20 @@ modal(h);
 
 
 /* ============ SEO AUDIT ============ */
+
+function seoAuditRunFix(action){
+if(action==='faq_bulk_generate'){
+  if(!confirm('Сгенерировать FAQ для всех офферов без FAQ?')) return;
+  ap('/faq/bulk-generate',{method:'POST'}).then(function(d){
+    if(d.error){ alert('Ошибка: '+d.error); return; }
+    alert('✅ FAQ сгенерированы для '+(d.generated||0)+' офферов');
+    runSeoAudit();
+  }).catch(function(){ alert('Ошибка генерации FAQ'); });
+  return;
+}
+alert('Неизвестное действие');
+}
+
 function runSeoAudit(){
 var box=document.getElementById('seo-audit-result');
 box.innerHTML='<p class="text-gray-500 text-sm">⏳ Анализ SEO...</p>';
@@ -4253,7 +4267,7 @@ h+='<div class="mb-3">';
 items.forEach(function(issue){
 h+='<div class="flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0">';
 h+='<span class="text-sm flex-shrink-0">'+levels[level]+'</span>';
-h+='<div class="flex-1 min-w-0"><p class="text-sm text-gray-800">'+e(issue.msg)+'</p>';
+h+='<div class="flex-1 min-w-0"><div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><p class="text-sm text-gray-800">'+e(issue.msg)+'</p>'+(issue.fix_action?'<button type="button" onclick="seoAuditRunFix(&#39;'+e(issue.fix_action)+'&#39;)" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-lg text-xs font-semibold self-start">'+e(issue.fix_label||'Исправить')+'</button>':'')+'</div>';
 if(issue.items&&issue.items.length){
 h+='<details class="mt-1"><summary class="text-xs text-gray-400 cursor-pointer">Подробнее ('+issue.items.length+')</summary>';
 h+='<ul class="mt-1 text-xs text-gray-500 list-disc pl-4">';
