@@ -3195,6 +3195,12 @@ h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-bet
 h+='<div class="border rounded-lg p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-purple-600">🧠 llms.txt</h4><a href="/llms.txt" target="_blank" class="text-xs text-purple-500 hover:underline">Открыть →</a></div><p class="text-xs text-gray-500">Для AI-систем (ChatGPT, Claude)</p><button onclick="idxPreviewLlms()" class="mt-2 text-xs text-purple-600 hover:underline">Предпросмотр</button></div>';
 h+='</div></div>';
 
+// SEO-аудит
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔍 SEO-аудит</h3>';
+h+='<div class="flex gap-2 mb-3"><button onclick="runSeoAudit()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">▶ Запустить аудит</button></div>';
+h+='<div id="seo-audit-result"></div>';
+h+='</div>';
+
 // Проверка страниц
 h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔍 Проверка страниц</h3>';
 h+='<p class="text-xs text-gray-500 mb-3">Проверка доступности всех страниц из sitemap. Найдёт 404 и другие ошибки.</p>';
@@ -4218,6 +4224,50 @@ h+='</div></div>';
 
 modal(h);
 });
+}
+
+
+/* ============ SEO AUDIT ============ */
+function runSeoAudit(){
+var box=document.getElementById('seo-audit-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Анализ SEO...</p>';
+ap('/seo-audit').then(function(d){
+var h='';
+
+// Score
+var scoreColor=d.score>=80?'green':d.score>=60?'yellow':'red';
+h+='<div class="flex items-center gap-4 mb-4">';
+h+='<div class="w-16 h-16 rounded-full border-4 border-'+scoreColor+'-500 flex items-center justify-center"><span class="text-xl font-bold text-'+scoreColor+'-600">'+d.score+'</span></div>';
+h+='<div><p class="font-bold text-gray-900">SEO Score: '+d.score+'/100</p>';
+h+='<p class="text-xs text-gray-500">Ошибок: '+d.errors+' • Предупреждений: '+d.warnings+' • Инфо: '+d.info+'</p></div>';
+h+='</div>';
+
+// Issues
+var levels={error:'❌',warning:'⚠️',info:'ℹ️',ok:'✅'};
+var colors={error:'red',warning:'yellow',info:'blue',ok:'green'};
+
+['error','warning','info','ok'].forEach(function(level){
+var items=(d.issues||[]).filter(function(i){ return i.level===level; });
+if(!items.length) return;
+h+='<div class="mb-3">';
+items.forEach(function(issue){
+h+='<div class="flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0">';
+h+='<span class="text-sm flex-shrink-0">'+levels[level]+'</span>';
+h+='<div class="flex-1 min-w-0"><p class="text-sm text-gray-800">'+e(issue.msg)+'</p>';
+if(issue.items&&issue.items.length){
+h+='<details class="mt-1"><summary class="text-xs text-gray-400 cursor-pointer">Подробнее ('+issue.items.length+')</summary>';
+h+='<ul class="mt-1 text-xs text-gray-500 list-disc pl-4">';
+issue.items.slice(0,10).forEach(function(it){ h+='<li>'+e(it)+'</li>'; });
+if(issue.items.length>10) h+='<li>...и ещё '+(issue.items.length-10)+'</li>';
+h+='</ul></details>';
+}
+h+='</div></div>';
+});
+h+='</div>';
+});
+
+box.innerHTML=h;
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+err.message+'</p>'; });
 }
 
 

@@ -23,6 +23,9 @@ if (str_starts_with($adminUri, "/giveaway")) { require __DIR__ . "/admin/giveawa
 // Тест почты
 if ($adminUri === "/test-mail" && $method === "POST") { require __DIR__ . "/admin/test-mail.php"; exit; }
 
+// SEO-аудит
+if (str_starts_with($adminUri, "/seo-audit")) { require __DIR__ . "/admin/seo-audit.php"; exit; }
+
 // Системный мониторинг
 if (str_starts_with($adminUri, "/system-monitor")) { require __DIR__ . "/admin/system-monitor.php"; exit; }
 

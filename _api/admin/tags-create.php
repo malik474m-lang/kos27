@@ -47,5 +47,9 @@ $newId = $db->lastInsertId();
 auditLog('create', 'tag', (int)$newId, $title);
 
 @unlink(__DIR__ . '/../../data/tag-links-cache.json');
+require_once __DIR__ . '/../../includes/auto-indexing.php';
+$catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+$catU = $catUrls[$data['category'] ?? 'microloans'] ?? '/zajmy';
+autoSubmitUrl($catU . '/type/' . $slug);
 pageCacheClear();
 echo json_encode(['success' => true, 'id' => $newId]);

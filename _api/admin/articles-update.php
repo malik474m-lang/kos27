@@ -9,4 +9,8 @@ $db->prepare("UPDATE articles SET title=?, excerpt=?, content=?, meta_title=?, m
     $data['coverImage'] ?? '', $data['isPublished'] ?? false, $itemId,
 ]);
 
+try { require_once __DIR__ . '/../../includes/auto-indexing.php';
+    $slugRow = $db->prepare('SELECT slug FROM articles WHERE id = ?'); $slugRow->execute([$itemId]); $sl = $slugRow->fetchColumn();
+    if ($sl) autoSubmitUrl('/articles/' . $sl);
+} catch (Exception $e) {}
 echo json_encode(['success' => true]);

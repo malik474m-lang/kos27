@@ -36,7 +36,11 @@ try {
     $changes = $oldData ? auditDiff($oldData, $newData, ['title', 'category', 'is_active', 'rate', 'amount_max']) : null;
     auditLog('update', 'offer', $itemId, $data['title'] ?? $oldData['title'] ?? '', $changes);
     
-    echo json_encode(['success' => true]);
+    try { require_once __DIR__ . '/../../includes/auto-indexing.php';
+    $slugRow = $db->prepare('SELECT slug FROM offers WHERE id = ?'); $slugRow->execute([$itemId]); $sl = $slugRow->fetchColumn();
+    if ($sl) autoSubmitUrl('/offer/' . $sl);
+} catch (Exception $e) {}
+echo json_encode(['success' => true]);
 } catch (Exception $e) {
     try {
         $db->prepare("UPDATE offers SET title=?, category=?, amount_min=?, amount_max=?, term_min_days=?, term_max_days=?, psk=?, rate=?, free_term_days=?, logo_url=?, affiliate_url=?, borrower_category=?, description=?, seo_keywords=?, regions=?, is_active=?, sort_order=? WHERE id=?")

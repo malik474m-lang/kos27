@@ -25,7 +25,9 @@ try {
     // Аудит
     auditLog('create', 'offer', (int)$newId, $data['title'] ?? 'Новый оффер');
     
-    echo json_encode(['success' => true, 'id' => $newId]);
+    require_once __DIR__ . '/../../includes/auto-indexing.php';
+autoSubmitUrl('/offer/' . $slug);
+echo json_encode(['success' => true, 'id' => $newId]);
 } catch (Exception $e) {
     try {
         $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, free_term_days, logo_url, affiliate_url, borrower_category, description, seo_keywords, regions, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
