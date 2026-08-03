@@ -127,6 +127,7 @@ $routes = [
     '/login' => 'user-login',
     '/cabinet' => 'cabinet',
     '/search' => 'search',
+    '/contact' => 'contact',
     '/giveaway' => 'giveaway',
     '/privacy' => 'privacy',
     '/terms' => 'terms',

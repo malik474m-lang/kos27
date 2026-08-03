@@ -84,6 +84,7 @@ $topCities = [
                 <a href="/privacy" class="hover:text-white transition-colors">Конфиденциальность</a>
                 <a href="/terms" class="hover:text-white transition-colors">Соглашение</a>
                 <a href="/disclaimer" class="hover:text-white transition-colors">Отказ от ответственности</a>
+                <a href="/contact" class="hover:text-white transition-colors">Обратная связь</a>
             </div>
         </div>
     </div>

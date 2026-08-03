@@ -2853,6 +2853,12 @@ h+='</div>';
 h+='<p class="text-xs text-gray-500 mt-2">Коды счётчиков автоматически добавятся на все страницы сайта</p>';
 h+='</div>';
 
+// Обратная связь
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">📬 Обратная связь</h3>';
+h+='<div><label class="block text-sm font-medium mb-1">Email для обратной связи</label><input type="email" id="set-contact-email" class="input-f" value="'+e(siteSettings.contact_email||'')+'" placeholder="info@kosmozaim.ru"></div>';
+h+='<p class="text-xs text-gray-500 mt-2">На этот адрес будут приходить сообщения из <a href="/contact" target="_blank" class="text-blue-600 hover:underline">формы обратной связи</a></p>';
+h+='</div>';
+
 h+='<div class="flex gap-3"><button type="submit" class="btn-p">💾 Сохранить настройки</button></div>';
 h+='</form>';
 
@@ -2869,7 +2875,8 @@ site_url:document.getElementById('set-url').value,
 yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
 yandex_folder_id:document.getElementById('set-folder').value,
 yandex_metrika_id:document.getElementById('set-metrika').value,
-google_analytics_id:document.getElementById('set-ga').value
+google_analytics_id:document.getElementById('set-ga').value,
+contact_email:document.getElementById('set-contact-email').value
 };
 ap('/settings',{method:'POST',body:JSON.stringify(data)}).then(d=>{
 if(d.success){alert('✅ Настройки сохранены!\n\nРекомендуем сбросить кэш страниц.');lSet();}
