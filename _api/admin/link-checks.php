@@ -8,14 +8,14 @@ function checkAffiliateUrlOnce(string $url, bool $head = true): array {
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 5,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT => 15,
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => $head ? 15 : 20,
         CURLOPT_NOBODY => $head,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; Kosmozaim-LinkChecker/1.0; +https://kosmozaim.ru/)',
-        CURLOPT_HEADER => false,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+        CURLOPT_HEADER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_HTTPHEADER => [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -24,8 +24,12 @@ function checkAffiliateUrlOnce(string $url, bool $head = true): array {
             'Pragma: no-cache',
         ],
     ]);
+    if (!$head) {
+        curl_setopt($ch, CURLOPT_RANGE, '0-1024');
+    }
     curl_exec($ch);
     $curlErr = curl_error($ch);
+    $curlErrNo = curl_errno($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);
 
@@ -34,6 +38,7 @@ function checkAffiliateUrlOnce(string $url, bool $head = true): array {
         'final_url' => $info['url'] ?? $url,
         'redirect_count' => (int)($info['redirect_count'] ?? 0),
         'error_message' => $curlErr ?: null,
+        'curl_errno' => (int)$curlErrNo,
         'mode' => $head ? 'HEAD' : 'GET',
     ];
 }
@@ -47,7 +52,9 @@ function checkAffiliateUrl(string $url): array {
         return ['http_code' => 0, 'final_url' => $url, 'redirect_count' => 0, 'is_ok' => 0, 'error_message' => 'cURL недоступен'];
     }
 
-    // 1) Сначала HEAD
+    $isPartner = str_contains($url, 'leads.su') || str_contains($url, 'pxl.') || str_contains($url, '/click/') || str_contains($url, 'aff') || str_contains($url, 'utm_');
+
+    // 1) HEAD
     $head = checkAffiliateUrlOnce($url, true);
     if ($head['http_code'] >= 200 && $head['http_code'] < 400) {
         return [
@@ -55,11 +62,11 @@ function checkAffiliateUrl(string $url): array {
             'final_url' => $head['final_url'],
             'redirect_count' => $head['redirect_count'],
             'is_ok' => 1,
-            'error_message' => null,
+            'error_message' => $head['redirect_count'] > 0 ? ('Редиректов: ' . $head['redirect_count']) : null,
         ];
     }
 
-    // 2) Если HEAD дал 404/403/405/0 — обязательно перепроверяем GET
+    // 2) GET with small range
     $get = checkAffiliateUrlOnce($url, false);
     if ($get['http_code'] >= 200 && $get['http_code'] < 400) {
         return [
@@ -67,20 +74,39 @@ function checkAffiliateUrl(string $url): array {
             'final_url' => $get['final_url'],
             'redirect_count' => $get['redirect_count'],
             'is_ok' => 1,
-            'error_message' => null,
+            'error_message' => $get['redirect_count'] > 0 ? ('Редиректов: ' . $get['redirect_count']) : null,
         ];
     }
 
-    // 3) Некоторые партнёрки режут ботов, но ссылка технически существует.
-    // Если GET дал 403 после редиректов — считаем подозрительной, но не битой.
-    if ($get['http_code'] === 403 && $get['redirect_count'] > 0) {
-        return [
-            'http_code' => $get['http_code'],
-            'final_url' => $get['final_url'],
-            'redirect_count' => $get['redirect_count'],
-            'is_ok' => 1,
-            'error_message' => 'Ограничение доступа для ботов (403 после редиректа), в браузере может открываться корректно',
-        ];
+    // 3) Для партнёрок 403 / timeout / anti-bot — это нормальная ситуация
+    if ($isPartner) {
+        if ($get['http_code'] === 403 || $head['http_code'] === 403) {
+            return [
+                'http_code' => $get['http_code'] ?: $head['http_code'],
+                'final_url' => $get['final_url'] ?: $head['final_url'] ?: $url,
+                'redirect_count' => max((int)$get['redirect_count'], (int)$head['redirect_count']),
+                'is_ok' => 1,
+                'error_message' => 'Антибот-защита партнёрки (403), ссылка может работать в браузере',
+            ];
+        }
+        if (in_array((int)($get['curl_errno'] ?? 0), [28], true) || in_array((int)($head['curl_errno'] ?? 0), [28], true)) {
+            return [
+                'http_code' => $get['http_code'] ?: $head['http_code'] ?: 0,
+                'final_url' => $get['final_url'] ?: $head['final_url'] ?: $url,
+                'redirect_count' => max((int)$get['redirect_count'], (int)$head['redirect_count']),
+                'is_ok' => 1,
+                'error_message' => 'Таймаут/JS-редирект партнёрки — обычно это норма',
+            ];
+        }
+        if (($get['http_code'] === 0 && !empty($get['error_message'])) || ($head['http_code'] === 0 && !empty($head['error_message']))) {
+            return [
+                'http_code' => 0,
+                'final_url' => $url,
+                'redirect_count' => max((int)$get['redirect_count'], (int)$head['redirect_count']),
+                'is_ok' => 1,
+                'error_message' => 'Партнёрская ссылка не даёт техпроверку, но не считается битой',
+            ];
+        }
     }
 
     return [

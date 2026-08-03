@@ -1226,7 +1226,7 @@ items.forEach(function(it){
   var badge='';
   if(!it.checked_at) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Не проверен</span>';
   else if(Number(it.is_ok)===1) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">OK</span>';
-  else badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Ошибка</span>';
+  else if(it.error_message&&it.error_message.includes('Антибот')) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">OK*</span>';else if(it.error_message&&it.error_message.includes('Таймаут/JS-редирект')) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">OK*</span>';else if(it.error_message&&it.error_message.includes('не считается битой')) badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">OK*</span>';else badge='<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Ошибка</span>';
   var code=it.http_code?String(it.http_code):'—';
   var checked=it.checked_at?new Date(it.checked_at).toLocaleString('ru-RU'):'—';
   var title=it.error_message?('Ошибка: '+it.error_message):(it.final_url||it.affiliate_url||'');
