@@ -49,6 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('analytics')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="analytics">📈 Аналитика</button>
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
+<button onclick="sw('monitor')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="monitor">🖥️ Мониторинг</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('giveaway')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="giveaway">🎁 Розыгрыши</button>
 <button onclick="sw('positions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="positions">📊 Позиции</button>
@@ -79,6 +80,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-analytics" class="tp hidden"></div>
 <div id="p-backup" class="tp hidden"></div>
 <div id="p-users" class="tp hidden"></div>
+<div id="p-monitor" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
 <div id="p-giveaway" class="tp hidden"></div>
@@ -94,8 +96,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',health:'Здоровье сайта'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
+const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
@@ -4007,6 +4009,107 @@ h+='</div>';
 h+='</div>';
 el.innerHTML=h;
 }).catch(function(err){ el.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>'; });
+}
+
+
+/* ============ SYSTEM MONITOR ============ */
+function lMonitor(){
+var el=document.getElementById('p-monitor');
+el.innerHTML='<p class="text-gray-500">⏳ Загрузка мониторинга...</p>';
+ap('/system-monitor?action=overview').then(function(d){
+var h='<div class="space-y-6">';
+h+='<h2 class="text-xl font-bold">🖥️ Системный мониторинг</h2>';
+
+// Сервисы
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔌 Внешние сервисы</h3>';
+h+='<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
+var svc=d.services||{};
+h+='<div class="p-3 rounded-lg '+(svc.yandex_gpt?'bg-green-50':'bg-red-50')+'"><span class="text-lg">'+(svc.yandex_gpt?'✅':'❌')+'</span><p class="text-sm font-medium mt-1">YandexGPT</p></div>';
+h+='<div class="p-3 rounded-lg '+(svc.google_indexing?'bg-green-50':'bg-yellow-50')+'"><span class="text-lg">'+(svc.google_indexing?'✅':'⚠️')+'</span><p class="text-sm font-medium mt-1">Google Indexing</p></div>';
+h+='<div class="p-3 rounded-lg '+(svc.yandex_webmaster?'bg-green-50':'bg-yellow-50')+'"><span class="text-lg">'+(svc.yandex_webmaster?'✅':'⚠️')+'</span><p class="text-sm font-medium mt-1">Яндекс.Вебмастер</p></div>';
+h+='</div></div>';
+
+// Безопасность
+var sec=d.security||{};
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔒 Безопасность</h3>';
+h+='<p class="text-sm">2FA: '+(sec['2fa_enabled']?'<span class="text-green-600 font-semibold">✅ Включена</span>':'<span class="text-red-600 font-semibold">❌ Выключена</span>')+'</p>';
+h+='</div>';
+
+// Планировщик
+var sch=d.scheduler||{};
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">⏰ Планировщик</h3>';
+h+='<div class="grid sm:grid-cols-2 gap-4 mb-3">';
+h+='<div class="p-3 rounded-lg '+(sch.reviews_enabled?'bg-green-50':'bg-gray-50')+'"><p class="text-sm font-medium">Отзывы: '+(sch.reviews_enabled?'<span class="text-green-600">вкл</span>':'<span class="text-gray-400">выкл</span>')+'</p><p class="text-xs text-gray-500">Сегодня: '+sch.reviews_today+' / '+sch.reviews_target+'</p>'+(sch.last_review?'<p class="text-xs text-gray-400">Последний: '+sch.last_review+'</p>':'')+'</div>';
+h+='<div class="p-3 rounded-lg '+(sch.articles_enabled?'bg-green-50':'bg-gray-50')+'"><p class="text-sm font-medium">Статьи: '+(sch.articles_enabled?'<span class="text-green-600">вкл</span>':'<span class="text-gray-400">выкл</span>')+'</p><p class="text-xs text-gray-500">Сегодня: '+sch.articles_today+' / '+sch.articles_target+'</p>'+(sch.last_article?'<p class="text-xs text-gray-400">Последняя: '+sch.last_article+'</p>':'')+'</div>';
+h+='</div>';
+if(sch.recent_log&&sch.recent_log.length){
+h+='<details class="mt-2"><summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">📋 Лог запусков (последние 10)</summary><div class="mt-2 bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto font-mono text-xs text-gray-600">';
+sch.recent_log.forEach(function(l){ h+='<div>'+e(l)+'</div>'; });
+h+='</div></details>';
+}
+h+='</div>';
+
+// Бэкапы
+var bk=d.backups||{};
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">💾 Бэкапы</h3>';
+h+='<div class="flex gap-4">';
+h+='<div><p class="text-sm">Всего: <strong>'+bk.count+'</strong></p></div>';
+h+='<div><p class="text-sm">Последний: <strong>'+(bk.last_backup||'никогда')+'</strong></p></div>';
+if(bk.days_since_backup!==null){
+h+='<div><p class="text-sm '+(bk.days_since_backup>7?'text-red-600':'text-green-600')+'">'+bk.days_since_backup+' дней назад</p></div>';
+}
+h+='</div>';
+if(bk.days_since_backup===null||bk.days_since_backup>3){
+h+='<p class="text-xs text-yellow-600 mt-2">⚠️ Рекомендуется делать бэкап не реже 1 раза в 3 дня</p>';
+}
+h+='</div>';
+
+// БД и PHP
+var dbInfo=d.database||{};
+var phpInfo=d.php||{};
+h+='<div class="grid sm:grid-cols-2 gap-6">';
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🗄️ База данных</h3>';
+h+='<p class="text-sm">Размер: <strong>'+(dbInfo.size_mb||0)+' МБ</strong></p>';
+h+='<p class="text-sm">Таблиц: <strong>'+(dbInfo.tables||0)+'</strong></p>';
+h+='</div>';
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">⚙️ PHP</h3>';
+h+='<p class="text-sm">Версия: <strong>'+(phpInfo.version||'?')+'</strong></p>';
+h+='<p class="text-sm">Память: <strong>'+(phpInfo.memory_limit||'?')+'</strong></p>';
+h+='<p class="text-sm">cURL: '+(phpInfo.curl?'✅':'❌')+' | OpenSSL: '+(phpInfo.openssl?'✅':'❌')+' | mbstring: '+(phpInfo.mbstring?'✅':'❌')+'</p>';
+h+='</div></div>';
+
+// Кэш
+var cache=d.cache||{};
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📦 Кэш</h3>';
+h+='<p class="text-sm">Файлов: <strong>'+cache.page_cache_files+'</strong> | Размер: <strong>'+Math.round((cache.page_cache_size||0)/1024)+' КБ</strong></p>';
+h+='</div>';
+
+// Ошибки
+var errors=d.recent_errors||[];
+h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">🐛 Последние ошибки ('+(d.error_count||0)+')</h3><button onclick="monClearErrors()" class="text-xs text-gray-400 hover:text-red-500">Очистить</button></div>';
+if(errors.length){
+h+='<div class="divide-y max-h-64 overflow-y-auto">';
+errors.forEach(function(er){
+var color=er.level==='critical'?'red':er.level==='error'?'red':er.level==='warning'?'yellow':'gray';
+h+='<div class="px-4 py-2 text-xs"><div class="flex items-center gap-2"><span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-'+color+'-100 text-'+color+'-700">'+e(er.level)+'</span><span class="text-gray-400">'+e(er.time)+'</span><span class="text-gray-500 font-medium">'+e(er.source)+'</span></div><p class="text-gray-700 mt-1">'+e(er.message)+'</p></div>';
+});
+h+='</div>';
+}else{
+h+='<p class="p-4 text-gray-500 text-sm">Нет ошибок ✅</p>';
+}
+h+='</div>';
+
+h+='</div>';
+el.innerHTML=h;
+}).catch(function(err){ el.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>'; });
+}
+
+function monClearErrors(){
+if(!confirm('Очистить лог ошибок?')) return;
+ap('/system-monitor?action=clear-errors',{method:'POST'}).then(function(d){
+if(d.success) alert('Очищено: '+d.cleared);
+lMonitor();
+});
 }
 
 

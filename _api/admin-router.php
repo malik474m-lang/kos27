@@ -20,6 +20,9 @@ if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.
 // Розыгрыши
 if (str_starts_with($adminUri, "/giveaway")) { require __DIR__ . "/admin/giveaway.php"; exit; }
 
+// Системный мониторинг
+if (str_starts_with($adminUri, "/system-monitor")) { require __DIR__ . "/admin/system-monitor.php"; exit; }
+
 // Google Indexing
 if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/google-indexing.php"; exit; }
 
