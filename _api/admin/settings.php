@@ -22,6 +22,15 @@ function loadSettings(): array {
         'yandex_folder_id' => '',
         'yandex_metrika_id' => '',
         'google_analytics_id' => '',
+        'contact_email' => '',
+        'smtp_enabled' => false,
+        'smtp_host' => '',
+        'smtp_port' => 465,
+        'smtp_user' => '',
+        'smtp_pass' => '',
+        'smtp_secure' => 'ssl',
+        'mail_from' => '',
+        'mail_from_name' => '',
     ];
     
     // Сначала из .env
@@ -157,15 +166,20 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name'];
     
     foreach ($allowedFields as $field) {
-        if (isset($data[$field])) {
-            // Если API ключ пустой или замаскирован — не меняем
-            if ($field === 'yandex_gpt_api_key' && (empty($data[$field]) || strpos($data[$field], '...') !== false)) {
+        if (array_key_exists($field, $data)) {
+            if ($field === 'yandex_gpt_api_key' && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
                 continue;
             }
-            $settings[$field] = trim($data[$field]);
+            if ($field === 'smtp_enabled') {
+                $settings[$field] = !empty($data[$field]);
+            } elseif ($field === 'smtp_port') {
+                $settings[$field] = (int)$data[$field];
+            } else {
+                $settings[$field] = is_string($data[$field]) ? trim($data[$field]) : $data[$field];
+            }
         }
     }
     
