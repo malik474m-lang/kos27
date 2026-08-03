@@ -55,6 +55,14 @@ $topCities = [
                     <form id="subscribe-form" onsubmit="return handleSubscribe(event)">
                         <div style="display:none"><input type="text" name="hp-sub" id="hp-sub" tabindex="-1" autocomplete="off"></div>
                         <input type="email" name="email" placeholder="Ваш email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-primary mb-2">
+                        <label class="flex items-start gap-2 mb-2 cursor-pointer">
+                            <input type="checkbox" id="sub-agree-rules" checked class="mt-0.5 w-3.5 h-3.5 flex-shrink-0 accent-primary">
+                            <span class="text-xs text-gray-400 leading-tight">Соглашаюсь с <a href="/terms" class="text-primary hover:underline">Правилами сайта</a>, предоставляю согласие на <a href="/privacy" class="text-primary hover:underline">обработку персональных данных</a> и на участие в Программе лояльности</span>
+                        </label>
+                        <label class="flex items-start gap-2 mb-3 cursor-pointer">
+                            <input type="checkbox" id="sub-agree-marketing" checked class="mt-0.5 w-3.5 h-3.5 flex-shrink-0 accent-primary">
+                            <span class="text-xs text-gray-400 leading-tight">Предоставляю согласие на получение рекламы и информационных сообщений</span>
+                        </label>
                         <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white px-3 py-2 rounded-lg font-medium text-sm transition-colors">Подписаться</button>
                     </form>
                 </div>
