@@ -61,6 +61,16 @@ function kosmozaimErrorHandler(int $errno, string $errstr, string $errfile, int 
     // Не логируем notice
     if ($level === 'notice') return false;
 
+    // Игнорируем безвредные race-condition предупреждения при создании директорий
+    $ignoredPatterns = [
+        'mkdir(): File exists',
+    ];
+    foreach ($ignoredPatterns as $pattern) {
+        if (str_contains($errstr, $pattern)) {
+            return true;
+        }
+    }
+
     logAppError('php', $errstr, $level, [
         'file' => basename($errfile),
         'line' => $errline,
