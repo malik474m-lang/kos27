@@ -4385,6 +4385,74 @@ function cqImproveField(prefix, entity, field){
   }).catch(function(){ alert('Ошибка улучшения'); });
 }
 
+function loadFunnelMap(){
+var box=document.getElementById('funnel-map-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка воронки...</p>';
+ap('/positions?action=funnel-map&days='+_posDays).then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">'+e(d.error)+'</p>'; return; }
+var map=d.map||[];
+if(!map.length){ box.innerHTML='<p class="text-gray-400 text-sm">Нет данных за выбранный период</p>'; return; }
+var h='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr>';
+h+='<th class="px-3 py-2 text-left">Оффер</th>';
+h+='<th class="px-3 py-2 text-right">Просмотры</th>';
+h+='<th class="px-3 py-2 text-right">→ Клики</th>';
+h+='<th class="px-3 py-2 text-right">CTR</th>';
+h+='<th class="px-3 py-2 text-right">→ Одобрено</th>';
+h+='<th class="px-3 py-2 text-right">CR</th>';
+h+='<th class="px-3 py-2 text-right">❌</th>';
+h+='<th class="px-3 py-2 text-right">Доход</th>';
+h+='<th class="px-3 py-2 text-right">EPC</th>';
+h+='</tr></thead><tbody>';
+map.forEach(function(r){
+var ctrColor=r.view_to_click>=5?'text-green-600':r.view_to_click>=2?'text-blue-600':'text-gray-500';
+var crColor=r.click_to_conv>=5?'text-green-600 font-bold':r.click_to_conv>=1?'text-blue-600':'text-gray-500';
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 font-medium max-w-[200px] truncate" title="'+e(r.title)+'"><a href="/offer/'+e(r.slug)+'" target="_blank" class="text-primary hover:underline">'+e(r.title)+'</a></td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+r.views+'</td>';
+h+='<td class="px-3 py-2 text-right font-medium">'+r.clicks+'</td>';
+h+='<td class="px-3 py-2 text-right '+ctrColor+'">'+r.view_to_click+'%</td>';
+h+='<td class="px-3 py-2 text-right text-green-600 font-medium">'+r.approved+'</td>';
+h+='<td class="px-3 py-2 text-right '+crColor+'">'+r.click_to_conv+'%</td>';
+h+='<td class="px-3 py-2 text-right '+(r.rejected>0?'text-red-500':'text-gray-400')+'">'+r.rejected+'</td>';
+h+='<td class="px-3 py-2 text-right text-green-600 font-medium">'+Number(r.revenue).toLocaleString("ru-RU")+' ₽</td>';
+h+='<td class="px-3 py-2 text-right">'+Number(r.epc).toLocaleString("ru-RU")+' ₽</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+box.innerHTML=h;
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
+}
+
+function loadByPage(){
+var box=document.getElementById('by-page-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Загрузка...</p>';
+ap('/positions?action=by-page&days='+_posDays+'&limit=50').then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">'+e(d.error)+'</p>'; return; }
+var pages=d.pages||[];
+if(!pages.length){ box.innerHTML='<p class="text-gray-400 text-sm">Нет данных</p>'; return; }
+var h='<div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr>';
+h+='<th class="px-3 py-2 text-left">Страница</th>';
+h+='<th class="px-3 py-2 text-right">Позиция</th>';
+h+='<th class="px-3 py-2 text-right">Показы</th>';
+h+='<th class="px-3 py-2 text-right">Клики</th>';
+h+='<th class="px-3 py-2 text-right">CTR</th>';
+h+='</tr></thead><tbody>';
+pages.forEach(function(pg){
+var posColor=pg.position<=3?'text-green-600 font-bold':pg.position<=10?'text-blue-600 font-medium':pg.position<=30?'text-yellow-600':'text-gray-500';
+h+='<tr class="border-t hover:bg-gray-50">';
+h+='<td class="px-3 py-2 font-mono text-xs max-w-[300px] truncate" title="'+e(pg.url)+'"><a href="'+e(pg.url)+'" target="_blank" class="text-primary hover:underline">'+e(pg.url)+'</a></td>';
+h+='<td class="px-3 py-2 text-right '+posColor+'">'+pg.position+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-600">'+pg.shows+'</td>';
+h+='<td class="px-3 py-2 text-right font-medium">'+pg.clicks+'</td>';
+h+='<td class="px-3 py-2 text-right text-gray-500">'+pg.ctr+'%</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+box.innerHTML=h;
+}).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
+}
+
+
 </script>
 </body>
 </html>

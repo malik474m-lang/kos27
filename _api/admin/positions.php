@@ -194,6 +194,80 @@ case 'combined':
     ]);
     break;
 
+case 'by-page':
+    // Позиции по страницам (Google SC)
+    $token = generateGoogleSearchConsoleToken();
+    if (!$token) { echo json_encode(['error' => 'Google SC не настроен']); exit; }
+    $dateFrom = date('Y-m-d', strtotime("-{$days} days"));
+    $dateTo = date('Y-m-d', strtotime('-1 day'));
+    $body = ['startDate' => $dateFrom, 'endDate' => $dateTo, 'dimensions' => ['page'], 'rowLimit' => $limit];
+    $ch = curl_init('https://www.googleapis.com/webmasters/v3/sites/' . urlencode(SITE_URL) . '/searchAnalytics/query');
+    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($body),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $token],
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
+    $response = curl_exec($ch); $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($httpCode !== 200) { echo json_encode(['error' => 'Google error', 'status' => $httpCode]); exit; }
+    $pages = [];
+    foreach ((json_decode($response, true)['rows'] ?? []) as $row) {
+        $pageUrl = $row['keys'][0] ?? '';
+        $path = str_replace(SITE_URL, '', $pageUrl);
+        $pages[] = [
+            'url' => $path,
+            'clicks' => (int)($row['clicks'] ?? 0),
+            'shows' => (int)($row['impressions'] ?? 0),
+            'position' => round((float)($row['position'] ?? 0), 1),
+            'ctr' => round(($row['ctr'] ?? 0) * 100, 1),
+        ];
+    }
+    echo json_encode(['source' => 'google', 'pages' => $pages, 'days' => $days]);
+    break;
+
+case 'funnel-map':
+    // Полная карта: запрос → страница → клики на оффер → конверсия
+    $clickDateColumn = dbDateColumn('click_stats', ['clicked_at', 'created_at']);
+    $offers = $db->query("SELECT id, title, slug FROM offers WHERE is_active = 1")->fetchAll();
+    $map = [];
+    foreach ($offers as $o) {
+        $slug = $o['slug'];
+        $oid = (int)$o['id'];
+        // Просмотры страницы оффера
+        $pageViewCol = dbDateColumn('page_views', ['viewed_at', 'created_at']);
+        $vstmt = $db->prepare("SELECT COUNT(*) as cnt FROM page_views WHERE page = ? AND {$pageViewCol} >= DATE_SUB(NOW(), INTERVAL ? DAY)");
+        $vstmt->execute(['/offer/' . $slug, $days]);
+        $views = (int)$vstmt->fetch()['cnt'];
+        // Клики
+        $cstmt = $db->prepare("SELECT COUNT(*) as cnt FROM click_stats WHERE offer_id = ? AND {$clickDateColumn} >= DATE_SUB(NOW(), INTERVAL ? DAY)");
+        $cstmt->execute([$oid, $days]);
+        $clicks = (int)$cstmt->fetch()['cnt'];
+        // Конверсии
+        $approved = 0; $rejected = 0; $revenue = 0;
+        try {
+            $pstmt = $db->prepare("SELECT status, COUNT(*) as cnt, SUM(payout) as total FROM postback_conversions WHERE offer_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) GROUP BY status");
+            $pstmt->execute([$oid, $days]);
+            foreach ($pstmt->fetchAll() as $row) {
+                if ($row['status'] === 'approved') { $approved = (int)$row['cnt']; $revenue = (float)$row['total']; }
+                elseif ($row['status'] === 'rejected') { $rejected = (int)$row['cnt']; }
+            }
+        } catch (Exception $e) {}
+        if ($views === 0 && $clicks === 0) continue;
+        $map[] = [
+            'offer_id' => $oid,
+            'title' => $o['title'],
+            'slug' => $slug,
+            'views' => $views,
+            'clicks' => $clicks,
+            'approved' => $approved,
+            'rejected' => $rejected,
+            'revenue' => $revenue,
+            'view_to_click' => $views > 0 ? round($clicks / $views * 100, 1) : 0,
+            'click_to_conv' => $clicks > 0 ? round($approved / $clicks * 100, 1) : 0,
+            'epc' => $clicks > 0 ? round($revenue / $clicks, 2) : 0,
+        ];
+    }
+    usort($map, fn($a, $b) => $b['views'] <=> $a['views']);
+    echo json_encode(['map' => $map, 'days' => $days]);
+    break;
+
 default:
     echo json_encode(['error' => 'Unknown action']);
 }
