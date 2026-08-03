@@ -14,6 +14,10 @@ function renderGiveawayBanner(): string {
         $endDate = $gw['end_at'] ? date('d.m.Y', strtotime($gw['end_at'])) : '—';
         $drawDate = $gw['draw_at'] ? date('d.m.Y в H:i', strtotime($gw['draw_at'])) : $endDate;
         $title = htmlspecialchars($gw['title'], ENT_QUOTES, 'UTF-8');
+        $offerName = '';
+        if (!empty($gw['offer_id'])) {
+            try { $ofStmt = $db->prepare('SELECT title FROM offers WHERE id = ?'); $ofStmt->execute([$gw['offer_id']]); $offerName = ($ofStmt->fetch()['title'] ?? ''); } catch (Exception $e) {}
+        }
 
         $cnt = $db->prepare("SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
         $cnt->execute([$gw['id']]);

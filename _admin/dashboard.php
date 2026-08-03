@@ -317,6 +317,7 @@ return '<div class="flex items-center gap-2 mb-2 of-ef-row">'+
 function ofAddExtraField(){
 var box=document.getElementById('of-extra-fields');if(!box)return;
 box.insertAdjacentHTML('beforeend','<div class="flex items-center gap-2 mb-2 of-ef-row"><label class="flex items-center gap-1 flex-shrink-0"><input type="checkbox" class="of-ef-vis w-3.5 h-3.5" checked title="Показывать"></label><input class="input-f text-xs of-ef-label flex-1" placeholder="Название поля"><input class="input-f text-xs of-ef-value flex-1" placeholder="Значение"><button type="button" onclick="this.closest(\'.of-ef-row\').remove()" class="text-red-400 hover:text-red-600 text-sm">&times;</button></div>');
+setTimeout(function(){ _gwLoadOffers(f.offer_id||''); }, 50);
 }
 function ofCollectExtraFields(){
 var fields=[];
@@ -3593,7 +3594,7 @@ var prize=Number(g.prize_amount||0).toLocaleString('ru-RU');
 h+='<div class="bg-white rounded-xl border p-6">';
 h+='<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">';
 h+='<div><h3 class="text-lg font-bold">'+e(g.title)+'</h3>';
-h+='<p class="text-sm text-gray-500 mt-1">'+new Date(g.start_at).toLocaleDateString("ru-RU")+' — '+new Date(g.end_at).toLocaleDateString("ru-RU")+'</p></div>';
+h+='<p class="text-sm text-gray-500 mt-1">'+new Date(g.start_at).toLocaleDateString("ru-RU")+' — '+new Date(g.end_at).toLocaleDateString("ru-RU")+(g.offer_title?' • <span class="text-blue-600">'+e(g.offer_title)+'</span>':'  • <span class="text-gray-400">все офферы</span>')+'</p></div>';
 h+='<span class="px-3 py-1 rounded-full text-sm font-semibold bg-'+stColor+'-100 text-'+stColor+'-700">'+stLabel+'</span></div>';
 h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">';
 h+='<div class="bg-yellow-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-yellow-600">'+prize+' ₽</p><p class="text-xs text-gray-500">Призовой фонд</p></div>';
@@ -3639,12 +3640,27 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Шаги участия (каждый с новой строки)</label><textarea id="gw-steps" class="input-f" rows="4" placeholder="Зарегистрируйтесь на сайте\nОформите любой продукт\nПолучите одобрение\nЖдите розыгрыш!">'+e(f.page_steps||'')+'</textarea></div>'+
 '<div><label class="block text-xs font-medium mb-1">Обязательные условия (каждое с новой строки)</label><textarea id="gw-rules" class="input-f" rows="4" placeholder="Регистрация на сайте\nОдобренная заявка через сайт">'+e(f.page_rules||'')+'</textarea></div>'+
 '<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Процент приза от конверсий</label><input id="gw-percent" type="number" step="0.1" min="1" max="100" class="input-f" value="'+(f.prize_percent||10)+'"></div><div><label class="block text-xs font-medium mb-1">Статус</label><select id="gw-status" class="sel-f">'+statuses+'</select></div></div>'+
+'<div><label class="block text-xs font-medium mb-1">Оффер (пусто = все офферы)</label><select id="gw-offer" class="sel-f"><option value="">Все офферы</option></select></div>'+
 '<div class="grid grid-cols-3 gap-3"><div><label class="block text-xs font-medium mb-1">Начало *</label><input id="gw-start" type="datetime-local" class="input-f" value="'+startVal+'"></div><div><label class="block text-xs font-medium mb-1">Окончание *</label><input id="gw-end" type="datetime-local" class="input-f" value="'+endVal+'"></div><div><label class="block text-xs font-medium mb-1">Розыгрыш (прямой эфир)</label><input id="gw-draw" type="datetime-local" class="input-f" value="'+drawVal+'"></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="gwSave('+(isEdit?f.id:0)+')" class="btn-p">Сохранить</button></div>');
 }
 
+function _gwLoadOffers(selectedId){
+ap('/offers').then(function(list){
+var sel=document.getElementById('gw-offer');
+if(!sel) return;
+(list||[]).forEach(function(o){
+var opt=document.createElement('option');
+opt.value=o.id;
+opt.textContent=o.title+' ('+({microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'}[o.category]||o.category)+')';
+if(selectedId && Number(o.id)===Number(selectedId)) opt.selected=true;
+sel.appendChild(opt);
+});
+});
+}
+
 function gwSave(id){
-var body={title:document.getElementById('gw-title').value,description:document.getElementById('gw-desc').value,page_subtitle:document.getElementById('gw-subtitle').value,page_steps:document.getElementById('gw-steps').value,page_rules:document.getElementById('gw-rules').value,
+var offerSel=document.getElementById('gw-offer');var body={title:document.getElementById('gw-title').value,description:document.getElementById('gw-desc').value,page_subtitle:document.getElementById('gw-subtitle').value,page_steps:document.getElementById('gw-steps').value,page_rules:document.getElementById('gw-rules').value,offer_id:offerSel?offerSel.value:'',
 prize_percent:parseFloat(document.getElementById('gw-percent').value)||10,
 start_at:document.getElementById('gw-start').value.replace('T',' '),
 end_at:document.getElementById('gw-end').value.replace('T',' '),

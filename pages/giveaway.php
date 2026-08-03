@@ -18,6 +18,11 @@ try {
         $cnt = $db->prepare("SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
         $cnt->execute([$activeGiveaway['id']]);
         $activeGiveaway['entries_count'] = (int)$cnt->fetch()['cnt'];
+        if (!empty($activeGiveaway['offer_id'])) {
+            $ofStmt = $db->prepare('SELECT title FROM offers WHERE id = ?');
+            $ofStmt->execute([$activeGiveaway['offer_id']]);
+            $activeGiveaway['offer_title'] = ($ofStmt->fetch()['title'] ?? '');
+        }
 
         $entStmt = $db->prepare("SELECT user_name, user_email, offer_title, created_at FROM giveaway_entries WHERE giveaway_id = ? ORDER BY created_at DESC LIMIT 50");
         $entStmt->execute([$activeGiveaway['id']]);

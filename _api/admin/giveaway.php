@@ -13,6 +13,10 @@ try { $db->query("SELECT 1 FROM giveaways LIMIT 1");
     try { $db->query("SELECT page_subtitle FROM giveaways LIMIT 1"); } catch (Exception $e2) {
         $db->exec("ALTER TABLE giveaways ADD COLUMN page_subtitle varchar(500) DEFAULT NULL AFTER description, ADD COLUMN page_steps text DEFAULT NULL AFTER page_subtitle, ADD COLUMN page_rules text DEFAULT NULL AFTER page_steps");
     }
+    try { $db->query("SELECT offer_id FROM giveaways LIMIT 1"); } catch (Exception $e3) {
+        $db->exec("ALTER TABLE giveaways ADD COLUMN offer_id int(11) DEFAULT NULL AFTER status");
+        $db->exec("ALTER TABLE giveaways ADD COLUMN page_subtitle varchar(500) DEFAULT NULL AFTER description, ADD COLUMN page_steps text DEFAULT NULL AFTER page_subtitle, ADD COLUMN page_rules text DEFAULT NULL AFTER page_steps");
+    }
 } catch (Exception $e) {
     $migration = file_get_contents(__DIR__ . '/../../database-giveaway-migration.sql');
     foreach (explode(';', $migration) as $q) { $q = trim($q); if ($q) $db->exec($q); }
@@ -37,6 +41,12 @@ function recalcGiveaway(PDO $db, int $giveawayId): array {
     $gw = $gw->fetch(); if (!$gw) return ['error' => 'Not found'];
 
     // Собираем одобренные конверсии за период конкурса
+    $offerFilter = '';
+    $params = [$gw['start_at'], $gw['end_at']];
+    if (!empty($gw['offer_id'])) {
+        $offerFilter = ' AND pc.offer_id = ?';
+        $params[] = (int)$gw['offer_id'];
+    }
     $stmt = $db->prepare("SELECT pc.id as conv_id, pc.offer_id, pc.payout, pc.ip, pc.status,
         o.title as offer_title, ua.user_id, u.name as user_name, u.email as user_email
         FROM postback_conversions pc
@@ -44,9 +54,9 @@ function recalcGiveaway(PDO $db, int $giveawayId): array {
         LEFT JOIN click_stats cs ON pc.click_id = cs.id OR pc.aff_sub = cs.id
         LEFT JOIN user_applications ua ON ua.click_stat_id = cs.id
         LEFT JOIN users u ON ua.user_id = u.id
-        WHERE pc.status = 'approved' AND pc.created_at >= ? AND pc.created_at <= ?
+        WHERE pc.status = 'approved' AND pc.created_at >= ? AND pc.created_at <= ?{$offerFilter}
         ORDER BY pc.created_at ASC");
-    $stmt->execute([$gw['start_at'], $gw['end_at']]);
+    $stmt->execute($params);
     $conversions = $stmt->fetchAll();
 
     $totalAmount = 0;
@@ -74,7 +84,7 @@ function recalcGiveaway(PDO $db, int $giveawayId): array {
 switch ($action) {
 
 case 'list':
-    $rows = $db->query("SELECT * FROM giveaways ORDER BY created_at DESC")->fetchAll();
+    $rows = $db->query("SELECT g.*, o.title as offer_title FROM giveaways g LEFT JOIN offers o ON g.offer_id = o.id ORDER BY g.created_at DESC")->fetchAll();
     foreach ($rows as &$r) {
         $cnt = $db->prepare("SELECT COUNT(*) as cnt FROM giveaway_entries WHERE giveaway_id = ?");
         $cnt->execute([$r['id']]); $r['entries_count'] = (int)$cnt->fetch()['cnt'];
@@ -85,22 +95,24 @@ case 'list':
 case 'create':
     if ($method !== 'POST') { echo json_encode(['error'=>'POST']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
-    $db->prepare("INSERT INTO giveaways (title, description, page_subtitle, page_steps, page_rules, prize_percent, start_at, end_at, draw_at, status) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    $offerId = !empty($data['offer_id']) ? (int)$data['offer_id'] : null;
+    $db->prepare("INSERT INTO giveaways (title, description, page_subtitle, page_steps, page_rules, prize_percent, start_at, end_at, draw_at, status, offer_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
        ->execute([$data['title']??'Розыгрыш', $data['description']??'', $data['page_subtitle']??'',
                   $data['page_steps']??'', $data['page_rules']??'',
                   $data['prize_percent']??10,
                   $data['start_at']??date('Y-m-d H:i:s'), $data['end_at']??date('Y-m-d H:i:s', strtotime('+30 days')),
-                  $data['draw_at']??null, 'planned']);
+                  $data['draw_at']??null, 'planned', $offerId]);
     echo json_encode(['success'=>true, 'id'=>$db->lastInsertId()]);
     break;
 
 case 'update':
     if ($method !== 'POST') { echo json_encode(['error'=>'POST']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
-    $db->prepare("UPDATE giveaways SET title=?, description=?, page_subtitle=?, page_steps=?, page_rules=?, prize_percent=?, start_at=?, end_at=?, draw_at=?, status=? WHERE id=?")
+    $offerId = isset($data['offer_id']) ? ($data['offer_id'] ? (int)$data['offer_id'] : null) : null;
+    $db->prepare("UPDATE giveaways SET title=?, description=?, page_subtitle=?, page_steps=?, page_rules=?, prize_percent=?, start_at=?, end_at=?, draw_at=?, status=?, offer_id=? WHERE id=?")
        ->execute([$data['title'], $data['description']??'', $data['page_subtitle']??'', $data['page_steps']??'', $data['page_rules']??'',
                   $data['prize_percent']??10,
-                  $data['start_at'], $data['end_at'], $data['draw_at']??null, $data['status']??'planned', $data['id']]);
+                  $data['start_at'], $data['end_at'], $data['draw_at']??null, $data['status']??'planned', $offerId, $data['id']]);
     echo json_encode(['success'=>true]);
     break;
 
