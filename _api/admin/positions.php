@@ -60,9 +60,9 @@ case 'yandex':
     break;
 
 case 'google':
-    $token = generateGoogleJWT();
+    $token = generateGoogleSearchConsoleToken();
     if (!$token) {
-        echo json_encode(['error' => 'Google не настроен']); exit;
+        echo json_encode(['error' => 'Google Search Console не настроен. Проверьте ключ сервисного аккаунта.']); exit;
     }
 
     $dateFrom = date('Y-m-d', strtotime("-{$days} days"));
@@ -156,7 +156,7 @@ case 'combined':
     }
 
     // Google
-    $token = generateGoogleJWT();
+    $token = generateGoogleSearchConsoleToken();
     if ($token) {
         $dateFrom = date('Y-m-d', strtotime("-{$days} days"));
         $dateTo = date('Y-m-d', strtotime('-1 day'));

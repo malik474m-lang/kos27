@@ -15,6 +15,57 @@ function googleIndexingAvailable(): bool {
 /**
  * Генерация JWT токена для Google API
  */
+function generateGoogleJWTWithScope(string $scope): ?string {
+    $keyFile = getGoogleServiceAccountPath();
+    if (!file_exists($keyFile)) return null;
+
+    $sa = json_decode(file_get_contents($keyFile), true);
+    if (!$sa || empty($sa['private_key']) || empty($sa['client_email'])) return null;
+
+    $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+    $now = time();
+    $claims = base64_encode(json_encode([
+        'iss' => $sa['client_email'],
+        'scope' => $scope,
+        'aud' => 'https://oauth2.googleapis.com/token',
+        'iat' => $now,
+        'exp' => $now + 3600,
+    ]));
+
+    $toSign = str_replace(['+', '/', '='], ['-', '_', ''], $header) . '.' . str_replace(['+', '/', '='], ['-', '_', ''], $claims);
+
+    $privateKey = openssl_pkey_get_private($sa['private_key']);
+    if (!$privateKey) return null;
+
+    $signature = '';
+    if (!openssl_sign($toSign, $signature, $privateKey, OPENSSL_ALGO_SHA256)) return null;
+
+    $jwt = $toSign . '.' . str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+
+    $ch = curl_init('https://oauth2.googleapis.com/token');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion' => $jwt,
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) return null;
+
+    $data = json_decode($response, true);
+    return $data['access_token'] ?? null;
+}
+
+function generateGoogleSearchConsoleToken(): ?string {
+    return generateGoogleJWTWithScope('https://www.googleapis.com/auth/webmasters.readonly');
+}
+
 function generateGoogleJWT(): ?string {
     $keyFile = getGoogleServiceAccountPath();
     if (!file_exists($keyFile)) return null;
