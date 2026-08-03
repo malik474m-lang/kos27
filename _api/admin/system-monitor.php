@@ -5,6 +5,7 @@
 requireAdmin();
 require_once __DIR__ . '/../../includes/error-logger.php';
 require_once __DIR__ . '/../../includes/yandex-webmaster.php';
+require_once __DIR__ . '/../../includes/mailer.php';
 require_once __DIR__ . '/../../includes/google-indexing.php';
 
 $db = getDB();
@@ -55,14 +56,24 @@ case 'overview':
         'recent_log' => $schedulerLog,
     ];
 
-    // 2. Внешние сервисы
+    // 2. Почта
+    $mailCfg = getMailConfig();
+    $checks['mail'] = [
+        'smtp_enabled' => $mailCfg['smtp_enabled'],
+        'smtp_host' => $mailCfg['smtp_host'] ?: null,
+        'mail_from' => $mailCfg['mail_from'],
+        'contact_email' => $mailCfg['contact_email'] ?: null,
+        'method' => $mailCfg['smtp_enabled'] ? 'SMTP' : 'mail()',
+    ];
+
+    // 3. Внешние сервисы
     $checks['services'] = [
         'google_indexing' => googleIndexingAvailable(),
         'yandex_webmaster' => yandexWebmasterAvailable(),
         'yandex_gpt' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
     ];
 
-    // 3. 2FA
+    // 4. 2FA
     try {
         $adminUser = $db->query("SELECT totp_enabled FROM admin_users WHERE id = " . (int)($_SESSION['admin_id'] ?? 0))->fetch();
         $checks['security'] = ['2fa_enabled' => !empty($adminUser['totp_enabled'])];
@@ -70,7 +81,7 @@ case 'overview':
         $checks['security'] = ['2fa_enabled' => false];
     }
 
-    // 4. Кэш
+    // 5. Кэш
     $cacheDir = __DIR__ . '/../../data/page_cache';
     $cacheFiles = is_dir($cacheDir) ? glob($cacheDir . '/*.html') : [];
     $checks['cache'] = [
@@ -78,7 +89,7 @@ case 'overview':
         'page_cache_size' => array_sum(array_map('filesize', $cacheFiles ?: [])),
     ];
 
-    // 5. Бэкапы
+    // 6. Бэкапы
     $backupDir = __DIR__ . '/../../data/backups';
     $backupFiles = is_dir($backupDir) ? glob($backupDir . '/*.zip') : [];
     $lastBackup = null;
@@ -92,7 +103,7 @@ case 'overview':
         'days_since_backup' => $lastBackup ? (int)((time() - strtotime($lastBackup)) / 86400) : null,
     ];
 
-    // 6. БД
+    // 7. БД
     try {
         $dbSize = $db->query("SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb FROM information_schema.tables WHERE table_schema = DATABASE()")->fetch();
         $tableCount = $db->query("SELECT COUNT(*) as cnt FROM information_schema.tables WHERE table_schema = DATABASE()")->fetch();
@@ -104,14 +115,14 @@ case 'overview':
         $checks['database'] = ['error' => $e->getMessage()];
     }
 
-    // 7. Диск
+    // 8. Диск
     $dataDir = __DIR__ . '/../../data';
     $checks['disk'] = [
         'data_dir_exists' => is_dir($dataDir),
         'data_dir_writable' => is_writable($dataDir),
     ];
 
-    // 8. PHP
+    // 9. PHP
     $checks['php'] = [
         'version' => PHP_VERSION,
         'memory_limit' => ini_get('memory_limit'),
@@ -122,7 +133,7 @@ case 'overview':
         'json' => extension_loaded('json'),
     ];
 
-    // 9. Ошибки
+    // 10. Ошибки
     $errors = getAppErrors(20);
     $checks['recent_errors'] = $errors;
     $checks['error_count'] = count($errors);

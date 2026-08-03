@@ -4044,6 +4044,16 @@ ap('/system-monitor?action=overview').then(function(d){
 var h='<div class="space-y-6">';
 h+='<h2 class="text-xl font-bold">🖥️ Системный мониторинг</h2>';
 
+// Почта
+var ml=d.mail||{};
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">📧 Почта</h3>';
+h+='<div class="grid sm:grid-cols-2 gap-3">';
+h+='<div class="p-3 rounded-lg '+(ml.smtp_enabled?'bg-green-50':'bg-yellow-50')+'"><p class="text-sm font-medium">'+(ml.smtp_enabled?'✅ SMTP':'⚠️ mail()')+'</p><p class="text-xs text-gray-500">'+(ml.smtp_host||'Стандартная отправка')+'</p></div>';
+h+='<div class="p-3 rounded-lg bg-gray-50"><p class="text-xs text-gray-500">От: <strong>'+e(ml.mail_from||'—')+'</strong></p><p class="text-xs text-gray-500">Обратная связь: <strong>'+e(ml.contact_email||'не указан')+'</strong></p></div>';
+h+='</div>';
+if(!ml.smtp_enabled) h+='<p class="text-xs text-yellow-600 mt-2">💡 Рекомендуем настроить SMTP в Настройках, чтобы письма не попадали в спам</p>';
+h+='</div>';
+
 // Сервисы
 h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔌 Внешние сервисы</h3>';
 h+='<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
