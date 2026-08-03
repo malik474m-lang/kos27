@@ -213,7 +213,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="of-so" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><div class="flex gap-2"><input id="of-lo" class="input-f flex-1" value="'+e(f.logo_url||'')+'"><button type="button" onclick="mediaPicker(\'of-lo\',\'offer\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="of-lo-preview" class="mt-2">'+(f.logo_url?'<img src="'+e(f.logo_url)+'" class="w-16 h-16 object-contain rounded border bg-white">':'')+'</div></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
@@ -360,7 +360,7 @@ function agDo(){let cu=document.getElementById('ag-cu').value.trim(),tp=cu||docu
 ap('/generate-article',{method:'POST',body:JSON.stringify({topic:tp||null,category:ct||null})}).then(d=>{cm();if(d.success){let im=d.hasImage?'\n📷 Обложка: YandexART':'\n📷 Без обложки';alert('Статья "'+d.article.title+'" создана!\n🤖 '+d.aiProvider+im);}else alert('Ошибка: '+(d.error||''));lA();}).catch(()=>{alert('Ошибка');b.disabled=false;b.textContent='🚀 Сгенерировать';});}
 
 function aForm(a){let f=a||{title:'',excerpt:'',content:'',meta_title:'',meta_description:'',cover_image:'',is_published:false};let id=a?a.id:0;
-modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать статью':'Новая статья')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><form onsubmit="return aS(event,'+id+')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Заголовок *</label><input id="af-t" class="input-f" value="'+e(f.title)+'" required></div><div><label class="block text-xs font-medium mb-1">Краткое описание</label><textarea id="af-ex" class="input-f" rows="2">'+e(f.excerpt||'')+'</textarea></div><div><label class="block text-xs font-medium mb-1">Содержание *</label><textarea id="af-co" class="input-f" rows="10" required>'+e(f.content)+'</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="af-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="af-meta-btn" onclick="fillMeta(&quot;af&quot;,&quot;article&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div><div><label class="block text-xs font-medium mb-1">Обложка</label><div class="flex gap-2"><input id="af-ci" class="input-f flex-1" value="'+e(f.cover_image||'')+'"><button type="button" onclick="mediaPicker(\'af-ci\',\'articles\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="af-ci-preview" class="mt-1">'+(f.cover_image?'<img src="'+e(f.cover_image)+'" class="w-20 h-12 object-cover rounded border">':'')+'</div></div></div><div><label class="block text-xs font-medium mb-1">Meta Description</label><textarea id="af-md" class="input-f" rows="2">'+e(f.meta_description||'')+'</textarea></div><div><label class="flex items-center gap-2"><input type="checkbox" id="af-pu" '+(f.is_published?'checked':'')+' class="w-4 h-4"><span class="text-sm">Опубликовать</span></label></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(id?'Редактировать статью':'Новая статья')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div><form onsubmit="return aS(event,'+id+')"><div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Заголовок *</label><input id="af-t" class="input-f" value="'+e(f.title)+'" required></div><div><label class="block text-xs font-medium mb-1">Краткое описание</label><textarea id="af-ex" class="input-f" rows="2">'+e(f.excerpt||'')+'</textarea></div><div><label class="block text-xs font-medium mb-1">Содержание *</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;af&#39;,&#39;article&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;af&#39;,&#39;article&#39;,&#39;content&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button></div><textarea id="af-co" class="input-f" rows="10" required>'+e(f.content)+'</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="af-mt" class="input-f flex-1" value="'+e(f.meta_title||'')+'"><button type="button" id="af-meta-btn" onclick="fillMeta(&quot;af&quot;,&quot;article&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div><div><label class="block text-xs font-medium mb-1">Обложка</label><div class="flex gap-2"><input id="af-ci" class="input-f flex-1" value="'+e(f.cover_image||'')+'"><button type="button" onclick="mediaPicker(\'af-ci\',\'articles\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="af-ci-preview" class="mt-1">'+(f.cover_image?'<img src="'+e(f.cover_image)+'" class="w-20 h-12 object-cover rounded border">':'')+'</div></div></div><div><label class="block text-xs font-medium mb-1">Meta Description</label><textarea id="af-md" class="input-f" rows="2">'+e(f.meta_description||'')+'</textarea></div><div><label class="flex items-center gap-2"><input type="checkbox" id="af-pu" '+(f.is_published?'checked':'')+' class="w-4 h-4"><span class="text-sm">Опубликовать</span></label></div></div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');}
 
 function aS(ev,id){ev.preventDefault();let d={title:document.getElementById('af-t').value,excerpt:document.getElementById('af-ex').value,content:document.getElementById('af-co').value,metaTitle:document.getElementById('af-mt').value,metaDescription:document.getElementById('af-md').value,coverImage:document.getElementById('af-ci').value,isPublished:document.getElementById('af-pu').checked};ap(id?'/articles/'+id:'/articles',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(()=>{cm();lA();});return false;}
 function aToggle(id,v){ap('/articles/'+id,{method:'PUT',body:JSON.stringify({isPublished:v})}).then(()=>lA());}
@@ -741,7 +741,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">H1 заголовок</label><input id="tg-h1" class="input-f" value="'+e(f.h1||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Короткое описание</label><input id="tg-desc" class="input-f" value="'+e(f.description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex flex-wrap gap-2"><input id="tg-mt" class="input-f flex-1 min-w-0" value="'+e(f.meta_title||'')+'"><button type="button" id="tg-meta-btn" onclick="fillMeta(&quot;tg&quot;,&quot;tag&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button><button type="button" id="tg-seo-btn" onclick="tgGenerateSeo()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ SEO</button></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><textarea id="tg-content" class="input-f" rows="6">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="5" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;tg&#39;,&#39;tag&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить текст</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;description&#39;)" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить описание</button></div><textarea id="tg-content" class="input-f" rows="6">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="5" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><div class="flex gap-2 mb-2"><button type="button" onclick="tgAutoFeatures()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ Автофичи</button><span class="text-xs text-gray-400 self-center">Сгенерирует 4 карточки по категории и названию</span></div><textarea id="tg-feat" class="input-f font-mono text-xs" rows="5">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
@@ -4284,6 +4284,66 @@ box.innerHTML=h;
 }).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+err.message+'</p>'; });
 }
 
+
+
+/* ============ CONTENT QUALITY ============ */
+function cqCollect(prefix){
+  return {
+    title:(document.getElementById(prefix+'-t')||document.getElementById(prefix+'-title')||document.getElementById(prefix+'-name')||{}).value||'',
+    h1:(document.getElementById(prefix+'-h1')||{}).value||'',
+    description:(document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de')||{}).value||'',
+    content:(document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content')||{}).value||''
+  };
+}
+
+function cqAnalyzeForm(prefix, entity){
+  var data=cqCollect(prefix);
+  var content=data.content || data.description;
+  if(!content.trim()){ alert('Нет текста для анализа'); return; }
+  ap('/content-quality',{method:'POST',body:JSON.stringify({action:'analyze',entity:entity,title:data.title||data.h1,description:data.description,content:content})}).then(function(d){
+    if(d.error){ alert(d.error); return; }
+    var a=d.analysis||{};
+    var score=a.score||0;
+    var scoreColor=score>=80?'green':score>=60?'yellow':'red';
+    var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Качество контента</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+    h+='<div class="flex items-center gap-4 mb-4"><div class="w-16 h-16 rounded-full border-4 border-'+scoreColor+'-500 flex items-center justify-center"><span class="text-xl font-bold text-'+scoreColor+'-600">'+score+'</span></div><div><p class="font-bold text-gray-900">Score: '+score+'/100</p><p class="text-xs text-gray-500">Слов: '+(a.stats?.words||0)+' • Предложений: '+(a.stats?.sentences||0)+' • Абзацев: '+(a.stats?.paragraphs||0)+'</p></div></div>';
+    if(a.issues&&a.issues.length){
+      h+='<div class="space-y-2 mb-4">';
+      a.issues.forEach(function(it){
+        var icon=it.level==='error'?'❌':it.level==='warning'?'⚠️':'ℹ️';
+        h+='<div class="text-sm text-gray-700">'+icon+' '+e(it.msg)+'</div>';
+      });
+      h+='</div>';
+    } else {
+      h+='<p class="text-green-600 text-sm font-medium mb-4">✅ Явных проблем не найдено</p>';
+    }
+    if(a.recommendations&&a.recommendations.length){
+      h+='<div class="bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-700 mb-2">Рекомендации</h4><ul class="text-sm text-blue-700 list-disc pl-5">';
+      a.recommendations.forEach(function(r){ h+='<li>'+e(r)+'</li>'; });
+      h+='</ul></div>';
+    }
+    modal(h);
+  }).catch(function(){ alert('Ошибка анализа'); });
+}
+
+function cqImproveField(prefix, entity, field){
+  var data=cqCollect(prefix);
+  var sourceField = field==='description' ? data.description : data.content;
+  if(!sourceField.trim()){ alert('Нет текста для улучшения'); return; }
+  if(!confirm('Улучшить текст через AI/шаблонный редактор?')) return;
+  ap('/content-quality',{method:'POST',body:JSON.stringify({action:'improve',entity:entity,field:field,title:data.title||data.h1,description:data.description,content:sourceField})}).then(function(d){
+    if(d.error){ alert(d.error); return; }
+    if(field==='description'){
+      var descEl=document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de');
+      if(descEl) descEl.value=d.improved||sourceField;
+    } else {
+      var contentEl=document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content');
+      if(contentEl) contentEl.value=d.improved||sourceField;
+    }
+    var before=d.analysis_before?.score||0, after=d.analysis_after?.score||0;
+    alert('✅ Текст улучшен ('+(d.provider||'template')+')\nScore: '+before+' → '+after);
+  }).catch(function(){ alert('Ошибка улучшения'); });
+}
 
 </script>
 </body>

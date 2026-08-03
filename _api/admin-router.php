@@ -44,6 +44,9 @@ if (str_starts_with($adminUri, "/page-checker")) { require __DIR__ . "/admin/pag
 // Города
 if (str_starts_with($adminUri, "/cities")) { require __DIR__ . "/admin/cities.php"; exit; }
 
+// Качество контента
+if ($adminUri === '/content-quality' && $method === 'POST') { require __DIR__ . '/admin/content-quality.php'; exit; }
+
 // FAQ офферов
 if ($adminUri === '/faq' && $method === 'GET') { require __DIR__ . '/admin/faq-list.php'; exit; }
 if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/admin/faq-generate.php'; exit; }
