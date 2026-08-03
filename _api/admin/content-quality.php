@@ -24,14 +24,21 @@ if ($action === 'improve') {
         exit;
     }
 
+    $analysisBefore = cq_analyze($content, $entity, $title, $description);
+    $recommendations = $analysisBefore['recommendations'] ?? [];
+    $issuesList = array_map(fn($i) => $i['msg'] ?? '', $analysisBefore['issues'] ?? []);
     $improved = null;
     $provider = 'template';
 
     if (defined('YANDEX_GPT_API_KEY') && YANDEX_GPT_API_KEY && defined('YANDEX_FOLDER_ID') && YANDEX_FOLDER_ID) {
-        $prompt = "Улучши текст для финансового сайта. "
+        $prompt = "Улучши текст для финансового сайта с учётом конкретных замечаний. "
             . "Сущность: {$entity}. Поле: {$field}. Заголовок: {$title}. Описание: {$description}. "
-            . "Сделай текст более полезным, менее шаблонным, убери markdown-мусор, штампы, повторы, слишком рекламные формулировки. "
-            . "Сохрани фактический смысл. Если в тексте есть HTML, верни аккуратный HTML без обёрток <html><body>. Если HTML нет — верни просто улучшенный текст. Без пояснений.\n\nТекст:\n" . $content;
+            . "Минимум слов для этого типа контента: " . cq_min_words($entity) . ". "
+            . "Нужно обязательно устранить замечания: " . implode('; ', array_filter($issuesList)) . ". "
+            . "Нужно обязательно выполнить рекомендации: " . implode('; ', array_filter($recommendations)) . ". "
+            . "Сделай текст более полезным, менее шаблонным, убери markdown-мусор, повторы и слишком рекламные фразы. "
+            . "Если в тексте нет упоминания темы, естественно добавь формулировку заголовка в текст. "
+            . "Верни только улучшенный текст без пояснений. Если в исходнике есть HTML — верни аккуратный HTML без <html><body>. Если HTML нет — верни просто текст.\n\nИсходный текст:\n" . $content;
 
         $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
             'http' => [
@@ -39,9 +46,9 @@ if ($action === 'improve') {
                 'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
                 'content' => json_encode([
                     'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                    'completionOptions' => ['stream' => false, 'temperature' => 0.35, 'maxTokens' => 4000],
+                    'completionOptions' => ['stream' => false, 'temperature' => 0.3, 'maxTokens' => 5000],
                     'messages' => [
-                        ['role' => 'system', 'text' => 'Ты редактор контента финансового сайта. Отвечаешь только улучшенным текстом без пояснений.'],
+                        ['role' => 'system', 'text' => 'Ты редактор контента финансового сайта. Строго устраняешь перечисленные проблемы и возвращаешь только улучшенный текст без пояснений.'],
                         ['role' => 'user', 'text' => $prompt],
                     ],
                 ]),
@@ -52,10 +59,9 @@ if ($action === 'improve') {
 
         if ($response) {
             $json = json_decode($response, true);
-            $text = trim((string)($json['result']['alternatives'][0]['message']['text'] ?? ''));
-            if ($text !== '') {
-                // GPT часто игнорирует "без markdown" — принудительно чистим
-                $improved = cq_strip_markdown($text);
+            $respText = trim((string)($json['result']['alternatives'][0]['message']['text'] ?? ''));
+            if ($respText !== '') {
+                $improved = cq_strip_markdown($respText);
                 $provider = 'YandexGPT';
             }
         }
@@ -64,15 +70,32 @@ if ($action === 'improve') {
     if ($improved === null) {
         $improved = cq_improve_fallback($content, $entity, $title, $description);
     }
-    // Финальная очистка от markdown-мусора
+
     $improved = cq_strip_markdown($improved);
+    $improved = cq_enforce_recommendations($improved, $analysisBefore, $entity, $title, $description);
+    $analysisAfter = cq_analyze($improved, $entity, $title, $description);
+
+    // Если ИИ не помог — применяем ещё один детерминированный проход
+    if (($analysisAfter['score'] ?? 0) < ($analysisBefore['score'] ?? 0) || ($analysisAfter['score'] ?? 0) < 80) {
+        $fallbackImproved = cq_enforce_recommendations(cq_improve_fallback($content, $entity, $title, $description), $analysisBefore, $entity, $title, $description);
+        $fallbackAnalysis = cq_analyze($fallbackImproved, $entity, $title, $description);
+        if (($fallbackAnalysis['score'] ?? 0) > ($analysisAfter['score'] ?? 0)) {
+            $improved = $fallbackImproved;
+            $analysisAfter = $fallbackAnalysis;
+            if ($provider !== 'YandexGPT') {
+                $provider = 'template';
+            } else {
+                $provider = 'YandexGPT + fallback';
+            }
+        }
+    }
 
     echo json_encode([
         'success' => true,
         'provider' => $provider,
         'improved' => $improved,
-        'analysis_before' => cq_analyze($content, $entity, $title, $description),
-        'analysis_after' => cq_analyze($improved, $entity, $title, $description),
+        'analysis_before' => $analysisBefore,
+        'analysis_after' => $analysisAfter,
     ]);
     exit;
 }

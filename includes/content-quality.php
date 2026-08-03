@@ -78,6 +78,90 @@ function cq_strip_markdown(string $text): string {
     return trim($text);
 }
 
+function cq_min_words(string $entity): int {
+    return match ($entity) {
+        'article' => 600,
+        'tag' => 120,
+        'city_seo' => 180,
+        'city_tag_seo' => 180,
+        'offer' => 40,
+        default => 80,
+    };
+}
+
+function cq_supporting_paragraph(string $entity, string $title, string $description): string {
+    $title = trim($title);
+    $description = trim($description);
+    $base = $description !== '' ? $description : ($title !== '' ? $title : 'Материал');
+    return match ($entity) {
+        'article' => "{$base}. Дополнительно стоит рассмотреть практические нюансы: кому подходит решение, какие условия нужно проверить заранее, какие ограничения могут повлиять на итоговый выбор и как сравнить несколько предложений между собой без лишней переплаты.",
+        'tag' => "{$base}. Перед выбором предложения важно сравнить ставку, лимит, сроки, требования к заёмщику и дополнительные условия, чтобы подобрать вариант под конкретную ситуацию.",
+        'offer' => "{$base}. Перед оформлением уточните ставку, срок, сумму, требования к клиенту и возможные ограничения по продукту.",
+        default => "{$base}. Добавьте больше полезных деталей, примеров применения и критериев выбора, чтобы текст лучше отвечал на запрос пользователя.",
+    };
+}
+
+function cq_enforce_recommendations(string $text, array $analysis, string $entity = 'generic', string $title = '', string $description = ''): string {
+    $text = cq_strip_markdown($text);
+    $issues = $analysis['issues'] ?? [];
+    $plain = cq_strip_text($text);
+
+    // Если тема не отражена — добавляем в начало короткий вводный абзац
+    if ($title && mb_stripos($plain, mb_strtolower($title)) === false) {
+        $intro = $title . ' — ключевая тема этого материала.';
+        if (preg_match('/<[^>]+>/', $text)) {
+            $text = '<p>' . htmlspecialchars($intro, ENT_QUOTES, 'UTF-8') . '</p>' . "
+" . $text;
+        } else {
+            $text = $intro . "
+
+" . $text;
+        }
+    }
+
+    // Если текст короткий — дополняем полезным абзацем
+    $currentWords = cq_word_count($text);
+    $minWords = cq_min_words($entity);
+    if ($currentWords < $minWords) {
+        $extra = cq_supporting_paragraph($entity, $title, $description);
+        if (preg_match('/<[^>]+>/', $text)) {
+            $text .= "
+<p>" . htmlspecialchars($extra, ENT_QUOTES, 'UTF-8') . "</p>";
+        } else {
+            $text .= "
+
+" . $extra;
+        }
+        // если всё ещё коротко — добавим второй абзац
+        if (cq_word_count($text) < $minWords) {
+            $extra2 = 'Отдельно оцените прозрачность условий, порядок одобрения, возможные дополнительные комиссии и удобство оформления. Это поможет избежать ошибок и выбрать более подходящее решение.';
+            if (preg_match('/<[^>]+>/', $text)) {
+                $text .= "
+<p>" . htmlspecialchars($extra2, ENT_QUOTES, 'UTF-8') . "</p>";
+            } else {
+                $text .= "
+
+" . $extra2;
+            }
+        }
+    }
+
+    // Удаляем самые частые шаблонные формулировки повторно
+    $replacements = [
+        'На этой странице' => 'В материале ниже',
+        'Мы собрали' => 'Ниже представлены',
+        'Это поможет' => 'Так проще принять решение',
+        'Обратите внимание' => 'Важно учитывать',
+        'выберите подходящий вариант' => 'подберите подходящее решение',
+        'актуальные условия' => 'текущие условия',
+    ];
+    foreach ($replacements as $from => $to) {
+        $text = preg_replace('/' . preg_quote($from, '/') . '/ui', $to, $text, 1);
+    }
+
+    return trim($text);
+}
+
 function cq_analyze(string $text, string $entity = 'generic', string $title = '', string $description = ''): array {
     $issues = [];
     $recommendations = [];
