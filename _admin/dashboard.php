@@ -3172,6 +3172,11 @@ h+='</div>';
 h+='<div id="page-check-result"></div>';
 h+='</div>';
 
+// Google Indexing API
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔵 Google Indexing API</h3>';
+h+='<div id="google-idx-status"><p class="text-gray-500 text-sm">⏳ Проверка...</p></div>';
+h+='</div>';
+
 // Изменения контента
 h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-900">📝 Последние изменения контента</h3><select id="idx-changes-days" onchange="idxLoadChanges()" class="text-sm border rounded px-2 py-1"><option value="7">7 дней</option><option value="14">14 дней</option><option value="30">30 дней</option></select></div><div id="idx-changes" class="p-4"><p class="text-gray-500 text-sm">⏳ Загрузка...</p></div></div>';
 
@@ -3217,7 +3222,7 @@ h+='</div>';
 
 h+='</div>';
 el.innerHTML=h;
-setTimeout(function(){ idxLoadSeoStats(); idxLoadChanges(); }, 300);
+setTimeout(function(){ idxLoadSeoStats(); idxLoadChanges(); gIdxLoadStatus(); }, 300);
 });
 }
 
@@ -3725,6 +3730,88 @@ box.innerHTML='<p class="text-green-700 font-semibold">🏆 Победитель
 box.innerHTML='<p class="text-green-700 font-semibold">🏆 Победитель определён (ID: '+winnerId+')</p>';
 }
 });
+}
+
+
+/* ============ GOOGLE INDEXING ============ */
+function gIdxLoadStatus(){
+ap('/google-indexing?action=status').then(function(d){
+var box=document.getElementById('google-idx-status');
+if(!box) return;
+var h='';
+if(!d.available){
+h+='<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">';
+h+='<p class="text-sm text-yellow-700 font-medium">⚠️ Сервисный аккаунт Google не настроен</p>';
+h+='<p class="text-xs text-yellow-600 mt-1">Загрузите JSON-ключ сервисного аккаунта из Google Cloud Console</p>';
+h+='<div class="mt-3"><textarea id="gidx-key" class="input-f text-xs font-mono" rows="4" placeholder="Вставьте содержимое JSON-файла сервисного аккаунта..."></textarea>';
+h+='<button onclick="gIdxUploadKey()" class="btn-p text-sm mt-2">📤 Загрузить ключ</button></div>';
+h+='</div>';
+}else{
+h+='<div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">';
+h+='<p class="text-sm text-green-700">✅ Подключено: <span class="font-mono text-xs">'+e(d.service_account)+'</span></p>';
+h+='</div>';
+h+='<div class="flex flex-wrap gap-2 mb-3">';
+h+='<button onclick="gIdxTest()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold">🔑 Тест авторизации</button>';
+h+='<button onclick="gIdxSubmitNew()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🚀 Отправить новые URL</button>';
+h+='<div class="flex items-center gap-2"><input id="gidx-url" class="input-f text-sm" placeholder="/karty/kreditnye/moskva" style="width:240px"><button onclick="gIdxSubmitOne()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">Отправить</button></div>';
+h+='</div>';
+h+='<div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500"><strong>Лимит:</strong> ~200 URL в день. Отправляйте только новые и важные страницы.</div>';
+}
+h+='<div id="gidx-result" class="mt-3"></div>';
+box.innerHTML=h;
+}).catch(function(){ var b=document.getElementById('google-idx-status'); if(b) b.innerHTML='<p class="text-red-500 text-sm">Ошибка загрузки</p>'; });
+}
+
+function gIdxUploadKey(){
+var key=(document.getElementById('gidx-key')?.value||'').trim();
+if(!key){ alert('Вставьте JSON-ключ'); return; }
+ap('/google-indexing?action=upload-key',{method:'POST',body:JSON.stringify({key:key})}).then(function(d){
+if(d.error){ alert('Ошибка: '+d.error); return; }
+alert('✅ Ключ загружен: '+d.email);
+gIdxLoadStatus();
+}).catch(function(){ alert('Ошибка'); });
+}
+
+function gIdxTest(){
+var box=document.getElementById('gidx-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Тестирование...</p>';
+ap('/google-indexing?action=test').then(function(d){
+box.innerHTML=d.success?'<p class="text-green-600 text-sm">✅ Авторизация успешна! Можно отправлять URL.</p>':'<p class="text-red-500 text-sm">❌ Ошибка авторизации. Проверьте ключ и настройки.</p>';
+});
+}
+
+function gIdxSubmitNew(){
+if(!confirm('Отправить все новые/обновлённые URL в Google Indexing API? (макс. 50)')) return;
+var box=document.getElementById('gidx-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Отправка URL в Google...</p>';
+ap('/google-indexing?action=submit-new',{method:'POST'}).then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+e(d.error)+'</p>'; return; }
+if(d.total===0){ box.innerHTML='<p class="text-gray-500 text-sm">Нет URL для отправки — все уже отправлены.</p>'; return; }
+var h='<div class="bg-blue-50 rounded-lg p-3"><p class="text-sm font-medium text-blue-700">Отправлено: '+d.success+' из '+d.total+' (ошибок: '+d.failed+')</p>';
+if(d.results&&d.results.length){
+h+='<div class="mt-2 max-h-40 overflow-y-auto space-y-1">';
+d.results.forEach(function(r){
+h+='<div class="text-xs flex items-center gap-2">'+(r.success?'<span class="text-green-600">✅</span>':'<span class="text-red-500">❌ '+r.status+'</span>')+'<span class="font-mono truncate">'+e(r.url)+'</span></div>';
+});
+h+='</div>';
+}
+h+='</div>';
+box.innerHTML=h;
+lIndexing();
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка отправки</p>'; });
+}
+
+function gIdxSubmitOne(){
+var url=(document.getElementById('gidx-url')?.value||'').trim();
+if(!url){ alert('Введите URL'); return; }
+if(!url.startsWith('/')) url='/'+url;
+var box=document.getElementById('gidx-result');
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Отправка '+e(url)+'...</p>';
+ap('/google-indexing?action=submit',{method:'POST',body:JSON.stringify({urls:[url]})}).then(function(d){
+if(d.error){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+e(d.error)+'</p>'; return; }
+var r=d.results&&d.results[0];
+box.innerHTML=r&&r.success?'<p class="text-green-600 text-sm">✅ '+e(r.url)+' — отправлено в Google!</p>':'<p class="text-red-500 text-sm">❌ Ошибка '+(r?r.status:'')+'</p>';
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка</p>'; });
 }
 
 

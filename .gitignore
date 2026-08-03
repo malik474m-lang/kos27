@@ -1,2 +1,3 @@
 node_modules/
 /assets/tailwind.css.map
+data/google-service-account.json
