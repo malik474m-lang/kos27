@@ -89,6 +89,7 @@ if ($totp_enabled) {
         echo json_encode([
             'success' => false,
             'require_2fa' => true,
+            'requires_2fa' => true,
             'message' => 'Введите код из приложения-аутентификатора'
         ]);
         exit;
@@ -115,7 +116,7 @@ if ($totp_enabled) {
     if (!$verified) {
         logLoginAttempt($username, $ip, false);
         http_response_code(401);
-        echo json_encode(['error' => 'Неверный код 2FA', 'require_2fa' => true]);
+        echo json_encode(['error' => 'Неверный код 2FA', 'require_2fa' => true, 'requires_2fa' => true]);
         exit;
     }
 }

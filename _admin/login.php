@@ -95,11 +95,11 @@ ob_start('minifyHtmlOutput');
             .then(function(d){
                 btn.disabled = false; btn.textContent = 'Войти';
                 if (d.blocked) {
-                    blockedUntil = Date.now() + (d.remaining || 900) * 1000;
+                    blockedUntil = Date.now() + ((d.remaining || d.wait || 900) * 1000);
                     showBlocked(d.error || 'Слишком много попыток');
                     return;
                 }
-                if (d.requires_2fa) {
+                if (d.requires_2fa || d.require_2fa) {
                     document.getElementById('login-form').classList.add('hidden');
                     document.getElementById('totp-form').classList.remove('hidden');
                     document.getElementById('totp-code').focus();
