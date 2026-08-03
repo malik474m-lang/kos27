@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/mailer.php';
 $settings = getSiteSettings();
 $contactEmail = $settings['contact_email'] ?? '';
 
@@ -27,10 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  . "Reply-To: {$email}\r\n"
                  . "Content-Type: text/plain; charset=UTF-8\r\n";
 
-        if (@mail($to, $subjectLine, $body, $headers, '-fnoreply@kosmozaim.ru')) {
+        $mailResult = sendMail($to, ($subject ?: 'Обратная связь от ' . $name), $body, false, $email);
+        if ($mailResult['ok']) {
             $sent = true;
         } else {
-            $error = 'Ошибка отправки. Попробуйте позже или напишите на ' . e($to);
+            $error = 'Ошибка отправки. ' . ($mailResult['error'] ?? 'Попробуйте позже.');
         }
     }
 }

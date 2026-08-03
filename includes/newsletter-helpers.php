@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/mailer.php';
 /**
  * Хелперы для рассылок: сборка письма, отправка, логирование
  */
@@ -162,11 +163,6 @@ function sendOneEmail(string $to, string $subject, string $fullHtml, string $uns
 
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
-    $ok = @mail($to, $encodedSubject, $fullHtml, $headers, '-f' . $from);
-    
-    if (!$ok) {
-        $err = error_get_last();
-        return ['ok' => false, 'error' => $err['message'] ?? 'mail() вернул false'];
-    }
-    return ['ok' => true, 'error' => null];
+    $result = sendMail($to, $subject, $fullHtml, true);
+    return ['ok' => $result['ok'], 'error' => $result['error'] ?? null, 'method' => $result['method'] ?? ''];
 }

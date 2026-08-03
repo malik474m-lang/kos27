@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/mailer.php';
 function startUserSession(): void {
     if (session_status() === PHP_SESSION_NONE) {
         session_set_cookie_params(['lifetime' => 86400 * 30, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);

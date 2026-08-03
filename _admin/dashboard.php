@@ -2860,6 +2860,22 @@ h+='<div><label class="block text-sm font-medium mb-1">Email для обратн
 h+='<p class="text-xs text-gray-500 mt-2">На этот адрес будут приходить сообщения из <a href="/contact" target="_blank" class="text-blue-600 hover:underline">формы обратной связи</a></p>';
 h+='</div>';
 
+// SMTP
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">📧 Настройки почты (SMTP)</h3>';
+h+='<div class="mb-3"><label class="flex items-center gap-2"><input type="checkbox" id="set-smtp-enabled" '+(siteSettings.smtp_enabled?'checked':'')+' class="w-4 h-4"><span class="text-sm font-medium">Использовать SMTP</span></label><p class="text-xs text-gray-500 mt-1">Если выключено — используется стандартный mail() (может попадать в спам)</p></div>';
+h+='<div class="grid md:grid-cols-2 gap-3">';
+h+='<div><label class="block text-xs font-medium mb-1">SMTP сервер</label><input type="text" id="set-smtp-host" class="input-f" value="'+e(siteSettings.smtp_host||'')+'" placeholder="smtp.yandex.ru"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Порт</label><input type="number" id="set-smtp-port" class="input-f" value="'+(siteSettings.smtp_port||465)+'" placeholder="465"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Логин</label><input type="text" id="set-smtp-user" class="input-f" value="'+e(siteSettings.smtp_user||'')+'" placeholder="info@kosmozaim.ru"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Пароль</label><input type="password" id="set-smtp-pass" class="input-f" value="'+e(siteSettings.smtp_pass||'')+'" placeholder="пароль"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Шифрование</label><select id="set-smtp-secure" class="sel-f"><option value="ssl"'+((siteSettings.smtp_secure||'ssl')==='ssl'?' selected':'')+'>SSL</option><option value="tls"'+((siteSettings.smtp_secure)==='tls'?' selected':'')+'>TLS</option><option value=""'+((siteSettings.smtp_secure)==='none'||siteSettings.smtp_secure===''?' selected':'')+'>Нет</option></select></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Email отправителя</label><input type="text" id="set-mail-from" class="input-f" value="'+e(siteSettings.mail_from||'')+'" placeholder="info@kosmozaim.ru"></div>';
+h+='<div><label class="block text-xs font-medium mb-1">Имя отправителя</label><input type="text" id="set-mail-from-name" class="input-f" value="'+e(siteSettings.mail_from_name||'')+'" placeholder="Космозайм"></div>';
+h+='<div class="flex items-end"><button type="button" onclick="testMail()" class="btn-p text-sm w-full">📧 Тест отправки</button></div>';
+h+='</div>';
+h+='<div id="smtp-test-result" class="mt-3"></div>';
+h+='</div>';
+
 h+='<div class="flex gap-3"><button type="submit" class="btn-p">💾 Сохранить настройки</button></div>';
 h+='</form>';
 
@@ -2877,7 +2893,15 @@ yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
 yandex_folder_id:document.getElementById('set-folder').value,
 yandex_metrika_id:document.getElementById('set-metrika').value,
 google_analytics_id:document.getElementById('set-ga').value,
-contact_email:document.getElementById('set-contact-email').value
+contact_email:document.getElementById('set-contact-email').value,
+smtp_enabled:document.getElementById('set-smtp-enabled').checked,
+smtp_host:document.getElementById('set-smtp-host').value,
+smtp_port:parseInt(document.getElementById('set-smtp-port').value)||465,
+smtp_user:document.getElementById('set-smtp-user').value,
+smtp_pass:document.getElementById('set-smtp-pass').value,
+smtp_secure:document.getElementById('set-smtp-secure').value,
+mail_from:document.getElementById('set-mail-from').value,
+mail_from_name:document.getElementById('set-mail-from-name').value
 };
 ap('/settings',{method:'POST',body:JSON.stringify(data)}).then(d=>{
 if(d.success){alert('✅ Настройки сохранены!\n\nРекомендуем сбросить кэш страниц.');lSet();}
@@ -4110,6 +4134,19 @@ ap('/system-monitor?action=clear-errors',{method:'POST'}).then(function(d){
 if(d.success) alert('Очищено: '+d.cleared);
 lMonitor();
 });
+}
+
+
+function testMail(){
+var box=document.getElementById('smtp-test-result');
+var email=document.getElementById('set-contact-email').value||document.getElementById('set-smtp-user').value||document.getElementById('set-mail-from').value;
+if(!email){ email=prompt('На какой email отправить тестовое письмо?'); }
+if(!email) return;
+box.innerHTML='<p class="text-gray-500 text-sm">⏳ Отправка тестового письма на '+e(email)+'...</p>';
+ap('/test-mail',{method:'POST',body:JSON.stringify({email:email})}).then(function(d){
+if(d.ok) box.innerHTML='<p class="text-green-600 text-sm">✅ Письмо отправлено через <strong>'+e(d.method||'?')+'</strong>. Проверьте почту!</p>';
+else box.innerHTML='<p class="text-red-500 text-sm">❌ Ошибка: '+e(d.error||'неизвестная')+(d.smtp_error?' (SMTP: '+e(d.smtp_error)+')':'')+'</p>';
+}).catch(function(){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка отправки</p>'; });
 }
 
 
