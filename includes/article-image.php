@@ -9,26 +9,27 @@ function generateArticleCoverImage(string $title): string {
         return '';
     }
 
-    // Шаг 1: Генерация детального промпта через YandexGPT
-    $detailedPrompt = generateDetailedImagePrompt($title);
-    
-    if (empty($detailedPrompt)) {
-        // Fallback на простой промпт
-        $detailedPrompt = "нарисуй 16:9 $title";
-    }
+    // Используем шаблон из настроек. По умолчанию — строго как требуется:
+    // "нарисуй 16:9 {title}"
+    $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    $template = trim((string)($settings['article_image_prompt_template'] ?? 'нарисуй 16:9 {title}'));
+    if ($template === '') $template = 'нарисуй 16:9 {title}';
+    $artPrompt = str_replace('{title}', $title, $template);
 
-    // Шаг 2: Генерация картинки через YandexART
+    // Фиксируем seed по заголовку, чтобы для одной и той же темы результат был стабильнее
+    $seed = abs(crc32($artPrompt)) % 999999 + 1;
+
     $artCtx = stream_context_create(['http' => [
         'method' => 'POST',
         'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
         'content' => json_encode([
             'modelUri' => 'art://' . YANDEX_FOLDER_ID . '/yandex-art/latest',
             'generationOptions' => [
-                'seed' => mt_rand(1, 999999),
+                'seed' => $seed,
                 'aspectRatio' => ['widthRatio' => '16', 'heightRatio' => '9']
             ],
             'messages' => [
-                ['weight' => '1', 'text' => $detailedPrompt],
+                ['weight' => '1', 'text' => $artPrompt],
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         'timeout' => 45,
@@ -42,7 +43,6 @@ function generateArticleCoverImage(string $title): string {
     $opId = $artData['id'] ?? null;
     if (!$opId) return '';
 
-    // Ожидаем генерацию картинки
     for ($i = 0; $i < 18; $i++) {
         sleep(4);
         $checkCtx = stream_context_create(['http' => [
@@ -70,50 +70,4 @@ function generateArticleCoverImage(string $title): string {
     }
 
     return '';
-}
-
-/**
- * Генерация детального промпта для картинки через YandexGPT
- */
-function generateDetailedImagePrompt(string $title): string {
-    if (!defined('YANDEX_GPT_API_KEY') || !YANDEX_GPT_API_KEY || !defined('YANDEX_FOLDER_ID') || !YANDEX_FOLDER_ID) {
-        return '';
-    }
-
-    $systemPrompt = "You are an expert at creating detailed image generation prompts. Create a detailed, descriptive prompt in English for generating a professional illustration. The prompt should describe the visual elements, style, colors, composition, and atmosphere. Do not include any explanations or text about what you're doing - just output the prompt itself.";
-    
-    $userPrompt = "Create a detailed image generation prompt for this topic (translate to English if needed): '$title'. The image should be 16:9 aspect ratio, professional quality, suitable for a financial article cover. Describe the visual elements, style, colors, and composition in detail.";
-
-    $ctx = stream_context_create(['http' => [
-        'method' => 'POST',
-        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-        'content' => json_encode([
-            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-            'completionOptions' => [
-                'stream' => false,
-                'temperature' => 0.7,
-                'maxTokens' => 800,
-            ],
-            'messages' => [
-                ['role' => 'system', 'text' => $systemPrompt],
-                ['role' => 'user', 'text' => $userPrompt],
-            ],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        'timeout' => 30,
-        'ignore_errors' => true,
-    ]]);
-
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, $ctx);
-    if (!$response) return '';
-
-    $data = json_decode($response, true);
-    $text = trim((string)($data['result']['alternatives'][0]['message']['text'] ?? ''));
-    
-    if (empty($text)) return '';
-    
-    // Убираем лишние кавычки и форматирование
-    $text = trim($text, '"\'');
-    $text = preg_replace('/^["\']+|["\']+$/', '', $text);
-    
-    return $text;
 }
