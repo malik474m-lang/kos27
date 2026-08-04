@@ -66,12 +66,16 @@ case 'overview':
         'method' => $mailCfg['smtp_enabled'] ? 'SMTP' : 'mail()',
     ];
 
-    // 3. Внешние сервисы
+    // 3. Внешние сервисы и SEO-интеграции
+    $siteSettings = function_exists('getSiteSettings') ? getSiteSettings() : [];
     $checks['services'] = [
         'google_indexing' => googleIndexingAvailable(),
+        'google_search_console' => googleIndexingAvailable(),
         'yandex_webmaster' => yandexWebmasterAvailable(),
         'yandex_gpt' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
         'google_sitemap_ping_deprecated' => true,
+        'article_image_provider' => $siteSettings['article_image_provider'] ?? 'yandex',
+        'article_image_prompt_template' => $siteSettings['article_image_prompt_template'] ?? 'нарисуй 16:9 {title}',
     ];
 
     // 4. 2FA

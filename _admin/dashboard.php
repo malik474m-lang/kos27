@@ -4176,6 +4176,17 @@ h+='</div>';
 h+='<div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">ℹ️ Google sitemap ping намеренно отключён: Google официально прекратил поддержку <code>/ping?sitemap=</code>. Для Google в проекте используются Search Console и Indexing API.</div>';
 h+='</div>';
 
+// SEO-интеграции
+h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔎 SEO-интеграции</h3>';
+h+='<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+h+='<div class="p-3 rounded-lg '+(svc.google_search_console?'bg-green-50':'bg-yellow-50')+'"><span class="text-lg">'+(svc.google_search_console?'✅':'⚠️')+'</span><p class="text-sm font-medium mt-1">Google Search Console</p></div>';
+h+='<div class="p-3 rounded-lg '+(svc.google_indexing?'bg-green-50':'bg-yellow-50')+'"><span class="text-lg">'+(svc.google_indexing?'✅':'⚠️')+'</span><p class="text-sm font-medium mt-1">Google Indexing API</p></div>';
+h+='<div class="p-3 rounded-lg '+(svc.yandex_webmaster?'bg-green-50':'bg-yellow-50')+'"><span class="text-lg">'+(svc.yandex_webmaster?'✅':'⚠️')+'</span><p class="text-sm font-medium mt-1">Яндекс.Вебмастер API</p></div>';
+h+='<div class="p-3 rounded-lg '+(svc.yandex_gpt?'bg-green-50':'bg-red-50')+'"><span class="text-lg">'+(svc.yandex_gpt?'✅':'❌')+'</span><p class="text-sm font-medium mt-1">YandexGPT / YandexART</p></div>';
+h+='<div class="p-3 rounded-lg bg-gray-50 lg:col-span-2"><p class="text-xs text-gray-500">Провайдер картинок статей</p><p class="text-sm font-semibold text-gray-900 mt-1">'+e((svc.article_image_provider||'yandex').toString())+'</p><p class="text-[11px] text-gray-400 mt-1">Промпт: '+e((svc.article_image_prompt_template||'').toString())+'</p></div>';
+h+='</div>';
+h+='</div>';
+
 // Безопасность
 var sec=d.security||{};
 h+='<div class="bg-white rounded-xl border p-4"><h3 class="font-bold text-gray-900 mb-3">🔒 Безопасность</h3>';
