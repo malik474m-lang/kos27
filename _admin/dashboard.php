@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/minify.php';
+require_once __DIR__ . '/../includes/license.php';
 require_once __DIR__ . '/../data/cities.php';
+$adminLicenseInfo = getLicenseInfo();
+$adminLicensePlan = $adminLicenseInfo['plan'] ?? 'unknown';
+$adminLicenseExpires = !empty($adminLicenseInfo['expires_at']) ? date('d.m.Y', strtotime($adminLicenseInfo['expires_at'])) : '—';
+$adminLicenseActive = !empty($adminLicenseInfo['active']);
 ob_start('minifyHtmlOutput');
 ?>
 <!DOCTYPE html>
@@ -25,7 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm mr-4">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm mr-4">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm mr-4">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm mr-4">⚡ API-кэш</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm mr-4">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div class="flex items-center gap-4 flex-wrap"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium <?= $adminLicenseActive ? 'bg-green-500/15 text-green-300 border border-green-400/20' : 'bg-red-500/15 text-red-300 border border-red-400/20' ?>"><span><?= $adminLicenseActive ? '✅' : '⚠️' ?></span><span>Тариф: <strong><?= e((string)$adminLicensePlan) ?></strong></span><span class="opacity-70">•</span><span>До: <strong><?= e($adminLicenseExpires) ?></strong></span></div></div><div class="flex items-center flex-wrap gap-3"><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm">⚡ API-кэш</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div></div>
 <div class="bg-white shadow-sm border-b"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-4 overflow-x-auto">
 <button onclick="sw('settings')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="settings">⚙️ Настройки</button>
 <button onclick="sw('offers')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="offers">📋 Предложения</button>
