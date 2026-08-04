@@ -180,39 +180,39 @@ ob_start('minifyHtmlOutput');
             <span class="mr-2">📚</span> Документация проекта
         </h2>
         <div class="grid md:grid-cols-2 gap-3 text-sm">
-            <a href="/docs/README.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=README.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">README документации</div>
                 <div class="text-gray-500 mt-1">Индекс всех документов</div>
             </a>
-            <a href="/docs/setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Развёртывание</div>
                 <div class="text-gray-500 mt-1">Установка, env, БД, первый запуск</div>
             </a>
-            <a href="/docs/admin-guide.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=admin-guide.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Руководство по админке</div>
                 <div class="text-gray-500 mt-1">Модули, процессы, сценарии работы</div>
             </a>
-            <a href="/docs/apis.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=apis.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">API и интеграции</div>
                 <div class="text-gray-500 mt-1">Внутренние API, Google, Яндекс, AI</div>
             </a>
-            <a href="/docs/cron.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=cron.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Cron и планировщик</div>
                 <div class="text-gray-500 mt-1">Фоновые задачи, логи, обслуживание</div>
             </a>
-            <a href="/docs/stabilization-checklist.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=stabilization-checklist.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Стабилизационный чек-лист</div>
                 <div class="text-gray-500 mt-1">Что проверять после релизов и правок</div>
             </a>
-            <a href="/docs/production-ready-audit.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=production-ready-audit.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Production-ready audit</div>
                 <div class="text-gray-500 mt-1">Готовность проекта к стабильной эксплуатации</div>
             </a>
-            <a href="/docs/white-label-porting.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=white-label-porting.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">White-label / перенос</div>
                 <div class="text-gray-500 mt-1">Как перенести проект на новый домен</div>
             </a>
-            <a href="/docs/crontab-setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <a href="/admin/docs?file=crontab-setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Crontab setup</div>
                 <div class="text-gray-500 mt-1">Готовые команды для cron</div>
             </a>

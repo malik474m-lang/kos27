@@ -5,24 +5,24 @@
 ## Содержание
 
 ### Основные документы
-- [setup.md](./setup.md) — развёртывание проекта, базовые требования, первый запуск
-- [admin-guide.md](./admin-guide.md) — руководство по админке и основным модулям
-- [apis.md](./apis.md) — описание внутренних API и интеграций
-- [cron.md](./cron.md) — cron-задачи, планировщик и обслуживание
-- [stabilization-checklist.md](./stabilization-checklist.md) — чек-лист стабилизации после релизов
-- [production-ready-audit.md](./production-ready-audit.md) — аудит готовности к production
-- [white-label-porting.md](./white-label-porting.md) — перенос на новый домен / white-label
+- [setup.md](/admin/docs?file=setup.md) — развёртывание проекта, базовые требования, первый запуск
+- [admin-guide.md](/admin/docs?file=admin-guide.md) — руководство по админке и основным модулям
+- [apis.md](/admin/docs?file=apis.md) — описание внутренних API и интеграций
+- [cron.md](/admin/docs?file=cron.md) — cron-задачи, планировщик и обслуживание
+- [stabilization-checklist.md](/admin/docs?file=stabilization-checklist.md) — чек-лист стабилизации после релизов
+- [production-ready-audit.md](/admin/docs?file=production-ready-audit.md) — аудит готовности к production
+- [white-label-porting.md](/admin/docs?file=white-label-porting.md) — перенос на новый домен / white-label
 
 ### Готовые конфигурации
-- [crontab-setup.md](./crontab-setup.md) — готовые примеры cron для хостинга
-- [email-setup-jino.txt](./email-setup-jino.txt) — настройка SPF/DKIM/DMARC/BIMI на Jino
+- [crontab-setup.md](/admin/docs?file=crontab-setup.md) — готовые примеры cron для хостинга
+- [email-setup-jino.txt](/admin/docs?file=email-setup-jino.txt) — настройка SPF/DKIM/DMARC/BIMI на Jino
 
 ### Аудит и перенос
-- [production-audit.md](./production-audit.md) — production-ready чек-лист проекта
-- [white-label-migration.md](./white-label-migration.md) — перенос на новый домен / white-label
+- [production-audit.md](/admin/docs?file=production-audit.md) — production-ready чек-лист проекта
+- [white-label-migration.md](/admin/docs?file=white-label-migration.md) — перенос на новый домен / white-label
 
 ### Оценка проекта
-- [ocenka-proekta-i-kak-povysit-stoimost.txt](./ocenka-proekta-i-kak-povysit-stoimost.txt) — оценка проекта и рекомендации по росту стоимости
+- [ocenka-proekta-i-kak-povysit-stoimost.txt](/admin/docs?file=ocenka-proekta-i-kak-povysit-stoimost.txt) — оценка проекта и рекомендации по росту стоимости
 
 ## Для кого эти документы
 
@@ -42,7 +42,7 @@
 
 ## Быстрый старт
 
-1. Открыть [setup.md](./setup.md) для развёртывания
-2. Открыть [admin-guide.md](./admin-guide.md) для работы с админкой
-3. Открыть [production-audit.md](./production-audit.md) для проверки готовности
-4. Открыть [white-label-migration.md](./white-label-migration.md) для переноса
+1. Открыть [setup.md](/admin/docs?file=setup.md) для развёртывания
+2. Открыть [admin-guide.md](/admin/docs?file=admin-guide.md) для работы с админкой
+3. Открыть [production-audit.md](/admin/docs?file=production-audit.md) для проверки готовности
+4. Открыть [white-label-migration.md](/admin/docs?file=white-label-migration.md) для переноса

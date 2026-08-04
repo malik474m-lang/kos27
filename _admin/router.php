@@ -65,6 +65,12 @@ if ($adminPath === '/backup' || str_starts_with($adminPath, '/backup/')) {
     exit;
 }
 
+// Документация
+if ($adminPath === '/docs' || $adminPath === '/docs/') {
+    require __DIR__ . '/docs.php';
+    exit;
+}
+
 // Страница «О системе»
 if ($adminPath === '/about' || $adminPath === '/about/') {
     require __DIR__ . '/about.php';
