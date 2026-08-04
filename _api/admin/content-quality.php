@@ -11,20 +11,10 @@ $title = trim((string)($data['title'] ?? ''));
 $description = trim((string)($data['description'] ?? ''));
 $content = (string)($data['content'] ?? '');
 $field = trim((string)($data['field'] ?? 'content'));
+$targetScore = max(1, min(100, (int)($data['targetScore'] ?? 80)));
+$maxPasses = max(1, min(5, (int)($data['maxPasses'] ?? 3)));
 
-if ($action === 'analyze') {
-    echo json_encode(['success' => true, 'analysis' => cq_analyze($content, $entity, $title, $description)]);
-    exit;
-}
-
-if ($action === 'improve') {
-    if ($content === '') {
-        http_response_code(400);
-        echo json_encode(['error' => 'Пустой текст']);
-        exit;
-    }
-
-    $analysisBefore = cq_analyze($content, $entity, $title, $description);
+function cq_ai_improve_once(string $content, string $entity, string $field, string $title, string $description, array $analysisBefore, int $targetScore): array {
     $recommendations = $analysisBefore['recommendations'] ?? [];
     $issuesList = array_map(fn($i) => $i['msg'] ?? '', $analysisBefore['issues'] ?? []);
     $improved = null;
@@ -33,6 +23,7 @@ if ($action === 'improve') {
     if (defined('YANDEX_GPT_API_KEY') && YANDEX_GPT_API_KEY && defined('YANDEX_FOLDER_ID') && YANDEX_FOLDER_ID) {
         $prompt = "Улучши текст для финансового сайта с учётом конкретных замечаний. "
             . "Сущность: {$entity}. Поле: {$field}. Заголовок: {$title}. Описание: {$description}. "
+            . "Целевой score качества: не ниже {$targetScore}. "
             . "Минимум слов для этого типа контента: " . cq_min_words($entity) . ". "
             . "Нужно обязательно устранить замечания: " . implode('; ', array_filter($issuesList)) . ". "
             . "Нужно обязательно выполнить рекомендации: " . implode('; ', array_filter($recommendations)) . ". "
@@ -75,27 +66,67 @@ if ($action === 'improve') {
     $improved = cq_enforce_recommendations($improved, $analysisBefore, $entity, $title, $description);
     $analysisAfter = cq_analyze($improved, $entity, $title, $description);
 
-    // Если ИИ не помог — применяем ещё один детерминированный проход
     if (($analysisAfter['score'] ?? 0) < ($analysisBefore['score'] ?? 0) || ($analysisAfter['score'] ?? 0) < 80) {
         $fallbackImproved = cq_enforce_recommendations(cq_improve_fallback($content, $entity, $title, $description), $analysisBefore, $entity, $title, $description);
         $fallbackAnalysis = cq_analyze($fallbackImproved, $entity, $title, $description);
         if (($fallbackAnalysis['score'] ?? 0) > ($analysisAfter['score'] ?? 0)) {
             $improved = $fallbackImproved;
             $analysisAfter = $fallbackAnalysis;
-            if ($provider !== 'YandexGPT') {
-                $provider = 'template';
-            } else {
-                $provider = 'YandexGPT + fallback';
-            }
+            $provider = ($provider === 'YandexGPT') ? 'YandexGPT + fallback' : 'template';
+        }
+    }
+
+    return [
+        'provider' => $provider,
+        'improved' => $improved,
+        'analysis_after' => $analysisAfter,
+    ];
+}
+
+if ($action === 'analyze') {
+    echo json_encode(['success' => true, 'analysis' => cq_analyze($content, $entity, $title, $description)]);
+    exit;
+}
+
+if ($action === 'improve' || $action === 'improve_until') {
+    if ($content === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Пустой текст']);
+        exit;
+    }
+
+    $analysisBefore = cq_analyze($content, $entity, $title, $description);
+    $currentText = $content;
+    $currentAnalysis = $analysisBefore;
+    $usedProviders = [];
+    $passes = [];
+
+    $passesToRun = $action === 'improve_until' ? $maxPasses : 1;
+
+    for ($i = 1; $i <= $passesToRun; $i++) {
+        $result = cq_ai_improve_once($currentText, $entity, $field, $title, $description, $currentAnalysis, $targetScore);
+        $currentText = $result['improved'];
+        $currentAnalysis = $result['analysis_after'];
+        $usedProviders[] = $result['provider'];
+        $passes[] = [
+            'pass' => $i,
+            'provider' => $result['provider'],
+            'score' => (int)($currentAnalysis['score'] ?? 0),
+        ];
+        if (($currentAnalysis['score'] ?? 0) >= $targetScore) {
+            break;
         }
     }
 
     echo json_encode([
         'success' => true,
-        'provider' => $provider,
-        'improved' => $improved,
+        'provider' => implode(' → ', array_values(array_unique($usedProviders))),
+        'improved' => $currentText,
         'analysis_before' => $analysisBefore,
-        'analysis_after' => $analysisAfter,
+        'analysis_after' => $currentAnalysis,
+        'target_score' => $targetScore,
+        'passes' => $passes,
+        'reached_target' => (($currentAnalysis['score'] ?? 0) >= $targetScore),
     ]);
     exit;
 }
