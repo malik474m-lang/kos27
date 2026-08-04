@@ -200,6 +200,18 @@ ob_start('minifyHtmlOutput');
                 <div class="font-semibold text-gray-900">Cron и планировщик</div>
                 <div class="text-gray-500 mt-1">Фоновые задачи, логи, обслуживание</div>
             </a>
+            <a href="/docs/stabilization-checklist.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Стабилизационный чек-лист</div>
+                <div class="text-gray-500 mt-1">Что проверять после релизов и правок</div>
+            </a>
+            <a href="/docs/production-ready-audit.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Production-ready audit</div>
+                <div class="text-gray-500 mt-1">Готовность проекта к стабильной эксплуатации</div>
+            </a>
+            <a href="/docs/white-label-porting.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">White-label / перенос</div>
+                <div class="text-gray-500 mt-1">Как перенести проект на новый домен</div>
+            </a>
             <a href="/docs/crontab-setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <div class="font-semibold text-gray-900">Crontab setup</div>
                 <div class="text-gray-500 mt-1">Готовые команды для cron</div>

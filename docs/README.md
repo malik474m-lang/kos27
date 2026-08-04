@@ -9,6 +9,9 @@
 - [admin-guide.md](./admin-guide.md) — руководство по админке и основным модулям
 - [apis.md](./apis.md) — описание внутренних API и интеграций
 - [cron.md](./cron.md) — cron-задачи, планировщик и обслуживание
+- [stabilization-checklist.md](./stabilization-checklist.md) — чек-лист стабилизации после релизов
+- [production-ready-audit.md](./production-ready-audit.md) — аудит готовности к production
+- [white-label-porting.md](./white-label-porting.md) — перенос на новый домен / white-label
 
 ### Готовые конфигурации
 - [crontab-setup.md](./crontab-setup.md) — готовые примеры cron для хостинга
