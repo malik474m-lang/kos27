@@ -213,7 +213,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="of-so" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><div class="flex gap-2"><input id="of-lo" class="input-f flex-1" value="'+e(f.logo_url||'')+'"><button type="button" onclick="mediaPicker(\'of-lo\',\'offer\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="of-lo-preview" class="mt-2">'+(f.logo_url?'<img src="'+e(f.logo_url)+'" class="w-16 h-16 object-contain rounded border bg-white">':'')+'</div></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,80,3)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🎯 До 80+</button></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,80,3)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;af&#39;,&#39;article&#39;,&#39;content&#39;,90,4)" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🚀 До 90+</button><button type="button" onclick="cqCleanupOnly(&#39;af&#39;,&#39;article&#39;,&#39;content&#39;)" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🧹 Только мусор</button></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
@@ -781,7 +781,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">H1 заголовок</label><input id="tg-h1" class="input-f" value="'+e(f.h1||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Короткое описание</label><input id="tg-desc" class="input-f" value="'+e(f.description||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex flex-wrap gap-2"><input id="tg-mt" class="input-f flex-1 min-w-0" value="'+e(f.meta_title||'')+'"><button type="button" id="tg-meta-btn" onclick="fillMeta(&quot;tg&quot;,&quot;tag&quot;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button><button type="button" id="tg-seo-btn" onclick="tgGenerateSeo()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ SEO</button></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="tg-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;tg&#39;,&#39;tag&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить текст</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;,80,3)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;description&#39;)" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить описание</button></div><textarea id="tg-content" class="input-f" rows="6">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="5" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;tg&#39;,&#39;tag&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить текст</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;,80,3)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;,90,4)" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🚀 До 90+</button><button type="button" onclick="cqCleanupOnly(&#39;tg&#39;,&#39;tag&#39;,&#39;content&#39;)" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🧹 Только мусор</button><button type="button" onclick="cqImproveField(&#39;tg&#39;,&#39;tag&#39;,&#39;description&#39;)" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить описание</button></div><textarea id="tg-content" class="input-f" rows="6">'+e(f.content||'')+'</textarea></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Поисковые запросы для перелинковки <span class="text-gray-400">(по одному на строку)</span></label><textarea id="tg-queries" class="input-f text-xs" rows="5" placeholder="кредитная карта с кэшбэком\nкарта с кэшбеком">'+e(f.search_queries||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Фичи (JSON) <span class="text-gray-400">[{"icon":"⚡","title":"...","text":"..."}]</span></label><div class="flex gap-2 mb-2"><button type="button" onclick="tgAutoFeatures()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 whitespace-nowrap">✨ Автофичи</button><span class="text-xs text-gray-400 self-center">Сгенерирует 4 карточки по категории и названию</span></div><textarea id="tg-feat" class="input-f font-mono text-xs" rows="5">'+e(JSON.stringify(feat,null,2))+'</textarea></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="tg-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Привязанные предложения</label><div id="tg-offers-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
@@ -4366,6 +4366,16 @@ function cqAnalyzeForm(prefix, entity){
   }).catch(function(){ alert('Ошибка анализа'); });
 }
 
+function cqApplyImprovedText(prefix, field, improved, original){
+  if(field==='description'){
+    var descEl=document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de');
+    if(descEl) descEl.value=improved||original;
+  } else {
+    var contentEl=document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content');
+    if(contentEl) contentEl.value=improved||original;
+  }
+}
+
 function cqImproveField(prefix, entity, field, targetScore, maxPasses){
   var data=cqCollect(prefix);
   var sourceField = field==='description' ? data.description : data.content;
@@ -4376,19 +4386,26 @@ function cqImproveField(prefix, entity, field, targetScore, maxPasses){
   var action=untilMode ? 'improve_until' : 'improve';
   ap('/content-quality',{method:'POST',body:JSON.stringify({action:action,entity:entity,field:field,title:data.title||data.h1,description:data.description,content:sourceField,targetScore:targetScore||80,maxPasses:maxPasses||3})}).then(function(d){
     if(d.error){ alert(d.error); return; }
-    if(field==='description'){
-      var descEl=document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de');
-      if(descEl) descEl.value=d.improved||sourceField;
-    } else {
-      var contentEl=document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content');
-      if(contentEl) contentEl.value=d.improved||sourceField;
-    }
+    cqApplyImprovedText(prefix, field, d.improved, sourceField);
     var before=d.analysis_before?.score||0, after=d.analysis_after?.score||0;
     var extra='';
     if(d.passes&&d.passes.length){ extra='\nПроходы: '+d.passes.map(function(p){return '#'+p.pass+': '+p.score;}).join(', '); }
     if(untilMode){ extra+='\nЦель '+(d.reached_target?'достигнута':'не достигнута')+': '+(d.target_score||targetScore)+'+'; }
     alert('✅ Текст улучшен ('+(d.provider||'template')+')\nScore: '+before+' → '+after+extra);
   }).catch(function(){ alert('Ошибка улучшения'); });
+}
+
+function cqCleanupOnly(prefix, entity, field){
+  var data=cqCollect(prefix);
+  var sourceField = field==='description' ? data.description : data.content;
+  if(!sourceField.trim()){ alert('Нет текста для очистки'); return; }
+  if(!confirm('Убрать только markdown/HTML-мусор без сильного переписывания текста?')) return;
+  ap('/content-quality',{method:'POST',body:JSON.stringify({action:'cleanup_only',entity:entity,field:field,title:data.title||data.h1,description:data.description,content:sourceField})}).then(function(d){
+    if(d.error){ alert(d.error); return; }
+    cqApplyImprovedText(prefix, field, d.improved, sourceField);
+    var before=d.analysis_before?.score||0, after=d.analysis_after?.score||0;
+    alert('✅ Мусор очищен\nScore: '+before+' → '+after);
+  }).catch(function(){ alert('Ошибка очистки'); });
 }
 
 function loadFunnelMap(){

@@ -88,6 +88,32 @@ if ($action === 'analyze') {
     exit;
 }
 
+if ($action === 'cleanup_only') {
+    if ($content === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Пустой текст']);
+        exit;
+    }
+    $analysisBefore = cq_analyze($content, $entity, $title, $description);
+    $cleaned = cq_strip_markdown($content);
+    // для SEO-текста убираем HTML в plain text, если это city/tag SEO, но здесь оставим структуру
+    $cleaned = preg_replace('/^```\s*\w*\s*\n?/mi', '', $cleaned);
+    $cleaned = preg_replace('/\n?```\s*$/m', '', $cleaned);
+    $cleaned = trim($cleaned);
+    $analysisAfter = cq_analyze($cleaned, $entity, $title, $description);
+    echo json_encode([
+        'success' => true,
+        'provider' => 'cleanup_only',
+        'improved' => $cleaned,
+        'analysis_before' => $analysisBefore,
+        'analysis_after' => $analysisAfter,
+        'target_score' => null,
+        'passes' => [['pass' => 1, 'provider' => 'cleanup_only', 'score' => (int)($analysisAfter['score'] ?? 0)]],
+        'reached_target' => null,
+    ]);
+    exit;
+}
+
 if ($action === 'improve' || $action === 'improve_until') {
     if ($content === '') {
         http_response_code(400);
