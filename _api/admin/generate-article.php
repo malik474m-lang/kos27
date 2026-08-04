@@ -296,6 +296,9 @@ if (!$content) {
 $imageResult = generateArticleCoverImageResult($selectedTopic);
 $coverImage = $imageResult['path'] ?? '';
 $imageProvider = $imageResult['provider'] ?? '';
+$imageRequestedProvider = $imageResult['requested_provider'] ?? '';
+$imageFallback = !empty($imageResult['fallback']);
+$imageError = $imageResult['error'] ?? null;
 
 // Мета
 $paragraphs = array_filter(explode("\n\n", $content));
@@ -325,7 +328,9 @@ echo json_encode([
     'hasImage' => !empty($coverImage),
     'category' => $selectedCategory,
     'imageProvider' => $imageProvider ? articleImageProviderLabel($imageProvider) : '',
-    'requestedImageProvider' => articleImageProviderLabel(getArticleImageSettings()['provider'] ?? 'yandex'),
+    'requestedImageProvider' => articleImageProviderLabel($imageRequestedProvider ?: (getArticleImageSettings()['provider'] ?? 'yandex')),
+    'imageFallback' => $imageFallback,
+    'imageError' => $imageError,
 ]);
 
 // ============================================================

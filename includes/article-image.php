@@ -73,12 +73,12 @@ function generateArticleCoverImageYandex(string $prompt): string {
     return '';
 }
 
-function generateArticleCoverImageStability(string $prompt, array $settings): string {
+function generateArticleCoverImageStability(string $prompt, array $settings): array {
     $apiKey = $settings['stability_api_key'] ?? '';
-    if ($apiKey === '') return '';
+    if ($apiKey === '') return ['path' => '', 'error' => 'Stability API key not set'];
     $seed = abs(crc32($prompt)) % 4294967294 + 1;
 
-    // Актуальный endpoint Stability v2beta Stable Image Core
+    // Попытка 1: актуальный endpoint Stable Image Core
     $ch = curl_init('https://api.stability.ai/v2beta/stable-image/generate/core');
     $postFields = [
         'prompt' => $prompt,
@@ -90,19 +90,59 @@ function generateArticleCoverImageStability(string $prompt, array $settings): st
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 60,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_HTTPHEADER => [
             'Authorization: Bearer ' . $apiKey,
-            'Accept: image/*',
+            'Accept: image/png',
         ],
         CURLOPT_POSTFIELDS => $postFields,
     ]);
     $response = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
     curl_close($ch);
     if ($code >= 200 && $code < 300 && $response) {
-        return saveArticleImageBinary($response, 'png');
+        return ['path' => saveArticleImageBinary($response, 'png'), 'error' => null];
     }
-    return '';
+
+    // Попытка 2: legacy SDXL endpoint
+    $ch = curl_init('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ],
+        CURLOPT_POSTFIELDS => json_encode([
+            'text_prompts' => [['text' => $prompt, 'weight' => 1]],
+            'cfg_scale' => 7,
+            'height' => 768,
+            'width' => 1344,
+            'steps' => 30,
+            'samples' => 1,
+            'seed' => $seed,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+    $response2 = curl_exec($ch);
+    $code2 = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr2 = curl_error($ch);
+    curl_close($ch);
+    if ($code2 >= 200 && $code2 < 300 && $response2) {
+        $data = json_decode($response2, true);
+        $b64 = $data['artifacts'][0]['base64'] ?? '';
+        if ($b64) {
+            return ['path' => saveArticleImageBinary(base64_decode($b64), 'png'), 'error' => null];
+        }
+    }
+
+    $err = 'core=' . $code . ($curlErr ? ' ' . $curlErr : '') . '; legacy=' . $code2 . ($curlErr2 ? ' ' . $curlErr2 : '');
+    return ['path' => '', 'error' => $err];
 }
 
 function generateGigaChatAccessToken(array $settings): string {
@@ -129,14 +169,14 @@ function generateGigaChatAccessToken(array $settings): string {
     $response = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($code < 200 || $code >= 300 || !$response) return '';
+    if ($code < 200 || $code >= 300 || !$response) return ['path' => '', 'error' => 'chat ' . $code];
     $data = json_decode($response, true);
     return (string)($data['access_token'] ?? '');
 }
 
-function generateArticleCoverImageGigaChat(string $prompt, array $settings): string {
+function generateArticleCoverImageGigaChat(string $prompt, array $settings): array {
     $token = generateGigaChatAccessToken($settings);
-    if ($token === '') return '';
+    if ($token === '') return ['path' => '', 'error' => 'GigaChat token not received'];
 
     $clientId = 'kosmozaim-image';
     $ch = curl_init('https://gigachat.devices.sberbank.ru/api/v1/chat/completions');
@@ -167,10 +207,10 @@ function generateArticleCoverImageGigaChat(string $prompt, array $settings): str
     if ($code < 200 || $code >= 300 || !$response) return '';
     $data = json_decode($response, true);
     $content = (string)($data['choices'][0]['message']['content'] ?? '');
-    if ($content === '') return '';
-    if (!preg_match('/<img[^>]+src="([^"]+)"/i', $content, $m)) return '';
+    if ($content === '') return ['path' => '', 'error' => 'empty content'];
+    if (!preg_match('/<img[^>]+src=\"([^\"]+)\"/i', $content, $m)) return ['path' => '', 'error' => 'no image file id in response'];
     $fileId = $m[1] ?? '';
-    if ($fileId === '') return '';
+    if ($fileId === '') return ['path' => '', 'error' => 'empty file id'];
 
     $imgCh = curl_init('https://api.giga.chat/v1/files/' . rawurlencode($fileId) . '/content');
     curl_setopt_array($imgCh, [
@@ -188,9 +228,9 @@ function generateArticleCoverImageGigaChat(string $prompt, array $settings): str
     $imgCode = (int)curl_getinfo($imgCh, CURLINFO_HTTP_CODE);
     curl_close($imgCh);
     if ($imgCode >= 200 && $imgCode < 300 && $binary) {
-        return saveArticleImageBinary($binary, 'jpg');
+        return ['path' => saveArticleImageBinary($binary, 'jpg'), 'error' => null];
     }
-    return '';
+    return ['path' => '', 'error' => 'file ' . $imgCode];
 }
 
 
@@ -210,18 +250,21 @@ function generateArticleCoverImageResult(string $title): array {
     $requested = $settings['provider'];
     $prompt = buildArticleImagePrompt($title);
 
+    $error = null;
     if ($requested === 'stability') {
-        $img = generateArticleCoverImageStability($prompt, $settings);
-        if ($img) return ['path' => $img, 'provider' => 'stability', 'requested_provider' => $requested];
+        $res = generateArticleCoverImageStability($prompt, $settings);
+        if (!empty($res['path'])) return ['path' => $res['path'], 'provider' => 'stability', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        $error = $res['error'] ?? 'unknown stability error';
     }
 
     if ($requested === 'gigachat') {
-        $img = generateArticleCoverImageGigaChat($prompt, $settings);
-        if ($img) return ['path' => $img, 'provider' => 'gigachat', 'requested_provider' => $requested];
+        $res = generateArticleCoverImageGigaChat($prompt, $settings);
+        if (!empty($res['path'])) return ['path' => $res['path'], 'provider' => 'gigachat', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        $error = $res['error'] ?? 'unknown gigachat error';
     }
 
     $img = generateArticleCoverImageYandex($prompt);
-    if ($img) return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested];
+    if ($img) return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested, 'fallback' => ($requested !== 'yandex'), 'error' => $error];
 
-    return ['path' => '', 'provider' => '', 'requested_provider' => $requested];
+    return ['path' => '', 'provider' => '', 'requested_provider' => $requested, 'fallback' => false, 'error' => $error ?: 'all providers failed'];
 }
