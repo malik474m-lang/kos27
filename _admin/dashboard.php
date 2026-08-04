@@ -2886,8 +2886,9 @@ h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input t
 h+='<div><label class="block text-sm font-medium mb-1">Провайдер картинок статей</label><select id="set-article-image-provider" class="sel-f"><option value="yandex"'+((siteSettings.article_image_provider||'yandex')==='yandex'?' selected':'')+'>YandexART</option><option value="stability"'+((siteSettings.article_image_provider||'yandex')==='stability'?' selected':'')+'>Stability AI</option><option value="gigachat"'+((siteSettings.article_image_provider||'yandex')==='gigachat'?' selected':'')+'>GigaChat / Kandinsky</option></select></div>';
 h+='<div><label class="block text-sm font-medium mb-1">GigaChat scope</label><select id="set-gigachat-scope" class="sel-f"><option value="GIGACHAT_API_PERS"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_PERS'?' selected':'')+'>GIGACHAT_API_PERS</option><option value="GIGACHAT_API_B2B"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_B2B'?' selected':'')+'>GIGACHAT_API_B2B</option><option value="GIGACHAT_API_CORP"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_CORP'?' selected':'')+'>GIGACHAT_API_CORP</option></select></div>';
 h+='<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка статьи. Пример: <code>нарисуй 16:9 {title}</code></p></div>';
-h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label><input type="text" id="set-stability-key" class="input-f font-mono text-sm" value="'+e(siteSettings.stability_api_key_masked||siteSettings.stability_api_key||'')+'" placeholder="sk-..."></div>';
-h+='<div><label class="block text-sm font-medium mb-1">GigaChat Authorization Key</label><input type="text" id="set-gigachat-auth" class="input-f font-mono text-sm" value="'+e(siteSettings.gigachat_auth_key_masked||siteSettings.gigachat_auth_key||'')+'" placeholder="Basic auth key"></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label><input type="text" id="set-stability-key" class="input-f font-mono text-sm" value="'+e(siteSettings.stability_api_key_masked||siteSettings.stability_api_key||'')+'" placeholder="sk-..."><button type="button" onclick="testImageProvider('stability')" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест Stability</button></div>';
+h+='<div><label class="block text-sm font-medium mb-1">GigaChat Authorization Key</label><input type="text" id="set-gigachat-auth" class="input-f font-mono text-sm" value="'+e(siteSettings.gigachat_auth_key_masked||siteSettings.gigachat_auth_key||'')+'" placeholder="Basic auth key"><button type="button" onclick="testImageProvider('gigachat')" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест GigaChat</button></div>';
+h+='<div class="md:col-span-2" id="image-provider-test-result"></div>';
 h+='</div>';
 h+='<p class="text-xs text-gray-500 mt-2">Получить ключи: <a href="https://console.cloud.yandex.ru/" target="_blank" class="text-blue-600 hover:underline">console.cloud.yandex.ru</a> → Сервисные аккаунты → API-ключи</p>';
 h+='</div>';
@@ -4206,6 +4207,22 @@ lMonitor();
 });
 }
 
+
+
+function testImageProvider(provider){
+var box=document.getElementById('image-provider-test-result');
+if(box) box.innerHTML='<p class="text-gray-500 text-sm">⏳ Тест провайдера '+provider+'...</p>';
+var title='тест картинки';
+fetch(A+'/image-provider-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:provider,title:title})})
+.then(r=>r.json()).then(function(d){
+  if(!box) return;
+  if(d.success){
+    box.innerHTML='<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">✅ '+(d.provider||provider)+' работает корректно</div>';
+  } else {
+    box.innerHTML='<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"><strong>❌ '+(d.provider||provider)+' не сработал</strong><div class="mt-1 text-xs whitespace-pre-wrap">'+e(d.error||'Неизвестная ошибка')+'</div></div>';
+  }
+}).catch(function(){ if(box) box.innerHTML='<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">❌ Ошибка запроса</div>'; });
+}
 
 function testMail(){
 var box=document.getElementById('smtp-test-result');

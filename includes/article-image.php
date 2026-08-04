@@ -105,6 +105,7 @@ function generateArticleCoverImageStability(string $prompt, array $settings): ar
     if ($code >= 200 && $code < 300 && $response) {
         return ['path' => saveArticleImageBinary($response, 'png'), 'error' => null];
     }
+    $responsePreview = is_string($response) ? mb_substr(trim($response), 0, 300) : '';
 
     // Попытка 2: legacy SDXL endpoint
     $ch = curl_init('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image');
@@ -141,13 +142,14 @@ function generateArticleCoverImageStability(string $prompt, array $settings): ar
         }
     }
 
-    $err = 'core=' . $code . ($curlErr ? ' ' . $curlErr : '') . '; legacy=' . $code2 . ($curlErr2 ? ' ' . $curlErr2 : '');
+    $legacyPreview = is_string($response2) ? mb_substr(trim($response2), 0, 300) : '';
+    $err = 'core=' . $code . ($curlErr ? ' ' . $curlErr : '') . ($responsePreview ? ' body=' . $responsePreview : '') . '; legacy=' . $code2 . ($curlErr2 ? ' ' . $curlErr2 : '') . ($legacyPreview ? ' body=' . $legacyPreview : '');
     return ['path' => '', 'error' => $err];
 }
 
-function generateGigaChatAccessToken(array $settings): string {
+function generateGigaChatAccessTokenDetails(array $settings): array {
     $authKey = $settings['gigachat_auth_key'] ?? '';
-    if ($authKey === '') return '';
+    if ($authKey === '') return ['token' => '', 'error' => 'GigaChat auth key not set'];
     $scope = $settings['gigachat_scope'] ?? 'GIGACHAT_API_PERS';
     $rqid = function_exists('random_bytes') ? bin2hex(random_bytes(16)) : md5(uniqid('', true));
     $rqid = substr($rqid,0,8) . '-' . substr($rqid,8,4) . '-' . substr($rqid,12,4) . '-' . substr($rqid,16,4) . '-' . substr($rqid,20,12);
@@ -168,15 +170,26 @@ function generateGigaChatAccessToken(array $settings): string {
     ]);
     $response = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
     curl_close($ch);
-    if ($code < 200 || $code >= 300 || !$response) return ['path' => '', 'error' => 'chat ' . $code];
+    if ($code < 200 || $code >= 300 || !$response) {
+        return ['token' => '', 'error' => 'oauth ' . $code . ($curlErr ? ' ' . $curlErr : '') . ($response ? ' body=' . mb_substr(trim($response),0,300) : '')];
+    }
     $data = json_decode($response, true);
-    return (string)($data['access_token'] ?? '');
+    $token = (string)($data['access_token'] ?? '');
+    if ($token === '') return ['token' => '', 'error' => 'oauth token missing'];
+    return ['token' => $token, 'error' => null];
+}
+
+function generateGigaChatAccessToken(array $settings): string {
+    $res = generateGigaChatAccessTokenDetails($settings);
+    return $res['token'] ?? '';
 }
 
 function generateArticleCoverImageGigaChat(string $prompt, array $settings): array {
-    $token = generateGigaChatAccessToken($settings);
-    if ($token === '') return ['path' => '', 'error' => 'GigaChat token not received'];
+    $tokenInfo = generateGigaChatAccessTokenDetails($settings);
+    $token = $tokenInfo['token'] ?? '';
+    if ($token === '') return ['path' => '', 'error' => ($tokenInfo['error'] ?? 'GigaChat token not received')];
 
     $clientId = 'kosmozaim-image';
     $ch = curl_init('https://gigachat.devices.sberbank.ru/api/v1/chat/completions');
@@ -267,4 +280,24 @@ function generateArticleCoverImageResult(string $title): array {
     if ($img) return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested, 'fallback' => ($requested !== 'yandex'), 'error' => $error];
 
     return ['path' => '', 'provider' => '', 'requested_provider' => $requested, 'fallback' => false, 'error' => $error ?: 'all providers failed'];
+}
+
+function testArticleImageProvider(string $provider, string $title = 'тест'): array {
+    $title = trim($title) ?: 'тест';
+    $settings = getArticleImageSettings();
+    $settings['provider'] = $provider;
+    $prompt = str_replace('{title}', $title, $settings['prompt_template']);
+    if ($provider === 'stability') {
+        $res = generateArticleCoverImageStability($prompt, $settings);
+        if (!empty($res['path'])) { @unlink(__DIR__ . '/..' . $res['path']); return ['success' => true, 'provider' => 'Stability AI', 'error' => null]; }
+        return ['success' => false, 'provider' => 'Stability AI', 'error' => $res['error'] ?? 'unknown'];
+    }
+    if ($provider === 'gigachat') {
+        $res = generateArticleCoverImageGigaChat($prompt, $settings);
+        if (!empty($res['path'])) { @unlink(__DIR__ . '/..' . $res['path']); return ['success' => true, 'provider' => 'GigaChat / Kandinsky', 'error' => null]; }
+        return ['success' => false, 'provider' => 'GigaChat / Kandinsky', 'error' => $res['error'] ?? 'unknown'];
+    }
+    $img = generateArticleCoverImageYandex($prompt);
+    if ($img) { @unlink(__DIR__ . '/..' . $img); return ['success' => true, 'provider' => 'YandexART', 'error' => null]; }
+    return ['success' => false, 'provider' => 'YandexART', 'error' => 'generation failed'];
 }

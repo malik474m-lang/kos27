@@ -29,6 +29,9 @@ if (str_starts_with($adminUri, "/seo-audit")) { require __DIR__ . "/admin/seo-au
 // Системный мониторинг
 if (str_starts_with($adminUri, "/system-monitor")) { require __DIR__ . "/admin/system-monitor.php"; exit; }
 
+// Тест провайдеров картинок
+if ($adminUri === '/image-provider-test' && $method === 'POST') { require __DIR__ . '/admin/image-provider-test.php'; exit; }
+
 // Google Indexing
 if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/google-indexing.php"; exit; }
 
