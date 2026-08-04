@@ -1,4 +1,4 @@
-# Production-ready audit
+﻿# Production-ready audit
 
 Документ для финальной оценки готовности проекта к стабильной эксплуатации.
 

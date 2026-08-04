@@ -1,4 +1,4 @@
-# Документация KosmoEngine / kosmozaim.ru
+﻿# Документация KosmoEngine / kosmozaim.ru
 
 Этот раздел содержит техническую документацию по проекту kosmozaim.ru.
 

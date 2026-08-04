@@ -1,0 +1,14 @@
+# Документация должна открываться в UTF-8 без кракозябр
+AddDefaultCharset UTF-8
+
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .txt .md
+    AddType text/plain .txt
+    AddType text/markdown .md
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(txt|md)$">
+        Header set Content-Type "text/plain; charset=UTF-8"
+    </FilesMatch>
+</IfModule>

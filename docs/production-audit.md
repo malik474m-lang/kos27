@@ -1,4 +1,4 @@
-# Production-ready аудит проекта
+﻿# Production-ready аудит проекта
 
 ## 1. Цель документа
 
