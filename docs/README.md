@@ -4,12 +4,21 @@
 
 ## Содержание
 
+### Основные документы
 - [setup.md](./setup.md) — развёртывание проекта, базовые требования, первый запуск
 - [admin-guide.md](./admin-guide.md) — руководство по админке и основным модулям
 - [apis.md](./apis.md) — описание внутренних API и интеграций
 - [cron.md](./cron.md) — cron-задачи, планировщик и обслуживание
+
+### Готовые конфигурации
 - [crontab-setup.md](./crontab-setup.md) — готовые примеры cron для хостинга
 - [email-setup-jino.txt](./email-setup-jino.txt) — настройка SPF/DKIM/DMARC/BIMI на Jino
+
+### Аудит и перенос
+- [production-audit.md](./production-audit.md) — production-ready чек-лист проекта
+- [white-label-migration.md](./white-label-migration.md) — перенос на новый домен / white-label
+
+### Оценка проекта
 - [ocenka-proekta-i-kak-povysit-stoimost.txt](./ocenka-proekta-i-kak-povysit-stoimost.txt) — оценка проекта и рекомендации по росту стоимости
 
 ## Для кого эти документы
@@ -27,3 +36,10 @@
 - SEO-инструменты, индексация и позиции;
 - воронка, аналитика, партнёрские ссылки;
 - планировщик, бэкапы, мониторинг и безопасность.
+
+## Быстрый старт
+
+1. Открыть [setup.md](./setup.md) для развёртывания
+2. Открыть [admin-guide.md](./admin-guide.md) для работы с админкой
+3. Открыть [production-audit.md](./production-audit.md) для проверки готовности
+4. Открыть [white-label-migration.md](./white-label-migration.md) для переноса
