@@ -501,13 +501,22 @@ ob_start();
     <!-- Перелинковка: города -->
     <?php
     require_once __DIR__ . '/../data/cities.php';
-    $shuffledCities = getCities(); shuffle($shuffledCities);
+    $shuffledCities = getCities();
+    if (!$shuffledCities) {
+        $shuffledCities = [
+            ['name'=>'Москва','slug'=>'moskva','prep'=>'Москве'],
+            ['name'=>'Санкт-Петербург','slug'=>'sankt-peterburg','prep'=>'Санкт-Петербурге'],
+            ['name'=>'Казань','slug'=>'kazan','prep'=>'Казани'],
+            ['name'=>'Екатеринбург','slug'=>'ekaterinburg','prep'=>'Екатеринбурге'],
+        ];
+    }
+    shuffle($shuffledCities);
     ?>
     <div class="offer-related-card bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4"><?= $catLabel ?> по городам</h2>
         <div class="flex flex-wrap gap-2">
             <?php foreach (array_slice($shuffledCities, 0, 12) as $c): ?>
-            <a href="<?= $catUrl ?>/<?= $c['slug'] ?>" class="inline-block bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?= $catLabel ?> в <?= e($c['prep']) ?></a>
+            <a href="<?= $catUrl ?>/<?= e($c['slug']) ?>" class="inline-block bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors"><?= $catLabel ?> в <?= e($c['prep']) ?></a>
             <?php endforeach; ?>
         </div>
     </div>
