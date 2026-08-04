@@ -4185,8 +4185,9 @@ h+='<div class="p-3 rounded-lg '+(svc.yandex_webmaster?'bg-green-50':'bg-yellow-
 h+='<div class="p-3 rounded-lg '+(svc.yandex_gpt?'bg-green-50':'bg-red-50')+'"><span class="text-lg">'+(svc.yandex_gpt?'✅':'❌')+'</span><p class="text-sm font-medium mt-1">YandexGPT / YandexART</p></div>';
 h+='<div class="p-3 rounded-lg bg-gray-50 lg:col-span-2"><p class="text-xs text-gray-500">Провайдер картинок статей</p><p class="text-sm font-semibold text-gray-900 mt-1">'+e((svc.article_image_provider||'yandex').toString())+'</p><p class="text-[11px] text-gray-400 mt-1">Промпт: '+e((svc.article_image_prompt_template||'').toString())+'</p></div>';
 h+='</div>';
+h+='<div class="mt-3 bg-white border border-gray-200 rounded-lg p-3"><div class="flex items-center justify-between gap-3 mb-2"><h4 class="font-semibold text-sm text-gray-800">🖼️ Последние генерации картинок</h4><span class="text-[11px] text-gray-400">Тесты провайдеров: Настройки → Yandex GPT</span></div>';
 if(svc.article_image_recent&&svc.article_image_recent.length){
-  h+='<div class="mt-3 bg-white border border-gray-200 rounded-lg p-3"><h4 class="font-semibold text-sm text-gray-800 mb-2">🖼️ Последние генерации картинок</h4><div class="space-y-2 max-h-56 overflow-y-auto">';
+  h+='<div class="space-y-2 max-h-56 overflow-y-auto">';
   svc.article_image_recent.forEach(function(it){
     h+='<div class="rounded-lg '+(it.success?'bg-green-50 border border-green-200':'bg-red-50 border border-red-200')+' p-2 text-xs">';
     h+='<div class="flex flex-wrap items-center gap-2"><span class="font-medium">'+e(it.time||'')+'</span><span>запрошен: <strong>'+e(it.requested_provider||'')+'</strong></span><span>факт: <strong>'+e(it.actual_provider||'—')+'</strong></span></div>';
@@ -4194,8 +4195,11 @@ if(svc.article_image_recent&&svc.article_image_recent.length){
     if(it.error){ h+='<div class="mt-1 text-red-600 whitespace-pre-wrap">'+e(it.error)+'</div>'; }
     h+='</div>';
   });
-  h+='</div></div>';
+  h+='</div>';
+}else{
+  h+='<p class="text-sm text-gray-400">Пока нет записей. Сначала сгенерируйте статью или протестируйте провайдера картинок.</p>';
 }
+h+='</div>';
 h+='</div>';
 
 // Безопасность
