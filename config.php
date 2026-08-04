@@ -44,6 +44,7 @@ function getSiteSettings(): array {
         'yandex_folder_id' => getenv('YANDEX_FOLDER_ID') ?: '',
         'yandex_metrika_id' => getenv('NEXT_PUBLIC_YANDEX_METRIKA_ID') ?: '',
         'google_analytics_id' => getenv('NEXT_PUBLIC_GOOGLE_ANALYTICS_ID') ?: '',
+        'article_image_prompt_template' => 'нарисуй 16:9 {title}',
     ];
     
     if (file_exists($settingsFile)) {

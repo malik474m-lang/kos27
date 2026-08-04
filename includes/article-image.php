@@ -9,8 +9,11 @@ function generateArticleCoverImage(string $title): string {
         return '';
     }
 
-    // Точный промпт по требованию
-    $artPrompt = 'нарисуй 16:9 ' . $title;
+    // Шаблон промпта: по умолчанию строго 'нарисуй 16:9 {title}'
+    $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    $template = trim((string)($settings['article_image_prompt_template'] ?? 'нарисуй 16:9 {title}'));
+    if ($template === '') $template = 'нарисуй 16:9 {title}';
+    $artPrompt = str_replace('{title}', $title, $template);
 
     $artCtx = stream_context_create(['http' => [
         'method' => 'POST',

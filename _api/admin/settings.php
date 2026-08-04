@@ -31,6 +31,7 @@ function loadSettings(): array {
         'smtp_secure' => 'ssl',
         'mail_from' => '',
         'mail_from_name' => '',
+        'article_image_prompt_template' => 'нарисуй 16:9 {title}',
     ];
     
     // Сначала из .env
@@ -166,7 +167,7 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template'];
     
     foreach ($allowedFields as $field) {
         if (array_key_exists($field, $data)) {

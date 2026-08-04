@@ -2883,6 +2883,7 @@ h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-
 h+='<div class="grid md:grid-cols-2 gap-4">';
 h+='<div><label class="block text-sm font-medium mb-1">API Key</label><input type="text" id="set-gpt-key" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_gpt_api_key_masked||siteSettings.yandex_gpt_api_key||'')+'" placeholder="AQVN..."></div>';
 h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input type="text" id="set-folder" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_folder_id||'')+'" placeholder="b1g..."></div>';
+h+='<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка статьи. Пример: <code>нарисуй 16:9 {title}</code></p></div>';
 h+='</div>';
 h+='<p class="text-xs text-gray-500 mt-2">Получить ключи: <a href="https://console.cloud.yandex.ru/" target="_blank" class="text-blue-600 hover:underline">console.cloud.yandex.ru</a> → Сервисные аккаунты → API-ключи</p>';
 h+='</div>';
@@ -2933,6 +2934,7 @@ site_name:document.getElementById('set-name').value,
 site_url:document.getElementById('set-url').value,
 yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
 yandex_folder_id:document.getElementById('set-folder').value,
+article_image_prompt_template:document.getElementById('set-article-image-prompt').value,
 yandex_metrika_id:document.getElementById('set-metrika').value,
 google_analytics_id:document.getElementById('set-ga').value,
 contact_email:document.getElementById('set-contact-email').value,
