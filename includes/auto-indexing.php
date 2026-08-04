@@ -65,10 +65,9 @@ function pingSitemap(): void {
 
     $sitemapUrl = SITE_URL . '/sitemap.xml';
 
-    // Google ping
-    @file_get_contents('https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl), false, stream_context_create([
-        'http' => ['timeout' => 3, 'method' => 'GET']
-    ]));
+    // Google sitemap ping больше не используется:
+    // https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping
+    // Для Google используем Search Console / Indexing API.
 
     // Yandex ping
     @file_get_contents('https://webmaster.yandex.ru/ping?sitemap=' . urlencode($sitemapUrl), false, stream_context_create([
