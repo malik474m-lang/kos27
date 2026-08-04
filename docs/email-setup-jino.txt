@@ -3,7 +3,7 @@
   SPF / DKIM / DMARC / BIMI
 ================================================================
 
-Цель: письма от info@ВАШ_САЙТ не попадают в спам,
+Цель: письма от info@your-domain.ru не попадают в спам,
       иконка отправителя отображается в почтовых клиентах.
 
 
@@ -33,19 +33,19 @@
 
    Тип:      TXT
    Имя:      _dmarc
-   Значение: v=DMARC1; p=quarantine; rua=mailto:info@ВАШ_САЙТ; ruf=mailto:info@ВАШ_САЙТ; fo=1; adkim=s; aspf=s; pct=100
+   Значение: v=DMARC1; p=quarantine; rua=mailto:info@your-domain.ru; ruf=mailto:info@your-domain.ru; fo=1; adkim=s; aspf=s; pct=100
 
 4. Сохрани
 
 Пояснение:
 - p=quarantine -- подозрительные письма в спам (мягкий режим)
-- rua -- отчёты об отправках на info@ВАШ_САЙТ
+- rua -- отчёты об отправках на info@your-domain.ru
 - pct=100 -- политика для 100% писем
 
 Через 1-2 недели, когда убедишься что все работает,
 можно усилить до p=reject:
 
-   v=DMARC1; p=reject; rua=mailto:info@ВАШ_САЙТ; ruf=mailto:info@ВАШ_САЙТ; fo=1; adkim=s; aspf=s; pct=100
+   v=DMARC1; p=reject; rua=mailto:info@your-domain.ru; ruf=mailto:info@your-domain.ru; fo=1; adkim=s; aspf=s; pct=100
 
 
 ================================================================
@@ -94,7 +94,7 @@ BIMI показывает логотип рядом с именем отправ
 https://bimigroup.org/bimi-generator/
 
 Готовый файл залей на сервер:
-https://ВАШ_САЙТ/images/bimi.svg
+https://your-domain.ru/images/bimi.svg
 
 Шаг 2: Добавь DNS-запись BIMI
 
@@ -103,7 +103,7 @@ https://ВАШ_САЙТ/images/bimi.svg
 
    Тип:      TXT
    Имя:      default._bimi
-   Значение: v=BIMI1; l=https://ВАШ_САЙТ/images/bimi.svg;
+   Значение: v=BIMI1; l=https://your-domain.ru/images/bimi.svg;
 
 Шаг 3: Проверь
 
