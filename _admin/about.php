@@ -173,7 +173,41 @@ ob_start('minifyHtmlOutput');
 
     </div>
 
-    <!-- Возможности системы -->
+    
+    <!-- Документация -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 mt-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+            <span class="mr-2">📚</span> Документация проекта
+        </h2>
+        <div class="grid md:grid-cols-2 gap-3 text-sm">
+            <a href="/docs/README.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">README документации</div>
+                <div class="text-gray-500 mt-1">Индекс всех документов</div>
+            </a>
+            <a href="/docs/setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Развёртывание</div>
+                <div class="text-gray-500 mt-1">Установка, env, БД, первый запуск</div>
+            </a>
+            <a href="/docs/admin-guide.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Руководство по админке</div>
+                <div class="text-gray-500 mt-1">Модули, процессы, сценарии работы</div>
+            </a>
+            <a href="/docs/apis.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">API и интеграции</div>
+                <div class="text-gray-500 mt-1">Внутренние API, Google, Яндекс, AI</div>
+            </a>
+            <a href="/docs/cron.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Cron и планировщик</div>
+                <div class="text-gray-500 mt-1">Фоновые задачи, логи, обслуживание</div>
+            </a>
+            <a href="/docs/crontab-setup.md" target="_blank" class="rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <div class="font-semibold text-gray-900">Crontab setup</div>
+                <div class="text-gray-500 mt-1">Готовые команды для cron</div>
+            </a>
+        </div>
+    </div>
+
+<!-- Возможности системы -->
     <div class="bg-white rounded-2xl shadow-sm p-6 mt-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
             <span class="mr-2">🛠️</span> Возможности KosmoEngine
