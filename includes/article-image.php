@@ -89,12 +89,12 @@ function generateArticleCoverImageStability(string $prompt, array $settings): ar
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 60,
+        CURLOPT_TIMEOUT => 35,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_HTTPHEADER => [
             'Authorization: Bearer ' . $apiKey,
-            'Accept: image/png',
+            'Accept: image/*',
         ],
         CURLOPT_POSTFIELDS => $postFields,
     ]);
@@ -125,7 +125,7 @@ function generateArticleCoverImageStability(string $prompt, array $settings): ar
             'cfg_scale' => 7,
             'height' => 768,
             'width' => 1344,
-            'steps' => 30,
+            'steps' => 20,
             'samples' => 1,
             'seed' => $seed,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
