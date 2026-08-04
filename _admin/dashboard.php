@@ -1200,7 +1200,7 @@ function lFunnel(){
 var p=_funnelPeriod;
 ap('/funnel?period='+p).then(d=>{
 var t=d.totals||{};
-var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🔻 Воронка по офферам</h2><div class="flex gap-2"><select id="fn-period" onchange="_funnelPeriod=+this.value;lFunnel()" class="sel-f text-sm w-auto"><option value="7"'+(p==7?' selected':'')+'>7 дн</option><option value="14"'+(p==14?' selected':'')+'>14 дн</option><option value="30"'+(p==30?' selected':'')+'>30 дн</option><option value="90"'+(p==90?' selected':'')+'>90 дн</option><option value="365"'+(p==365?' selected':'')+'>Год</option></select><button onclick="lFunnel()" class="text-sm text-blue-600 hover:underline">🔄</button></div></div>';
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🔻 Воронка по офферам</h2><div class="flex gap-2"><select id="fn-period" onchange="_funnelPeriod=+this.value;lFunnel()" class="sel-f text-sm w-auto"><option value="7"'+(p==7?' selected':'')+'>7 дн</option><option value="14"'+(p==14?' selected':'')+'>14 дн</option><option value="30"'+(p==30?' selected':'')+'>30 дн</option><option value="90"'+(p==90?' selected':'')+'>90 дн</option><option value="365"'+(p==365?' selected':'')+'>Год</option></select><button onclick="showFunnelDebugPicker()" class="text-sm text-purple-600 hover:underline">🧪 Проверить логику</button><button onclick="lFunnel()" class="text-sm text-blue-600 hover:underline">🔄</button></div></div>';
 
 // Общая воронка
 h+='<div class="bg-white rounded-2xl border p-6 mb-6">';
@@ -1229,7 +1229,7 @@ h+='</div>';
 // Таблица по офферам
 var items=d.funnel||[];
 if(items.length){
-h+='<div class="bg-white rounded-2xl border shadow-sm overflow-hidden"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div style="max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch"><table class="text-sm" style="min-width:980px;width:100%;table-layout:auto"><thead class="bg-gray-50"><tr><th class="p-3 text-left" style="min-width:240px">Оффер</th><th class="p-3 text-right whitespace-nowrap">Просм.</th><th class="p-3 text-right whitespace-nowrap">Клики</th><th class="p-3 text-right whitespace-nowrap">CTR</th><th class="p-3 text-right text-green-700 whitespace-nowrap">Одобр.</th><th class="p-3 text-right text-red-600 whitespace-nowrap">Откл.</th><th class="p-3 text-right whitespace-nowrap">CR</th><th class="p-3 text-right whitespace-nowrap">Approval</th><th class="p-3 text-right whitespace-nowrap">EPC</th><th class="p-3 text-right font-semibold whitespace-nowrap">Доход</th></tr></thead><tbody>';
+h+='<div class="bg-white rounded-2xl border shadow-sm overflow-hidden"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">Воронка по каждому офферу</h3></div><div style="max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch"><table class="text-sm" style="min-width:980px;width:100%;table-layout:auto"><thead class="bg-gray-50"><tr><th class="p-3 text-left" style="min-width:240px">Оффер</th><th class="p-3 text-right whitespace-nowrap">Просм.</th><th class="p-3 text-right whitespace-nowrap">Клики</th><th class="p-3 text-right whitespace-nowrap">CTR</th><th class="p-3 text-right text-green-700 whitespace-nowrap">Одобр.</th><th class="p-3 text-right text-red-600 whitespace-nowrap">Откл.</th><th class="p-3 text-right whitespace-nowrap">CR</th><th class="p-3 text-right whitespace-nowrap">Approval</th><th class="p-3 text-right whitespace-nowrap">EPC</th><th class="p-3 text-right font-semibold whitespace-nowrap">Доход</th><th class="p-3 text-right whitespace-nowrap">Debug</th></tr></thead><tbody>';
 items.forEach(function(o){
 var rowClass=o.clicks===0?'bg-gray-50 text-gray-400':'';
 h+='<tr class="border-t hover:bg-gray-50 '+rowClass+'"><td class="p-3 font-medium" style="min-width:240px;max-width:240px"><div style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(o.title)+'">'+e(o.title)+'</div></td>';
@@ -1242,12 +1242,57 @@ h+='<td class="p-3 text-right whitespace-nowrap '+(o.cr>=3?'text-green-600':'tex
 h+='<td class="p-3 text-right whitespace-nowrap '+(o.approval_rate>=50?'text-green-600':o.approval_rate>0?'text-yellow-600':'text-gray-400')+'">'+o.approval_rate+'%</td>';
 h+='<td class="p-3 text-right whitespace-nowrap '+(o.epc>0?'text-purple-600':'text-gray-400')+'">'+Number(o.epc).toFixed(2)+'</td>';
 h+='<td class="p-3 text-right whitespace-nowrap font-semibold '+(o.payout>0?'text-green-700':'text-gray-400')+'">'+Number(o.payout).toLocaleString('ru-RU',{minimumFractionDigits:2})+' ₽</td>';
+h+='<td class="p-3 text-right whitespace-nowrap"><button type="button" onclick="showFunnelDebug('+o.id+')" class="text-purple-600 hover:underline text-sm">проверить</button></td>';
 h+='</tr>';
 });
 h+='</tbody></table></div></div>';
 }
 
 document.getElementById('p-funnel').innerHTML=h;});}
+
+
+function showFunnelDebugPicker(){
+  ap('/offers').then(function(list){
+    var opts='<option value="">Выберите оффер</option>';
+    (list||[]).forEach(function(o){ opts+='<option value="'+o.id+'">'+e(o.title)+'</option>'; });
+    modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Проверка логики воронки</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>'+
+      '<div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Оффер</label><select id="funnel-debug-offer" class="sel-f">'+opts+'</select></div>'+
+      '<div class="flex justify-end gap-3"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="var id=document.getElementById(\'funnel-debug-offer\').value;if(!id){alert(\'Выберите оффер\');return;}showFunnelDebug(id);" class="btn-p">Проверить</button></div></div>');
+  });
+}
+
+function showFunnelDebug(offerId){
+  ap('/funnel?action=debug&period='+_funnelPeriod+'&offer_id='+offerId).then(function(d){
+    if(d.error){ alert(d.error); return; }
+    var h='<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🧪 Debug воронки: '+e(d.offer.title||'')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>';
+    h+='<div class="bg-gray-50 rounded-lg p-4 mb-4 text-sm">';
+    h+='<p><strong>Период:</strong> '+d.period+' дней</p>';
+    h+='<p><strong>Страница оффера:</strong> /offer/'+e(d.offer.slug||'')+'</p>';
+    h+='<p><strong>Колонки:</strong> page_views.'+e(d.columns.page_views)+' / click_stats.'+e(d.columns.click_stats)+' / postback_conversions.'+e(d.columns.postback_conversions)+'</p>';
+    h+='</div>';
+    h+='<div class="grid grid-cols-3 gap-3 mb-4">';
+    h+='<div class="bg-blue-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-blue-600">'+(d.counts.views||0)+'</p><p class="text-xs text-gray-500">Просмотры</p></div>';
+    h+='<div class="bg-indigo-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-indigo-600">'+(d.counts.clicks||0)+'</p><p class="text-xs text-gray-500">Клики</p></div>';
+    var approved=0,rejected=0,pending=0,payout=0; (d.counts.conversions||[]).forEach(function(c){ if(c.status==='approved'){approved=Number(c.cnt||0); payout=Number(c.total||0);} else if(c.status==='rejected'){rejected=Number(c.cnt||0);} else {pending+=Number(c.cnt||0);} });
+    h+='<div class="bg-green-50 rounded-lg p-3 text-center"><p class="text-xl font-bold text-green-600">'+approved+'</p><p class="text-xs text-gray-500">Одобрено</p></div>';
+    h+='</div>';
+    h+='<div class="bg-white rounded-xl border p-4 mb-4"><h4 class="font-semibold mb-2">Конверсии по статусам</h4><div class="space-y-1 text-sm">';
+    (d.counts.conversions||[]).forEach(function(c){ h+='<div class="flex justify-between"><span>'+e(c.status)+'</span><span>'+c.cnt+' / '+Number(c.total||0).toLocaleString('ru-RU')+' ₽</span></div>'; });
+    h+='</div></div>';
+    function renderSample(title, rows, formatter){
+      var out='<div class="bg-white rounded-xl border p-4 mb-4"><h4 class="font-semibold mb-2">'+title+'</h4>';
+      if(!rows||!rows.length){ out+='<p class="text-sm text-gray-400">Нет данных</p></div>'; return out; }
+      out+='<div class="max-h-40 overflow-y-auto space-y-1 text-xs font-mono">';
+      rows.forEach(function(r){ out+='<div class="bg-gray-50 rounded px-2 py-1">'+formatter(r)+'</div>'; });
+      out+='</div></div>'; return out;
+    }
+    h+=renderSample('Последние просмотры', d.samples.views, function(r){ return (r.dt||'')+' • '+(r.page||'')+' • '+(r.ip||''); });
+    h+=renderSample('Последние клики', d.samples.clicks, function(r){ return (r.dt||'')+' • id='+r.id+' • ip='+(r.ip||'')+' • utm='+(r.utm_source||''); });
+    h+=renderSample('Последние конверсии', d.samples.conversions, function(r){ return (r.dt||'')+' • id='+r.id+' • '+r.status+' • payout='+(r.payout||0)+' • click_id='+(r.click_id||'')+' • aff_sub='+(r.aff_sub||''); });
+    modal(h);
+  }).catch(function(){ alert('Ошибка debug-проверки'); });
+}
+
 
 /* ============ LINK CHECKS ============ */
 function lLinks(){
