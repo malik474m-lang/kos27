@@ -32,6 +32,10 @@ function loadSettings(): array {
         'mail_from' => '',
         'mail_from_name' => '',
         'article_image_prompt_template' => 'нарисуй 16:9 {title}',
+        'article_image_provider' => 'yandex',
+        'stability_api_key' => '',
+        'gigachat_auth_key' => '',
+        'gigachat_scope' => 'GIGACHAT_API_PERS',
     ];
     
     // Сначала из .env
@@ -60,6 +64,14 @@ if ($method === 'GET') {
     if ($masked['yandex_gpt_api_key']) {
         $key = $masked['yandex_gpt_api_key'];
         $masked['yandex_gpt_api_key_masked'] = substr($key, 0, 8) . '...' . substr($key, -4);
+    }
+    if (!empty($masked['stability_api_key'])) {
+        $key = (string)$masked['stability_api_key'];
+        $masked['stability_api_key_masked'] = substr($key, 0, 6) . '...' . substr($key, -4);
+    }
+    if (!empty($masked['gigachat_auth_key'])) {
+        $key = (string)$masked['gigachat_auth_key'];
+        $masked['gigachat_auth_key_masked'] = substr($key, 0, 6) . '...' . substr($key, -4);
     }
     echo json_encode(['settings' => $masked]);
     exit;
@@ -167,11 +179,11 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template', 'article_image_provider', 'stability_api_key', 'gigachat_auth_key', 'gigachat_scope'];
     
     foreach ($allowedFields as $field) {
         if (array_key_exists($field, $data)) {
-            if ($field === 'yandex_gpt_api_key' && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
+            if (in_array($field, ['yandex_gpt_api_key','stability_api_key','gigachat_auth_key'], true) && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
                 continue;
             }
             if ($field === 'smtp_enabled') {

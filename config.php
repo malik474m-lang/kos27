@@ -45,6 +45,10 @@ function getSiteSettings(): array {
         'yandex_metrika_id' => getenv('NEXT_PUBLIC_YANDEX_METRIKA_ID') ?: '',
         'google_analytics_id' => getenv('NEXT_PUBLIC_GOOGLE_ANALYTICS_ID') ?: '',
         'article_image_prompt_template' => 'нарисуй 16:9 {title}',
+        'article_image_provider' => 'yandex',
+        'stability_api_key' => '',
+        'gigachat_auth_key' => '',
+        'gigachat_scope' => 'GIGACHAT_API_PERS',
     ];
     
     if (file_exists($settingsFile)) {

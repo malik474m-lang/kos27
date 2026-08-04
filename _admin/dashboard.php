@@ -2883,7 +2883,11 @@ h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-
 h+='<div class="grid md:grid-cols-2 gap-4">';
 h+='<div><label class="block text-sm font-medium mb-1">API Key</label><input type="text" id="set-gpt-key" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_gpt_api_key_masked||siteSettings.yandex_gpt_api_key||'')+'" placeholder="AQVN..."></div>';
 h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input type="text" id="set-folder" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_folder_id||'')+'" placeholder="b1g..."></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Провайдер картинок статей</label><select id="set-article-image-provider" class="sel-f"><option value="yandex"'+((siteSettings.article_image_provider||'yandex')==='yandex'?' selected':'')+'>YandexART</option><option value="stability"'+((siteSettings.article_image_provider||'yandex')==='stability'?' selected':'')+'>Stability AI</option><option value="gigachat"'+((siteSettings.article_image_provider||'yandex')==='gigachat'?' selected':'')+'>GigaChat / Kandinsky</option></select></div>';
+h+='<div><label class="block text-sm font-medium mb-1">GigaChat scope</label><select id="set-gigachat-scope" class="sel-f"><option value="GIGACHAT_API_PERS"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_PERS'?' selected':'')+'>GIGACHAT_API_PERS</option><option value="GIGACHAT_API_B2B"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_B2B'?' selected':'')+'>GIGACHAT_API_B2B</option><option value="GIGACHAT_API_CORP"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_CORP'?' selected':'')+'>GIGACHAT_API_CORP</option></select></div>';
 h+='<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка статьи. Пример: <code>нарисуй 16:9 {title}</code></p></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label><input type="text" id="set-stability-key" class="input-f font-mono text-sm" value="'+e(siteSettings.stability_api_key_masked||siteSettings.stability_api_key||'')+'" placeholder="sk-..."></div>';
+h+='<div><label class="block text-sm font-medium mb-1">GigaChat Authorization Key</label><input type="text" id="set-gigachat-auth" class="input-f font-mono text-sm" value="'+e(siteSettings.gigachat_auth_key_masked||siteSettings.gigachat_auth_key||'')+'" placeholder="Basic auth key"></div>';
 h+='</div>';
 h+='<p class="text-xs text-gray-500 mt-2">Получить ключи: <a href="https://console.cloud.yandex.ru/" target="_blank" class="text-blue-600 hover:underline">console.cloud.yandex.ru</a> → Сервисные аккаунты → API-ключи</p>';
 h+='</div>';
@@ -2935,6 +2939,10 @@ site_url:document.getElementById('set-url').value,
 yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
 yandex_folder_id:document.getElementById('set-folder').value,
 article_image_prompt_template:document.getElementById('set-article-image-prompt').value,
+article_image_provider:document.getElementById('set-article-image-provider').value,
+stability_api_key:document.getElementById('set-stability-key').value,
+gigachat_auth_key:document.getElementById('set-gigachat-auth').value,
+gigachat_scope:document.getElementById('set-gigachat-scope').value,
 yandex_metrika_id:document.getElementById('set-metrika').value,
 google_analytics_id:document.getElementById('set-ga').value,
 contact_email:document.getElementById('set-contact-email').value,
