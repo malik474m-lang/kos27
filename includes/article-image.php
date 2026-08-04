@@ -192,60 +192,94 @@ function generateArticleCoverImageGigaChat(string $prompt, array $settings): arr
     if ($token === '') return ['path' => '', 'error' => ($tokenInfo['error'] ?? 'GigaChat token not received')];
 
     $clientId = 'kosmozaim-image';
-    $ch = curl_init('https://gigachat.devices.sberbank.ru/api/v1/chat/completions');
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 60,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'Authorization: Bearer ' . $token,
-            'X-Client-ID: ' . $clientId,
+    $chatBody = json_encode([
+        'model' => 'GigaChat',
+        'function_call' => 'auto',
+        'messages' => [
+            ['role' => 'system', 'content' => 'Ты — Василий Кандинский'],
+            ['role' => 'user', 'content' => $prompt],
         ],
-        CURLOPT_POSTFIELDS => json_encode([
-            'model' => 'GigaChat',
-            'function_call' => 'auto',
-            'messages' => [
-                ['role' => 'system', 'content' => 'Ты — Василий Кандинский'],
-                ['role' => 'user', 'content' => $prompt],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $chatUrls = [
+        'https://api.giga.chat/v1/chat/completions',
+        'https://gigachat.devices.sberbank.ru/api/v1/chat/completions',
+    ];
+
+    $content = '';
+    $chatErrors = [];
+    foreach ($chatUrls as $chatUrl) {
+        $ch = curl_init($chatUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Authorization: Bearer ' . $token,
+                'X-Client-ID: ' . $clientId,
             ],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-    ]);
-    $response = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($code < 200 || $code >= 300 || !$response) return '';
-    $data = json_decode($response, true);
-    $content = (string)($data['choices'][0]['message']['content'] ?? '');
-    if ($content === '') return ['path' => '', 'error' => 'empty content'];
-    if (!preg_match('/<img[^>]+src=\"([^\"]+)\"/i', $content, $m)) return ['path' => '', 'error' => 'no image file id in response'];
-    $fileId = $m[1] ?? '';
+            CURLOPT_POSTFIELDS => $chatBody,
+        ]);
+        $response = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+        if ($code >= 200 && $code < 300 && $response) {
+            $data = json_decode($response, true);
+            $content = (string)($data['choices'][0]['message']['content'] ?? '');
+            if ($content !== '') break;
+        }
+        $chatErrors[] = $chatUrl . ' => ' . $code . ($err ? ' ' . $err : '') . ($response ? ' body=' . mb_substr(trim($response), 0, 250) : '');
+    }
+    if ($content === '') {
+        return ['path' => '', 'error' => 'chat failed: ' . implode(' | ', $chatErrors)];
+    }
+
+    if (!preg_match('/<img[^>]+src="([^"]+)"/i', $content, $m)) {
+        return ['path' => '', 'error' => 'no image file id in response: ' . mb_substr($content, 0, 250)];
+    }
+    $fileId = trim((string)($m[1] ?? ''));
     if ($fileId === '') return ['path' => '', 'error' => 'empty file id'];
 
-    $imgCh = curl_init('https://api.giga.chat/v1/files/' . rawurlencode($fileId) . '/content');
-    curl_setopt_array($imgCh, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 60,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_HTTPHEADER => [
+    $downloadAttempts = [
+        ['url' => 'https://api.giga.chat/v1/files/' . rawurlencode($fileId) . '/content', 'withClient' => true],
+        ['url' => 'https://api.giga.chat/v1/files/' . rawurlencode($fileId) . '/content', 'withClient' => false],
+        ['url' => 'https://gigachat.devices.sberbank.ru/api/v1/files/' . rawurlencode($fileId) . '/content', 'withClient' => true],
+        ['url' => 'https://gigachat.devices.sberbank.ru/api/v1/files/' . rawurlencode($fileId) . '/content', 'withClient' => false],
+    ];
+    $downloadErrors = [];
+    foreach ($downloadAttempts as $attempt) {
+        $headers = [
             'Accept: application/jpg',
             'Authorization: Bearer ' . $token,
-            'X-Client-ID: ' . $clientId,
-        ],
-    ]);
-    $binary = curl_exec($imgCh);
-    $imgCode = (int)curl_getinfo($imgCh, CURLINFO_HTTP_CODE);
-    curl_close($imgCh);
-    if ($imgCode >= 200 && $imgCode < 300 && $binary) {
-        return ['path' => saveArticleImageBinary($binary, 'jpg'), 'error' => null];
+        ];
+        if ($attempt['withClient']) {
+            $headers[] = 'X-Client-ID: ' . $clientId;
+        }
+        $imgCh = curl_init($attempt['url']);
+        curl_setopt_array($imgCh, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
+        $binary = curl_exec($imgCh);
+        $imgCode = (int)curl_getinfo($imgCh, CURLINFO_HTTP_CODE);
+        $imgErr = curl_error($imgCh);
+        curl_close($imgCh);
+        if ($imgCode >= 200 && $imgCode < 300 && $binary) {
+            return ['path' => saveArticleImageBinary($binary, 'jpg'), 'error' => null];
+        }
+        $downloadErrors[] = $attempt['url'] . ' client=' . ($attempt['withClient'] ? '1' : '0') . ' => ' . $imgCode . ($imgErr ? ' ' . $imgErr : '') . ($binary ? ' body=' . mb_substr(trim($binary), 0, 180) : '');
     }
-    return ['path' => '', 'error' => 'file ' . $imgCode];
-}
 
+    return ['path' => '', 'error' => 'file not downloaded; file_id=' . $fileId . '; ' . implode(' | ', $downloadErrors)];
+}
 
 function articleImageProviderLabel(string $provider): string {
     return match ($provider) {
