@@ -65,7 +65,9 @@ if (!$content) {
 $paragraphs = array_filter(explode("\n\n", $content));
 $excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : mb_substr($content, 0, 200) . '...';
 $slug = slugify($topic) . '-' . time();
-$coverImage = generateArticleCoverImage($topic);
+$imageResult = generateArticleCoverImageResult($topic);
+$coverImage = $imageResult['path'] ?? '';
+$imageProvider = $imageResult['provider'] ?? '';
 
 $db = getDB();
 try { $db->query("SELECT content_status FROM articles LIMIT 1");
@@ -78,4 +80,4 @@ try { $db->query("SELECT content_status FROM articles LIMIT 1");
 
 require_once __DIR__ . '/../includes/auto-indexing.php';
 autoSubmitUrl('/articles/' . $slug);
-echo "[DONE] Статья создана ($provider" . ($coverImage ? ", image" : ", no-image") . "): $topic\n";
+echo "[DONE] Статья создана ($provider" . ($coverImage ? ", image: " . articleImageProviderLabel($imageProvider ?: 'yandex') : ", no-image") . "): $topic\n";

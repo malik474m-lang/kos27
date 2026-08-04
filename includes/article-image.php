@@ -33,27 +33,8 @@ function buildArticleImagePrompt(string $title): string {
 }
 
 function generateArticleCoverImage(string $title): string {
-    $title = trim($title);
-    if ($title === '') return '';
-
-    $settings = getArticleImageSettings();
-    $provider = $settings['provider'];
-    $prompt = buildArticleImagePrompt($title);
-
-    if ($provider === 'stability') {
-        $img = generateArticleCoverImageStability($prompt, $settings);
-        if ($img) return $img;
-        // fallback chain
-        $provider = 'yandex';
-    }
-
-    if ($provider === 'gigachat') {
-        $img = generateArticleCoverImageGigaChat($prompt, $settings);
-        if ($img) return $img;
-        $provider = 'yandex';
-    }
-
-    return generateArticleCoverImageYandex($prompt);
+    $result = generateArticleCoverImageResult($title);
+    return $result['path'] ?? '';
 }
 
 function generateArticleCoverImageYandex(string $prompt): string {
@@ -210,4 +191,37 @@ function generateArticleCoverImageGigaChat(string $prompt, array $settings): str
         return saveArticleImageBinary($binary, 'jpg');
     }
     return '';
+}
+
+
+function articleImageProviderLabel(string $provider): string {
+    return match ($provider) {
+        'stability' => 'Stability AI',
+        'gigachat' => 'GigaChat / Kandinsky',
+        default => 'YandexART',
+    };
+}
+
+function generateArticleCoverImageResult(string $title): array {
+    $title = trim($title);
+    if ($title === '') return ['path' => '', 'provider' => '', 'requested_provider' => ''];
+
+    $settings = getArticleImageSettings();
+    $requested = $settings['provider'];
+    $prompt = buildArticleImagePrompt($title);
+
+    if ($requested === 'stability') {
+        $img = generateArticleCoverImageStability($prompt, $settings);
+        if ($img) return ['path' => $img, 'provider' => 'stability', 'requested_provider' => $requested];
+    }
+
+    if ($requested === 'gigachat') {
+        $img = generateArticleCoverImageGigaChat($prompt, $settings);
+        if ($img) return ['path' => $img, 'provider' => 'gigachat', 'requested_provider' => $requested];
+    }
+
+    $img = generateArticleCoverImageYandex($prompt);
+    if ($img) return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested];
+
+    return ['path' => '', 'provider' => '', 'requested_provider' => $requested];
 }

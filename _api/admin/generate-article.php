@@ -114,6 +114,7 @@ if ($method === 'GET') {
             'yandexGPT' => !empty(YANDEX_GPT_API_KEY),
             'gigaChat' => false,
             'yandexART' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
+            'articleImageProvider' => articleImageProviderLabel(getArticleImageSettings()['provider'] ?? 'yandex'),
         ],
     ]);
     exit;
@@ -292,7 +293,9 @@ if (!$content) {
 }
 
 // Генерация картинки
-$coverImage = generateArticleCoverImage($selectedTopic);
+$imageResult = generateArticleCoverImageResult($selectedTopic);
+$coverImage = $imageResult['path'] ?? '';
+$imageProvider = $imageResult['provider'] ?? '';
 
 // Мета
 $paragraphs = array_filter(explode("\n\n", $content));
@@ -321,6 +324,8 @@ echo json_encode([
     'aiProvider' => $aiProvider,
     'hasImage' => !empty($coverImage),
     'category' => $selectedCategory,
+    'imageProvider' => $imageProvider ? articleImageProviderLabel($imageProvider) : '',
+    'requestedImageProvider' => articleImageProviderLabel(getArticleImageSettings()['provider'] ?? 'yandex'),
 ]);
 
 // ============================================================
