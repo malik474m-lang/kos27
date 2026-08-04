@@ -291,7 +291,7 @@ function articleImageProviderLabel(string $provider): string {
 
 function generateArticleCoverImageResult(string $title): array {
     $title = trim($title);
-    if ($title === '') return ['path' => '', 'provider' => '', 'requested_provider' => ''];
+    if ($title === '') return ['path' => '', 'provider' => '', 'requested_provider' => '', 'fallback' => false, 'error' => 'empty title'];
 
     $settings = getArticleImageSettings();
     $requested = $settings['provider'];
@@ -300,19 +300,29 @@ function generateArticleCoverImageResult(string $title): array {
     $error = null;
     if ($requested === 'stability') {
         $res = generateArticleCoverImageStability($prompt, $settings);
-        if (!empty($res['path'])) return ['path' => $res['path'], 'provider' => 'stability', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        if (!empty($res['path'])) {
+            logArticleImageEvent($requested, 'stability', $prompt, true, null);
+            return ['path' => $res['path'], 'provider' => 'stability', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        }
         $error = $res['error'] ?? 'unknown stability error';
     }
 
     if ($requested === 'gigachat') {
         $res = generateArticleCoverImageGigaChat($prompt, $settings);
-        if (!empty($res['path'])) return ['path' => $res['path'], 'provider' => 'gigachat', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        if (!empty($res['path'])) {
+            logArticleImageEvent($requested, 'gigachat', $prompt, true, null);
+            return ['path' => $res['path'], 'provider' => 'gigachat', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+        }
         $error = $res['error'] ?? 'unknown gigachat error';
     }
 
     $img = generateArticleCoverImageYandex($prompt);
-    if ($img) return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested, 'fallback' => ($requested !== 'yandex'), 'error' => $error];
+    if ($img) {
+        logArticleImageEvent($requested, 'yandex', $prompt, true, $requested !== 'yandex' ? $error : null);
+        return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested, 'fallback' => ($requested !== 'yandex'), 'error' => $error];
+    }
 
+    logArticleImageEvent($requested, '', $prompt, false, $error ?: 'all providers failed');
     return ['path' => '', 'provider' => '', 'requested_provider' => $requested, 'fallback' => false, 'error' => $error ?: 'all providers failed'];
 }
 
@@ -334,4 +344,30 @@ function testArticleImageProvider(string $provider, string $title = 'тест'):
     $img = generateArticleCoverImageYandex($prompt);
     if ($img) { @unlink(__DIR__ . '/..' . $img); return ['success' => true, 'provider' => 'YandexART', 'error' => null]; }
     return ['success' => false, 'provider' => 'YandexART', 'error' => 'generation failed'];
+}
+
+
+function logArticleImageEvent(string $providerRequested, string $providerActual, string $prompt, bool $success, ?string $error = null): void {
+    $logFile = __DIR__ . '/../data/article-image-log.json';
+    $entries = [];
+    if (file_exists($logFile)) {
+        $entries = json_decode(file_get_contents($logFile), true) ?: [];
+    }
+    $entries[] = [
+        'time' => date('Y-m-d H:i:s'),
+        'requested_provider' => $providerRequested,
+        'actual_provider' => $providerActual,
+        'success' => $success,
+        'prompt' => mb_substr($prompt, 0, 300),
+        'error' => $error ? mb_substr($error, 0, 800) : null,
+    ];
+    if (count($entries) > 100) $entries = array_slice($entries, -100);
+    @file_put_contents($logFile, json_encode($entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+function getArticleImageLog(int $limit = 10): array {
+    $logFile = __DIR__ . '/../data/article-image-log.json';
+    if (!file_exists($logFile)) return [];
+    $entries = json_decode(file_get_contents($logFile), true) ?: [];
+    return array_slice(array_reverse($entries), 0, $limit);
 }

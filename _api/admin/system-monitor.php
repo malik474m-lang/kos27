@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../includes/error-logger.php';
 require_once __DIR__ . '/../../includes/yandex-webmaster.php';
 require_once __DIR__ . '/../../includes/mailer.php';
 require_once __DIR__ . '/../../includes/google-indexing.php';
+require_once __DIR__ . '/../../includes/article-image.php';
 
 $db = getDB();
 $action = $_GET['action'] ?? 'overview';
@@ -76,6 +77,7 @@ case 'overview':
         'google_sitemap_ping_deprecated' => true,
         'article_image_provider' => $siteSettings['article_image_provider'] ?? 'yandex',
         'article_image_prompt_template' => $siteSettings['article_image_prompt_template'] ?? 'нарисуй 16:9 {title}',
+        'article_image_recent' => getArticleImageLog(8),
     ];
 
     // 4. 2FA
