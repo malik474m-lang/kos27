@@ -71,6 +71,7 @@ case 'overview':
         'google_indexing' => googleIndexingAvailable(),
         'yandex_webmaster' => yandexWebmasterAvailable(),
         'yandex_gpt' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
+        'google_sitemap_ping_deprecated' => true,
     ];
 
     // 4. 2FA
