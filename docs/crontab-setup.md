@@ -5,27 +5,27 @@
 ```crontab
 # === ОБСЛУЖИВАНИЕ ===
 # Все задачи разом — каждый день в 4:00
-0 4 * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php all >> data/maintenance.log 2>&1
+0 4 * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php all >> data/maintenance.log 2>&1
 
 # === ИЛИ ПО ОТДЕЛЬНОСТИ ===
 
 # Проверка битых ссылок — каждый день в 3:00
-0 3 * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php link-check >> data/maintenance.log 2>&1
+0 3 * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php link-check >> data/maintenance.log 2>&1
 
 # Умный рейтинг — каждый день в 5:00
-0 5 * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php smart-rating >> data/maintenance.log 2>&1
+0 5 * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php smart-rating >> data/maintenance.log 2>&1
 
 # Очистка логов — каждый день в 4:30
-30 4 * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php clean-logs >> data/maintenance.log 2>&1
+30 4 * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php clean-logs >> data/maintenance.log 2>&1
 
 # Очистка кэша — каждый день в 4:35
-35 4 * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php clean-cache >> data/maintenance.log 2>&1
+35 4 * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php clean-cache >> data/maintenance.log 2>&1
 
 # Бэкап базы — каждое воскресенье в 2:00
-0 2 * * 0  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php backup >> data/maintenance.log 2>&1
+0 2 * * 0  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php backup >> data/maintenance.log 2>&1
 
 # Проверка работоспособности — каждые 10 минут
-*/10 * * * *  cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php health-ping >> data/maintenance.log 2>&1
+*/10 * * * *  cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php health-ping >> data/maintenance.log 2>&1
 
 # === ГЕНЕРАЦИЯ КОНТЕНТА (уже существует) ===
 # Автогенерация отзывов — через планировщик в админке
@@ -36,7 +36,7 @@
 
 1. Зайти в панель Jino → Хостинг → Cron-задачи
 2. Добавить задачу:
-   - **Команда:** `cd ~/domains/kosmozaim.ru && php cron/maintenance-cron.php all`
+   - **Команда:** `cd ~/domains/ВАШ_САЙТ && php cron/maintenance-cron.php all`
    - **Расписание:** `0 4 * * *` (каждый день в 4:00)
 
 Или через SSH:
@@ -49,7 +49,7 @@ crontab -e
 
 ```bash
 # Запустить вручную
-cd ~/domains/kosmozaim.ru
+cd ~/domains/ВАШ_САЙТ
 php cron/maintenance-cron.php all
 
 # Посмотреть лог

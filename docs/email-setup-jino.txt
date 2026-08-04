@@ -1,9 +1,9 @@
 ﻿================================================================
-  НАСТРОЙКА ПОЧТЫ kosmozaim.ru НА ХОСТИНГЕ JINO
+  НАСТРОЙКА ПОЧТЫ ВАШ_САЙТ НА ХОСТИНГЕ JINO
   SPF / DKIM / DMARC / BIMI
 ================================================================
 
-Цель: письма от info@kosmozaim.ru не попадают в спам,
+Цель: письма от info@ВАШ_САЙТ не попадают в спам,
       иконка отправителя отображается в почтовых клиентах.
 
 
@@ -13,7 +13,7 @@
 
 1. Зайди в панель Jino: https://cp-mail.jino.ru
 2. Раздел: Почта -> Управление -> Почтовые ящики
-3. Найди домен kosmozaim.ru
+3. Найди домен ВАШ_САЙТ
 4. Рядом с доменом будут кнопки SPF и DKIM
 5. Нажми на каждую -> включи переключатели
 6. Записи добавятся автоматически в DNS
@@ -27,25 +27,25 @@
   ЭТАП 2: DMARC (5 минут)
 ================================================================
 
-1. Зайди: Домены -> Управление -> kosmozaim.ru -> DNS
+1. Зайди: Домены -> Управление -> ВАШ_САЙТ -> DNS
 2. Нажми "Новая DNS-запись"
 3. Заполни:
 
    Тип:      TXT
    Имя:      _dmarc
-   Значение: v=DMARC1; p=quarantine; rua=mailto:info@kosmozaim.ru; ruf=mailto:info@kosmozaim.ru; fo=1; adkim=s; aspf=s; pct=100
+   Значение: v=DMARC1; p=quarantine; rua=mailto:info@ВАШ_САЙТ; ruf=mailto:info@ВАШ_САЙТ; fo=1; adkim=s; aspf=s; pct=100
 
 4. Сохрани
 
 Пояснение:
 - p=quarantine -- подозрительные письма в спам (мягкий режим)
-- rua -- отчёты об отправках на info@kosmozaim.ru
+- rua -- отчёты об отправках на info@ВАШ_САЙТ
 - pct=100 -- политика для 100% писем
 
 Через 1-2 недели, когда убедишься что все работает,
 можно усилить до p=reject:
 
-   v=DMARC1; p=reject; rua=mailto:info@kosmozaim.ru; ruf=mailto:info@kosmozaim.ru; fo=1; adkim=s; aspf=s; pct=100
+   v=DMARC1; p=reject; rua=mailto:info@ВАШ_САЙТ; ruf=mailto:info@ВАШ_САЙТ; fo=1; adkim=s; aspf=s; pct=100
 
 
 ================================================================
@@ -56,7 +56,7 @@
 
 1. SPF:
    https://mxtoolbox.com/spf.aspx
-   Введи: kosmozaim.ru -> должно быть "SPF Record Found"
+   Введи: ВАШ_САЙТ -> должно быть "SPF Record Found"
 
 2. DKIM:
    https://mxtoolbox.com/dkim.aspx
@@ -64,7 +64,7 @@
 
 3. DMARC:
    https://mxtoolbox.com/dmarc.aspx
-   Введи: kosmozaim.ru -> должно быть "DMARC Record Found"
+   Введи: ВАШ_САЙТ -> должно быть "DMARC Record Found"
 
 4. Комплексная проверка:
    https://www.mail-tester.com/
@@ -94,21 +94,21 @@ BIMI показывает логотип рядом с именем отправ
 https://bimigroup.org/bimi-generator/
 
 Готовый файл залей на сервер:
-https://kosmozaim.ru/images/bimi.svg
+https://ВАШ_САЙТ/images/bimi.svg
 
 Шаг 2: Добавь DNS-запись BIMI
 
-1. Домены -> Управление -> kosmozaim.ru -> DNS
+1. Домены -> Управление -> ВАШ_САЙТ -> DNS
 2. Новая DNS-запись:
 
    Тип:      TXT
    Имя:      default._bimi
-   Значение: v=BIMI1; l=https://kosmozaim.ru/images/bimi.svg;
+   Значение: v=BIMI1; l=https://ВАШ_САЙТ/images/bimi.svg;
 
 Шаг 3: Проверь
 
 https://bimigroup.org/bimi-generator/
-Введи kosmozaim.ru -> проверит наличие записи и SVG
+Введи ВАШ_САЙТ -> проверит наличие записи и SVG
 
 
 ================================================================
@@ -141,8 +141,8 @@ CMC (Common Mark Certificate):
   ИТОГО: ЧТО ДЕЛАТЬ ПРЯМО СЕЙЧАС
 ================================================================
 
-1. [ ] Включить SPF в панели Jino (Почта -> kosmozaim.ru)
-2. [ ] Включить DKIM в панели Jino (Почта -> kosmozaim.ru)
+1. [ ] Включить SPF в панели Jino (Почта -> ВАШ_САЙТ)
+2. [ ] Включить DKIM в панели Jino (Почта -> ВАШ_САЙТ)
 3. [ ] Добавить DMARC TXT-запись в DNS
 4. [ ] Подождать 1-2 часа
 5. [ ] Проверить на mxtoolbox.com
