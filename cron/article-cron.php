@@ -4,6 +4,7 @@
  * Запуск: php cron/article-cron.php
  */
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/article-image.php';
 
 $topics = [
     'Как получить займ без отказа','Первый займ без процентов','Как улучшить шансы на одобрение займа',
@@ -64,16 +65,17 @@ if (!$content) {
 $paragraphs = array_filter(explode("\n\n", $content));
 $excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : mb_substr($content, 0, 200) . '...';
 $slug = slugify($topic) . '-' . time();
+$coverImage = generateArticleCoverImage($topic);
 
 $db = getDB();
 try { $db->query("SELECT content_status FROM articles LIMIT 1");
-    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published, content_status, quality_score) VALUES (?,?,?,?,?,?,?,?,?)")
-       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155), 0, 'draft', 0]);
+    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published, content_status, quality_score) VALUES (?,?,?,?,?,?,?,?,?,?)")
+       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155), $coverImage, 0, 'draft', 0]);
 } catch (Exception $e) {
-    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,0)")
-       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155)]);
+    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published) VALUES (?,?,?,?,?,?,?,0)")
+       ->execute([$topic, $slug, $excerpt, $content, "$topic | " . SITE_NAME, mb_substr($excerpt, 0, 155), $coverImage]);
 }
 
 require_once __DIR__ . '/../includes/auto-indexing.php';
 autoSubmitUrl('/articles/' . $slug);
-echo "[DONE] Статья создана ($provider): $topic\n";
+echo "[DONE] Статья создана ($provider" . ($coverImage ? ", image" : ", no-image") . "): $topic\n";

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/article-image.php';
 // Базовый список тем
 $baseTopics = [
     ['category' => 'займы', 'themes' => [
@@ -217,7 +218,7 @@ if ($isBank) {
 
     $userPrompt = "Напиши развёрнутую обзорную статью о банке \"$selectedTopic\". Минимум 1500 слов. Обязательно укажи: генеральную лицензию ЦБ, юридический адрес, телефон горячей линии, условия кредитования, лучшие карты, преимущества и недостатки. Без ссылки на сайт банка. Без таблиц, без markdown.";
 
-    $artPrompt = "Нарисуй какой сейчас логотип банка $selectedTopic, на белом фоне, чистый логотип компании, без дополнительных элементов";
+    // Промпт для картинки задаётся в generateArticleCoverImage(): 'нарисуй 16:9 [Заголовок статьи]' ;
 } elseif ($isMFO) {
     $systemPrompt = "Ты — опытный финансовый журналист и эксперт по микрофинансовым организациям для сайта Космозайм (kosmozaim.ru).
 Пиши развёрнутые обзорные статьи о конкретных МФО минимум 1500 слов на русском.
@@ -238,7 +239,7 @@ if ($isBank) {
 Без таблиц, без markdown, без звёздочек. Подзаголовки на отдельной строке.";
 
     $userPrompt = "Напиши развёрнутую обзорную статью о микрофинансовой организации \"$selectedTopic\". Минимум 1500 слов. Обязательно укажи: лицензию ЦБ, юридический адрес, телефон горячей линии, условия займов, пошаговую инструкцию оформления, преимущества и недостатки. Без ссылки на сайт организации.";
-    $artPrompt = "Нарисуй какой сейчас логотип МФО $selectedTopic, на белом фоне, чистый логотип компании, без дополнительных элементов";
+    // Промпт для картинки задаётся в generateArticleCoverImage(): 'нарисуй 16:9 [Заголовок статьи]' ;
 } else {
     $systemPrompt = "Ты — опытный финансовый журналист для сайта Космозайм (kosmozaim.ru).
 Пиши развёрнутые статьи минимум 1500 слов на русском.
@@ -247,7 +248,7 @@ if ($isBank) {
 Без таблиц, без markdown, без звёздочек. Подзаголовки на отдельной строке.";
 
     $userPrompt = "Напиши развёрнутую статью на тему \"$selectedTopic\". Минимум 1500 слов. Без таблиц, без markdown. Практические советы для России.";
-    $artPrompt = "Профессиональная иллюстрация: $selectedTopic. Финансовая тема, современный стиль, яркие цвета, без текста.";
+    // Промпт для картинки задаётся в generateArticleCoverImage(): 'нарисуй 16:9 [Заголовок статьи]' ;
 }
 
 // Генерация текста
@@ -291,42 +292,7 @@ if (!$content) {
 }
 
 // Генерация картинки
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $artCtx = stream_context_create(['http' => [
-        'method' => 'POST',
-        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY,
-        'content' => json_encode([
-            'modelUri' => 'art://' . YANDEX_FOLDER_ID . '/yandex-art/latest',
-            'generationOptions' => ['seed' => mt_rand(1, 999999), 'aspectRatio' => ['widthRatio' => '16', 'heightRatio' => '9']],
-            'messages' => [['weight' => '1', 'text' => $artPrompt]],
-        ]),
-        'timeout' => 30,
-    ]]);
-    $artResponse = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/imageGenerationAsync', false, $artCtx);
-    if ($artResponse) {
-        $artData = json_decode($artResponse, true);
-        $opId = $artData['id'] ?? null;
-        if ($opId) {
-            for ($i = 0; $i < 12; $i++) {
-                sleep(5);
-                $checkCtx = stream_context_create(['http' => ['header' => "Authorization: Api-Key " . YANDEX_GPT_API_KEY, 'timeout' => 10]]);
-                $checkResponse = @file_get_contents("https://operation.api.cloud.yandex.net:443/operations/$opId", false, $checkCtx);
-                if (!$checkResponse) continue;
-                $checkData = json_decode($checkResponse, true);
-                if (($checkData['done'] ?? false) && !empty($checkData['response']['image'])) {
-                    $imageData = base64_decode($checkData['response']['image']);
-                    $fileName = 'article-' . time() . '.jpeg';
-                    $dirPath = __DIR__ . '/../../images/articles';
-                    if (!is_dir($dirPath)) @mkdir($dirPath, 0755, true);
-                    file_put_contents("$dirPath/$fileName", $imageData);
-                    $coverImage = "/images/articles/$fileName";
-                    break;
-                }
-                if (($checkData['done'] ?? false) && !empty($checkData['error'])) break;
-            }
-        }
-    }
-}
+$coverImage = generateArticleCoverImage($selectedTopic);
 
 // Мета
 $paragraphs = array_filter(explode("\n\n", $content));
