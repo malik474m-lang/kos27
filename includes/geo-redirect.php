@@ -1,6 +1,7 @@
 <?php
 // Приоритет: конкретная страна с URL -> исключение -> wildcard *
 $geoUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if (function_exists('isTestHost') && isTestHost()) return;
 if (str_starts_with($geoUri,'/api/')||str_starts_with($geoUri,'/admin')||str_starts_with($geoUri,'/images/')||str_starts_with($geoUri,'/css/')||str_starts_with($geoUri,'/js/')||str_contains($geoUri,'.')) return;
 $ip=$_SERVER['HTTP_X_FORWARDED_FOR']??$_SERVER['HTTP_X_REAL_IP']??$_SERVER['REMOTE_ADDR']??'127.0.0.1';
 $ip=trim(explode(',',$ip)[0]);

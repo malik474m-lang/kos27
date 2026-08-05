@@ -192,6 +192,16 @@ function startAdminSession(): void {
     }
 }
 
+function isTestHost(): bool {
+    $host = strtolower(trim($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+    return $host !== '' && (
+        str_starts_with($host, 'test.') ||
+        str_contains($host, '.test.') ||
+        $host === 'localhost' ||
+        str_starts_with($host, '127.0.0.1')
+    );
+}
+
 function getClientIp(): string {
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     return trim(explode(',', $ip)[0]);

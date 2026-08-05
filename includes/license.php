@@ -200,6 +200,7 @@ function forceLicenseCheck(): array {
  * Проверка и блокировка сайта если нет лицензии
  */
 function requireLicense(): void {
+    if (function_exists('isTestHost') && isTestHost()) return;
     $uri = $_SERVER['REQUEST_URI'] ?? '';
     $path = parse_url($uri, PHP_URL_PATH);
     
