@@ -10,14 +10,14 @@ import {
   Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, CATEGORIES } from '@/constants/config';
-import { getOffers, getActiveGiveaway } from '@/api/endpoints';
-import type { Offer, Article, GiveawayInfo } from '@/api/types';
-import OfferCard from '@/components/OfferCard';
-import CategoryCard from '@/components/CategoryCard';
-import LoadingScreen from '@/components/LoadingScreen';
-import { useFavorites } from '@/hooks/useFavorites';
-import { formatMoney } from '@/utils/format';
+import { Colors, CATEGORIES } from '../constants/config';
+import { getOffers, getActiveGiveaway } from '../api/endpoints';
+import type { Offer, Article, GiveawayInfo } from '../api/types';
+import OfferCard from '../components/OfferCard';
+import CategoryCard from '../components/CategoryCard';
+import LoadingScreen from '../components/LoadingScreen';
+import { useFavorites } from '../hooks/useFavorites';
+import { formatMoney } from '../utils/format';
 
 interface HomeScreenProps {
   navigation: any;

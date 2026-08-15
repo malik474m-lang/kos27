@@ -4,17 +4,17 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, Platform } from 'react-native';
-import { Colors } from '@/constants/config';
-import { AuthContext, useAuthProvider } from '@/hooks/useAuth';
+import { Colors } from './src/constants/config';
+import { AuthContext, useAuthProvider } from './src/hooks/useAuth';
 
 // Screens
-import HomeScreen from '@/screens/HomeScreen';
-import CatalogScreen from '@/screens/CatalogScreen';
-import OfferDetailScreen from '@/screens/OfferDetailScreen';
-import CalculatorScreen from '@/screens/CalculatorScreen';
-import ArticlesScreen from '@/screens/ArticlesScreen';
-import FavoritesScreen from '@/screens/FavoritesScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import CatalogScreen from './src/screens/CatalogScreen';
+import OfferDetailScreen from './src/screens/OfferDetailScreen';
+import CalculatorScreen from './src/screens/CalculatorScreen';
+import ArticlesScreen from './src/screens/ArticlesScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

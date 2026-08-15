@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors, API_BASE_URL } from '@/constants/config';
-import { formatDate, truncate } from '@/utils/format';
-import type { Article } from '@/api/types';
+import { Colors, API_BASE_URL } from '../constants/config';
+import { formatDate, truncate } from '../utils/format';
+import type { Article } from '../api/types';
 
 interface ArticleCardProps {
   article: Article;

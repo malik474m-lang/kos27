@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/constants/config';
+import { API_BASE_URL } from '../constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Базовый HTTP клиент для работы с API kosmozaim.ru

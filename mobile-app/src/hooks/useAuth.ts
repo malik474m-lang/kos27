@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as endpoints from '@/api/endpoints';
+import * as endpoints from '../api/endpoints';
 
 const AUTH_KEY = 'kosmozaim_auth';
 

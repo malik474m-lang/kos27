@@ -9,9 +9,9 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { Colors, API_BASE_URL } from '@/constants/config';
-import { useAuth } from '@/hooks/useAuth';
-import { subscribe } from '@/api/endpoints';
+import { Colors, API_BASE_URL } from '../constants/config';
+import { useAuth } from '../hooks/useAuth';
+import { subscribe } from '../api/endpoints';
 
 interface ProfileScreenProps {
   navigation: any;

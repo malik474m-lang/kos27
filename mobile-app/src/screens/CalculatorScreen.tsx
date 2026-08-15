@@ -7,13 +7,13 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Colors } from '@/constants/config';
-import { formatMoney, formatDays, calculateLoan } from '@/utils/format';
-import { getOffers } from '@/api/endpoints';
-import type { Offer } from '@/api/types';
-import OfferCard from '@/components/OfferCard';
-import GradientHeader from '@/components/GradientHeader';
-import { useFavorites } from '@/hooks/useFavorites';
+import { Colors } from '../constants/config';
+import { formatMoney, formatDays, calculateLoan } from '../utils/format';
+import { getOffers } from '../api/endpoints';
+import type { Offer } from '../api/types';
+import OfferCard from '../components/OfferCard';
+import GradientHeader from '../components/GradientHeader';
+import { useFavorites } from '../hooks/useFavorites';
 
 interface CalculatorScreenProps {
   navigation: any;

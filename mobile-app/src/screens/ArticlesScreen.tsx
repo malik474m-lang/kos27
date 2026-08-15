@@ -6,12 +6,12 @@ import {
   RefreshControl,
   StyleSheet,
 } from 'react-native';
-import { Colors, API_BASE_URL } from '@/constants/config';
-import type { Article } from '@/api/types';
-import ArticleCard from '@/components/ArticleCard';
-import GradientHeader from '@/components/GradientHeader';
-import LoadingScreen from '@/components/LoadingScreen';
-import { api } from '@/api/client';
+import { Colors, API_BASE_URL } from '../constants/config';
+import type { Article } from '../api/types';
+import ArticleCard from '../components/ArticleCard';
+import GradientHeader from '../components/GradientHeader';
+import LoadingScreen from '../components/LoadingScreen';
+import { api } from '../api/client';
 
 interface ArticlesScreenProps {
   navigation: any;

@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { Colors, API_BASE_URL } from '@/constants/config';
-import { formatMoney, formatDays, formatRate, truncate, categoryLabel } from '@/utils/format';
-import type { Offer } from '@/api/types';
+import { Colors, API_BASE_URL } from '../constants/config';
+import { formatMoney, formatDays, formatRate, truncate, categoryLabel } from '../utils/format';
+import type { Offer } from '../api/types';
 
 interface OfferCardProps {
   offer: Offer;

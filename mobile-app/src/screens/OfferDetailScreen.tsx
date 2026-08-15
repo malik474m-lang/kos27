@@ -10,11 +10,11 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { Colors, API_BASE_URL } from '@/constants/config';
-import { formatMoney, formatDays, formatRate, categoryLabel, borrowerLabel } from '@/utils/format';
-import { submitReview } from '@/api/endpoints';
-import type { Offer } from '@/api/types';
-import { useFavorites } from '@/hooks/useFavorites';
+import { Colors, API_BASE_URL } from '../constants/config';
+import { formatMoney, formatDays, formatRate, categoryLabel, borrowerLabel } from '../utils/format';
+import { submitReview } from '../api/endpoints';
+import type { Offer } from '../api/types';
+import { useFavorites } from '../hooks/useFavorites';
 
 interface OfferDetailScreenProps {
   route: any;

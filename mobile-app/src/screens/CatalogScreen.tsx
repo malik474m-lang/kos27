@@ -9,14 +9,14 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { Colors, CATEGORIES, BORROWER_CATEGORIES } from '@/constants/config';
-import { getOffers } from '@/api/endpoints';
-import type { Offer } from '@/api/types';
-import OfferCard from '@/components/OfferCard';
-import GradientHeader from '@/components/GradientHeader';
-import LoadingScreen from '@/components/LoadingScreen';
-import { useFavorites } from '@/hooks/useFavorites';
-import type { CategoryKey } from '@/constants/config';
+import { Colors, CATEGORIES, BORROWER_CATEGORIES } from '../constants/config';
+import { getOffers } from '../api/endpoints';
+import type { Offer } from '../api/types';
+import OfferCard from '../components/OfferCard';
+import GradientHeader from '../components/GradientHeader';
+import LoadingScreen from '../components/LoadingScreen';
+import { useFavorites } from '../hooks/useFavorites';
+import type { CategoryKey } from '../constants/config';
 
 interface CatalogScreenProps {
   navigation: any;
