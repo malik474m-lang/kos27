@@ -6,6 +6,7 @@ import type { Offer } from '../api/types';
 import OfferCard from '../components/OfferCard';
 import GradientHeader from '../components/GradientHeader';
 import { useFavorites } from '../hooks/useFavorites';
+import { trackPageView, trackOfferClick } from '../api/tracker';
 
 interface FavoritesScreenProps {
   navigation: any;
@@ -34,6 +35,7 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
 
   useEffect(() => {
     loadFavorites();
+    trackPageView('Favorites');
   }, [loadFavorites]);
 
   return (
@@ -47,7 +49,7 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
             offer={item}
             isFavorite={isFavorite(item.id)}
             onToggleFavorite={toggleFavorite}
-            onPress={(o) => navigation.navigate('OfferDetail', { offer: o })}
+            onPress={(o) => { trackOfferClick(o.id, o.title); navigation.navigate('OfferDetail', { offer: o }); }}
           />
         )}
         contentContainerStyle={styles.list}

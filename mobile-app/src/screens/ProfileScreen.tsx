@@ -12,12 +12,15 @@ import {
 import { Colors, API_BASE_URL } from '../constants/config';
 import { useAuth } from '../hooks/useAuth';
 import { subscribe } from '../api/endpoints';
+import { trackPageView } from '../api/tracker';
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
+  React.useEffect(() => { trackPageView('Profile'); }, []);
+
   const { isLoggedIn, userName, email, login, register, verify, logout, loading } = useAuth();
 
   // Формы

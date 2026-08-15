@@ -14,6 +14,7 @@ import type { Offer } from '../api/types';
 import OfferCard from '../components/OfferCard';
 import GradientHeader from '../components/GradientHeader';
 import { useFavorites } from '../hooks/useFavorites';
+import { trackCalculatorUse, trackOfferClick, trackPageView } from '../api/tracker';
 
 interface CalculatorScreenProps {
   navigation: any;
@@ -28,6 +29,7 @@ export default function CalculatorScreen({ navigation }: CalculatorScreenProps) 
 
   useEffect(() => {
     getOffers().then(setAllOffers).catch(() => {});
+    trackPageView('Calculator');
   }, []);
 
   const amountNum = parseInt(amount) || 0;
@@ -137,7 +139,7 @@ export default function CalculatorScreen({ navigation }: CalculatorScreenProps) 
               offer={offer}
               isFavorite={isFavorite(offer.id)}
               onToggleFavorite={toggleFavorite}
-              onPress={(o: Offer) => navigation.navigate('OfferDetail', { offer: o })}
+              onPress={(o: Offer) => { trackOfferClick(o.id, o.title); navigation.navigate('OfferDetail', { offer: o }); }}
             />
           ))
         ) : (

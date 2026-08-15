@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../constants/config';
 import GradientHeader from '../components/GradientHeader';
+import { trackPageView } from '../api/tracker';
 
 const faqs = [
   { q: 'Что такое микрозайм?', a: 'Микрозайм — это небольшой краткосрочный заём от микрофинансовой организации (МФО). Суммы обычно от 1 000 до 100 000 рублей, сроки — от нескольких дней до нескольких месяцев.' },
@@ -16,6 +17,8 @@ const faqs = [
 
 export default function FAQScreen() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  React.useEffect(() => { trackPageView('FAQ'); }, []);
 
   return (
     <View style={styles.container}>

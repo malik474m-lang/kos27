@@ -17,6 +17,7 @@ import GradientHeader from '../components/GradientHeader';
 import LoadingScreen from '../components/LoadingScreen';
 import { useFavorites } from '../hooks/useFavorites';
 import type { CategoryKey } from '../constants/config';
+import { trackCategoryView, trackOfferClick } from '../api/tracker';
 
 interface CatalogScreenProps {
   navigation: any;
@@ -55,6 +56,7 @@ export default function CatalogScreen({ navigation, route }: CatalogScreenProps)
   useEffect(() => {
     setLoading(true);
     loadData();
+    trackCategoryView(category);
   }, [loadData]);
 
   const applyFilters = (offers: Offer[], amount: string, term: string, borrower: string) => {
@@ -168,7 +170,7 @@ export default function CatalogScreen({ navigation, route }: CatalogScreenProps)
             offer={item}
             isFavorite={isFavorite(item.id)}
             onToggleFavorite={toggleFavorite}
-            onPress={(o) => navigation.navigate('OfferDetail', { offer: o })}
+            onPress={(o) => { trackOfferClick(o.id, o.title); navigation.navigate('OfferDetail', { offer: o }); }}
           />
         )}
         contentContainerStyle={styles.list}

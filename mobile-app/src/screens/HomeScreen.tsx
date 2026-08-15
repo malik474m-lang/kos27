@@ -108,7 +108,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             offer={offer}
             isFavorite={isFavorite(offer.id)}
             onToggleFavorite={toggleFavorite}
-            onPress={(o: Offer) => navigation.navigate('OfferDetail', { offer: o })}
+            onPress={(o: Offer) => { trackOfferClick(o.id, o.title); navigation.navigate('OfferDetail', { offer: o }); }}
           />
         ))}
       </View>

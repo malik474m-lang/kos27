@@ -6,7 +6,7 @@ import { formatMoney, formatDays, formatRate, categoryLabel, borrowerLabel, calc
 import { submitReview } from '../api/endpoints';
 import type { Offer } from '../api/types';
 import { useFavorites } from '../hooks/useFavorites';
-import { trackOfferApply, trackCalculatorUse, trackFavoriteAdd } from '../api/tracker';
+import { trackOfferApply, trackCalculatorUse, trackFavoriteAdd, trackPageView, trackOfferClick } from '../api/tracker';
 
 interface Props { route: any; navigation: any; }
 
@@ -23,6 +23,8 @@ export default function OfferDetailScreen({ route, navigation }: Props) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Калькулятор — предзаполнен данными оффера
+  React.useEffect(() => { trackOfferClick(offer.id, offer.title); trackPageView('OfferDetail'); }, []);
+
   const defaultAmount = offer ? Math.min(offer.amount_max, Math.max(offer.amount_min, 30000)) : 30000;
   const defaultTerm = offer ? Math.min(offer.term_max_days, Math.max(offer.term_min_days, 30)) : 30;
   const defaultRate = offer ? offer.rate : 1;
@@ -107,7 +109,7 @@ export default function OfferDetailScreen({ route, navigation }: Props) {
 
         {offer.description ? <Text style={styles.description}>{offer.description}</Text> : null}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => toggleFavorite(offer.id)}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => { toggleFavorite(offer.id); trackFavoriteAdd(offer.id, offer.title); }}>
           <Text style={styles.favBtnText}>{isFavorite(offer.id) ? '❤️ В избранном' : '🤍 В избранное'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>

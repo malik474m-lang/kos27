@@ -6,13 +6,14 @@ import type { GiveawayInfo } from '../api/types';
 import GradientHeader from '../components/GradientHeader';
 import LoadingScreen from '../components/LoadingScreen';
 import { formatMoney } from '../utils/format';
+import { trackPageView } from '../api/tracker';
 
 export default function GiveawayScreen() {
   const [giveaway, setGiveaway] = useState<GiveawayInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getActiveGiveaway().then(setGiveaway).catch(() => {}).finally(() => setLoading(false));
+    getActiveGiveaway().then(setGiveaway); trackPageView('Giveaway').catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <LoadingScreen message="Загрузка..." />;
