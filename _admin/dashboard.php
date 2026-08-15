@@ -55,6 +55,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('backup')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="backup">💾 Бэкап</button>
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('monitor')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="monitor">🖥️ Мониторинг</button>
+<button onclick="sw('pwa')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="pwa">📱 PWA</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('giveaway')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="giveaway">🎁 Розыгрыши</button>
 <button onclick="sw('positions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="positions">📊 Позиции</button>
@@ -87,6 +88,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-users" class="tp hidden"></div>
 <div id="p-monitor" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
+<div id="p-pwa" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
 <div id="p-giveaway" class="tp hidden"></div>
 <div id="p-positions" class="tp hidden"></div>
@@ -101,7 +103,7 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта'};
+const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика'};
 function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
@@ -4606,5 +4608,33 @@ box.innerHTML=h;
 
 
 </script>
+
+// === PWA Stats ===
+var pwaChart=null;
+function loadPwaStats(p){
+  p=p||30;var el=document.getElementById('p-pwa');
+  el.innerHTML='<div class="text-center py-12"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>';
+  ap('/pwa-stats?period='+p).then(function(d){
+    if(d.message){el.innerHTML='<div class="bg-yellow-50 p-6 rounded-xl text-yellow-700">'+d.message+'</div>';return;}
+    var t=d.total,cr=t.prompts_shown>0?((t.installs/t.prompts_shown)*100).toFixed(1):'0';
+    el.innerHTML='<div class="space-y-6">'+
+      '<div class="flex justify-between items-center"><h2 class="text-xl font-bold">📱 PWA Статистика</h2><select onchange="loadPwaStats(this.value)" class="border rounded-lg px-3 py-2"><option value="7"'+(p==7?' selected':'')+'>7 дней</option><option value="30"'+(p==30?' selected':'')+'>30 дней</option><option value="90"'+(p==90?' selected':'')+'>90 дней</option></select></div>'+
+      '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">'+
+      '<div class="bg-green-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-green-600">'+t.installs+'</div><div class="text-sm text-green-700">Установок</div></div>'+
+      '<div class="bg-blue-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-blue-600">'+t.visits+'</div><div class="text-sm text-blue-700">Визитов</div></div>'+
+      '<div class="bg-purple-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-purple-600">'+t.standalone_visits+'</div><div class="text-sm text-purple-700">Через PWA</div></div>'+
+      '<div class="bg-emerald-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-emerald-600">'+cr+'%</div><div class="text-sm text-emerald-700">Конверсия</div></div>'+
+      '</div>'+
+      '<div class="bg-white rounded-xl border p-6"><canvas id="pwaChartCanvas" height="80"></canvas></div>'+
+      '<div class="grid md:grid-cols-2 gap-6">'+
+      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">📊 Платформы</h3>'+(d.platforms.length?'<table class="w-full text-sm"><tr class="text-gray-500"><th class="text-left pb-2">Платформа</th><th>Визиты</th><th>Установки</th></tr>'+d.platforms.map(function(r){return'<tr class="border-t"><td class="py-2">'+(r.platform=="ios"?"🍎 iOS":r.platform=="android"?"🤖 Android":"💻 Desktop")+'</td><td class="text-center">'+r.visits+'</td><td class="text-center text-green-600 font-semibold">'+r.installs+'</td></tr>';}).join('')+'</table>':'<p class="text-gray-400">Нет данных</p>')+'</div>'+
+      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">📱 Устройства</h3>'+(d.devices.length?'<div class="space-y-1 max-h-48 overflow-auto text-sm">'+d.devices.map(function(r){return'<div class="flex justify-between py-1 border-b border-gray-100"><span>'+(r.platform=="ios"?"🍎":"🤖")+' '+r.device_model+'</span><span class="text-gray-500">'+r.count+(r.installs>0?' <span class="text-green-600">+'+r.installs+'</span>':'')+'</span></div>';}).join('')+'</div>':'<p class="text-gray-400">Нет данных</p>')+'</div>'+
+      '</div>'+
+      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">🆕 Последние установки</h3>'+(d.recent_installs.length?'<div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">'+d.recent_installs.map(function(r){return'<div class="bg-gray-50 rounded-lg p-3"><div>'+(r.platform=="ios"?"🍎":"🤖")+' '+(r.device_model||r.browser)+'</div><div class="text-gray-400 text-xs">'+r.created_at.split(' ')[0]+'</div></div>';}).join('')+'</div>':'<p class="text-gray-400">Пока нет установок</p>')+'</div>'+
+      '</div>';
+    if(d.daily.length){var ctx=document.getElementById('pwaChartCanvas');if(pwaChart)pwaChart.destroy();pwaChart=new Chart(ctx,{type:'line',data:{labels:d.daily.map(function(r){return r.date.slice(5);}),datasets:[{label:'Визиты',data:d.daily.map(function(r){return r.visits;}),borderColor:'#3b82f6',tension:0.3},{label:'Установки',data:d.daily.map(function(r){return r.installs;}),borderColor:'#10b981',tension:0.3},{label:'PWA',data:d.daily.map(function(r){return r.standalone;}),borderColor:'#8b5cf6',tension:0.3}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});}
+  });
+}
+var _sw=sw;sw=function(t){_sw(t);if(t==='pwa')loadPwaStats();};
 </body>
 </html>

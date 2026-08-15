@@ -13,6 +13,7 @@ if ($apiUri === '/reviews' && $_SERVER['REQUEST_METHOD'] === 'POST') { require _
 if ($apiUri === '/nl-open') { require __DIR__ . '/nl-open.php'; exit; }
 if ($apiUri === '/nl-click') { require __DIR__ . '/nl-click.php'; exit; }
 if ($apiUri === '/postback') { require __DIR__ . '/postback.php'; exit; }
+if ($apiUri === '/pwa-track') { require __DIR__ . '/pwa-track.php'; exit; }
 // User API
 if (str_starts_with($apiUri, '/user/')) {
     $userAction = substr($apiUri, 6);
