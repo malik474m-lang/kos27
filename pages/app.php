@@ -16,7 +16,7 @@ ob_start();
         <div class="text-6xl mb-6">📱</div>
         <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Скачайте приложение<br>Космозайм</h1>
         <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">Подберите займ, кредит или карту прямо с телефона. Калькулятор, сравнение и мгновенное оформление.</p>
-        <a href="/download-apk.php" id="download-btn" target="_self" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
+        <a href="/download-apk.php" id="download-btn" onclick="return directApkDownload(event)" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2H6.477C5.66 2 5 2.66 5 3.477v17.046C5 21.34 5.66 22 6.477 22h11.046C18.34 22 19 21.34 19 20.523V3.477C19 2.66 18.34 2 17.523 2zM12 20.5c-.552 0-1-.448-1-1s.448-1 1-1 1 .448 1 1-.448 1-1 1zM17 17H7V5h10v12z"/></svg>
             Скачать для Android
         </a>
@@ -90,5 +90,22 @@ $jsonLdSchemas = [
     ]
 ];
 $canonicalUrl = SITE_URL . '/app';
+
+<script>
+function directApkDownload(e) {
+    try {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs){
+                regs.forEach(function(reg){
+                    if (reg && reg.update) reg.update();
+                });
+            }).catch(function(){});
+        }
+    } catch(err) {}
+    window.location.href = '/download-apk.php';
+    return false;
+}
+</script>
+
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

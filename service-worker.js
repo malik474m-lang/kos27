@@ -1,5 +1,5 @@
 // Service Worker для Космозайм PWA
-const CACHE_NAME = 'kosmozaim-v1';
+const CACHE_NAME = 'kosmozaim-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Файлы для кэширования при установке
@@ -43,6 +43,9 @@ self.addEventListener('fetch', event => {
   if (request.url.includes('/api/')) return;
   if (request.url.includes('/admin')) return;
   if (request.url.includes('/click/')) return;
+  if (request.url.includes('/download-apk.php')) return;
+  if (request.url.includes('/downloads/')) return;
+  if (request.url.match(/\.apk($|\?)/)) return;
   
   event.respondWith(
     fetch(request)
