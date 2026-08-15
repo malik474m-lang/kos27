@@ -16,13 +16,14 @@ ob_start();
         <div class="text-6xl mb-6">📱</div>
         <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Скачайте приложение<br>Космозайм</h1>
         <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">Подберите займ, кредит или карту прямо с телефона. Калькулятор, сравнение и мгновенное оформление.</p>
-        <a href="https://kosmozaim.ru/download-apk.php" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
+        <a href="https://kosmozaim.ru/download-apk.php" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2H6.477C5.66 2 5 2.66 5 3.477v17.046C5 21.34 5.66 22 6.477 22h11.046C18.34 22 19 21.34 19 20.523V3.477C19 2.66 18.34 2 17.523 2zM12 20.5c-.552 0-1-.448-1-1s.448-1 1-1 1 .448 1 1-.448 1-1 1zM17 17H7V5h10v12z"/></svg>
             Скачать для Android
         </a>
         <?php if ($downloadCount > 0): ?>
         <p class="text-blue-200 text-sm mt-4">Уже скачали: <?= number_format($downloadCount, 0, '', ' ') ?></p>
         <?php endif; ?>
+        <p class="text-blue-100 text-sm mt-4">Если загрузка не началась — откройте прямую ссылку:<br><a href="https://kosmozaim.ru/download-apk.php" target="_blank" rel="noopener noreferrer" class="underline font-semibold text-white break-all">https://kosmozaim.ru/download-apk.php</a></p>
     </div>
 </section>
 
