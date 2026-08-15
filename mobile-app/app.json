@@ -23,10 +23,7 @@
       "package": "ru.kosmozaim.app"
     },
     "extra": {
-      "apiBaseUrl": "https://kosmozaim.ru",
-      "eas": {
-        "projectId": "906a8d26-2bc8-48e8-ab21-cff61a9d913b"
-      }
+      "apiBaseUrl": "https://kosmozaim.ru"
     }
   }
 }
