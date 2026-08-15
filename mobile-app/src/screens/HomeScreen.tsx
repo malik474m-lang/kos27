@@ -65,10 +65,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <TouchableOpacity style={styles.heroBtn} onPress={() => navigation.navigate('Calculator')}>
             <Text style={styles.heroBtnText}>🧮 Калькулятор</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.heroBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]} onPress={() => navigation.navigate('Catalog', { category: 'microloans' })}>
+            <Text style={styles.heroBtnText}>Все предложения →</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.heroBtnWide} onPress={() => navigation.navigate('Catalog', { category: 'microloans' })}>
-          <Text style={styles.heroBtnWideText}>Все предложения →</Text>
-        </TouchableOpacity>
       </LinearGradient>
 
       {/* Категории */}
@@ -150,8 +150,7 @@ const styles = StyleSheet.create({
   heroSubtitle: { fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 10, lineHeight: 22 },
   heroBtns: { flexDirection: 'row', gap: 10, marginTop: 20 },
   heroBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.accent },
-  heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  heroBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+    heroBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
   categoriesRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginTop: 12 },
   giveawayBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef3c7', marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#fde68a', gap: 12 },
   giveawayIcon: { fontSize: 32 },
