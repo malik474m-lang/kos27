@@ -16,16 +16,16 @@ $topCities = [
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-                <a href="/app" class="block bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-5 mb-4 hover:opacity-90 transition-opacity shadow-lg shadow-blue-900/30">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"><span class="text-2xl">📱</span></div>
+                <a href="/app" style="display:block;background:linear-gradient(135deg,#1a56db,#7e3af2);border-radius:16px;padding:20px;margin-bottom:16px;text-decoration:none;box-shadow:0 8px 24px rgba(26,86,219,0.3);">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                        <div style="width:48px;height:48px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;"><span style="font-size:24px;">📱</span></div>
                         <div>
-                            <div class="text-white font-bold text-base">Скачайте приложение</div>
-                            <div class="text-blue-200 text-xs">Бесплатно для Android</div>
+                            <div style="color:#fff;font-weight:700;font-size:15px;">Скачайте приложение</div>
+                            <div style="color:rgba(191,219,254,1);font-size:12px;">Бесплатно для Android</div>
                         </div>
                     </div>
-                    <div class="bg-white/20 rounded-lg py-2.5 text-center">
-                        <span class="text-white font-semibold text-sm">Скачать →</span>
+                    <div style="background:rgba(255,255,255,0.2);border-radius:8px;padding:10px 0;text-align:center;">
+                        <span style="color:#fff;font-weight:600;font-size:14px;">Скачать →</span>
                     </div>
                 </a>
                 <p class="text-sm text-gray-400">Сервис подбора финансовых предложений. Сравнивайте условия и выбирайте лучшие займы, кредиты и банковские карты.</p>

@@ -16,6 +16,7 @@ if ($apiUri === '/nl-click') { require __DIR__ . '/nl-click.php'; exit; }
 if ($apiUri === '/postback') { require __DIR__ . '/postback.php'; exit; }
 if ($apiUri === '/pwa-track') { require __DIR__ . '/pwa-track.php'; exit; }
 if ($apiUri === '/app-track') { require __DIR__ . '/app-track.php'; exit; }
+if ($apiUri === '/app-download-track') { require __DIR__ . '/app-download-track.php'; exit; }
 // User API
 if (str_starts_with($apiUri, '/user/')) {
     $userAction = substr($apiUri, 6);

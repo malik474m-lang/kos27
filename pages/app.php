@@ -2,29 +2,10 @@
 $pageTitle = 'Скачать приложение Космозайм для Android | ' . SITE_NAME;
 $metaDescription = 'Скачайте мобильное приложение Космозайм для Android. Подбор займов, кредитов и карт прямо с телефона.';
 
-// Считаем скачивание
-if (isset($_GET['download']) && $_GET['download'] === '1') {
-    try {
-        $db = getDB();
-        $db->exec("CREATE TABLE IF NOT EXISTS app_downloads (id INT AUTO_INCREMENT PRIMARY KEY, platform VARCHAR(20), ip VARCHAR(45), user_agent TEXT, referrer VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-        $ip = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '')[0]);
-        $db->prepare("INSERT INTO app_downloads (platform, ip, user_agent, referrer) VALUES (?, ?, ?, ?)")
-           ->execute(['android', $ip, $_SERVER['HTTP_USER_AGENT'] ?? '', $_SERVER['HTTP_REFERER'] ?? '']);
-    } catch (Exception $e) {}
-    
-    $apkFile = __DIR__ . '/../downloads/kosmozaim.apk';
-    if (file_exists($apkFile)) {
-        header('Location: /downloads/kosmozaim.apk');
-    } else {
-        header('Location: /app?nofile=1');
-    }
-    exit;
-}
-
 $downloadCount = 0;
 try {
     $db = getDB();
-    $db->query("SELECT 1 FROM app_downloads LIMIT 1");
+    $db->exec("CREATE TABLE IF NOT EXISTS app_downloads (id INT AUTO_INCREMENT PRIMARY KEY, platform VARCHAR(20), ip VARCHAR(45), user_agent TEXT, referrer VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
     $downloadCount = (int)$db->query("SELECT COUNT(*) as cnt FROM app_downloads")->fetch()['cnt'];
 } catch (Exception $e) {}
 
@@ -35,23 +16,17 @@ ob_start();
         <div class="text-6xl mb-6">📱</div>
         <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Скачайте приложение<br>Космозайм</h1>
         <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">Подберите займ, кредит или карту прямо с телефона. Калькулятор, сравнение и мгновенное оформление.</p>
-        <a href="/app?download=1" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
+        <a href="/downloads/kosmozaim.apk" id="download-btn" onclick="trackDownload()" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg" download>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2H6.477C5.66 2 5 2.66 5 3.477v17.046C5 21.34 5.66 22 6.477 22h11.046C18.34 22 19 21.34 19 20.523V3.477C19 2.66 18.34 2 17.523 2zM12 20.5c-.552 0-1-.448-1-1s.448-1 1-1 1 .448 1 1-.448 1-1 1zM17 17H7V5h10v12z"/></svg>
             Скачать для Android
         </a>
         <?php if ($downloadCount > 0): ?>
         <p class="text-blue-200 text-sm mt-4">Уже скачали: <?= number_format($downloadCount, 0, '', ' ') ?></p>
         <?php endif; ?>
-        <?php if (isset($_GET['nofile'])): ?>
-        <div class="bg-yellow-500/20 rounded-xl p-4 mt-6 max-w-md mx-auto">
-            <p class="text-yellow-100">APK файл ещё не загружен на сервер. Поместите его в /downloads/kosmozaim.apk</p>
-        </div>
-        <?php endif; ?>
     </div>
 </section>
 
 <div class="max-w-4xl mx-auto px-4 py-12">
-    <!-- Возможности -->
     <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Возможности приложения</h2>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
         <?php
@@ -73,7 +48,6 @@ ob_start();
         <?php endforeach; ?>
     </div>
 
-    <!-- Как установить -->
     <div class="bg-white rounded-2xl border border-gray-100 p-8 sm:p-10 mb-12">
         <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Как установить</h2>
         <div class="grid sm:grid-cols-3 gap-6">
@@ -95,12 +69,29 @@ ob_start();
         </div>
     </div>
 
-    <!-- Также доступно как PWA -->
     <div class="bg-gray-50 rounded-2xl p-8 text-center">
         <h2 class="text-xl font-bold text-gray-900 mb-3">Есть iPhone?</h2>
         <p class="text-gray-600 mb-4">Откройте <a href="/" class="text-primary font-semibold">kosmozaim.ru</a> в Safari и нажмите «На экран Домой» — приложение установится автоматически.</p>
     </div>
 </div>
+
+<script>
+function trackDownload() {
+    try {
+        fetch('/api/app-track', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({event: 'app_download', screen: 'download_page'})
+        }).catch(function(){});
+        // Также пишем в app_downloads
+        fetch('/api/app-download-track', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({platform: 'android'})
+        }).catch(function(){});
+    } catch(e){}
+}
+</script>
 
 <?php
 $jsonLdSchemas = [
