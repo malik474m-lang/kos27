@@ -17,6 +17,7 @@ import CategoryCard from '../components/CategoryCard';
 import LoadingScreen from '../components/LoadingScreen';
 import { useFavorites } from '../hooks/useFavorites';
 import { formatMoney } from '../utils/format';
+import { trackOfferClick, trackPageView } from '../api/tracker';
 
 interface HomeScreenProps {
   navigation: any;
@@ -45,7 +46,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); trackPageView("Home"); }, [loadData]);
 
   const onRefresh = () => { setRefreshing(true); loadData(); };
 

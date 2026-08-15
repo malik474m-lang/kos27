@@ -1,0 +1,10 @@
+# Разрешаем скачивание APK
+<Files "*.apk">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule mod_headers.c>
+        Header set Content-Type "application/vnd.android.package-archive"
+        Header set Content-Disposition "attachment"
+    </IfModule>
+</Files>

@@ -12,6 +12,7 @@ import ArticleCard from '../components/ArticleCard';
 import GradientHeader from '../components/GradientHeader';
 import LoadingScreen from '../components/LoadingScreen';
 import { api } from '../api/client';
+import { trackArticleView } from '../api/tracker';
 
 interface ArticlesScreenProps {
   navigation: any;
@@ -55,7 +56,7 @@ export default function ArticlesScreen({ navigation }: ArticlesScreenProps) {
         renderItem={({ item }) => (
           <ArticleCard
             article={item}
-            onPress={(a) => navigation.navigate('ArticleDetail', { article: a })}
+            onPress={(a) => { trackArticleView(a.id, a.title); navigation.navigate('ArticleDetail', { article: a }); }}
           />
         )}
         contentContainerStyle={styles.list}

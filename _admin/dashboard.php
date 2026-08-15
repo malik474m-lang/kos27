@@ -56,6 +56,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('users')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="users">👥 Пользователи</button>
 <button onclick="sw('monitor')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="monitor">🖥️ Мониторинг</button>
 <button onclick="sw('pwa')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="pwa">📱 PWA</button>
+<button onclick="sw('mobileapp')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="mobileapp">📲 Приложение</button>
 <button onclick="sw('health')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="health">🏥 Здоровье</button>
 <button onclick="sw('giveaway')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="giveaway">🎁 Розыгрыши</button>
 <button onclick="sw('positions')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="positions">📊 Позиции</button>
@@ -89,6 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-monitor" class="tp hidden"></div>
 <div id="p-health" class="tp hidden"></div>
 <div id="p-pwa" class="tp hidden"></div>
+<div id="p-mobileapp" class="tp hidden"></div>
 <div id="p-security" class="tp hidden"></div>
 <div id="p-giveaway" class="tp hidden"></div>
 <div id="p-positions" class="tp hidden"></div>
@@ -103,7 +105,7 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика'};
+const TAB_LABELS={giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
 function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
@@ -4641,6 +4643,45 @@ function loadPwaStats(p){
   }).catch(function(){el.innerHTML='<div class="bg-red-50 border border-red-200 p-6 rounded-xl text-red-600">Ошибка загрузки</div>';});
 }
 var _origSw=sw;sw=function(t){_origSw(t);if(t==='pwa')loadPwaStats(30);};
+
+
+// === Mobile App Stats ===
+var appChart=null;
+function loadAppStats(p){
+  p=p||30;var el=document.getElementById('p-mobileapp');
+  el.innerHTML='<div class="text-center py-12"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>';
+  ap('/app-stats?period='+p).then(function(d){
+    var t=d.total;
+    var h='<div class="space-y-6">';
+    h+='<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl font-bold">'+String.fromCodePoint(0x1F4F2)+' Статистика приложения</h2><select onchange="loadAppStats(this.value)" class="sel-f" style="width:auto"><option value="7"'+(p==7?' selected':'')+'>7 дн.</option><option value="30"'+(p==30?' selected':'')+'>30 дн.</option><option value="90"'+(p==90?' selected':'')+'>90 дн.</option></select></div>';
+    h+='<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">';
+    h+='<div class="bg-green-50 border border-green-100 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-green-600">'+t.downloads+'</div><div class="text-xs text-green-700 mt-1">Скачиваний</div></div>';
+    h+='<div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-blue-600">'+t.opens+'</div><div class="text-xs text-blue-700 mt-1">Открытий</div></div>';
+    h+='<div class="bg-purple-50 border border-purple-100 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-purple-600">'+t.unique_devices+'</div><div class="text-xs text-purple-700 mt-1">Устройств</div></div>';
+    h+='<div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-amber-600">'+t.offer_clicks+'</div><div class="text-xs text-amber-700 mt-1">Кликов</div></div>';
+    h+='</div>';
+    h+='<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">';
+    h+='<div class="bg-white border rounded-xl p-4 text-center"><div class="text-xl font-bold text-gray-800">'+(t.applies||0)+'</div><div class="text-xs text-gray-500">Заявок</div></div>';
+    h+='<div class="bg-white border rounded-xl p-4 text-center"><div class="text-xl font-bold text-gray-800">'+(t.article_views||0)+'</div><div class="text-xs text-gray-500">Статей</div></div>';
+    h+='<div class="bg-white border rounded-xl p-4 text-center"><div class="text-xl font-bold text-gray-800">'+(t.calc_uses||0)+'</div><div class="text-xs text-gray-500">Калькулятор</div></div>';
+    h+='<div class="bg-white border rounded-xl p-4 text-center"><div class="text-xl font-bold text-gray-800">'+(t.favorites||0)+'</div><div class="text-xs text-gray-500">Избранное</div></div>';
+    h+='</div>';
+    h+='<div class="bg-white rounded-xl shadow-sm border p-6"><h3 class="font-bold mb-4">Динамика</h3><canvas id="appChartCanvas" height="80"></canvas></div>';
+    h+='<div class="grid md:grid-cols-2 gap-6">';
+    h+='<div class="bg-white rounded-xl shadow-sm border p-6"><h3 class="font-bold mb-4">Популярные офферы</h3>';
+    if(d.offers&&d.offers.length){d.offers.forEach(function(o){h+='<div class="flex justify-between py-2 border-b border-gray-50 text-sm"><span class="font-medium">'+e(o.offer_title||'#'+o.offer_id)+'</span><span class="text-gray-500">'+o.clicks+' кл. '+(o.applies>0?'<span class="text-green-600">'+o.applies+' заяв.</span>':'')+'</span></div>';});}else{h+='<p class="text-gray-400 text-sm">Нет данных</p>';}
+    h+='</div>';
+    h+='<div class="bg-white rounded-xl shadow-sm border p-6"><h3 class="font-bold mb-4">Устройства</h3>';
+    if(d.devices&&d.devices.length){d.devices.forEach(function(v){h+='<div class="flex justify-between py-2 border-b border-gray-50 text-sm"><span>'+(v.platform=="ios"?String.fromCodePoint(0x1F34E):String.fromCodePoint(0x1F916))+' '+e(v.device_model)+'</span><span class="text-gray-500">'+v.users+' польз.</span></div>';});}else{h+='<p class="text-gray-400 text-sm">Нет данных</p>';}
+    h+='</div></div>';
+    if(d.recent&&d.recent.length){h+='<div class="bg-white rounded-xl shadow-sm border p-6"><h3 class="font-bold mb-4">Последние действия</h3><div class="space-y-1 max-h-64 overflow-auto text-sm">';d.recent.forEach(function(r){var labels={app_open:'Открыл',page_view:'Страница',offer_click:'Клик',offer_apply:'Заявка',article_view:'Статья',calculator_use:'Кальк.',favorite_add:'Избр.'};h+='<div class="flex justify-between py-1 border-b border-gray-50"><span>'+(labels[r.event_type]||r.event_type)+' '+(r.offer_title||r.screen_name||'')+'</span><span class="text-gray-400">'+e(r.created_at)+'</span></div>';});h+='</div></div>';}
+    if(d.message){h+='<div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-yellow-800 text-sm">'+d.message+'</div>';}
+    h+='</div>';
+    el.innerHTML=h;
+    if(d.daily&&d.daily.length){var ctx=document.getElementById('appChartCanvas');if(appChart)appChart.destroy();appChart=new Chart(ctx,{type:'line',data:{labels:d.daily.map(function(r){return r.date.slice(5);}),datasets:[{label:'Открытия',data:d.daily.map(function(r){return parseInt(r.opens)||0;}),borderColor:'#3b82f6',tension:0.3},{label:'Клики',data:d.daily.map(function(r){return parseInt(r.clicks)||0;}),borderColor:'#10b981',tension:0.3},{label:'Пользователи',data:d.daily.map(function(r){return parseInt(r.users)||0;}),borderColor:'#8b5cf6',tension:0.3}]},options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});}
+  });
+}
+var _sw2=sw;sw=function(t){_sw2(t);if(t==='mobileapp')loadAppStats(30);};
 
 </script>
 </body>

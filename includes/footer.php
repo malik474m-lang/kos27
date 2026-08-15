@@ -66,6 +66,16 @@ $topCities = [
                         <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white px-3 py-2 rounded-lg font-medium text-sm transition-colors">Подписаться</button>
                     </form>
                 </div>
+                <a href="/app" class="block bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 mt-4 hover:opacity-90 transition-opacity">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📱</span>
+                        <div>
+                            <div class="text-white font-semibold text-sm">Скачайте приложение</div>
+                            <div class="text-blue-200 text-xs">Займы и кредиты в кармане</div>
+                        </div>
+                        <span class="text-white ml-auto">→</span>
+                    </div>
+                </a>
             </div>
         </div>
 

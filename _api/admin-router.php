@@ -225,6 +225,7 @@ if ($adminUri === '/meta-generate' && $method === 'POST') { require __DIR__ . '/
 // Статистика
 if ($adminUri === '/stats') { require __DIR__ . '/admin/stats.php'; exit; }
 if ($adminUri === '/pwa-stats') { require __DIR__ . '/admin/pwa-stats.php'; exit; }
+if ($adminUri === '/app-stats') { require __DIR__ . '/admin/app-stats.php'; exit; }
 
 // Подписчики
 if ($adminUri === '/subscribers') { require __DIR__ . '/admin/subscribers.php'; exit; }

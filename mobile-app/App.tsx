@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, Platform } from 'react-native';
 import { Colors } from './src/constants/config';
+import { trackAppOpen } from './src/api/tracker';
 import { AuthContext, useAuthProvider } from './src/hooks/useAuth';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -49,6 +50,7 @@ function HomeTabs() {
 
 export default function App() {
   const auth = useAuthProvider();
+  React.useEffect(() => { trackAppOpen(); }, []);
   return (
     <AuthContext.Provider value={auth}>
       <NavigationContainer>

@@ -6,6 +6,7 @@ import { formatMoney, formatDays, formatRate, categoryLabel, borrowerLabel, calc
 import { submitReview } from '../api/endpoints';
 import type { Offer } from '../api/types';
 import { useFavorites } from '../hooks/useFavorites';
+import { trackOfferApply, trackCalculatorUse, trackFavoriteAdd } from '../api/tracker';
 
 interface Props { route: any; navigation: any; }
 
@@ -53,7 +54,7 @@ export default function OfferDetailScreen({ route, navigation }: Props) {
   const logoUrl = normalizeImageUrl(offer.logo_url || '');
   const rateUnit = offer.rate_unit || 'day';
 
-  const handleApply = () => Linking.openURL(`${API_BASE_URL}/click/${offer.id}`);
+  const handleApply = () => { trackOfferApply(offer.id, offer.title); Linking.openURL(`${API_BASE_URL}/click/${offer.id}`); };
 
   const handleSubmitReview = async () => {
     if (!reviewName.trim() || !reviewComment.trim()) { Alert.alert('Ошибка', 'Заполните имя и комментарий'); return; }
