@@ -4607,34 +4607,41 @@ box.innerHTML=h;
 }
 
 
-</script>
 
 // === PWA Stats ===
 var pwaChart=null;
 function loadPwaStats(p){
-  p=p||30;var el=document.getElementById('p-pwa');
+  p=p||30;
+  var el=document.getElementById('p-pwa');
   el.innerHTML='<div class="text-center py-12"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>';
   ap('/pwa-stats?period='+p).then(function(d){
-    if(d.message){el.innerHTML='<div class="bg-yellow-50 p-6 rounded-xl text-yellow-700">'+d.message+'</div>';return;}
+    if(d.message){el.innerHTML='<div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl text-yellow-800">'+d.message+'</div>';return;}
     var t=d.total,cr=t.prompts_shown>0?((t.installs/t.prompts_shown)*100).toFixed(1):'0';
-    el.innerHTML='<div class="space-y-6">'+
-      '<div class="flex justify-between items-center"><h2 class="text-xl font-bold">📱 PWA Статистика</h2><select onchange="loadPwaStats(this.value)" class="border rounded-lg px-3 py-2"><option value="7"'+(p==7?' selected':'')+'>7 дней</option><option value="30"'+(p==30?' selected':'')+'>30 дней</option><option value="90"'+(p==90?' selected':'')+'>90 дней</option></select></div>'+
-      '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">'+
-      '<div class="bg-green-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-green-600">'+t.installs+'</div><div class="text-sm text-green-700">Установок</div></div>'+
-      '<div class="bg-blue-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-blue-600">'+t.visits+'</div><div class="text-sm text-blue-700">Визитов</div></div>'+
-      '<div class="bg-purple-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-purple-600">'+t.standalone_visits+'</div><div class="text-sm text-purple-700">Через PWA</div></div>'+
-      '<div class="bg-emerald-50 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-emerald-600">'+cr+'%</div><div class="text-sm text-emerald-700">Конверсия</div></div>'+
-      '</div>'+
-      '<div class="bg-white rounded-xl border p-6"><canvas id="pwaChartCanvas" height="80"></canvas></div>'+
-      '<div class="grid md:grid-cols-2 gap-6">'+
-      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">📊 Платформы</h3>'+(d.platforms.length?'<table class="w-full text-sm"><tr class="text-gray-500"><th class="text-left pb-2">Платформа</th><th>Визиты</th><th>Установки</th></tr>'+d.platforms.map(function(r){return'<tr class="border-t"><td class="py-2">'+(r.platform=="ios"?"🍎 iOS":r.platform=="android"?"🤖 Android":"💻 Desktop")+'</td><td class="text-center">'+r.visits+'</td><td class="text-center text-green-600 font-semibold">'+r.installs+'</td></tr>';}).join('')+'</table>':'<p class="text-gray-400">Нет данных</p>')+'</div>'+
-      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">📱 Устройства</h3>'+(d.devices.length?'<div class="space-y-1 max-h-48 overflow-auto text-sm">'+d.devices.map(function(r){return'<div class="flex justify-between py-1 border-b border-gray-100"><span>'+(r.platform=="ios"?"🍎":"🤖")+' '+r.device_model+'</span><span class="text-gray-500">'+r.count+(r.installs>0?' <span class="text-green-600">+'+r.installs+'</span>':'')+'</span></div>';}).join('')+'</div>':'<p class="text-gray-400">Нет данных</p>')+'</div>'+
-      '</div>'+
-      '<div class="bg-white rounded-xl border p-6"><h3 class="font-bold mb-4">🆕 Последние установки</h3>'+(d.recent_installs.length?'<div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">'+d.recent_installs.map(function(r){return'<div class="bg-gray-50 rounded-lg p-3"><div>'+(r.platform=="ios"?"🍎":"🤖")+' '+(r.device_model||r.browser)+'</div><div class="text-gray-400 text-xs">'+r.created_at.split(' ')[0]+'</div></div>';}).join('')+'</div>':'<p class="text-gray-400">Пока нет установок</p>')+'</div>'+
-      '</div>';
-    if(d.daily.length){var ctx=document.getElementById('pwaChartCanvas');if(pwaChart)pwaChart.destroy();pwaChart=new Chart(ctx,{type:'line',data:{labels:d.daily.map(function(r){return r.date.slice(5);}),datasets:[{label:'Визиты',data:d.daily.map(function(r){return r.visits;}),borderColor:'#3b82f6',tension:0.3},{label:'Установки',data:d.daily.map(function(r){return r.installs;}),borderColor:'#10b981',tension:0.3},{label:'PWA',data:d.daily.map(function(r){return r.standalone;}),borderColor:'#8b5cf6',tension:0.3}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});}
-  });
+    var h='<div class="space-y-6">';
+    h+='<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl font-bold text-gray-900">' + String.fromCodePoint(0x1F4F1) + ' PWA Статистика</h2><select onchange="loadPwaStats(this.value)" class="sel-f" style="width:auto"><option value="7"'+(p==7?' selected':'')+'>7 дней</option><option value="30"'+(p==30?' selected':'')+'>30 дней</option><option value="90"'+(p==90?' selected':'')+'>90 дней</option></select></div>';
+    h+='<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">';
+    h+='<div class="bg-green-50 border border-green-100 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-green-600">'+t.installs+'</div><div class="text-sm text-green-700 mt-1">Установок</div></div>';
+    h+='<div class="bg-blue-50 border border-blue-100 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-blue-600">'+t.visits+'</div><div class="text-sm text-blue-700 mt-1">Визитов</div></div>';
+    h+='<div class="bg-purple-50 border border-purple-100 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-purple-600">'+t.standalone_visits+'</div><div class="text-sm text-purple-700 mt-1">Через PWA</div></div>';
+    h+='<div class="bg-amber-50 border border-amber-100 rounded-xl p-5 text-center"><div class="text-3xl font-bold text-amber-600">'+cr+'%</div><div class="text-sm text-amber-700 mt-1">Конверсия</div></div>';
+    h+='</div>';
+    h+='<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"><h3 class="font-bold text-gray-900 mb-4">' + String.fromCodePoint(0x1F4C8) + ' Динамика</h3><canvas id="pwaChartCanvas" height="80"></canvas></div>';
+    h+='<div class="grid md:grid-cols-2 gap-6">';
+    h+='<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"><h3 class="font-bold text-gray-900 mb-4">' + String.fromCodePoint(0x1F4CA) + ' Платформы</h3>';
+    if(d.platforms.length){h+='<table class="w-full text-sm"><thead><tr class="text-gray-500 border-b"><th class="text-left pb-3 font-medium">Платформа</th><th class="pb-3 font-medium text-center">Визиты</th><th class="pb-3 font-medium text-center">Уст.</th></tr></thead><tbody>';d.platforms.forEach(function(r){h+='<tr class="border-b border-gray-50"><td class="py-3 font-medium">'+(r.platform=="ios"?String.fromCodePoint(0x1F34E)+" iOS":r.platform=="android"?String.fromCodePoint(0x1F916)+" Android":String.fromCodePoint(0x1F4BB)+" Desktop")+'</td><td class="text-center">'+r.visits+'</td><td class="text-center text-green-600 font-semibold">'+r.installs+'</td></tr>';});h+='</tbody></table>';}else{h+='<p class="text-gray-400 text-sm">Нет данных</p>';}
+    h+='</div>';
+    h+='<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"><h3 class="font-bold text-gray-900 mb-4">' + String.fromCodePoint(0x1F4F1) + ' Устройства</h3>';
+    if(d.devices.length){h+='<div class="space-y-2 max-h-56 overflow-y-auto">';d.devices.forEach(function(r){h+='<div class="flex justify-between items-center py-2 border-b border-gray-50"><span class="text-sm font-medium">'+(r.platform=="ios"?String.fromCodePoint(0x1F34E):String.fromCodePoint(0x1F916))+' '+e(r.device_model)+'</span><span class="text-sm text-gray-500">'+r.count+(r.installs>0?' <span class="text-green-600 font-semibold">+'+r.installs+'</span>':'')+'</span></div>';});h+='</div>';}else{h+='<p class="text-gray-400 text-sm">Нет данных</p>';}
+    h+='</div></div>';
+    h+='<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"><h3 class="font-bold text-gray-900 mb-4">' + String.fromCodePoint(0x1F195) + ' Последние установки</h3>';
+    if(d.recent_installs.length){h+='<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';d.recent_installs.forEach(function(r){h+='<div class="bg-gray-50 rounded-lg p-3 border border-gray-100"><div class="text-sm font-medium">'+(r.platform=="ios"?String.fromCodePoint(0x1F34E):String.fromCodePoint(0x1F916))+' '+(r.device_model||r.browser)+'</div><div class="text-xs text-gray-400 mt-1">'+r.created_at+'</div></div>';});h+='</div>';}else{h+='<p class="text-gray-400 text-sm">Пока нет установок</p>';}
+    h+='</div></div>';
+    el.innerHTML=h;
+    if(d.daily.length){var ctx=document.getElementById('pwaChartCanvas');if(pwaChart)pwaChart.destroy();pwaChart=new Chart(ctx,{type:'line',data:{labels:d.daily.map(function(r){return r.date.slice(5);}),datasets:[{label:'Визиты',data:d.daily.map(function(r){return parseInt(r.visits)||0;}),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:0.3},{label:'Установки',data:d.daily.map(function(r){return parseInt(r.installs)||0;}),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',fill:true,tension:0.3},{label:'PWA',data:d.daily.map(function(r){return parseInt(r.standalone)||0;}),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});}
+  }).catch(function(){el.innerHTML='<div class="bg-red-50 border border-red-200 p-6 rounded-xl text-red-600">Ошибка загрузки</div>';});
 }
-var _sw=sw;sw=function(t){_sw(t);if(t==='pwa')loadPwaStats();};
+var _origSw=sw;sw=function(t){_origSw(t);if(t==='pwa')loadPwaStats(30);};
+
+</script>
 </body>
 </html>
