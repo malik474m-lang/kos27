@@ -79,14 +79,14 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Приложение','url'=>'/app']]),
-    [
+    json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'SoftwareApplication',
         'name' => 'Космозайм',
         'operatingSystem' => 'Android',
         'applicationCategory' => 'FinanceApplication',
         'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'RUB'],
-    ]
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 ];
 $canonicalUrl = SITE_URL . '/app';
 $content = ob_get_clean();
