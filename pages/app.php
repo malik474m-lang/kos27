@@ -16,7 +16,7 @@ ob_start();
         <div class="text-6xl mb-6">📱</div>
         <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Скачайте приложение<br>Космозайм</h1>
         <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">Подберите займ, кредит или карту прямо с телефона. Калькулятор, сравнение и мгновенное оформление.</p>
-        <a href="/api/download-apk" id="download-btn" onclick="trackDownload()" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg" download>
+        <a href="/download-apk.php" id="download-btn" class="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg" download>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2H6.477C5.66 2 5 2.66 5 3.477v17.046C5 21.34 5.66 22 6.477 22h11.046C18.34 22 19 21.34 19 20.523V3.477C19 2.66 18.34 2 17.523 2zM12 20.5c-.552 0-1-.448-1-1s.448-1 1-1 1 .448 1 1-.448 1-1 1zM17 17H7V5h10v12z"/></svg>
             Скачать для Android
         </a>
@@ -75,23 +75,7 @@ ob_start();
     </div>
 </div>
 
-<script>
-function trackDownload() {
-    try {
-        fetch('/api/app-track', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({event: 'app_download', screen: 'download_page'})
-        }).catch(function(){});
-        // Также пишем в app_downloads
-        fetch('/api/app-download-track', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({platform: 'android'})
-        }).catch(function(){});
-    } catch(e){}
-}
-</script>
+
 
 <?php
 $jsonLdSchemas = [
