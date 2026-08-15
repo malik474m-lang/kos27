@@ -77,20 +77,6 @@ ob_start();
 
 
 
-<?php
-$jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Приложение','url'=>'/app']]),
-    [
-        '@context' => 'https://schema.org',
-        '@type' => 'SoftwareApplication',
-        'name' => 'Космозайм',
-        'operatingSystem' => 'Android',
-        'applicationCategory' => 'FinanceApplication',
-        'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'RUB'],
-    ]
-];
-$canonicalUrl = SITE_URL . '/app';
-
 <script>
 function directApkDownload(e) {
     try {
@@ -107,5 +93,18 @@ function directApkDownload(e) {
 }
 </script>
 
+<?php
+$jsonLdSchemas = [
+    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Приложение','url'=>'/app']]),
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'Космозайм',
+        'operatingSystem' => 'Android',
+        'applicationCategory' => 'FinanceApplication',
+        'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'RUB'],
+    ]
+];
+$canonicalUrl = SITE_URL . '/app';
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';
