@@ -8,32 +8,24 @@
     "userInterfaceStyle": "automatic",
     "scheme": "kosmozaim",
     "splash": {
-      "image": "./src/assets/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#1a56db"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ru.kosmozaim.app",
-      "buildNumber": "1"
+      "bundleIdentifier": "ru.kosmozaim.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#1a56db"
       },
-      "package": "ru.kosmozaim.app",
-      "versionCode": 1
+      "package": "ru.kosmozaim.app"
     },
-    "web": {
-      "favicon": "./src/assets/favicon.png"
-    },
-    "plugins": ["expo-router", "expo-secure-store"],
     "extra": {
       "apiBaseUrl": "https://kosmozaim.ru",
       "eas": {
-        "projectId": "kosmozaim-mobile"
+        "projectId": "906a8d26-2bc8-48e8-ab21-cff61a9d913b"
       }
     }
   }
