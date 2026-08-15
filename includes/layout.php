@@ -3,6 +3,7 @@
 // Переменные: $pageTitle, $metaDescription, $metaKeywords, $content, $jsonLdSchemas, $canonicalUrl, $ogImage
 require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/giveaway-banner.php';
+require_once __DIR__ . '/pwa.php';
 
 $pageTitle = $pageTitle ?? SITE_NAME;
 $metaDescription = $metaDescription ?? 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам.';
@@ -65,6 +66,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <link rel="icon" href="<?= e($siteFavicon) ?>" type="<?= str_ends_with($siteFavicon, '.svg') ? 'image/svg+xml' : (str_ends_with($siteFavicon, '.png') ? 'image/png' : 'image/x-icon') ?>">
     <?php else: ?>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <?= getPwaHeadTags() ?>
     <?php endif; ?>
     <link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
@@ -405,6 +407,8 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 <script src="/assets/site.min.js?v=20260728" defer></script>
+<?= getPwaInstallBanner() ?>
+<?= getPwaScripts() ?>
 </body>
 </html>
 <?php pageCacheEnd(); ?>
