@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
+import { SvgUri } from 'react-native-svg';
 import { Colors, API_BASE_URL } from '../constants/config';
 import { formatMoney, formatDays, formatRate, categoryLabel, borrowerLabel } from '../utils/format';
 import { submitReview } from '../api/endpoints';
@@ -101,7 +102,9 @@ export default function OfferDetailScreen({ route, navigation }: OfferDetailScre
       <View style={styles.mainCard}>
         <View style={styles.header}>
           <View style={styles.logoWrap}>
-            {logoUrl ? (
+            {logoUrl && logoUrl.endsWith(".svg") ? (
+              <SvgUri uri={logoUrl} width={60} height={60} />
+            ) : logoUrl ? (
               <Image source={{ uri: logoUrl }} style={styles.logo} resizeMode="contain" />
             ) : (
               <Text style={styles.logoFallback}>🏦</Text>

@@ -9,6 +9,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { register_shutdown_functio
 if ($apiUri === '/health') { echo json_encode(['ok' => true]); exit; }
 if ($apiUri === '/subscribe' && $_SERVER['REQUEST_METHOD'] === 'POST') { require __DIR__ . '/subscribe.php'; exit; }
 if ($apiUri === '/offers') { require __DIR__ . '/offers.php'; exit; }
+if ($apiUri === '/articles') { require __DIR__ . '/articles.php'; exit; }
 if ($apiUri === '/reviews' && $_SERVER['REQUEST_METHOD'] === 'POST') { require __DIR__ . '/reviews.php'; exit; }
 if ($apiUri === '/nl-open') { require __DIR__ . '/nl-open.php'; exit; }
 if ($apiUri === '/nl-click') { require __DIR__ . '/nl-click.php'; exit; }
