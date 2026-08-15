@@ -12,16 +12,17 @@ import CatalogScreen from './src/screens/CatalogScreen';
 import OfferDetailScreen from './src/screens/OfferDetailScreen';
 import CalculatorScreen from './src/screens/CalculatorScreen';
 import ArticlesScreen from './src/screens/ArticlesScreen';
+import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import FAQScreen from './src/screens/FAQScreen';
+import GiveawayScreen from './src/screens/GiveawayScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Home: '🏠', Catalog: '📋', Calculator: '🧮', Articles: '📰', Profile: '👤',
-  };
+  const icons: Record<string, string> = { Home: '🏠', Catalog: '📋', Calculator: '🧮', Articles: '📰', Profile: '👤' };
   return <Text style={{ fontSize: focused ? 26 : 22, opacity: focused ? 1 : 0.5 }}>{icons[name] || '📌'}</Text>;
 }
 
@@ -52,21 +53,13 @@ export default function App() {
     <AuthContext.Provider value={auth}>
       <NavigationContainer>
         <StatusBar style="auto" />
-        <Stack.Navigator
-          screenOptions={{
-            headerStyle: { backgroundColor: Colors.white },
-            headerTintColor: Colors.text,
-            headerTitleStyle: { fontWeight: '700' },
-            headerBackTitle: 'Назад',
-          }}
-        >
+        <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: Colors.white }, headerTintColor: Colors.text, headerTitleStyle: { fontWeight: '700' }, headerBackTitle: 'Назад' }}>
           <Stack.Screen name="MainTabs" component={HomeTabs} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="OfferDetail"
-            component={OfferDetailScreen}
-            options={({ route }: any) => ({ title: route.params?.offer?.title || 'Предложение' })}
-          />
+          <Stack.Screen name="OfferDetail" component={OfferDetailScreen} options={({ route }: any) => ({ title: route.params?.offer?.title || 'Предложение' })} />
+          <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} options={({ route }: any) => ({ title: route.params?.article?.title || 'Статья' })} />
           <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Избранное', headerShown: false }} />
+          <Stack.Screen name="FAQ" component={FAQScreen} options={{ title: 'FAQ', headerShown: false }} />
+          <Stack.Screen name="Giveaway" component={GiveawayScreen} options={{ title: 'Розыгрыш', headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </AuthContext.Provider>

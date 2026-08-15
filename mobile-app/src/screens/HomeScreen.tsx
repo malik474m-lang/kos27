@@ -83,7 +83,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       {/* Розыгрыш */}
       {giveaway && (
-        <TouchableOpacity style={styles.giveawayBanner} onPress={() => Linking.openURL('https://kosmozaim.ru/giveaway')}>
+        <TouchableOpacity style={styles.giveawayBanner} onPress={() => navigation.navigate('Giveaway')}>
           <Text style={styles.giveawayIcon}>🎁</Text>
           <View style={styles.giveawayContent}>
             <Text style={styles.giveawayTitle}>{giveaway.title}</Text>
@@ -126,7 +126,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <View style={styles.navGrid}>
           {[
             { icon: '📰', title: 'Статьи', onPress: () => navigation.navigate('Articles') },
-            { icon: '❓', title: 'FAQ', onPress: () => Linking.openURL('https://kosmozaim.ru/faq') },
+            { icon: '❓', title: 'FAQ', onPress: () => navigation.navigate('FAQ') },
             { icon: '🧮', title: 'Калькулятор', onPress: () => navigation.navigate('Calculator') },
             { icon: '❤️', title: 'Избранное', onPress: () => navigation.navigate('Favorites') },
           ].map(item => (
@@ -148,11 +148,10 @@ const styles = StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 28 },
   heroTitle: { fontSize: 26, fontWeight: '800', color: Colors.white, lineHeight: 34 },
   heroSubtitle: { fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 10, lineHeight: 22 },
-  heroBtns: { marginTop: 20 },
-  heroBtn: { backgroundColor: Colors.accent, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 12, alignSelf: 'flex-start' },
+  heroBtns: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  heroBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.accent },
+  heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.2)' },
   heroBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
-  heroBtnWide: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 12, marginTop: 10, alignItems: 'center' },
-  heroBtnWideText: { color: Colors.white, fontWeight: '600', fontSize: 15 },
   categoriesRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginTop: 12 },
   giveawayBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef3c7', marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#fde68a', gap: 12 },
   giveawayIcon: { fontSize: 32 },
