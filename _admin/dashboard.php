@@ -232,13 +232,14 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2 border-t pt-3 mt-2"><div class="flex items-center justify-between mb-2"><span class="text-xs font-bold text-gray-700">📋 Справочная информация</span><div class="flex items-center gap-3"><button type="button" onclick="genOfferInfo(this)" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs">🤖 ИИ</button><a href="https://cbr.ru/microfinance/registry/" target="_blank" class="text-blue-600 hover:underline text-xs">Реестр ЦБ ↗</a></div></div><div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium mb-1">Телефон</label><input id="of-phone" class="input-f" value="'+e(f.phone||'')+'" placeholder="8-800-..."></div><div><label class="block text-xs font-medium mb-1">Лицензия ЦБ</label><input id="of-license" class="input-f" value="'+e(f.license||'')+'" placeholder="№..."></div><div><label class="block text-xs font-medium mb-1">Торговая марка</label><input id="of-trademark" class="input-f" value="'+e(f.trademark||'')+'" placeholder="ООО..."></div><div><label class="block text-xs font-medium mb-1">Адрес</label><input id="of-address" class="input-f" value="'+e(f.address||'')+'" placeholder="г. Москва..."></div></div></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,80,3)" style="background:#059669;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,90,4)" style="background:#0f766e;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🚀 До 90+</button><button type="button" onclick="cqCleanupOnly(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" style="background:#475569;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🧹 Только мусор</button><span id="of-quality-badge" class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-xs font-semibold">score —</span></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-template-actions" class="hidden mb-3 flex flex-wrap gap-2"><button type="button" onclick="ofApplyDebitCardTemplate(false)" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🪪 Шаблон дебетовой карты</button><button type="button" onclick="ofApplyDebitCardTemplate(true)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold">➕ Добавить поля карты</button></div><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">🏷️ Теги</label><div id="of-tags-box" class="flex flex-wrap gap-2"><span class="text-xs text-gray-400">Загрузка...</span></div></div>'+
 '</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
 setTimeout(function(){ cqSetInlineScore('of', 0); }, 0);
 // Инициализируем видимость стандартных полей
 ofInitDisplayFields(f);
+ofToggleExtraTemplateActions();
 
 // Инициализируем дополнительные поля (из шаблона категории или существующих)
 var ef=[];try{ef=JSON.parse(f.extra_fields||'[]');}catch(x){}
@@ -274,8 +275,10 @@ if(catSelect&&!catSelect.dataset.boundTpl){
             ofRenderExtraFields(tpl);
           }
         }
+        ofToggleExtraTemplateActions();
       });
     }
+    ofToggleExtraTemplateActions();
   });
 }
 
@@ -349,6 +352,39 @@ var visible=row.querySelector('.of-ef-vis')?.checked||false;
 if(label)fields.push({label:label,value:value,visible:visible});
 });
 return JSON.stringify(fields);
+}
+
+const OF_DEBIT_CARD_TEMPLATE=[
+{label:'Кэшбэк',value:'',visible:true},
+{label:'Процент на остаток',value:'',visible:true},
+{label:'Стоимость обслуживания',value:'',visible:true},
+{label:'Снятие наличных',value:'',visible:true},
+{label:'Переводы по СБП',value:'',visible:true},
+{label:'Бонусы / мили',value:'',visible:true}
+];
+function ofToggleExtraTemplateActions(){
+var cat=document.getElementById('of-c');
+var box=document.getElementById('of-extra-template-actions');
+if(!cat||!box)return;
+box.classList.toggle('hidden',cat.value!=='debit_cards');
+}
+function ofApplyDebitCardTemplate(merge){
+var current=[];
+if(merge){
+  document.querySelectorAll('.of-ef-row').forEach(function(row){
+    var label=row.querySelector('.of-ef-label')?.value?.trim()||'';
+    var value=row.querySelector('.of-ef-value')?.value?.trim()||'';
+    var visible=row.querySelector('.of-ef-vis')?.checked||false;
+    if(label)current.push({label:label,value:value,visible:visible});
+  });
+}
+var existingMap={};
+current.forEach(function(f){existingMap[(f.label||'').toLowerCase()]=true;});
+var next=merge?current.slice():[];
+OF_DEBIT_CARD_TEMPLATE.forEach(function(f){
+  if(!existingMap[(f.label||'').toLowerCase()]) next.push({label:f.label,value:f.value,visible:f.visible});
+});
+ofRenderExtraFields(next);
 }
 
 function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,rateUnit:document.getElementById('of-ru').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value,extraFields:ofCollectExtraFields(),displayFields:ofCollectDisplayFields(),phone:document.getElementById('of-phone').value,address:document.getElementById('of-address').value,trademark:document.getElementById('of-trademark').value,license:document.getElementById('of-license').value};ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{
