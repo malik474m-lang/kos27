@@ -32,7 +32,7 @@ $baseFields = [
 ];
 
 $contactFields = $hasContactFields ? [
-    $data['phone'] ?? null,
+    $data['phone'] ?? null, $data['kosmobonusEnabled'] ?? false, (int)($data['kosmobonusAmount'] ?? 0), $data['kosmobonusConditions'] ?? null,
     $data['address'] ?? null,
     $data['trademark'] ?? null,
     $data['license'] ?? null,
@@ -48,7 +48,7 @@ $extraFields = [
 
 try {
     if ($hasContactFields) {
-        $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, rate_unit, free_term_days, logo_url, affiliate_url, phone, address, trademark, license, borrower_category, description, seo_keywords, regions, is_active, sort_order, extra_fields, display_fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+        $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, rate_unit, free_term_days, logo_url, affiliate_url, phone, kosmobonus_enabled, kosmobonus_amount, kosmobonus_conditions, address, trademark, license, borrower_category, description, seo_keywords, regions, is_active, sort_order, extra_fields, display_fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
         ->execute(array_merge($baseFields, $contactFields, $extraFields));
     } else {
         $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, rate_unit, free_term_days, logo_url, affiliate_url, borrower_category, description, seo_keywords, regions, is_active, sort_order, extra_fields, display_fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")

@@ -77,6 +77,7 @@ function renderOfferCard(array $offer): string {
     $freeTermDays = (int)($offer['free_term_days'] ?? 0);
 
     require_once __DIR__ . '/ab-test.php';
+    require_once __DIR__ . '/kosmobonus.php';
     $abVar = getAbVariant($offer['category'] ?? '');
     $btnLabel = $abVar ? $abVar['label'] : getDefaultCtaLabelByCategory($offer['category'] ?? '');
     $btnColor = $abVar ? $abVar['color'] : '#059669';
@@ -155,6 +156,7 @@ function renderOfferCard(array $offer): string {
                         <?php if ($reviewCount > 0): ?><span class="text-yellow-500 font-normal">(<?= $reviewCount ?>)</span><?php endif; ?>
                     </span>
                     <?php endif; ?>
+                    <?= renderKosmoBonusBadge($offer) ?>
                     <?php if ($freeTermDays > 0 && !empty($displayFields['free_term'])): ?>
                     <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
                         Льготный период — <?= formatDays($freeTermDays) ?>

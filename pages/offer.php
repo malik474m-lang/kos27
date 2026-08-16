@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../includes/sticky-cta.php';
 require_once __DIR__ . '/../includes/offer-interest.php';
+require_once __DIR__ . '/../includes/kosmobonus.php';
 
 $db = getDB();
 $stmt = $db->prepare("SELECT * FROM offers WHERE slug = ? AND is_active = 1 LIMIT 1");
@@ -199,6 +200,8 @@ ob_start();
         <div class="prose max-w-none text-gray-700 mb-6"><?= safeAutoLink($offer['description'], 5) ?></div>
         <?php endif; ?>
 
+
+        <?= renderKosmoBonusBlock($offer) ?>
 
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
                onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"

@@ -39,9 +39,18 @@ function loadCabinet(){
         var rejected=apps.filter(a=>a.status==='rejected').length;
         h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-green-600">'+approved+'</p><p class="text-xs text-gray-500">Одобрено</p></div>';
         h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-red-600">'+rejected+'</p><p class="text-xs text-gray-500">Отклонено</p></div>';
+h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-amber-600">'+(d.bonus_balance||0)+'</p><p class="text-xs text-gray-500">КосмоБонусы (₽)</p></div>';
         h+='</div>';
 
-        if(apps.length){
+        if(d.bonus_history&&d.bonus_history.length){
+        h+='<div class="bg-white rounded-xl border mt-6"><div class="p-4 border-b"><h2 class="font-bold text-gray-900">🎁 КосмоБонусы</h2></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Сумма</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+        d.bonus_history.forEach(function(b){
+            var st=b.status==='confirmed'?'<span class="text-green-600">Начислено</span>':(b.status==='pending'?'<span class="text-yellow-600">Ожидание</span>':'<span class="text-red-500">Отменено</span>');
+            h+='<tr class="border-t"><td class="p-3 text-gray-500">'+new Date(b.created_at).toLocaleDateString('ru-RU')+'</td><td class="p-3">'+(b.offer_title||'—')+'</td><td class="p-3 text-right font-semibold text-amber-600">+'+b.amount+' ₽</td><td class="p-3">'+st+'</td></tr>';
+        });
+        h+='</tbody></table></div></div>';
+    }
+    if(apps.length){
             h+='<div class="bg-white rounded-xl border"><div class="p-4 border-b"><h2 class="font-bold text-gray-900">Мои заявки</h2></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Предложение</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
             apps.forEach(function(a){
                 var stBadge=a.status==='approved'?'bg-green-100 text-green-700':a.status==='rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700';

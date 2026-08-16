@@ -26,14 +26,14 @@ $oldData = $oldStmt->fetch();
 
 try {
     if ($hasContactFields) {
-        $db->prepare("UPDATE offers SET title=?, category=?, amount_min=?, amount_max=?, term_min_days=?, term_max_days=?, psk=?, rate=?, rate_unit=?, free_term_days=?, logo_url=?, affiliate_url=?, phone=?, address=?, trademark=?, license=?, borrower_category=?, description=?, seo_keywords=?, regions=?, is_active=?, sort_order=?, extra_fields=?, display_fields=?, meta_title=?, meta_description=? WHERE id=?")
+        $db->prepare("UPDATE offers SET title=?, category=?, amount_min=?, amount_max=?, term_min_days=?, term_max_days=?, psk=?, rate=?, rate_unit=?, free_term_days=?, logo_url=?, affiliate_url=?, phone=?, kosmobonus_enabled=?, kosmobonus_amount=?, kosmobonus_conditions=?, address=?, trademark=?, license=?, borrower_category=?, description=?, seo_keywords=?, regions=?, is_active=?, sort_order=?, extra_fields=?, display_fields=?, meta_title=?, meta_description=? WHERE id=?")
         ->execute([
             $data['title'] ?? '', $data['category'] ?? 'microloans',
             $data['amountMin'] ?? 1000, $data['amountMax'] ?? 100000,
             $data['termMinDays'] ?? 1, $data['termMaxDays'] ?? 365,
             $data['psk'] ?? '0', $data['rate'] ?? '0', $data['rateUnit'] ?? 'day', $data['freeTermDays'] ?? 0,
             $data['logoUrl'] ?? '', $data['affiliateUrl'] ?? '',
-            $data['phone'] ?? null, $data['address'] ?? null,
+            $data['phone'] ?? null, $data['kosmobonusEnabled'] ?? false, (int)($data['kosmobonusAmount'] ?? 0), $data['kosmobonusConditions'] ?? null, $data['address'] ?? null,
             $data['trademark'] ?? null, $data['license'] ?? null,
             $data['borrowerCategory'] ?? 'any', $data['description'] ?? '',
             $data['seoKeywords'] ?? '', $data['regions'] ?? '',

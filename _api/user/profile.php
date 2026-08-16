@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/user-auth.php';
+require_once __DIR__ . '/../../includes/kosmobonus.php';
 header('Content-Type: application/json; charset=UTF-8');
 $user = getUser();
 if (!$user) { http_response_code(401); echo json_encode(['error' => 'Unauthorized']); exit; }
@@ -19,4 +20,4 @@ $apps = $db->prepare("
 $apps->execute([$user['id']]);
 $applications = $apps->fetchAll();
 
-echo json_encode(['profile' => $profile, 'applications' => $applications]);
+echo json_encode(['profile' => $profile, 'applications' => $applications, 'bonus_balance' => kosmoBonusBalance((int)$user['id']), 'bonus_history' => kosmoBonusHistory((int)$user['id'], 20)]);

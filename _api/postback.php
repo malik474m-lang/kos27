@@ -150,6 +150,26 @@ try {
 
     syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
 
+    // КосмоБонус: автоначисление при конверсии
+    if ($internalOfferId && $affSub) {
+        try {
+            require_once __DIR__ . '/../includes/kosmobonus.php';
+            // Ищем user через click_stats → user_applications
+            $bonusUser = $db->prepare("SELECT ua.user_id FROM user_applications ua WHERE ua.click_stat_id = ? LIMIT 1");
+            $bonusUser->execute([(int)$affSub]);
+            $bonusRow = $bonusUser->fetch();
+            if ($bonusRow && $bonusRow['user_id']) {
+                $postbackInsertId = $db->lastInsertId();
+                $bonusResult = kosmoBonusAccrue((int)$bonusRow['user_id'], $internalOfferId, (int)$affSub, (int)$postbackInsertId);
+                if ($bonusResult['ok'] && $normalizedStatus === 'approved') {
+                    // Сразу подтверждаем если конверсия approved
+                    $lastBonusTx = $db->query("SELECT id FROM bonus_transactions ORDER BY id DESC LIMIT 1")->fetch();
+                    if ($lastBonusTx) kosmoBonusConfirm((int)$lastBonusTx['id']);
+                }
+            }
+        } catch (Exception $e) {}
+    }
+
     echo json_encode([
         'ok' => true,
         'action' => 'created',
