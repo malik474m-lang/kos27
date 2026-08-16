@@ -139,6 +139,16 @@ $routes = [
     '/llms.txt' => 'llms',
 ];
 
+// IndexNow key verification file
+if (preg_match('#^/([a-f0-9]{32})\.txt$#', $uri, $m)) {
+    $indexNowKeyFile = __DIR__ . '/data/indexnow-key.txt';
+    if (file_exists($indexNowKeyFile) && trim(file_get_contents($indexNowKeyFile)) === $m[1]) {
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $m[1];
+        exit;
+    }
+}
+
 // Точное совпадение
 if (isset($routes[$uri])) {
     $page = $routes[$uri];
