@@ -266,6 +266,24 @@ function findRelatedArticles(array $currentArticle, int $limit = 3): array {
 
 
 function detectArticleOfferCategory(array $article): string {
+    $title = mb_strtolower(trim((string)($article['title'] ?? '')));
+    $slug = mb_strtolower(trim((string)($article['slug'] ?? '')));
+
+    // Жёсткий приоритет по заголовку/slug — это важнее текста статьи.
+    $hardSource = $title . ' ' . $slug;
+    if (preg_match('/кредитн(ая|ые)\s+карт/u', $hardSource) || str_contains($hardSource, 'credit-card')) {
+        return 'credit_cards';
+    }
+    if (preg_match('/дебетов(ая|ые)\s+карт/u', $hardSource) || str_contains($hardSource, 'debit-card')) {
+        return 'debit_cards';
+    }
+    if (preg_match('/(микрозайм|микрозаймы|займ|займы|мфо)/u', $hardSource) || str_contains($hardSource, 'zajm')) {
+        return 'microloans';
+    }
+    if (preg_match('/(кредит|кредиты|рефинансирование)/u', $hardSource) || str_contains($hardSource, 'kredit')) {
+        return 'credits';
+    }
+
     $text = mb_strtolower(trim(
         (string)($article['title'] ?? '') . ' ' .
         (string)($article['excerpt'] ?? '') . ' ' .
@@ -568,9 +586,12 @@ function renderArticleInlineOfferCta(array $offer, string $articleSlug = ""): st
     $buttonClass = $variant === 'b'
         ? 'inline-flex items-center justify-center rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700'
         : 'inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700';
+    $buttonStyle = $variant === 'b'
+        ? 'display:inline-flex;align-items:center;justify-content:center;background:#ea580c;color:#ffffff;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:700;text-decoration:none;line-height:1.2;box-shadow:0 8px 20px rgba(234,88,12,.18);'
+        : 'display:inline-flex;align-items:center;justify-content:center;background:#059669;color:#ffffff;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:700;text-decoration:none;line-height:1.2;box-shadow:0 8px 20px rgba(5,150,105,.18);';
 
     ob_start(); ?>
-    <div class="<?= $wrapClass ?>" data-inline-cta-variant="<?= e($variant) ?>">
+    <div class="<?= $wrapClass ?>" data-inline-cta-variant="<?= e($variant) ?>" style="overflow:hidden;border-radius:18px;box-shadow:0 4px 18px rgba(15,23,42,.06);">
         <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-4 min-w-0">
                 <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 <?= $ringClass ?>">
@@ -595,7 +616,7 @@ function renderArticleInlineOfferCta(array $offer, string $articleSlug = ""): st
             <div class="flex-shrink-0">
                 <a href="/click/<?= (int)$offer['id'] ?>?inline_cta_variant=<?= e($variant) ?>&article_slug=<?= urlencode($articleSlug) ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
                    onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
-                   class="<?= $buttonClass ?>">
+                   class="<?= $buttonClass ?>" style="<?= e($buttonStyle) ?>">
                     <?= e($buttonText) ?>
                 </a>
             </div>
