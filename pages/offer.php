@@ -132,7 +132,7 @@ ob_start();
                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">✅ <?= e($offerInterest['today_label']) ?>: <?= (int)$offerInterest['today_count'] ?></span>
                     <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">🔥 <?= e($offerInterest['trend_label']) ?></span>
                     <?php if ((int)$offerInterest['views_24h'] > 0): ?>
-                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">За 24 часа: <?= (int)$offerInterest['views_24h'] ?> просмотров</span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">За 24 часа: <?= e($offerInterest['views_24h_label']) ?></span>
                     <?php endif; ?>
                 </div>
             </div>

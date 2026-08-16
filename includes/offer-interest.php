@@ -5,10 +5,22 @@
  * но безопасно работает даже если часть таблиц/колонок отсутствует.
  */
 
+if (!function_exists('offerRussianPlural')) {
+    function offerRussianPlural(int $n, string $one, string $two, string $five): string {
+        $n = abs($n) % 100;
+        $n1 = $n % 10;
+        if ($n > 10 && $n < 20) return $five;
+        if ($n1 > 1 && $n1 < 5) return $two;
+        if ($n1 == 1) return $one;
+        return $five;
+    }
+}
+
 function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer = []): array {
     $db = getDB();
 
     $views24h = 0;
+    $uniqueViews24h = 0;
     $recentUniqueViews = 0;
     $clicks24h = 0;
     $applicationsToday = 0;
@@ -35,6 +47,7 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
 
         if ($row) {
             $views24h = (int)($row['total_views'] ?? 0);
+            $uniqueViews24h = (int)($row['unique_views'] ?? 0);
             $recentUniqueViews = (int)($row['recent_unique'] ?? 0);
         }
     } catch (Exception $e) {
@@ -88,29 +101,38 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
         'debit_cards' => ['boost' => 1, 'min_live' => 3, 'max_live' => 11, 'fallback_today_min' => 1, 'fallback_today_max' => 4],
     ][$category] ?? ['boost' => 2, 'min_live' => 4, 'max_live' => 14, 'fallback_today_min' => 1, 'fallback_today_max' => 4];
 
-    // У офферов теперь разные сиды по часу/офферу/категории — значения перестают быть одинаковыми.
     $seed = abs(crc32($offerPagePath . '|' . $category . '|' . date('Y-m-d-H')));
-    $hourJitter = $seed % 6;           // 0..5
-    $microJitter = ($seed >> 3) % 3;   // 0..2
+    $hourJitter = $seed % 6;
+    $microJitter = ($seed >> 3) % 3;
     $ratingBoost = (int)floor($rating);
     $reviewBoost = min(6, (int)floor($reviewCount / 15));
     $categoryBoost = $categoryConfig['boost'];
 
-    $liveNow = (int)round($recentUniqueViews * 1.8)
-        + (int)ceil($clicks24h / 4)
+    $liveNow = (int)round($recentUniqueViews * 1.6)
+        + (int)ceil($clicks24h / 5)
         + $ratingBoost
         + $reviewBoost
         + $categoryBoost
         + $hourJitter
         + $microJitter;
 
-    // Если живых данных мало, строим правдоподобное значение на базе оффера, но разное для каждого.
-    if ($liveNow <= $categoryConfig['min_live'] - 1) {
+    // Если реальных просмотров нет — используем правдоподобный fallback.
+    if ($views24h <= 0) {
         $dayHourBoost = ((int)date('G') >= 9 && (int)date('G') <= 22) ? 2 : 0;
         $liveNow = $categoryConfig['min_live'] + ($seed % max(2, $categoryConfig['max_live'] - $categoryConfig['min_live'] - 1)) + $dayHourBoost;
-    }
+        $liveNow = max($categoryConfig['min_live'], min($categoryConfig['max_live'], $liveNow));
+    } else {
+        // Если просмотры есть — «сейчас смотрят» не должно выглядеть абсурдно.
+        $realisticCap = match (true) {
+            $views24h <= 3 => 1,
+            $views24h <= 6 => 2,
+            $views24h <= 10 => 3,
+            $views24h <= 18 => 5,
+            default => max(6, (int)ceil($views24h * 0.35)),
+        };
 
-    $liveNow = max($categoryConfig['min_live'], min($categoryConfig['max_live'], $liveNow));
+        $liveNow = max(1, min($liveNow, $realisticCap, max(1, $uniqueViews24h ?: $views24h)));
+    }
 
     $trendLabel = 'Стабильный интерес';
     if ($views24h >= 50 || $clicks24h >= 15 || $approvedToday >= 3) {
@@ -122,11 +144,10 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
     $todayCount = max($approvedToday, $applicationsToday);
     $todayLabel = $approvedToday > 0 ? 'Оформили сегодня' : 'Подали сегодня';
 
-    // Лёгкий fallback, если данных нет совсем.
     if ($todayCount <= 0) {
         $todayCount = max(
             $categoryConfig['fallback_today_min'],
-            min($categoryConfig['fallback_today_max'], (int)floor($liveNow / 4))
+            min($categoryConfig['fallback_today_max'], max(1, (int)floor($liveNow / 3)))
         );
         $todayLabel = 'Подали сегодня';
     }
@@ -134,11 +155,13 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
     return [
         'live_now' => $liveNow,
         'views_24h' => $views24h,
+        'unique_views_24h' => $uniqueViews24h,
         'clicks_24h' => $clicks24h,
         'applications_today' => $applicationsToday,
         'approved_today' => $approvedToday,
         'today_count' => $todayCount,
         'today_label' => $todayLabel,
         'trend_label' => $trendLabel,
+        'views_24h_label' => $views24h . ' ' . offerRussianPlural($views24h, 'просмотр', 'просмотра', 'просмотров'),
     ];
 }
