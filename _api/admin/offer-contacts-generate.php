@@ -1,7 +1,10 @@
 <?php
 /**
- * Генерация справочной информации оффера через Yandex GPT
- * Важно: промпт максимально строгий, чтобы модель не придумывала данные.
+ * Генерация справочной информации оффера через Yandex GPT.
+ * Режим ближе к поведению Алисы:
+ * - мягче правила уверенности
+ * - допускается частичное заполнение
+ * - если JSON не получен, пробуем вытащить поля из обычного текста
  */
 
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -30,9 +33,10 @@ $prompt = <<<PROMPT
 Дай Справочную информацию о {$offerTitle}, Телефон, Лицензия ЦБ, Торговая марка, Адрес.
 
 Контекст: это {$categoryLabel} в России.
+Если ты знаешь бренд или компанию по общеизвестной справочной информации, верни известные поля.
+Если какое-то поле неизвестно — верни null.
 
-Нужен только JSON-объект без markdown, без комментариев, без пояснений, без текста до и после JSON.
-Строго в формате:
+Ответ нужен в JSON:
 {
   "phone": null,
   "license": null,
@@ -41,15 +45,13 @@ $prompt = <<<PROMPT
 }
 
 Правила:
-1. Не выдумывай данные.
-2. Если не уверен хотя бы на 95%, ставь null.
-3. Не придумывай номер лицензии, телефон, торговую марку или адрес.
-4. phone — только телефон поддержки или горячей линии.
-5. license — только номер лицензии ЦБ РФ без дополнительных пояснений.
-6. trademark — только точное юридическое название компании, если оно известно.
-7. address — только юридический адрес, если он известен точно.
-8. Если название оффера похоже на бренд, но точную компанию определить нельзя, все поля должны быть null.
-9. Ответ только JSON.
+1. phone — телефон поддержки или горячей линии.
+2. license — номер лицензии ЦБ РФ без пояснений.
+3. trademark — торговая марка или точное юрлицо, если известно.
+4. address — юридический адрес, если известен.
+5. Можно заполнять только часть полей.
+6. Не добавляй markdown и комментарии.
+7. Ответ только JSON.
 PROMPT;
 
 $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
@@ -60,11 +62,11 @@ $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModel
             'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt-lite/latest',
             'completionOptions' => [
                 'stream' => false,
-                'temperature' => 0,
-                'maxTokens' => 250,
+                'temperature' => 0.2,
+                'maxTokens' => 300,
             ],
             'messages' => [
-                ['role' => 'system', 'text' => 'Ты возвращаешь только валидный JSON-объект. Если точных данных нет — ставишь null. Ничего не придумываешь.'],
+                ['role' => 'system', 'text' => 'Ты возвращаешь краткую справочную информацию о российских финансовых брендах. Старайся вернуть JSON. Если поле неизвестно — null. Не используй markdown.'],
                 ['role' => 'user', 'text' => $prompt],
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -86,33 +88,71 @@ if ($text === '') {
     exit;
 }
 
-$text = preg_replace('/^```(?:json)?\s*/i', '', $text);
-$text = preg_replace('/\s*```$/', '', $text);
+$text = preg_replace('/^```(?:json)?\s*/iu', '', $text);
+$text = preg_replace('/\s*```$/u', '', $text);
 $text = trim($text);
 
-if (!str_starts_with($text, '{') && preg_match('/\{.*\}/su', $text, $m)) {
-    $text = $m[0];
+function offerInfoNormalize($value): ?string {
+    if ($value === null) return null;
+    if (is_array($value) || is_object($value)) return null;
+    $value = trim((string)$value);
+    if ($value === '') return null;
+    $bad = ['null', 'неизвестно', 'не указано', 'нет данных', 'n/a'];
+    if (in_array(mb_strtolower($value), $bad, true)) return null;
+    return $value;
 }
 
-$contacts = json_decode($text, true);
-if (!is_array($contacts)) {
-    echo json_encode(['error' => 'Не удалось распознать ответ от ИИ', 'raw' => $text]);
-    exit;
-}
+function offerInfoParseFromText(string $text): array {
+    $result = [
+        'phone' => null,
+        'license' => null,
+        'trademark' => null,
+        'address' => null,
+    ];
 
-$normalized = [];
-foreach (['phone', 'address', 'trademark', 'license'] as $field) {
-    $value = $contacts[$field] ?? null;
-    if (is_string($value)) {
-        $value = trim($value);
-        if ($value === '' || mb_strtolower($value) === 'null' || mb_strtolower($value) === 'неизвестно') {
-            $value = null;
-        }
+    if (preg_match('/(?:телефон|phone)\s*[:\-]\s*([^\n\r]+)/iu', $text, $m)) {
+        $result['phone'] = trim($m[1]);
     }
-    $normalized[$field] = $value;
+    if (preg_match('/(?:лицензия(?:\s*цб)?|license)\s*[:\-]\s*([^\n\r]+)/iu', $text, $m)) {
+        $result['license'] = trim($m[1]);
+    }
+    if (preg_match('/(?:торговая марка|trademark|бренд|юр(?:идическое)?\s*лицо)\s*[:\-]\s*([^\n\r]+)/iu', $text, $m)) {
+        $result['trademark'] = trim($m[1]);
+    }
+    if (preg_match('/(?:адрес|address)\s*[:\-]\s*([^\n\r]+)/iu', $text, $m)) {
+        $result['address'] = trim($m[1]);
+    }
+
+    if (!$result['phone'] && preg_match('/(?:8\s*800|\+7)[\d\s\-\(\)]{7,}/u', $text, $m)) {
+        $result['phone'] = trim($m[0]);
+    }
+
+    return $result;
+}
+
+$contacts = null;
+if (preg_match('/\{.*\}/su', $text, $m)) {
+    $contacts = json_decode($m[0], true);
+}
+if (!is_array($contacts)) {
+    $contacts = offerInfoParseFromText($text);
+}
+
+$normalized = [
+    'phone' => offerInfoNormalize($contacts['phone'] ?? null),
+    'license' => offerInfoNormalize($contacts['license'] ?? null),
+    'trademark' => offerInfoNormalize($contacts['trademark'] ?? null),
+    'address' => offerInfoNormalize($contacts['address'] ?? null),
+];
+
+$filled = 0;
+foreach ($normalized as $value) {
+    if ($value !== null) $filled++;
 }
 
 echo json_encode([
     'success' => true,
     'contacts' => $normalized,
+    'filled' => $filled,
+    'raw' => $text,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
