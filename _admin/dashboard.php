@@ -1721,6 +1721,7 @@ function subDel(id,email){if(confirm('Удалить подписчика '+emai
 
 
 
+function lYD(){}
 sw('offers');
 
 
