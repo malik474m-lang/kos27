@@ -30,7 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div class="flex items-center gap-4 flex-wrap"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium <?= $adminLicenseActive ? 'bg-green-500/15 text-green-300 border border-green-400/20' : 'bg-red-500/15 text-red-300 border border-red-400/20' ?>"><span><?= $adminLicenseActive ? '✅' : '⚠️' ?></span><span>Тариф: <strong><?= e((string)$adminLicensePlan) ?></strong></span><span class="opacity-70">•</span><span>До: <strong><?= e($adminLicenseExpires) ?></strong></span></div></div><div class="flex items-center flex-wrap gap-3"><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm">⚡ API-кэш</button><button onclick="resetOpcache()" class="text-gray-300 hover:text-white text-sm">♻️ OPcache</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div></div>
+<div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div class="flex items-center gap-4 flex-wrap"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium <?= $adminLicenseActive ? 'bg-green-500/15 text-green-300 border border-green-400/20' : 'bg-red-500/15 text-red-300 border border-red-400/20' ?>"><span><?= $adminLicenseActive ? '✅' : '⚠️' ?></span><span>Тариф: <strong><?= e((string)$adminLicensePlan) ?></strong></span><span class="opacity-70">•</span><span>До: <strong><?= e($adminLicenseExpires) ?></strong></span></div></div><div class="flex items-center flex-wrap gap-3"><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm">⚡ API-кэш</button><button id="bonus-withdraw-alert-btn" onclick="sw(\'users\')" class="hidden rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-gray-900 hover:bg-amber-300">💸 0 заявок на вывод</button><button onclick="resetOpcache()" class="text-gray-300 hover:text-white text-sm">♻️ OPcache</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div></div>
 <div class="bg-white shadow-sm border-b"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-4 overflow-x-auto">
 <button onclick="sw('settings')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="settings">⚙️ Настройки</button>
 <button onclick="sw('offers')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="offers">📋 Предложения</button>
@@ -117,6 +117,7 @@ function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function resetOpcache(){fetch(A+'/opcache-reset',{method:'POST'}).then(r=>r.json()).then(d=>{alert((d.message||'Результат неизвестен') + (d.enabled===false ? '\n\nopcache_reset() недоступен на хостинге.' : ''));}).catch(()=>alert('Ошибка сброса OPcache'));}
 function logout(){fetch(A+'/logout',{method:'POST'}).then(()=>location.href='/admin/login');}
+function loadBonusWithdrawAlert(){fetch(A+'/bonus-withdraw-alert').then(r=>r.json()).then(function(d){var btn=document.getElementById('bonus-withdraw-alert-btn');if(!btn)return;var cnt=Number(d.pending||0);if(cnt>0){btn.textContent='💸 '+cnt+' заяв'+(cnt===1?'ка':(cnt<5?'ки':'ок'))+' на вывод';btn.classList.remove('hidden');}else{btn.classList.add('hidden');}}).catch(function(){});}
 function modal(h){document.getElementById('M').innerHTML='<div class="modal-bg" onclick="if(event.target===this)cm()"><div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl">'+h+'</div></div>';}
 function cm(){document.getElementById('M').innerHTML='';}
 function cm2(){document.getElementById('M2').innerHTML='';}
@@ -1822,6 +1823,7 @@ function subDel(id,email){if(confirm('Удалить подписчика '+emai
 function lYD(){}
 function lLS(){}
 function lEF(){}
+loadBonusWithdrawAlert();
 sw('offers');
 
 
@@ -3208,13 +3210,14 @@ h+='</tbody></table></div>';
 }else{h+='<p class="p-4 text-gray-400">Нет заявок на вывод</p>';}
 h+='</div>';
 
-document.getElementById('p-users').innerHTML=h;});}
+document.getElementById('p-users').innerHTML=h;loadBonusWithdrawAlert();});}
 
 function bonusProcessRequest(requestId,action){
 var comment=prompt(action==='paid'?'Комментарий к выплате (необязательно):':'Причина отклонения (необязательно):','')||'';
 ap('/bonuses?action=process-request',{method:'POST',body:JSON.stringify({request_id:requestId,process_action:action,admin_comment:comment})}).then(function(r){
 if(r.error){alert(r.error);return;}
 alert(action==='paid'?'✅ Заявка отмечена как выплаченная':'⚠️ Заявка отклонена');
+loadBonusWithdrawAlert();
 lUsers();
 }).catch(function(){alert('Ошибка обработки заявки');});
 }
