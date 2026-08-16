@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../includes/sticky-cta.php';
+require_once __DIR__ . '/../includes/offer-interest.php';
 
 $db = getDB();
 $stmt = $db->prepare("SELECT * FROM offers WHERE slug = ? AND is_active = 1 LIMIT 1");
@@ -68,6 +69,8 @@ require_once __DIR__ . '/../includes/ab-test.php';
 $offerCtaLabel = getDefaultCtaLabelByCategory($offer['category'] ?? '');
 $offerCtaSecondary = getDefaultCtaSecondaryLabelByCategory($offer['category'] ?? '');
 
+$offerInterest = getOfferInterestStats((int)$offer['id'], '/offer/' . $offer['slug']);
+
 $displayDefaults = [
     'microloans' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>true],
     'credits' => ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>false,'borrower'=>true],
@@ -124,6 +127,13 @@ ob_start();
                 <?php if (!empty($offer['updated_at'])): ?>
                 <p class="text-xs text-gray-400 mt-2">Обновлено: <time datetime="<?= date('c', strtotime($offer['updated_at'])) ?>"><?= date('d.m.Y', strtotime($offer['updated_at'])) ?></time></p>
                 <?php endif; ?>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">👀 Сейчас смотрят: <?= (int)$offerInterest['live_now'] ?></span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">🔥 <?= e($offerInterest['trend_label']) ?></span>
+                    <?php if ((int)$offerInterest['views_24h'] > 0): ?>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">За 24 часа: <?= (int)$offerInterest['views_24h'] ?> просмотров</span>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
