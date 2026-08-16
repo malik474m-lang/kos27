@@ -138,6 +138,7 @@ $routes = [
     '/disclaimer' => 'disclaimer',
     '/app' => 'app',
     '/unsubscribe' => 'unsubscribe',
+    '/thankyou' => 'thankyou',
     '/sitemap.xml' => 'sitemap',
     '/robots.txt' => 'robots',
     '/llms.txt' => 'llms',

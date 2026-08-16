@@ -183,6 +183,7 @@ ob_start();
 
 
         <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+               onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
            style="background:#059669" class="offer-cta inline-flex items-center space-x-2 text-white px-8 py-4 rounded-lg font-semibold transition-colors text-lg hover:opacity-90">
             <span><?= e($offerCtaLabel) ?></span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -273,7 +274,8 @@ ob_start();
                         <p id="offer-calc-note" class="text-sm text-gray-600">Предварительный расчёт по открытым параметрам оффера.</p>
                     </div>
                 </div>
-                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" style="background:#059669" class="mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 font-semibold text-white transition-colors hover:opacity-90"><?= e($offerCtaSecondary) ?></a>
+                <a href="/click/<?= $offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+               onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)" style="background:#059669" class="mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 font-semibold text-white transition-colors hover:opacity-90"><?= e($offerCtaSecondary) ?></a>
             </div>
         </div>
     </div>

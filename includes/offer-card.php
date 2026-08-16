@@ -143,6 +143,7 @@ function renderOfferCard(array $offer): string {
                 </button>
             </div>
             <a href="/click/<?= (int)$offer['id'] ?>?ab=<?= $abVid ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+               onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
                style="background:<?= e($btnColor) ?>"
                class="inline-flex w-full sm:w-auto items-center justify-center space-x-2 text-white px-5 py-3 rounded-lg font-semibold transition-all text-sm hover:opacity-90 hover:shadow-lg">
                 <span><?= e($btnLabel) ?></span>
