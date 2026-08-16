@@ -62,7 +62,7 @@ function leadsSuGetPlatforms(): array {
 }
 
 function leadsSuGetOfferLink(int $offerId, int $platformId): string {
-    return 'https://pxl.leads.su/aff_c?offer_id=' . $offerId . '&pltfm_id=' . $platformId;
+    return 'https://pxl.leads.su/aff_c?offer_id=' . $offerId . '&pltfm_id=' . $platformId . '&aff_sub1=kosmozaim';
 }
 
 function leadsSuMapCategory(array $offer): string {
@@ -73,11 +73,11 @@ function leadsSuMapCategory(array $offer): string {
     return 'microloans';
 }
 
-function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = false): array {
+function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = false, string $categoryOverride = ''): array {
     $db = getDB();
     $name = trim((string)($apiOffer['name'] ?? 'Без названия'));
     $description = trim(strip_tags((string)($apiOffer['description'] ?? '')));
-    $category = leadsSuMapCategory($apiOffer);
+    $category = $categoryOverride !== '' ? $categoryOverride : leadsSuMapCategory($apiOffer);
     $slug = slugify($name) . '-' . time();
     $affiliateUrl = leadsSuGetOfferLink((int)($apiOffer['id'] ?? 0), $platformId);
     $logo = $apiOffer['logo'] ?? $apiOffer['image'] ?? '';

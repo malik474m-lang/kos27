@@ -23,6 +23,7 @@ try {
             $offersToImport = $data['offers'] ?? [];
             $platformId = (int)($data['platform_id'] ?? 0);
             $activate = (bool)($data['activate'] ?? false);
+            $categoryOverride = trim((string)($data['category'] ?? ''));
 
             if (!$offersToImport || !$platformId) {
                 echo json_encode(['error' => 'offers и platform_id обязательны']);
@@ -34,7 +35,7 @@ try {
             $errors = [];
 
             foreach ($offersToImport as $apiOffer) {
-                $result = leadsSuImportOffer($apiOffer, $platformId, $activate);
+                $result = leadsSuImportOffer($apiOffer, $platformId, $activate, $categoryOverride);
                 if ($result['ok']) {
                     $imported++;
                 } elseif (!empty($result['skipped'])) {
