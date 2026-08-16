@@ -38,6 +38,9 @@ if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/
 // Позиции
 if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
 
+// Генерация контактов оффера
+if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
+
 // Социальное доказательство
 if (str_starts_with($adminUri, "/social-proof")) { require __DIR__ . "/admin/social-proof.php"; exit; }
 

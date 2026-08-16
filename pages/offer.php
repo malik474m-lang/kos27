@@ -471,6 +471,59 @@ ob_start();
     <?php endif; ?>
 
     <!-- Похожие -->
+    <!-- Справочная информация -->
+    <?php 
+    $hasContacts = !empty($offer['phone']) || !empty($offer['address']) || !empty($offer['trademark']) || !empty($offer['license']);
+    if ($hasContacts): 
+    ?>
+    <div class="mt-12 bg-gray-50 rounded-2xl p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span>📋</span> Справочная информация
+        </h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+            <?php if (!empty($offer['trademark'])): ?>
+            <div class="flex items-start gap-3">
+                <span class="text-xl">🏢</span>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase">Торговая марка</p>
+                    <p class="text-sm font-medium text-gray-900"><?= e($offer['trademark']) ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($offer['license'])): ?>
+            <div class="flex items-start gap-3">
+                <span class="text-xl">📜</span>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase">Лицензия ЦБ РФ</p>
+                    <p class="text-sm font-medium text-gray-900"><?= e($offer['license']) ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($offer['phone'])): ?>
+            <div class="flex items-start gap-3">
+                <span class="text-xl">📞</span>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase">Телефон горячей линии</p>
+                    <a href="tel:<?= e(preg_replace('/[^\d+]/', '', $offer['phone'])) ?>" class="text-sm font-medium text-primary hover:underline"><?= e($offer['phone']) ?></a>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($offer['address'])): ?>
+            <div class="flex items-start gap-3">
+                <span class="text-xl">📍</span>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase">Юридический адрес</p>
+                    <p class="text-sm font-medium text-gray-900"><?= e($offer['address']) ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if ($similarOffers): ?>
     <div class="mt-12">
         <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Похожие предложения по сумме и ставке</h2>
