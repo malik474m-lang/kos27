@@ -15,7 +15,38 @@ $topics = [
     'Дебетовые карты с кэшбеком','Кредитные каникулы: кому положены','Автокредит или потребительский кредит',
 ];
 
-$topic = $topics[array_rand($topics)];
+// Фильтруем темы — убираем уже существующие
+$db = getDB();
+$existingTitles = $db->query("SELECT LOWER(title) as t FROM articles")->fetchAll(PDO::FETCH_COLUMN);
+
+$availableTopics = [];
+foreach ($topics as $t) {
+    $tLower = mb_strtolower($t);
+    $isDupe = false;
+    foreach ($existingTitles as $existing) {
+        // Нормализуем: убираем знаки препинания и множественные пробелы
+        $normExisting = preg_replace('/[^\p{L}\p{N}\s]/u', '', $existing);
+        $normTopic = preg_replace('/[^\p{L}\p{N}\s]/u', '', $tLower);
+        $normExisting = preg_replace('/\s+/', ' ', trim($normExisting));
+        $normTopic = preg_replace('/\s+/', ' ', trim($normTopic));
+        
+        if ($normExisting === $normTopic 
+            || str_contains($normExisting, $normTopic) 
+            || str_contains($normTopic, $normExisting)
+            || similar_text($normExisting, $normTopic) / max(mb_strlen($normExisting), mb_strlen($normTopic), 1) > 0.7) {
+            $isDupe = true;
+            break;
+        }
+    }
+    if (!$isDupe) $availableTopics[] = $t;
+}
+
+if (empty($availableTopics)) {
+    echo "[SKIP] Все темы уже использованы\n";
+    exit;
+}
+
+$topic = $availableTopics[array_rand($availableTopics)];
 $content = null;
 $provider = 'template';
 

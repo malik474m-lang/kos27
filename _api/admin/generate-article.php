@@ -81,19 +81,53 @@ if ($generatedTopics) {
 // Фильтруем использованные
 $existingTitles = $db->query("SELECT LOWER(title) as t FROM articles")->fetchAll(PDO::FETCH_COLUMN);
 
+// Нормализация для сравнения — убираем пунктуацию и лишние пробелы
+function normalizeForCompare(string $s): string {
+    $s = mb_strtolower(trim($s));
+    $s = preg_replace('/[^\p{L}\p{N}\s]/u', '', $s);
+    return preg_replace('/\s+/', ' ', trim($s));
+}
+
+function isTopicDuplicate(string $theme, array $existingTitles): bool {
+    $normTheme = normalizeForCompare($theme);
+    if ($normTheme === '') return false;
+    
+    foreach ($existingTitles as $existing) {
+        $normExisting = normalizeForCompare($existing);
+        if ($normExisting === '') continue;
+        
+        // Точное совпадение после нормализации
+        if ($normExisting === $normTheme) return true;
+        
+        // Один содержит другой
+        if (str_contains($normExisting, $normTheme) || str_contains($normTheme, $normExisting)) return true;
+        
+        // Похожесть > 70% (ловит "Займы без отказа" vs "Займ без отказа на карту")
+        $maxLen = max(mb_strlen($normExisting), mb_strlen($normTheme));
+        if ($maxLen > 0) {
+            similar_text($normExisting, $normTheme, $percent);
+            if ($percent > 70) return true;
+        }
+        
+        // Совпадение по ключевым словам (>60% слов совпадают)
+        $wordsTheme = array_filter(explode(' ', $normTheme), fn($w) => mb_strlen($w) > 2);
+        $wordsExisting = array_filter(explode(' ', $normExisting), fn($w) => mb_strlen($w) > 2);
+        if (count($wordsTheme) >= 3 && count($wordsExisting) >= 3) {
+            $common = count(array_intersect($wordsTheme, $wordsExisting));
+            $ratio = $common / min(count($wordsTheme), count($wordsExisting));
+            if ($ratio > 0.6) return true;
+        }
+    }
+    return false;
+}
+
 $topicsList = [];
 foreach ($baseTopics as $group) {
     $available = [];
     foreach ($group['themes'] as $theme) {
-        $themeLower = mb_strtolower($theme);
-        $found = false;
-        foreach ($existingTitles as $existing) {
-            if ($existing === $themeLower || str_contains($existing, $themeLower) || str_contains($themeLower, $existing)) {
-                $found = true;
-                break;
-            }
+        if (!isTopicDuplicate($theme, $existingTitles)) {
+            $available[] = $theme;
         }
-        if (!$found) $available[] = $theme;
     }
 
     $topicsList[] = [
@@ -380,14 +414,7 @@ function generateNewTopics(string $category, array $existingTitles): array {
         if (mb_strlen($line) > 10 && mb_strlen($line) < 150) {
             // Проверяем что не дубль
             $lineLower = mb_strtolower($line);
-            $isDupe = false;
-            foreach ($existingTitles as $et) {
-                if (str_contains($et, $lineLower) || str_contains($lineLower, $et)) {
-                    $isDupe = true;
-                    break;
-                }
-            }
-            if (!$isDupe) $topics[] = $line;
+            if (!isTopicDuplicate($line, $existingTitles)) $topics[] = $line;
         }
     }
 
