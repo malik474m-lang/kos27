@@ -3282,8 +3282,8 @@ h+='</div>';
 h+='<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">';
 h+='<div class="bg-blue-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-blue-600">'+d.total_urls+'</p><p class="text-xs text-gray-500 mt-1">Всего URL</p></div>';
 h+='<div class="bg-yellow-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-yellow-600">'+d.recently_modified+'</p><p class="text-xs text-gray-500 mt-1">Изменено за 7 дней</p></div>';
-h+='<div class="bg-orange-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-orange-600">'+d.pending_yandex+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Яндекс</p></div>';
-h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-green-600">'+d.pending_google+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Google</p></div>';
+h+='<div class="bg-orange-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-orange-600">'+d.pending_yandex+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Яндекс</p>'+(d.submitted_yandex?'<p class="text-xs text-green-600 mt-0.5">✓ '+d.submitted_yandex+' отправлено</p>':'')+'</div>';
+h+='<div class="bg-green-50 rounded-xl p-4 text-center"><p class="text-3xl font-bold text-green-600">'+d.pending_google+'</p><p class="text-xs text-gray-500 mt-1">Ожидают Google</p>'+(d.submitted_google?'<p class="text-xs text-green-600 mt-0.5">✓ '+d.submitted_google+' отправлено</p>':'')+'</div>';
 h+='</div>';
 
 // По типам
@@ -3364,7 +3364,7 @@ h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-
 d.recent_logs.forEach(function(log){
   var svc=log.service==='yandex'?'🔴 Яндекс':'🔵 Google';
   var status=log.status==='success'?'<span class="text-green-600">✓</span>':'<span class="text-red-600">✗</span>';
-  h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(log.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+svc+'</td><td class="p-3">'+e(log.action)+'</td><td class="p-3">'+log.urls_count+'</td><td class="p-3">'+status+'</td></tr>';
+  h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(log.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+svc+'</td><td class="p-3">'+e(log.action)+'</td><td class="p-3">'+(log.urls_success?log.urls_success+'/':'')+log.urls_count+'</td><td class="p-3">'+status+'</td></tr>';
 });
 h+='</tbody></table></div>';
 }else{
@@ -3382,7 +3382,7 @@ function idxSync(){
 if(!confirm('Синхронизировать все URL из базы данных?')) return;
 ap('/indexing?action=sync',{method:'POST'}).then(function(d){
 if(d.error){ alert('Ошибка: '+d.error); return; }
-alert('✓ Синхронизировано URL: '+d.synced);
+alert('✓ Добавлено: '+(d.added||0)+', обновлено: '+(d.updated||0)+', без изменений: '+(d.unchanged||0));
 lIndexing();
 });
 }

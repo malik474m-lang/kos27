@@ -19,7 +19,6 @@ case 'status':
     break;
 
 case 'test':
-    // Тестовый запрос — проверка авторизации
     $token = generateGoogleJWT();
     echo json_encode([
         'success' => !empty($token),
@@ -28,35 +27,37 @@ case 'test':
     break;
 
 case 'submit':
-    // Отправить URL на индексацию
     if ($method !== 'POST') { echo json_encode(['error' => 'POST required']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
     $urls = $data['urls'] ?? [];
     if (empty($urls)) { echo json_encode(['error' => 'No URLs']); exit; }
 
-    // Ограничение: максимум 50 за раз
     $urls = array_slice($urls, 0, 50);
-
-    // Добавляем SITE_URL если не полный URL
     $fullUrls = array_map(function($u) {
         return str_starts_with($u, 'http') ? $u : SITE_URL . $u;
     }, $urls);
 
     $result = googleIndexBatch($fullUrls);
 
-    // Логируем
+    // Логируем — total и success раздельно
     try {
-        $db->query("SELECT 1 FROM indexing_log LIMIT 1");
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('google', 'submit', ?, ?, ?)")
-           ->execute([$result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode($result['results'])]);
-    } catch (Exception $e) {}
+        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, urls_success, status, response) VALUES ('google', 'submit', ?, ?, ?, ?)")
+           ->execute([$result['total'], $result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode($result['results'])]);
+    } catch (Exception $e) {
+        // Fallback для старой схемы без urls_success
+        try {
+            $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('google', 'submit', ?, ?, ?)")
+               ->execute([$result['total'], $result['failed'] > 0 ? 'partial' : 'success', json_encode($result['results'])]);
+        } catch (Exception $e2) {}
+    }
 
     // Обновляем submitted_google в url_index_tracker
     try {
-        $successUrls = array_filter($result['results'], fn($r) => $r['success']);
-        foreach ($successUrls as $r) {
-            $path = str_replace(SITE_URL, '', $r['url']);
-            $db->prepare("UPDATE url_index_tracker SET submitted_google = NOW() WHERE url = ?")->execute([$path]);
+        foreach ($result['results'] as $r) {
+            if ($r['success']) {
+                $path = str_replace(SITE_URL, '', $r['url']);
+                $db->prepare("UPDATE url_index_tracker SET submitted_google = NOW() WHERE url = ?")->execute([$path]);
+            }
         }
     } catch (Exception $e) {}
 
@@ -64,7 +65,6 @@ case 'submit':
     break;
 
 case 'submit-new':
-    // Отправить все новые/обновлённые URL
     if ($method !== 'POST') { echo json_encode(['error' => 'POST required']); exit; }
 
     try {
@@ -74,18 +74,23 @@ case 'submit-new':
     }
 
     if (empty($pending)) {
-        echo json_encode(['success' => true, 'total' => 0, 'message' => 'No pending URLs']);
+        echo json_encode(['success' => true, 'total' => 0, 'message' => 'Все URL уже отправлены']);
         exit;
     }
 
     $fullUrls = array_map(fn($u) => SITE_URL . $u, $pending);
     $result = googleIndexBatch($fullUrls);
 
-    // Логируем
+    // Логируем — total и success раздельно
     try {
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('google', 'submit', ?, ?, ?)")
-           ->execute([$result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10))]);
-    } catch (Exception $e) {}
+        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, urls_success, status, response) VALUES ('google', 'submit', ?, ?, ?, ?)")
+           ->execute([$result['total'], $result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10))]);
+    } catch (Exception $e) {
+        try {
+            $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('google', 'submit', ?, ?, ?)")
+               ->execute([$result['total'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10))]);
+        } catch (Exception $e2) {}
+    }
 
     // Обновляем submitted_google
     try {
@@ -101,7 +106,6 @@ case 'submit-new':
     break;
 
 case 'check':
-    // Проверить статус URL
     $url = $_GET['url'] ?? '';
     if (!$url) { echo json_encode(['error' => 'url required']); exit; }
     $fullUrl = str_starts_with($url, 'http') ? $url : SITE_URL . $url;
@@ -109,7 +113,6 @@ case 'check':
     break;
 
 case 'upload-key':
-    // Загрузка ключа сервисного аккаунта
     if ($method !== 'POST') { echo json_encode(['error' => 'POST required']); exit; }
     $data = json_decode(file_get_contents('php://input'), true);
     $keyJson = $data['key'] ?? '';

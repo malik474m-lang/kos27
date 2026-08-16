@@ -48,8 +48,8 @@ case 'submit':
     $result = yandexSubmitBatch($fullUrls);
     try {
         $db->query("SELECT 1 FROM indexing_log LIMIT 1");
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('yandex', 'submit', ?, ?, ?)")
-           ->execute([$result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, urls_success, status, response) VALUES ('yandex', 'submit', ?, ?, ?, ?)")
+           ->execute([$result['total'], $result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
     } catch (Exception $e) {}
     try {
         foreach ($result['results'] as $r) {
@@ -75,8 +75,8 @@ case 'submit-new':
     }
     $result = yandexSubmitBatch(array_map(fn($u) => SITE_URL . $u, $pending));
     try {
-        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, status, response) VALUES ('yandex', 'submit', ?, ?, ?)")
-           ->execute([$result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+        $db->prepare("INSERT INTO indexing_log (service, action, urls_count, urls_success, status, response) VALUES ('yandex', 'submit', ?, ?, ?, ?)")
+           ->execute([$result['total'], $result['success'], $result['failed'] > 0 ? 'partial' : 'success', json_encode(array_slice($result['results'], 0, 10), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
     } catch (Exception $e) {}
     try {
         foreach ($result['results'] as $r) {
