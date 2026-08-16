@@ -40,6 +40,9 @@ $articleOfferContext = findRelatedOffersForArticle($article, 3);
 $articleOfferCategory = $articleOfferContext['category'];
 $articleOfferMeta = $articleOfferContext['meta'];
 $articleTopicOffers = $articleOfferContext['offers'];
+$inlineArticleOffer = !empty($articleTopicOffers) ? $articleTopicOffers[0] : null;
+$articleBodyHtml = safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory]);
+$articleBodyHtml = injectInlineOfferCta($articleBodyHtml, $inlineArticleOffer, 2);
 
 ob_start();
 ?>
@@ -86,7 +89,7 @@ ob_start();
 
     <!-- Содержание статьи -->
     <div class="prose prose-lg max-w-none text-gray-700 mb-10" itemprop="articleBody">
-        <?= safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory]) ?>
+        <?= $articleBodyHtml ?>
     </div>
 
     <?php if (!empty($relatedArticles)): ?>

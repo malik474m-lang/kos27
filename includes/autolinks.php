@@ -518,6 +518,70 @@ function autoLinkText(string $html, int $maxLinks = 10, array $options = []): st
     return implode('', $parts);
 }
 
+
+function renderArticleInlineOfferCta(array $offer): string {
+    $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
+    $amount = '';
+    if (!empty($offer['amount_max'])) {
+        $amount = 'до ' . formatMoney((int)$offer['amount_max']);
+    }
+    $rate = !empty($offer['rate']) ? formatRateDisplay($offer) : '';
+    $free = !empty($offer['free_term_days']) ? ' • 0% на ' . (int)$offer['free_term_days'] . ' дн.' : '';
+
+    ob_start(); ?>
+    <div class="not-prose my-8 overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-green-50 shadow-sm">
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-start gap-4 min-w-0">
+                <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-emerald-100">
+                    <?php if ($logo): ?>
+                        <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="h-full w-full object-contain p-2" loading="lazy">
+                    <?php else: ?>
+                        <span class="text-2xl">💰</span>
+                    <?php endif; ?>
+                </div>
+                <div class="min-w-0">
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">Подходящее предложение по теме</p>
+                    <a href="/offer/<?= e($offer['slug']) ?>" class="block text-lg font-bold text-gray-900 hover:text-emerald-700"><?= e($offer['title']) ?></a>
+                    <p class="mt-1 text-sm text-gray-600">
+                        <?php if ($amount): ?><span><?= e($amount) ?></span><?php endif; ?>
+                        <?php if ($amount && $rate): ?><span> • </span><?php endif; ?>
+                        <?php if ($rate): ?><span><?= e($rate) ?></span><?php endif; ?>
+                        <?php if ($free): ?><span><?= e($free) ?></span><?php endif; ?>
+                    </p>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                <a href="/click/<?= (int)$offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+                   onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
+                   class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                    Перейти к оформлению
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php return ob_get_clean();
+}
+
+function injectInlineOfferCta(string $html, ?array $offer = null, int $afterParagraph = 2): string {
+    if (!$offer) return $html;
+    if (stripos($html, '/offer/' . ($offer['slug'] ?? '')) !== false) return $html;
+
+    $cta = renderArticleInlineOfferCta($offer);
+
+    if (preg_match_all('/<p\b[^>]*>.*?<\/p>/isu', $html, $matches, PREG_OFFSET_CAPTURE) && count($matches[0]) > $afterParagraph) {
+        $target = $matches[0][$afterParagraph - 1];
+        $insertPos = $target[1] + strlen($target[0]);
+        return substr($html, 0, $insertPos) . $cta . substr($html, $insertPos);
+    }
+
+    if (preg_match('/(<h2\b[^>]*>.*?<\/h2>)/isu', $html, $m, PREG_OFFSET_CAPTURE)) {
+        $insertPos = $m[1][1] + strlen($m[1][0]);
+        return substr($html, 0, $insertPos) . $cta . substr($html, $insertPos);
+    }
+
+    return $cta . $html;
+}
+
 function safeAutoLink(string $text, int $maxLinks = 10, array $options = []): string {
     $html = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     $html = nl2br($html);
