@@ -20,11 +20,12 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: "Дебетовые карты в {$city['prep']} — " . SITE_NAME;
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Дебетовые карты в {$city['prep']}. Сравните дебетовые карты с кэшбэком и процентом на остаток.";
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Дебетовые карты', '/karty/debetovye'), breadcrumbItem($city['name'], '/karty/debetovye/' . $city['slug'])];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → <a href="/karty/debetovye" class="hover:text-primary">Дебетовые карты</a> → <?= e($city['name']) ?></nav>
+        <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8"><?= e($citySeo['seo_h1'] ?? "Дебетовые карты в {$city['prep']}") ?></h1>
 
     <?php if ($tags): ?>
@@ -61,7 +62,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Дебетовые карты','url'=>'/karty/debetovye'],['name'=>$city['name'],'url'=>"/karty/debetovye/{$city['slug']}"]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

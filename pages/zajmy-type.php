@@ -45,15 +45,12 @@ $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty
 $catLabels = ['microloans'=>'Займы','credits'=>'Кредиты','credit_cards'=>'Кредитные карты','debit_cards'=>'Дебетовые карты'];
 $catUrl = $catUrls[$type['category']] ?? '/zajmy';
 $catLabel = $catLabels[$type['category']] ?? 'Предложения';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem($catLabel, $catUrl), breadcrumbItem($type['title'], $catUrl . '/type/' . $type['slug'])];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a> →
-        <a href="<?= $catUrl ?>" class="hover:text-primary"><?= $catLabel ?></a> →
-        <?= e($type['title']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <h1 class="text-3xl font-bold text-gray-900 mb-4"><?= e($type['h1'] ?: $type['title']) ?></h1>
     <?php if ($type['description']): ?>

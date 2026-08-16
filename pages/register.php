@@ -1,11 +1,12 @@
 <?php
 $pageTitle = 'Регистрация — ' . SITE_NAME;
 $metaDescription = 'Регистрация личного кабинета на сайте ' . SITE_NAME . ' для сохранения избранного, сравнения предложений и отслеживания заявок.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Регистрация', '/register')];
 $pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-md mx-auto px-4 py-12">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Регистрация</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">Создать аккаунт</h1>
 
     <div id="reg-step-1" class="bg-white rounded-2xl border border-gray-100 p-6">
@@ -87,6 +88,6 @@ function verifyCode(){
 }
 </script>
 <?php
-$jsonLdSchemas = [jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Регистрация','url'=>'/register']])];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

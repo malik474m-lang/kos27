@@ -45,11 +45,12 @@ function maskEmailPublic(string $email): string {
 
 $pageTitle = 'Розыгрыш призов — ' . SITE_NAME;
 $metaDescription = 'Участвуйте в розыгрыше денежных призов от ' . SITE_NAME . '. Оформите любой финансовый продукт и получите шанс выиграть!';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Розыгрыш', '/giveaway')];
 
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Розыгрыш</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <?php if ($activeGiveaway): ?>
     <!-- Активный розыгрыш -->
@@ -190,7 +191,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Розыгрыш','url'=>'/giveaway']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/giveaway';
 $content = ob_get_clean();

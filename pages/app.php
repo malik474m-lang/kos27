@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Скачать приложение Космозайм для Android | ' . SITE_NAME;
 $metaDescription = 'Скачайте мобильное приложение Космозайм для Android. Подбор займов, кредитов и карт прямо с телефона.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Приложение', '/app')];
 
 $downloadCount = 0;
 try {
@@ -11,6 +12,8 @@ try {
 
 ob_start();
 ?>
+<section class="max-w-4xl mx-auto px-4 pt-8"><?= renderBreadcrumbs($breadcrumbs) ?></section>
+
 <section class="gradient-hero text-white py-16 sm:py-24">
     <div class="max-w-4xl mx-auto px-4 text-center">
         <div class="text-6xl mb-6">📱</div>
@@ -78,7 +81,7 @@ ob_start();
 
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Приложение','url'=>'/app']]),
+    jsonLdBreadcrumb($breadcrumbs),
     json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'SoftwareApplication',

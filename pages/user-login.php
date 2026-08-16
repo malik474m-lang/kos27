@@ -1,11 +1,12 @@
 <?php
 $pageTitle = 'Вход — ' . SITE_NAME;
 $metaDescription = 'Вход в личный кабинет сайта ' . SITE_NAME . ' для управления избранными предложениями и заявками.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Вход', '/login')];
 $pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-md mx-auto px-4 py-12">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Вход</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">Войти в аккаунт</h1>
     <div class="bg-white rounded-2xl border border-gray-100 p-6">
         <form onsubmit="return loginSubmit(event)">
@@ -39,6 +40,6 @@ function loginSubmit(e){
 }
 </script>
 <?php
-$jsonLdSchemas = [jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Вход','url'=>'/login']])];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

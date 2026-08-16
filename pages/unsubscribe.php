@@ -2,6 +2,7 @@
 $token = $_GET['token'] ?? '';
 $pageTitle = 'Отписка от рассылки — ' . SITE_NAME;
 $metaDescription = 'Страница отписки от email-рассылки сайта ' . SITE_NAME . '. Управление подпиской на уведомления и предложения.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Отписка от рассылки', '/unsubscribe')];
 $pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 $message = '';
 
@@ -24,7 +25,7 @@ if ($token) {
 ob_start();
 ?>
 <section class="max-w-xl mx-auto px-4 py-24 text-center">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Отписка от рассылки</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <span class="text-5xl block mb-4">📬</span>
     <h1 class="text-2xl font-bold text-gray-900 mb-4">Отписка от рассылки</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 text-gray-600"><?= $message ?></div>
@@ -32,7 +33,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Отписка от рассылки','url'=>'/unsubscribe']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/unsubscribe';
 $content = ob_get_clean();

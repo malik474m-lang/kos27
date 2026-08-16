@@ -18,6 +18,7 @@ $year = date('Y');
 $citySeoMeta = getCitySeoText($city, 'microloans');
 $pageTitle = ($citySeoMeta['meta_title'] ?? '') ?: (($citySeoMeta['seo_h1'] ?? '') ?: "Займы в {$city['prep']} — Взять микрозайм онлайн на карту | " . SITE_NAME);
 $metaDescription = ($citySeoMeta['meta_description'] ?? '') ?: "Займы в {$city['prep']} на карту онлайн. Сравните " . count($offers) . " предложений от МФО.";
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Займы', '/zajmy'), breadcrumbItem('Займы в ' . $city['prep'], '/zajmy/' . $citySlug)];
 $metaKeywords = "займ в {$city['prep']}, микрозайм {$city['name']}, деньги в долг {$city['name']}, займ на карту {$city['name']}";
 
 // Соседние города для перелинковки
@@ -28,11 +29,7 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a> →
-        <a href="/zajmy" class="hover:text-primary">Займы</a> →
-        Займы в <?= e($city['prep']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <h1 class="text-3xl font-bold text-gray-900 mb-3">Займы в <?= e($city['prep']) ?> на карту онлайн</h1>
     <p class="text-gray-600 text-lg mb-8">Получите займ в <?= e($city['prep']) ?> за 15 минут. Сравните <?= count($offers) ?> предложений от проверенных МФО. Первый займ под 0%!</p>
@@ -82,7 +79,7 @@ ob_start();
 </div>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Займы','url'=>'/zajmy'],['name'=>'Займы в '.$city['prep'],'url'=>'/zajmy/'.$citySlug]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

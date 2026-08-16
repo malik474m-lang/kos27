@@ -70,16 +70,12 @@ $cityTagSeo = getOrGenerateCityTagSeo($city, $type, $cityTypeCategory);
 $cityTagTitle = ($cityTagSeo['seo_h1'] ?? '') ?: (($type['h1'] ?: $type['title']) . ' в ' . $city['prep']);
 $pageTitle = ($cityTagSeo['meta_title'] ?? '') ?: ($cityTagTitle . ' | ' . SITE_NAME);
 $metaDescription = ($cityTagSeo['meta_description'] ?? '') ?: (($type['title'] . ' в ' . $city['prep'] . '. Сравните ' . count($offers) . ' предложений и выберите лучший вариант.'));
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem($catLabel, $catUrl), breadcrumbItem($city['name'], $catUrl . '/' . $citySlug), breadcrumbItem($type['title'] . ' в ' . $city['prep'], $catUrl . '/' . $citySlug . '/type/' . $type['slug'])];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a> →
-        <a href="<?= $catUrl ?>" class="hover:text-primary"><?= e($catLabel) ?></a> →
-        <a href="<?= $catUrl ?>/<?= e($citySlug) ?>" class="hover:text-primary"><?= e($city['name']) ?></a> →
-        <?= e($type['title']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <h1 class="text-3xl font-bold text-gray-900 mb-3"><?= e($cityTagTitle) ?></h1>
     <p class="text-gray-600 text-lg mb-8"><?= e($type['description'] ?: ($catLabel . ' в ' . $city['prep'])) ?>. Доступно <?= count($offers) ?> предложений.</p>
@@ -136,12 +132,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([
-        ['name'=>'Главная','url'=>'/'],
-        ['name'=>$catLabel,'url'=>$catUrl],
-        ['name'=>$city['name'],'url'=>$catUrl . '/' . $citySlug],
-        ['name'=>$type['title'] . ' в ' . $city['prep'],'url'=>$catUrl . '/' . $citySlug . '/type/' . $type['slug']]
-    ]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

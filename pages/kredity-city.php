@@ -20,11 +20,12 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: (($citySeo['seo_h1'] ?? '') ?: "Кредиты в {$city['prep']} — " . SITE_NAME);
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Кредиты в {$city['prep']}. Сравните условия банков.";
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Кредиты', '/kredity'), breadcrumbItem('Кредиты в ' . $city['prep'], '/kredity/' . $citySlug)];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → <a href="/kredity" class="hover:text-primary">Кредиты</a> → <?= e($city['name']) ?></nav>
+        <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-2"><?= e($citySeo['seo_h1'] ?? "Кредиты в {$city['prep']}") ?></h1>
     <p class="text-gray-600 mb-8"><?= count($offers) ?> предложений</p>
     <?php if (!empty($cityTags)): ?>
@@ -59,7 +60,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Кредиты','url'=>'/kredity'],['name'=>'Кредиты в '.$city['prep'],'url'=>'/kredity/'.$citySlug]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

@@ -1,10 +1,11 @@
 <?php
 $pageTitle = 'Редакционная политика — ' . SITE_NAME;
 $metaDescription = 'Редакционная политика сайта ' . SITE_NAME . ': как мы готовим материалы, обновляем данные и проверяем факты.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Редакционная политика', '/editorial-policy')];
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Редакционная политика</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Редакционная политика</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p>Мы придерживаемся принципов точности, прозрачности и полезности для пользователя.</p>
@@ -29,7 +30,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Редакционная политика','url'=>'/editorial-policy']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/editorial-policy';
 $content = ob_get_clean();

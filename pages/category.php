@@ -32,15 +32,12 @@ if ($cat['parent_id']) {
 $pageTitle = ($cat['meta_title'] ?: $cat['name']) . ' — ' . SITE_NAME;
 $metaDescription = $cat['meta_description'] ?: 'Сравните лучшие предложения: ' . $cat['name'];
 $bestOffer = getBestOfferByCategory($offerCategoryKey);
+$breadcrumbs = $parentCat ? [breadcrumbItem('Главная', '/'), breadcrumbItem($parentCat['name'], getCategoryUrl($parentCat)), breadcrumbItem($cat['name'], getCategoryUrl($cat))] : [breadcrumbItem('Главная', '/'), breadcrumbItem($cat['name'], getCategoryUrl($cat))];
 
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a>
-        <?php if ($parentCat): ?> → <a href="<?= getCategoryUrl($parentCat) ?>" class="hover:text-primary"><?= e($parentCat['name']) ?></a><?php endif; ?>
-        → <?= e($cat['name']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <h1 class="text-3xl font-bold text-gray-900 mb-2"><?= e($cat['h1'] ?: $cat['name']) ?></h1>
     <?php if ($cat['description']): ?>
@@ -83,11 +80,7 @@ ob_start();
 </div>
 <?php
 $jsonLdSchemas = [];
-if ($parentCat) {
-    $jsonLdSchemas[] = jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$parentCat['name'],'url'=>getCategoryUrl($parentCat)],['name'=>$cat['name'],'url'=>getCategoryUrl($cat)]]);
-} else {
-    $jsonLdSchemas[] = jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$cat['name'],'url'=>getCategoryUrl($cat)]]);
-}
+$jsonLdSchemas[] = jsonLdBreadcrumb($breadcrumbs);
 // Schema.org ItemList
 $_ilItems = [];
 foreach ($offersList as $_ii => $_io) {

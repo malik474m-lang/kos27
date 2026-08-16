@@ -5,11 +5,12 @@ if (!$user) { header('Location: /login'); exit; }
 
 $pageTitle = 'Личный кабинет — ' . SITE_NAME;
 $metaDescription = 'Личный кабинет пользователя сайта ' . SITE_NAME . ': избранные предложения, история заявок и настройки аккаунта.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Личный кабинет', '/cabinet')];
 $pageHeadHtml = '<meta name="robots" content="noindex,follow">';
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Личный кабинет</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <div class="flex items-center justify-between mb-8">
         <div>
@@ -62,6 +63,6 @@ function loadCabinet(){
 loadCabinet();
 </script>
 <?php
-$jsonLdSchemas = [jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Личный кабинет','url'=>'/cabinet']])];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

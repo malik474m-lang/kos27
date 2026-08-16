@@ -21,11 +21,12 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: (($citySeo['seo_h1'] ?? '') ?: "Банковские карты в {$city['prep']} — " . SITE_NAME);
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Банковские карты в {$city['prep']}. Сравните предложения.";
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Карты', '/karty/kreditnye'), breadcrumbItem('Карты в ' . $city['prep'], '/karty/' . $citySlug)];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Карты → <?= e($city['name']) ?></nav>
+        <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8"><?= e($citySeo['seo_h1'] ?? "Банковские карты в {$city['prep']}") ?></h1>
     <?php if (!empty($creditCardTags) || !empty($debitCardTags)): ?>
     <div class="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
@@ -74,7 +75,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Карты','url'=>'/karty/kreditnye'],['name'=>'Карты в '.$city['prep'],'url'=>'/karty/'.$citySlug]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/karty/' . $citySlug;
 $content = ob_get_clean();

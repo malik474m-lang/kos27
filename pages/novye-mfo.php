@@ -10,6 +10,7 @@ $latestDate = $offers && !empty($offers[0]['created_at']) ? date('d.m.Y', strtot
 $pageTitle = 'Новые МФО — последние добавленные займы | ' . SITE_NAME;
 $metaDescription = 'Новые МФО и последние добавленные предложения по займам на сайте Космозайм. Сравните условия, ставки, суммы и сроки оформления онлайн.';
 $metaKeywords = 'новые мфо, новые займы, последние мфо, новые микрозаймы, новые предложения мфо';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Займы', '/zajmy'), breadcrumbItem('Новые МФО', '/novye-mfo')];
 
 $shuffledCities = getCities();
 shuffle($shuffledCities);
@@ -18,7 +19,7 @@ $shuffledCities = array_slice($shuffledCities, 0, 12);
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → <a href="/zajmy" class="hover:text-primary">Займы</a> → Новые МФО</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <div class="bg-white rounded-2xl border border-gray-100 p-8 mb-8">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

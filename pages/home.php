@@ -8,6 +8,7 @@ $latestArticles = $db->query("SELECT * FROM articles WHERE is_published = 1 ORDE
 
 $pageTitle = SITE_NAME . ' — Подбор займов, кредитов и банковских карт онлайн';
 $metaDescription = 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам. Калькулятор займа, удобные фильтры и актуальные условия.';
+$breadcrumbs = [breadcrumbItem('Главная', '/')];
 
 $jsonLd = json_encode([
     '@context' => 'https://schema.org',
@@ -166,7 +167,7 @@ foreach ($topOffers as $i => $offer) {
         'url' => SITE_URL . '/offer/' . $offer['slug'],
     ];
 }
-$jsonLdSchemas = [jsonLdBreadcrumb([['name' => 'Главная', 'url' => '/']])];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 if ($homeFaqSchema) {
     $jsonLdSchemas[] = jsonLdFAQ($homeFaqSchema);
 }
