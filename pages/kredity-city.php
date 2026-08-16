@@ -21,6 +21,14 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: (($citySeo['seo_h1'] ?? '') ?: "Кредиты в {$city['prep']} — " . SITE_NAME);
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Кредиты в {$city['prep']}. Сравните условия банков.";
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Кредиты', '/kredity'), breadcrumbItem('Кредиты в ' . $city['prep'], '/kredity/' . $citySlug)];
+$cityCreditFaqs = [
+    ['q' => 'Можно ли оформить кредит в ' . $city['prep'] . ' онлайн?', 'a' => 'Да, многие банки позволяют подать заявку на кредит онлайн. Обычно решение предварительно приходит после анкеты, а окончательные условия зависят от проверки дохода, долговой нагрузки и кредитной истории.'],
+    ['q' => 'Что важнее при выборе кредита в ' . $city['prep'] . ': ставка или ПСК?', 'a' => 'Ставка важна, но сравнивать лучше полную стоимость кредита. ПСК помогает увидеть реальную нагрузку с учётом обязательных платежей и дополнительных условий, поэтому именно она полезнее для честного сравнения предложений.'],
+    ['q' => 'Можно ли получить кредит без справок о доходах?', 'a' => 'Да, такие предложения встречаются, но условия могут быть менее выгодными: ниже сумма, выше ставка или строже требования к заёмщику. Перед подачей заявки важно проверить, какие документы банк всё же может запросить дополнительно.'],
+    ['q' => 'Как повысить шансы на одобрение кредита в ' . $city['prep'] . '?', 'a' => 'Указывайте достоверные данные, не завышайте желаемую сумму, проверяйте кредитную историю заранее и выбирайте продукты, соответствующие вашему доходу. Также помогает отсутствие текущих просрочек и умеренная долговая нагрузка.'],
+    ['q' => 'Можно ли погасить кредит досрочно?', 'a' => 'Как правило, да. Но порядок досрочного погашения зависит от банка: иногда нужно заранее подать заявление или выбрать между уменьшением срока и уменьшением платежа. Эти условия лучше уточнить до оформления кредита.'],
+    ['q' => 'Сколько обычно рассматривают заявку на кредит?', 'a' => 'Предварительное решение может прийти за несколько минут, но окончательная проверка иногда занимает дольше. Срок зависит от суммы кредита, банка, полноты документов и необходимости дополнительной верификации клиента.'],
+];
 
 ob_start();
 ?>
@@ -49,6 +57,23 @@ ob_start();
     </div>
     <?php endif; ?>
 
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">FAQ по кредитам в <?= e($city['prep']) ?></h2>
+        <div class="space-y-4">
+            <?php foreach ($cityCreditFaqs as $faq): ?>
+            <details class="group border border-gray-200 rounded-lg">
+                <summary class="flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <span><?= e($faq['q']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-600 leading-relaxed">
+                    <?= safeAutoLink($faq['a'], 2) ?>
+                </div>
+            </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <div class="bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Кредиты в других городах</h2>
         <div class="flex flex-wrap gap-2">
@@ -61,6 +86,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
+    jsonLdFAQ($cityCreditFaqs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

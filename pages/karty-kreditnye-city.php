@@ -21,6 +21,14 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: "Кредитные карты в {$city['prep']} — " . SITE_NAME;
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Кредитные карты в {$city['prep']}. Сравните предложения по кредитным картам с кэшбэком и льготным периодом.";
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Кредитные карты', '/karty/kreditnye'), breadcrumbItem($city['name'], '/karty/kreditnye/' . $city['slug'])];
+$cityCreditCardFaqs = [
+    ['q' => 'Как выбрать кредитную карту в ' . $city['prep'] . '?', 'a' => 'Сравнивайте длительность льготного периода, кредитный лимит, стоимость обслуживания, кэшбэк, комиссии за переводы и снятие наличных. Лучше выбирать карту под реальные сценарии использования, а не только по рекламному лимиту.'],
+    ['q' => 'Что важно знать о льготном периоде?', 'a' => 'Льготный период действует не по всем операциям одинаково. Важно уточнить, распространяется ли он только на покупки, как формируется расчётный период и нужно ли полностью погашать долг до определённой даты, чтобы не платить проценты.'],
+    ['q' => 'Можно ли снимать наличные с кредитной карты в ' . $city['prep'] . '?', 'a' => 'Можно, но чаще всего это менее выгодно, чем покупки. По снятию наличных банки обычно начисляют комиссию и могут не давать льготный период, поэтому условия нужно проверять заранее.'],
+    ['q' => 'Какой минимальный платеж по кредитной карте?', 'a' => 'Минимальный платеж зависит от банка и условий карты. Обычно это небольшая часть от задолженности, которую нужно внести в срок, чтобы не допустить просрочку. Но если платить только минимум, переплата со временем растёт.'],
+    ['q' => 'Как пользоваться кредитной картой без переплаты?', 'a' => 'Главное правило — укладываться в льготный период, не допускать просрочек и внимательно проверять комиссии банка. Также лучше избегать наличных операций, если карта в первую очередь выгодна именно для покупок.'],
+    ['q' => 'Можно ли оформить кредитную карту онлайн?', 'a' => 'Да, многие банки принимают онлайн-заявки и дают предварительное решение дистанционно. Но окончательные условия и лимит зависят от оценки клиента, документов и внутренней скоринговой модели банка.'],
+];
 
 ob_start();
 ?>
@@ -51,6 +59,23 @@ ob_start();
     <div class="bg-white rounded-xl border p-6 mt-8 prose prose-sm max-w-none"><?= autoLinkText($citySeo['seo_text'], 8) ?></div>
     <?php endif; ?>
 
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">FAQ по кредитным картам в <?= e($city['prep']) ?></h2>
+        <div class="space-y-4">
+            <?php foreach ($cityCreditCardFaqs as $faq): ?>
+            <details class="group border border-gray-200 rounded-lg">
+                <summary class="flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <span><?= e($faq['q']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-600 leading-relaxed">
+                    <?= safeAutoLink($faq['a'], 2) ?>
+                </div>
+            </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <div class="bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Кредитные карты в других городах</h2>
         <div class="flex flex-wrap gap-2">
@@ -63,6 +88,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
+    jsonLdFAQ($cityCreditCardFaqs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

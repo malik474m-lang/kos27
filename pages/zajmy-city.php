@@ -20,6 +20,14 @@ $pageTitle = ($citySeoMeta['meta_title'] ?? '') ?: (($citySeoMeta['seo_h1'] ?? '
 $metaDescription = ($citySeoMeta['meta_description'] ?? '') ?: "Займы в {$city['prep']} на карту онлайн. Сравните " . count($offers) . " предложений от МФО.";
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Займы', '/zajmy'), breadcrumbItem('Займы в ' . $city['prep'], '/zajmy/' . $citySlug)];
 $metaKeywords = "займ в {$city['prep']}, микрозайм {$city['name']}, деньги в долг {$city['name']}, займ на карту {$city['name']}";
+$cityLoanFaqs = [
+    ['q' => 'Можно ли получить займ в ' . $city['prep'] . ' полностью онлайн?', 'a' => 'Да, большинство МФО позволяют оформить заявку полностью онлайн: заполнить анкету, дождаться решения и получить деньги на карту без посещения офиса. Важно заранее проверить требования к заёмщику, лимиты по сумме и условия возврата.'],
+    ['q' => 'Сколько времени занимает одобрение займа в ' . $city['prep'] . '?', 'a' => 'Решение по микрозайму часто принимается за 5–15 минут. Точное время зависит от МФО, корректности анкеты, кредитной истории и необходимости дополнительной проверки данных.'],
+    ['q' => 'Можно ли получить первый займ под 0% в ' . $city['prep'] . '?', 'a' => 'Да, некоторые МФО предлагают новым клиентам первый займ без процентов на ограниченный срок. Перед оформлением важно уточнить максимальную сумму, дату возврата и условия, при которых льготная ставка действительно сохраняется.'],
+    ['q' => 'На что смотреть при выборе займа в ' . $city['prep'] . '?', 'a' => 'Сравнивайте не только рекламную ставку, но и ПСК, срок займа, допустимую сумму, наличие льготного периода, требования к клиенту и условия продления. Чем прозрачнее правила возврата, тем легче избежать лишней переплаты.'],
+    ['q' => 'Могут ли отказать в займе даже при онлайн-заявке?', 'a' => 'Да, решение принимает МФО на основе внутреннего скоринга. Частые причины отказа: ошибки в анкете, высокая долговая нагрузка, просрочки в кредитной истории или несоответствие возрастным требованиям компании.'],
+    ['q' => 'Можно ли подать несколько заявок сразу?', 'a' => 'Да, многие пользователи сравнивают 2–3 предложения одновременно, чтобы повысить шанс одобрения и выбрать лучший вариант. При этом важно не отправлять слишком много заявок подряд без необходимости, чтобы не создавать лишнюю нагрузку на кредитный профиль.'],
+];
 
 // Соседние города для перелинковки
 $nearbyCities = array_filter($cities, fn($c) => $c['slug'] !== $citySlug);
@@ -66,6 +74,23 @@ ob_start();
         </div>
     </div>
 
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">FAQ по займам в <?= e($city['prep']) ?></h2>
+        <div class="space-y-4">
+            <?php foreach ($cityLoanFaqs as $faq): ?>
+            <details class="group border border-gray-200 rounded-lg">
+                <summary class="flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <span><?= e($faq['q']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-600 leading-relaxed">
+                    <?= safeAutoLink($faq['a'], 2) ?>
+                </div>
+            </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <!-- Перелинковка -->
     <div class="bg-gray-50 rounded-xl p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Займы в других городах России</h2>
@@ -80,6 +105,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
+    jsonLdFAQ($cityLoanFaqs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

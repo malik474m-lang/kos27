@@ -21,6 +21,14 @@ $nearbyCities = array_slice($nearbyCities, 0, 8);
 $pageTitle = ($citySeo['meta_title'] ?? '') ?: "Дебетовые карты в {$city['prep']} — " . SITE_NAME;
 $metaDescription = ($citySeo['meta_description'] ?? '') ?: "Дебетовые карты в {$city['prep']}. Сравните дебетовые карты с кэшбэком и процентом на остаток.";
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Дебетовые карты', '/karty/debetovye'), breadcrumbItem($city['name'], '/karty/debetovye/' . $city['slug'])];
+$cityDebitCardFaqs = [
+    ['q' => 'Как выбрать дебетовую карту в ' . $city['prep'] . '?', 'a' => 'Сравнивайте стоимость обслуживания, кэшбэк, процент на остаток, лимиты на переводы через СБП, условия снятия наличных и бонусные программы. Лучший вариант зависит от того, как именно вы планируете пользоваться картой каждый день.'],
+    ['q' => 'Что важнее для дебетовой карты: кэшбэк или процент на остаток?', 'a' => 'Если вы активно расплачиваетесь картой, чаще выгоднее кэшбэк. Если на счёте обычно лежит заметная сумма, полезнее может быть процент на остаток. Оптимально выбирать карту, где условия совпадают с вашим реальным сценарием расходов и хранения средств.'],
+    ['q' => 'Бывает ли бесплатное обслуживание дебетовой карты?', 'a' => 'Да, многие банки предлагают бесплатное обслуживание сразу или при выполнении условий: минимальный остаток, покупки на определённую сумму, зарплатный проект или регулярные поступления. Эти условия важно проверить заранее, чтобы избежать неожиданной комиссии.'],
+    ['q' => 'Можно ли переводить деньги по СБП без комиссии?', 'a' => 'Часто да, но у банка могут быть лимиты. До определённой суммы переводы через СБП бесплатны, а сверх лимита может взиматься комиссия. Перед оформлением карты стоит уточнить месячные ограничения и условия переводов.'],
+    ['q' => 'Как проверить условия снятия наличных?', 'a' => 'Обратите внимание, действует ли бесплатное снятие только в банкоматах своего банка или также у партнёров. Важны лимиты, минимальная сумма операции и комиссия за выход за установленный тарифом объём снятия.'],
+    ['q' => 'Можно ли оформить дебетовую карту онлайн в ' . $city['prep'] . '?', 'a' => 'Да, многие банки позволяют подать онлайн-заявку и получить карту в отделении или с доставкой. Но условия выпуска, активации и бонусных программ могут отличаться, поэтому полезно сравнить сразу несколько предложений.'],
+];
 
 ob_start();
 ?>
@@ -51,6 +59,23 @@ ob_start();
     <div class="bg-white rounded-xl border p-6 mt-8 prose prose-sm max-w-none"><?= autoLinkText($citySeo['seo_text'], 8) ?></div>
     <?php endif; ?>
 
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">FAQ по дебетовым картам в <?= e($city['prep']) ?></h2>
+        <div class="space-y-4">
+            <?php foreach ($cityDebitCardFaqs as $faq): ?>
+            <details class="group border border-gray-200 rounded-lg">
+                <summary class="flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <span><?= e($faq['q']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-600 leading-relaxed">
+                    <?= safeAutoLink($faq['a'], 2) ?>
+                </div>
+            </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <div class="bg-gray-50 rounded-xl p-6 mt-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Дебетовые карты в других городах</h2>
         <div class="flex flex-wrap gap-2">
@@ -63,6 +88,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
+    jsonLdFAQ($cityDebitCardFaqs),
 ];
 // Schema.org ItemList
 $_ilItems = [];
