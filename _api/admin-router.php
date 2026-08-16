@@ -210,6 +210,7 @@ if (preg_match('#^/categories/(\d+)$#', $adminUri, $m)) {
 }
 
 // Бонусы
+if ($adminUri === "/bonus-send-confirmation" && $method === "POST") { require __DIR__ . "/admin/bonus-send-confirmation.php"; exit; }
 if (str_starts_with($adminUri, '/bonuses')) { require __DIR__ . '/admin/bonuses.php'; exit; }
 
 // Пользователи

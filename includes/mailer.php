@@ -173,3 +173,59 @@ function testMailDelivery(string $to): array {
 
     return sendMail($to, $subject, $body, true);
 }
+
+
+/**
+ * Отправка письма с вложением файла
+ */
+function sendMailWithAttachment(string $to, string $subject, string $body, string $filePath, string $fileName, bool $isHtml = true): array {
+    $cfg = getMailConfig();
+    $from = $cfg['mail_from'] ?: 'info@kosmozaim.ru';
+    $fromName = $cfg['mail_from_name'] ?: (defined('SITE_NAME') ? SITE_NAME : 'Космозайм');
+
+    if (!file_exists($filePath)) {
+        return ['ok' => false, 'error' => 'Файл не найден: ' . $filePath];
+    }
+
+    $boundary = 'kosmo_attach_' . md5(uniqid());
+    $fileData = file_get_contents($filePath);
+    $fileBase64 = chunk_split(base64_encode($fileData));
+
+    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $mimeTypes = [
+        'pdf' => 'application/pdf',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+    ];
+    $mimeType = $mimeTypes[$ext] ?? 'application/octet-stream';
+    $contentType = $isHtml ? 'text/html' : 'text/plain';
+
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $encodedFromName = '=?UTF-8?B?' . base64_encode($fromName) . '?=';
+
+    $headers = "From: {$encodedFromName} <{$from}>\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
+    $headers .= "X-Mailer: KosmoEngine\r\n";
+
+    $message = "--{$boundary}\r\n";
+    $message .= "Content-Type: {$contentType}; charset=UTF-8\r\n";
+    $message .= "Content-Transfer-Encoding: base64\r\n\r\n";
+    $message .= chunk_split(base64_encode($body)) . "\r\n";
+
+    $message .= "--{$boundary}\r\n";
+    $message .= "Content-Type: {$mimeType}; name=\"{$fileName}\"\r\n";
+    $message .= "Content-Disposition: attachment; filename=\"{$fileName}\"\r\n";
+    $message .= "Content-Transfer-Encoding: base64\r\n\r\n";
+    $message .= $fileBase64 . "\r\n";
+    $message .= "--{$boundary}--\r\n";
+
+    $ok = @mail($to, $encodedSubject, $message, $headers, '-f' . $from);
+
+    return $ok
+        ? ['ok' => true, 'method' => 'mail() with attachment']
+        : ['ok' => false, 'error' => 'mail() failed', 'method' => 'mail() with attachment'];
+}

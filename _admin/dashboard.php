@@ -3201,7 +3201,7 @@ if(withdrawRequests&&withdrawRequests.length){
 h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Пользователь</th><th class="p-3 text-left">Банк</th><th class="p-3 text-left">Телефон</th><th class="p-3 text-left">Владелец</th><th class="p-3 text-right">Сумма</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
 withdrawRequests.forEach(function(r){
 var st=r.status==='paid'?'<span class="text-green-600">Выплачено</span>':(r.status==='pending'?'<span class="text-yellow-600">Ожидает</span>':'<span class="text-red-500">Отклонено</span>');
-var actions=r.status==='pending'?'<button onclick="bonusProcessRequest('+r.id+',\'paid\')" class="text-green-600 hover:underline text-sm mr-3">Выплачено</button><button onclick="bonusProcessRequest('+r.id+',\'rejected\')" class="text-red-500 hover:underline text-sm">Отклонить</button>':'—';
+var actions=r.status==='pending'?'<button onclick="bonusProcessRequest('+r.id+',\'paid\')" class="text-green-600 hover:underline text-sm mr-2">Выплачено</button><button onclick="bonusProcessRequest('+r.id+',\'rejected\')" class="text-red-500 hover:underline text-sm">Отклонить</button>':(r.status==='paid'?'<button onclick="bonusSendConfirmation('+r.id+')" class="text-blue-600 hover:underline text-sm">📧 Отправить подтверждение</button>':'—');
 h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(r.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+e(r.name||r.email||'—')+'</td><td class="p-3">'+e(r.bank_name||'—')+'</td><td class="p-3">'+e(r.phone||'—')+'</td><td class="p-3">'+e(r.cardholder_name||'—')+'</td><td class="p-3 text-right font-semibold text-amber-600">'+r.amount+' ₽</td><td class="p-3">'+st+'</td><td class="p-3 text-right">'+actions+'</td></tr>';
 });
 h+='</tbody></table></div>';
@@ -3217,6 +3217,32 @@ if(r.error){alert(r.error);return;}
 alert(action==='paid'?'✅ Заявка отмечена как выплаченная':'⚠️ Заявка отклонена');
 lUsers();
 }).catch(function(){alert('Ошибка обработки заявки');});
+}
+
+function bonusSendConfirmation(requestId){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">📧 Отправить подтверждение перевода</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form id="bonus-confirm-form" onsubmit="return bonusSendConfirmationSubmit(event,'+requestId+')"><div class="space-y-3">'+
+'<div><label class="block text-xs font-medium mb-1">Комментарий (необязательно)</label><input id="bc-comment" class="input-f" placeholder="Например: Перевод выполнен через СБП"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Скрин или PDF транзакции</label><input type="file" id="bc-file" accept="image/*,.pdf" class="input-f"></div>'+
+'<p class="text-xs text-gray-400">Допустимые форматы: PNG, JPG, PDF. Макс. размер: 5 МБ.</p>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">📧 Отправить письмо</button></div></form>');
+}
+
+function bonusSendConfirmationSubmit(ev,requestId){
+ev.preventDefault();
+var btn=ev.target.querySelector('button[type="submit"]');
+if(btn){btn.disabled=true;btn.textContent='Отправка...';}
+var fd=new FormData();
+fd.append('request_id',requestId);
+fd.append('comment',document.getElementById('bc-comment').value||'');
+var fileInput=document.getElementById('bc-file');
+if(fileInput&&fileInput.files[0])fd.append('attachment',fileInput.files[0]);
+fetch(A+'/bonus-send-confirmation',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+if(d.error){alert('Ошибка: '+d.error);return;}
+alert('✅ '+(d.message||'Письмо отправлено'));
+cm();
+}).catch(function(){alert('Ошибка отправки');}).finally(function(){if(btn){btn.disabled=false;btn.textContent='📧 Отправить письмо';}});
+return false;
 }
 
 function bonusWithdrawForm(userId,name,balance){
