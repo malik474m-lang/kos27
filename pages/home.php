@@ -166,7 +166,7 @@ foreach ($topOffers as $i => $offer) {
         'url' => SITE_URL . '/offer/' . $offer['slug'],
     ];
 }
-$jsonLdSchemas = [];
+$jsonLdSchemas = [jsonLdBreadcrumb([['name' => 'Главная', 'url' => '/']])];
 if ($homeFaqSchema) {
     $jsonLdSchemas[] = jsonLdFAQ($homeFaqSchema);
 }

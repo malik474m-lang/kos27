@@ -44,12 +44,29 @@ if (count($similarOffers) < 3) {
 }
 
 $offerTitle = $clickedOffer ? $clickedOffer['title'] : 'предложение';
+$thankyouCatMeta = ['label' => 'Предложения', 'url' => '/zajmy'];
+if ($clickedOffer) {
+    $thankyouCatMeta = match ($clickedOffer['category']) {
+        'credits' => ['label' => 'Кредиты', 'url' => '/kredity'],
+        'credit_cards' => ['label' => 'Кредитные карты', 'url' => '/karty/kreditnye'],
+        'debit_cards' => ['label' => 'Дебетовые карты', 'url' => '/karty/debetovye'],
+        default => ['label' => 'Займы', 'url' => '/zajmy'],
+    };
+}
 $pageTitle = 'Заявка отправлена — ' . SITE_NAME;
 $metaDescription = 'Ваша заявка отправлена. Пока ждёте ответ, посмотрите другие выгодные предложения.';
 
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <nav class="text-sm text-gray-500 mb-6">
+        <a href="/" class="hover:text-primary">Главная</a>
+        <?php if ($clickedOffer): ?>
+            → <a href="<?= e($thankyouCatMeta['url']) ?>" class="hover:text-primary"><?= e($thankyouCatMeta['label']) ?></a>
+            → <a href="/offer/<?= e($clickedOffer['slug']) ?>" class="hover:text-primary"><?= e($clickedOffer['title']) ?></a>
+        <?php endif; ?>
+        → Заявка отправлена
+    </nav>
 
     <!-- Блок подтверждения -->
     <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 sm:p-12 text-center mb-12 border border-green-100">
@@ -178,5 +195,12 @@ document.getElementById('ty-subscribe-form').addEventListener('submit', function
 </script>
 <?php
 $canonicalUrl = SITE_URL . '/thankyou';
+$breadcrumbItems = [['name' => 'Главная', 'url' => '/']];
+if ($clickedOffer) {
+    $breadcrumbItems[] = ['name' => $thankyouCatMeta['label'], 'url' => $thankyouCatMeta['url']];
+    $breadcrumbItems[] = ['name' => $clickedOffer['title'], 'url' => '/offer/' . $clickedOffer['slug']];
+}
+$breadcrumbItems[] = ['name' => 'Заявка отправлена', 'url' => '/thankyou'];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbItems)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';
