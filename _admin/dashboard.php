@@ -2954,6 +2954,9 @@ h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label>
 h+='<div><label class="block text-sm font-medium mb-1">GigaChat Authorization Key</label><input type="text" id="set-gigachat-auth" class="input-f font-mono text-sm" value="'+e(siteSettings.gigachat_auth_key_masked||siteSettings.gigachat_auth_key||'')+'" placeholder="Basic auth key"><button type="button" onclick="testImageProvider(&#39;gigachat&#39;)" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест GigaChat</button></div>';
 h+='<div class="md:col-span-2" id="image-provider-test-result"></div>';
 h+='</div>';
+h+='<div class="bg-white rounded-xl border p-6 mt-6"><h3 class="font-bold mb-4">🔗 Leads.su (партнёрская сеть)</h3>';
+h+='<div><label class="block text-sm font-medium mb-1">API токен leads.su</label><input type="text" id="set-leads-su-token" class="input-f font-mono text-sm" value="'+e(siteSettings.leads_su_api_token_masked||siteSettings.leads_su_api_token||'')+'" placeholder="Вставьте токен из webmaster.leads.su"><p class="text-xs text-gray-500 mt-1">Получить: <a href="https://webmaster.leads.su/account/default" target="_blank" class="text-blue-600 hover:underline">webmaster.leads.su → Аккаунт</a></p></div>';
+h+='</div>';
 h+='<p class="text-xs text-gray-500 mt-2">Получить ключи: <a href="https://console.cloud.yandex.ru/" target="_blank" class="text-blue-600 hover:underline">console.cloud.yandex.ru</a> → Сервисные аккаунты → API-ключи</p>';
 h+='</div>';
 
@@ -3006,6 +3009,7 @@ yandex_folder_id:document.getElementById('set-folder').value,
 article_image_prompt_template:document.getElementById('set-article-image-prompt').value,
 article_image_provider:document.getElementById('set-article-image-provider').value,
 stability_api_key:document.getElementById('set-stability-key').value,
+leads_su_api_token:document.getElementById('set-leads-su-token').value,
 gigachat_auth_key:document.getElementById('set-gigachat-auth').value,
 gigachat_scope:document.getElementById('set-gigachat-scope').value,
 yandex_metrika_id:document.getElementById('set-metrika').value,

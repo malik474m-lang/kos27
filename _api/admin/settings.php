@@ -61,6 +61,10 @@ if ($method === 'GET') {
     $settings = loadSettings();
     // Маскируем API ключ для безопасности
     $masked = $settings;
+    if (!empty($masked['leads_su_api_token'])) {
+        $key = $masked['leads_su_api_token'];
+        $masked['leads_su_api_token_masked'] = substr($key, 0, 8) . '...' . substr($key, -4);
+    }
     if ($masked['yandex_gpt_api_key']) {
         $key = $masked['yandex_gpt_api_key'];
         $masked['yandex_gpt_api_key_masked'] = substr($key, 0, 8) . '...' . substr($key, -4);
@@ -179,11 +183,11 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template', 'article_image_provider', 'stability_api_key', 'gigachat_auth_key', 'gigachat_scope'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template', 'article_image_provider', 'stability_api_key', 'gigachat_auth_key', 'gigachat_scope', 'leads_su_api_token'];
     
     foreach ($allowedFields as $field) {
         if (array_key_exists($field, $data)) {
-            if (in_array($field, ['yandex_gpt_api_key','stability_api_key','gigachat_auth_key'], true) && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
+            if (in_array($field, ['yandex_gpt_api_key','stability_api_key','gigachat_auth_key','leads_su_api_token'], true) && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
                 continue;
             }
             if ($field === 'smtp_enabled') {
