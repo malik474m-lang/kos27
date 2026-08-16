@@ -2,7 +2,7 @@
 $db = getDB();
 $articles = $db->query("SELECT * FROM articles WHERE is_published = 1 ORDER BY created_at DESC")->fetchAll();
 
-$pageTitle = 'Полезные статьи — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Полезные статьи');
 $metaDescription = 'Статьи о займах, кредитах и финансовой грамотности.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Статьи', '/articles')];
 
@@ -50,6 +50,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/articles';
+$canonicalUrl = pageCanonical('/articles');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

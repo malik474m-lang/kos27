@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Как мы оцениваем предложения — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Как мы оцениваем предложения');
 $metaDescription = 'Описание принципов ранжирования карточек офферов на сайте ' . SITE_NAME . ': какие факторы влияют на порядок вывода предложений.';
 ob_start();
 ?>
@@ -27,6 +27,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/how-we-rank';
+$canonicalUrl = pageCanonical('/how-we-rank');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

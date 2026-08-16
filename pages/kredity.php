@@ -7,7 +7,7 @@ $db = getDB();
 $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 AND category = 'credits' ORDER BY sort_order ASC")->fetchAll();
 $creditTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND category = 'credits' ORDER BY sort_order ASC")->fetchAll();
 
-$pageTitle = 'Кредиты онлайн — Сравнение банковских кредитов | ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Кредиты онлайн — Сравнение банковских кредитов', false) . ' | ' . SITE_NAME;
 $metaDescription = 'Сравните условия банковских кредитов. Низкие ставки, удобное оформление, быстрое одобрение.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Кредиты', '/kredity')];
 
@@ -54,7 +54,7 @@ if ($_ilItems) {
         'itemListElement' => $_ilItems,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
-$canonicalUrl = SITE_URL . '/kredity';
+$canonicalUrl = pageCanonical('/kredity');
 $content = ob_get_clean();
 $content .= renderStickyCta([
     'id' => 'list-sticky-cta',

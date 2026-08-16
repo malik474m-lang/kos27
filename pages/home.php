@@ -6,7 +6,7 @@ $db = getDB();
 $topOffers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 6")->fetchAll();
 $latestArticles = $db->query("SELECT * FROM articles WHERE is_published = 1 ORDER BY created_at DESC LIMIT 3")->fetchAll();
 
-$pageTitle = SITE_NAME . ' — Подбор займов, кредитов и банковских карт онлайн';
+$pageTitle = pageMetaTitle('Подбор займов, кредитов и банковских карт онлайн', false) . ' | ' . SITE_NAME;
 $metaDescription = 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам. Калькулятор займа, удобные фильтры и актуальные условия.';
 $breadcrumbs = [breadcrumbItem('Главная', '/')];
 
@@ -149,7 +149,7 @@ ob_start();
 </section>
 
 <?php
-$canonicalUrl = SITE_URL . '/';
+$canonicalUrl = pageCanonical('/');
 
 // Schema.org: FAQPage (Google показывает в выдаче!)
 $homeFaqSchema = [];

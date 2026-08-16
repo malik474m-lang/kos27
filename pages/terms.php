@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Пользовательское соглашение — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Пользовательское соглашение');
 $metaDescription = 'Пользовательское соглашение сайта ' . SITE_NAME . '. Условия использования сервиса и правила работы с финансовыми предложениями.';
 ob_start();
 ?>
@@ -22,6 +22,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/terms';
+$canonicalUrl = pageCanonical('/terms');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

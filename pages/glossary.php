@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../data/glossary.php';
 
-$pageTitle = 'Глоссарий финансовых терминов — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Глоссарий финансовых терминов');
 $metaDescription = 'Словарь финансовых терминов: ПСК, грейс-период, кредитная история и другие.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Глоссарий', '/glossary')];
 
@@ -23,6 +23,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/glossary';
+$canonicalUrl = pageCanonical('/glossary');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

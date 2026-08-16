@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/mailer.php';
 $settings = getSiteSettings();
 $contactEmail = $settings['contact_email'] ?? '';
 
-$pageTitle = 'Обратная связь — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Обратная связь');
 $metaDescription = 'Форма обратной связи сайта ' . SITE_NAME . '. Свяжитесь с нами по любым вопросам.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Обратная связь', '/contact')];
 
@@ -98,6 +98,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/contact';
+$canonicalUrl = pageCanonical('/contact');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

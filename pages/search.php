@@ -12,7 +12,7 @@ if ($q) {
     $results = $stmt->fetchAll();
 }
 
-$pageTitle = $q ? "Поиск: $q — " . SITE_NAME : 'Поиск — ' . SITE_NAME;
+$pageTitle = $q ? pageMetaTitle('Поиск: ' . $q, false) : pageMetaTitle('Поиск');
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Поиск', '/search')];
 
 ob_start();
@@ -39,6 +39,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/search';
+$canonicalUrl = pageCanonical('/search');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

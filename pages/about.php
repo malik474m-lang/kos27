@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'О проекте — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('О проекте');
 $metaDescription = 'Информация о проекте ' . SITE_NAME . ', целях сервиса, принципах работы и подходе к подбору финансовых продуктов.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('О проекте', '/about')];
 ob_start();
@@ -28,6 +28,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/about';
+$canonicalUrl = pageCanonical('/about');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

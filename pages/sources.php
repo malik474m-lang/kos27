@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Источники информации — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Источники информации');
 $metaDescription = 'Официальные и публичные источники данных, которые используются при подготовке материалов на сайте ' . SITE_NAME . '.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Источники информации', '/sources')];
 ob_start();
@@ -25,6 +25,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/sources';
+$canonicalUrl = pageCanonical('/sources');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../data/glossary.php';
 $term = findGlossaryTermBySlug($termSlug);
 if (!$term) { http_response_code(404); $pageTitle='Термин не найден'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Термин не найден</h1></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
 
-$pageTitle = $term['term'] . ' — Глоссарий | ' . SITE_NAME;
+$pageTitle = pageMetaTitle($term['term'] . ' — Глоссарий', false) . ' | ' . SITE_NAME;
 $metaDescription = $term['shortDefinition'];
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Глоссарий', '/glossary'), breadcrumbItem($term['term'], '/glossary/' . $term['slug'])];
 
@@ -21,6 +21,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/glossary/' . $term['slug'];
+$canonicalUrl = pageCanonical('/glossary/' . $term['slug']);
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

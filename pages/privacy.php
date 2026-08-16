@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Политика конфиденциальности — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Политика конфиденциальности');
 $metaDescription = 'Политика конфиденциальности сайта ' . SITE_NAME . '. Порядок обработки персональных данных, cookies и пользовательской информации.';
 ob_start();
 ?>
@@ -24,6 +24,6 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/privacy';
+$canonicalUrl = pageCanonical('/privacy');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

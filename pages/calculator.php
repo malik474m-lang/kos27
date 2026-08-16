@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Калькулятор займа — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Калькулятор займа');
 $metaDescription = 'Рассчитайте стоимость займа онлайн. Калькулятор процентов, переплаты и подбор подходящих предложений.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Калькулятор', '/calculator')];
 
@@ -194,6 +194,6 @@ calcUpdate();
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/calculator';
+$canonicalUrl = pageCanonical('/calculator');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

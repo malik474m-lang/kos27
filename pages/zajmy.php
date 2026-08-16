@@ -149,7 +149,7 @@ if ($offerItems) {
         'itemListElement' => $offerItems,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
-$canonicalUrl = SITE_URL . '/zajmy';
+$canonicalUrl = pageCanonical('/zajmy');
 $content = ob_get_clean();
 $content .= renderStickyCta([
     'id' => 'list-sticky-cta',

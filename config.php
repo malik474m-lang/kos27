@@ -4,6 +4,7 @@ $GLOBALS['page_start_time'] = microtime(true);
 // Логирование ошибок
 require_once __DIR__ . '/includes/error-logger.php';
 require_once __DIR__ . '/includes/breadcrumbs.php';
+require_once __DIR__ . '/includes/page-meta.php';
 set_error_handler('kosmozaimErrorHandler');
 register_shutdown_function('kosmozaimShutdownHandler');
 

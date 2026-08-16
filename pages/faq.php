@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/autolinks.php';
 
-$pageTitle = 'Частые вопросы — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Частые вопросы');
 $metaDescription = 'Ответы на популярные вопросы о займах, кредитах и банковских картах.';
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('FAQ', '/faq')];
 
@@ -38,6 +38,6 @@ $jsonLdSchemas = [
     jsonLdFAQ($faqs),
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/faq';
+$canonicalUrl = pageCanonical('/faq');
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

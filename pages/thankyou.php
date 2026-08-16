@@ -53,7 +53,7 @@ if ($clickedOffer) {
         default => ['label' => 'Займы', 'url' => '/zajmy'],
     };
 }
-$pageTitle = 'Заявка отправлена — ' . SITE_NAME;
+$pageTitle = pageMetaTitle('Заявка отправлена');
 $metaDescription = 'Ваша заявка отправлена. Пока ждёте ответ, посмотрите другие выгодные предложения.';
 $breadcrumbs = [breadcrumbItem('Главная', '/')];
 if ($clickedOffer) {
@@ -193,7 +193,7 @@ document.getElementById('ty-subscribe-form').addEventListener('submit', function
 });
 </script>
 <?php
-$canonicalUrl = SITE_URL . '/thankyou';
+$canonicalUrl = pageCanonical('/thankyou');
 $jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

@@ -63,7 +63,7 @@ $catUrl = match($offer['category']) {
 
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem($catLabel, $catUrl), breadcrumbItem($offer['title'], '/offer/' . $offer['slug'])];
 
-$pageTitle = (!empty($offer['meta_title'])) ? $offer['meta_title'] : ($offer['title'] . ' — ' . SITE_NAME);
+$pageTitle = (!empty($offer['meta_title'])) ? $offer['meta_title'] : pageMetaTitle($offer['title']);
 $metaDescription = (!empty($offer['meta_description'])) ? $offer['meta_description'] : ($offer['description'] ?: ("Оформите {$offer['title']} онлайн. Сумма от " . formatMoney($offer['amount_min']) . " до " . formatMoney($offer['amount_max'])));
 $rating = (float)$offer['rating'];
 $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
@@ -591,7 +591,7 @@ $jsonLdSchemas = [
     jsonLdOffer($offer),
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/offer/' . $offer['slug'];
+$canonicalUrl = pageCanonical('/offer/' . $offer['slug']);
 $ogImage = normalizeMediaUrl($offer['logo_url'] ?? '');
 $content = ob_get_clean();
 $content .= renderStickyCta([

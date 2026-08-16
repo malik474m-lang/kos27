@@ -32,7 +32,7 @@ if (!$hasEeatFields) {
     ]);
 }
 
-$pageTitle = $article['meta_title'] ?: ($article['title'] . ' — ' . SITE_NAME);
+$pageTitle = $article['meta_title'] ?: pageMetaTitle($article['title']);
 $metaDescription = $article['meta_description'] ?: ($article['excerpt'] ?: '');
 $cover = normalizeMediaUrl($article['cover_image'] ?? '');
 $relatedArticles = findRelatedArticles($article, 3);
@@ -164,7 +164,7 @@ $jsonLdSchemas = [
     jsonLdArticleEEAT($article),
     jsonLdBreadcrumb($breadcrumbs),
 ];
-$canonicalUrl = SITE_URL . '/articles/' . $article['slug'];
+$canonicalUrl = pageCanonical('/articles/' . $article['slug']);
 $ogImage = $cover;
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';
