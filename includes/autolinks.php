@@ -519,6 +519,22 @@ function autoLinkText(string $html, int $maxLinks = 10, array $options = []): st
 }
 
 
+
+function getArticleInlineCtaVariant(): string {
+    static $variant = null;
+    if ($variant !== null) return $variant;
+
+    $cookieKey = 'article_inline_cta_ab';
+    if (!empty($_COOKIE[$cookieKey]) && in_array($_COOKIE[$cookieKey], ['a', 'b'], true)) {
+        return $variant = $_COOKIE[$cookieKey];
+    }
+
+    $variant = mt_rand(0, 1) === 0 ? 'a' : 'b';
+    setcookie($cookieKey, $variant, time() + 86400 * 30, '/');
+    $_COOKIE[$cookieKey] = $variant;
+    return $variant;
+}
+
 function renderArticleInlineOfferCta(array $offer): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
     $amount = '';
@@ -527,22 +543,48 @@ function renderArticleInlineOfferCta(array $offer): string {
     }
     $rate = !empty($offer['rate']) ? formatRateDisplay($offer) : '';
     $free = !empty($offer['free_term_days']) ? ' • 0% на ' . (int)$offer['free_term_days'] . ' дн.' : '';
+    $category = (string)($offer['category'] ?? 'microloans');
+    $defaultButton = match ($category) {
+        'credits' => 'Подать заявку',
+        'credit_cards' => 'Оформить карту',
+        'debit_cards' => 'Заказать карту',
+        default => 'Перейти к оформлению',
+    };
+
+    $variant = getArticleInlineCtaVariant();
+    $labelTop = $variant === 'b' ? 'Не откладывайте решение' : 'Подходящее предложение по теме';
+    $headline = $variant === 'b'
+        ? 'Проверьте условия ' . $offer['title'] . ' прямо сейчас'
+        : $offer['title'];
+    $subline = $variant === 'b'
+        ? 'Пока читаете статью, можно сразу открыть анкету и сравнить условия.'
+        : 'Условия, которые хорошо подходят к теме этой статьи.';
+    $buttonText = $variant === 'b' ? 'Открыть заявку сейчас' : $defaultButton;
+    $wrapClass = $variant === 'b'
+        ? 'not-prose my-8 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-sm'
+        : 'not-prose my-8 overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-green-50 shadow-sm';
+    $ringClass = $variant === 'b' ? 'ring-amber-100' : 'ring-emerald-100';
+    $topClass = $variant === 'b' ? 'text-amber-700' : 'text-emerald-700';
+    $buttonClass = $variant === 'b'
+        ? 'inline-flex items-center justify-center rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700'
+        : 'inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700';
 
     ob_start(); ?>
-    <div class="not-prose my-8 overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-green-50 shadow-sm">
+    <div class="<?= $wrapClass ?>" data-inline-cta-variant="<?= e($variant) ?>">
         <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-4 min-w-0">
-                <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-emerald-100">
+                <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 <?= $ringClass ?>">
                     <?php if ($logo): ?>
                         <img src="<?= e($logo) ?>" alt="<?= e($offer['title']) ?>" class="h-full w-full object-contain p-2" loading="lazy">
                     <?php else: ?>
-                        <span class="text-2xl">💰</span>
+                        <span class="text-2xl"><?= $variant === 'b' ? '⚡' : '💰' ?></span>
                     <?php endif; ?>
                 </div>
                 <div class="min-w-0">
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">Подходящее предложение по теме</p>
-                    <a href="/offer/<?= e($offer['slug']) ?>" class="block text-lg font-bold text-gray-900 hover:text-emerald-700"><?= e($offer['title']) ?></a>
-                    <p class="mt-1 text-sm text-gray-600">
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide <?= $topClass ?>"><?= e($labelTop) ?></p>
+                    <a href="/offer/<?= e($offer['slug']) ?>" class="block text-lg font-bold text-gray-900 hover:text-emerald-700"><?= e($headline) ?></a>
+                    <p class="mt-1 text-sm text-gray-600"><?= e($subline) ?></p>
+                    <p class="mt-2 text-sm text-gray-600">
                         <?php if ($amount): ?><span><?= e($amount) ?></span><?php endif; ?>
                         <?php if ($amount && $rate): ?><span> • </span><?php endif; ?>
                         <?php if ($rate): ?><span><?= e($rate) ?></span><?php endif; ?>
@@ -553,8 +595,8 @@ function renderArticleInlineOfferCta(array $offer): string {
             <div class="flex-shrink-0">
                 <a href="/click/<?= (int)$offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
                    onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
-                   class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                    Перейти к оформлению
+                   class="<?= $buttonClass ?>">
+                    <?= e($buttonText) ?>
                 </a>
             </div>
         </div>
