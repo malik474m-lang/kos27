@@ -120,8 +120,41 @@ ob_start();
     </div>
 </section>
 
+<!-- FAQ Section -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Часто задаваемые вопросы</h2>
+        <div class="space-y-4">
+            <?php
+            $homeFaqs = [
+                ['q' => 'Как быстро получить займ онлайн?', 'a' => 'Оформление займа занимает от 5 до 15 минут. Заполните заявку на сайте МФО, укажите паспортные данные и банковскую карту. При одобрении деньги поступят на карту в течение нескольких минут. Первый займ во многих МФО предоставляется под 0%.'],
+                ['q' => 'Какие документы нужны для получения займа?', 'a' => 'Для оформления микрозайма в большинстве случаев достаточно паспорта гражданина РФ. Некоторые МФО могут запросить СНИЛС или ИНН. Справка о доходах обычно не требуется — решение принимается на основе скоринга.'],
+                ['q' => 'Безопасно ли оформлять займ через интернет?', 'a' => 'Да, если вы обращаетесь в лицензированную МФО. Все организации, представленные на нашем сайте, имеют действующую лицензию ЦБ РФ и внесены в государственный реестр. Проверить наличие лицензии можно на сайте Банка России.'],
+                ['q' => 'Что такое ПСК и почему это важно?', 'a' => 'ПСК (Полная стоимость кредита) — это все расходы заёмщика, выраженные в процентах годовых. ПСК включает проценты, комиссии и обязательные страховки. По закону ПСК не может превышать установленный ЦБ РФ предел. Сравнивайте именно ПСК, а не рекламную ставку.'],
+                ['q' => 'Можно ли получить займ с плохой кредитной историей?', 'a' => 'Да, многие МФО работают с заёмщиками с любой кредитной историей. Условия могут отличаться: сумма первого займа обычно меньше, а ставка выше. При своевременном погашении кредитная история улучшается, и условия следующих займов становятся лучше.'],
+                ['q' => 'Чем займ отличается от кредита?', 'a' => 'Микрозайм — это небольшая сумма (до 100 000 ₽) на короткий срок (до 1 года), выдаваемая МФО. Кредит — это более крупная сумма от банка на длительный срок. Займы оформляются быстрее и с минимумом документов, но имеют более высокую процентную ставку.'],
+            ];
+            foreach ($homeFaqs as $faq): ?>
+            <details class="group border border-gray-200 rounded-lg">
+                <summary class="flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 hover:bg-gray-50 rounded-lg">
+                    <span><?= e($faq['q']) ?></span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <p class="px-4 pb-4 text-sm text-gray-600 leading-relaxed"><?= e($faq['a']) ?></p>
+            </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
 <?php
 $canonicalUrl = SITE_URL . '/';
+
+// Schema.org: FAQPage (Google показывает в выдаче!)
+$homeFaqSchema = [];
+foreach ($homeFaqs as $faq) {
+    $homeFaqSchema[] = ['q' => $faq['q'], 'a' => $faq['a']];
+}
 
 // Schema.org: ItemList для топ офферов (Google карусель)
 $itemListItems = [];
@@ -134,6 +167,9 @@ foreach ($topOffers as $i => $offer) {
     ];
 }
 $jsonLdSchemas = [];
+if ($homeFaqSchema) {
+    $jsonLdSchemas[] = jsonLdFAQ($homeFaqSchema);
+}
 if ($itemListItems) {
     $jsonLdSchemas[] = json_encode([
         '@context' => 'https://schema.org',
