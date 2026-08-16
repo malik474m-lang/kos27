@@ -33,7 +33,29 @@ function loadCabinet(){
         var apps=d.applications||[];
         document.getElementById('cab-email').textContent=p.email||'';
 
-        var h='<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">';
+        var h='';
+        h+='<div class="mb-8 overflow-hidden rounded-3xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 shadow-sm">';
+        h+='<div class="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">';
+        h+='<div class="min-w-0">';
+        h+='<p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">КосмоБонус</p>';
+        h+='<h2 class="mt-2 text-2xl sm:text-3xl font-extrabold text-gray-900">Ваш бонусный баланс: '+(d.bonus_balance||0)+' ₽</h2>';
+        h+='<p class="mt-3 max-w-2xl text-sm sm:text-base text-gray-600">Копите бонусы за подтверждённые заявки и выводите их на карту. 1 бонус = 1 рубль. Если баланс уже доступен — отправьте заявку на вывод прямо сейчас.</p>';
+        h+='<div class="mt-4 flex flex-wrap gap-3 text-xs sm:text-sm">';
+        h+='<span class="inline-flex items-center rounded-full bg-white px-3 py-1.5 font-semibold text-amber-700 ring-1 ring-amber-200">🎁 Начисление после подтверждения заявки</span>';
+        h+='<span class="inline-flex items-center rounded-full bg-white px-3 py-1.5 font-semibold text-amber-700 ring-1 ring-amber-200">💳 Вывод на карту по заявке</span>';
+        h+='</div>';
+        h+='</div>';
+        h+='<div class="flex-shrink-0">';
+        if((d.bonus_balance||0) > 0){
+            h+='<button type="button" onclick="document.getElementById(\'bw-amount-user\')?.focus();window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'});" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-amber-600 hover:shadow-xl"><span>💸</span><span>Вывести бонусы</span></button>';
+        } else {
+            h+='<div class="rounded-2xl bg-white px-5 py-4 text-center ring-1 ring-amber-200"><p class="text-xs uppercase tracking-wide text-gray-400">Сейчас доступно</p><p class="mt-1 text-lg font-bold text-gray-700">0 ₽</p><p class="mt-1 text-xs text-gray-500">Бонусы появятся после одобрения заявки</p></div>';
+        }
+        h+='</div>';
+        h+='</div>';
+        h+='</div>';
+
+        h+='<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">';
         h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl font-bold text-blue-600">'+apps.length+'</p><p class="text-xs text-gray-500">Заявок</p></div>';
         var approved=apps.filter(a=>a.status==='approved').length;
         var rejected=apps.filter(a=>a.status==='rejected').length;
