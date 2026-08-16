@@ -32,27 +32,57 @@ function jsonLdWebsite(): string {
 function jsonLdOffer(array $offer, array $reviews = []): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
     $image = $logo ? (str_starts_with($logo, 'http') ? $logo : SITE_URL . $logo) : SITE_URL . '/favicon.svg';
+    $offerUrl = SITE_URL . '/offer/' . $offer['slug'];
+
+    $additionalType = match($offer['category'] ?? 'microloans') {
+        'microloans', 'credits' => 'https://schema.org/LoanOrCredit',
+        'credit_cards', 'debit_cards' => 'https://schema.org/PaymentCard',
+        default => 'https://schema.org/FinancialProduct',
+    };
 
     $data = [
         '@context' => 'https://schema.org',
-        '@type' => 'FinancialProduct',
-        '@id' => SITE_URL . '/offer/' . $offer['slug'],
-        'url' => SITE_URL . '/offer/' . $offer['slug'],
+        '@type' => 'Product',
+        'additionalType' => $additionalType,
+        '@id' => $offerUrl,
+        'url' => $offerUrl,
         'name' => $offer['title'],
         'image' => $image,
         'description' => $offer['description'] ?: "Финансовое предложение от {$offer['title']}",
+        'sku' => (string)($offer['slug'] ?? $offer['id'] ?? ''),
+        'category' => (string)($offer['category'] ?? ''),
         'brand' => ['@type' => 'Brand', 'name' => $offer['title']],
-        'provider' => ['@type' => 'FinancialService', 'name' => $offer['title']],
         'offers' => [
             '@type' => 'Offer',
+            'url' => $offerUrl,
             'priceCurrency' => 'RUB',
             'price' => '0',
             'availability' => 'https://schema.org/InStock',
-            'url' => SITE_URL . '/offer/' . $offer['slug'],
+            'priceValidUntil' => date('Y-12-31'),
         ],
-        'interestRate' => ['@type' => 'QuantitativeValue', 'value' => $offer['rate'], 'unitText' => (getRateUnit($offer) === 'year' ? 'percent per year' : 'percent per day')],
-        'amount' => ['@type' => 'MonetaryAmount', 'minValue' => $offer['amount_min'], 'maxValue' => $offer['amount_max'], 'currency' => 'RUB'],
     ];
+
+    if (!empty($offer['rate'])) {
+        $data['additionalProperty'][] = [
+            '@type' => 'PropertyValue',
+            'name' => getRateUnit($offer) === 'year' ? 'Процентная ставка годовая' : 'Процентная ставка',
+            'value' => (string)$offer['rate'] . '%',
+        ];
+    }
+    if (!empty($offer['amount_min']) || !empty($offer['amount_max'])) {
+        $data['additionalProperty'][] = [
+            '@type' => 'PropertyValue',
+            'name' => 'Сумма',
+            'value' => formatMoney((int)($offer['amount_min'] ?? 0)) . ' — ' . formatMoney((int)($offer['amount_max'] ?? 0)),
+        ];
+    }
+    if (!empty($offer['term_min_days']) || !empty($offer['term_max_days'])) {
+        $data['additionalProperty'][] = [
+            '@type' => 'PropertyValue',
+            'name' => 'Срок',
+            'value' => formatDays((int)($offer['term_min_days'] ?? 0)) . ' — ' . formatDays((int)($offer['term_max_days'] ?? 0)),
+        ];
+    }
 
     if ((float)$offer['rating'] > 0 && (int)$offer['review_count'] > 0) {
         $data['aggregateRating'] = [
@@ -64,7 +94,6 @@ function jsonLdOffer(array $offer, array $reviews = []): string {
         ];
     }
 
-    // Отзывы выносим в отдельный JSON-LD блок (не внутрь FinancialProduct)
     return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
