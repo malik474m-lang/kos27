@@ -41,7 +41,7 @@ function apiCacheClear(): int {
     $count = 0;
     $files = glob($API_CACHE_DIR . '/*.json') ?: [];
     foreach ($files as $f) {
-        if (@unlink($f)) $count++;
+        if (file_exists($f) && @unlink($f)) $count++;
     }
     return $count;
 }

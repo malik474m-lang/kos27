@@ -64,6 +64,8 @@ function kosmozaimErrorHandler(int $errno, string $errstr, string $errfile, int 
     // Игнорируем безвредные race-condition предупреждения при создании директорий
     $ignoredPatterns = [
         'mkdir(): File exists',
+        'unlink(',
+        'No such file or directory',
     ];
     foreach ($ignoredPatterns as $pattern) {
         if (str_contains($errstr, $pattern)) {

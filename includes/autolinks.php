@@ -32,7 +32,7 @@ function getCityLinks(): array {
     }
 
     $links = [];
-    foreach ($cities as $city) {
+    foreach (getCities() as $city) {
         $prep = $city['prep'];
         $name = $city['name'];
         $slug = $city['slug'];

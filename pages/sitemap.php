@@ -180,7 +180,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Займы по городам -->
-<?php foreach ($cities as $c):
+<?php foreach (getCities() as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_microloans'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -192,7 +192,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Кредиты по городам -->
-<?php foreach ($cities as $c):
+<?php foreach (getCities() as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credits'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -204,7 +204,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Кредитные карты по городам -->
-<?php foreach ($cities as $c):
+<?php foreach (getCities() as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -216,7 +216,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Дебетовые карты по городам -->
-<?php foreach ($cities as $c):
+<?php foreach (getCities() as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_debit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -228,7 +228,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Карты по городам (общие) -->
-<?php foreach ($cities as $c):
+<?php foreach (getCities() as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -240,7 +240,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- City + Tag страницы с lastmod -->
-<?php foreach ($cities as $c): foreach ($allTags as $tag):
+<?php foreach (getCities() as $c): foreach ($allTags as $tag):
     $tagCatUrl = $catUrls[$tag['category']] ?? '/zajmy';
     $cityTagUrl = $tagCatUrl . '/' . $c['slug'] . '/type/' . $tag['slug'];
     
