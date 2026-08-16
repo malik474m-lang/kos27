@@ -121,6 +121,7 @@ ob_start();
 </section>
 
 <?php
+$canonicalUrl = SITE_URL . '/';
 $jsonLdSchemas = [];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

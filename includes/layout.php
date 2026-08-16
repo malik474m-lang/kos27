@@ -8,7 +8,15 @@ require_once __DIR__ . '/pwa.php';
 $pageTitle = $pageTitle ?? SITE_NAME;
 $metaDescription = $metaDescription ?? 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам.';
 $metaKeywords = $metaKeywords ?? 'займы онлайн, кредиты, микрозаймы, кредитные карты, дебетовые карты';
-$canonicalUrl = $canonicalUrl ?? '';
+// Автоматический canonical — если страница не задала, формируем из SITE_URL + текущий путь
+if (empty($canonicalUrl)) {
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $currentPath = rtrim($currentPath, '/') ?: '/';
+    // Не ставим canonical для admin/api/click
+    if (!str_starts_with($currentPath, '/api/') && !str_starts_with($currentPath, '/admin') && !str_starts_with($currentPath, '/click/')) {
+        $canonicalUrl = SITE_URL . $currentPath;
+    }
+}
 $ogImage = $ogImage ?? '';
 $jsonLdSchemas = $jsonLdSchemas ?? [];
 $pageHeadHtml = $pageHeadHtml ?? '';
