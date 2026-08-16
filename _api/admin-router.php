@@ -9,6 +9,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { register_shutdown_functio
 if ($adminUri === '/login' && $method === 'POST') { require __DIR__ . '/admin/login.php'; exit; }
 if ($adminUri === '/logout' && $method === 'POST') { require __DIR__ . '/admin/logout.php'; exit; }
 if ($adminUri === '/check') { require __DIR__ . '/admin/check.php'; exit; }
+if ($adminUri === '/opcache-reset' && $method === 'POST') { require __DIR__ . '/admin/opcache-reset.php'; exit; }
 
 // Всё остальное — только для авторизованных
 requireAdmin();
