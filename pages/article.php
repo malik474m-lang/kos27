@@ -41,17 +41,14 @@ $articleOfferCategory = $articleOfferContext['category'];
 $articleOfferMeta = $articleOfferContext['meta'];
 $articleTopicOffers = $articleOfferContext['offers'];
 $inlineArticleOffer = !empty($articleTopicOffers) ? $articleTopicOffers[0] : null;
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Статьи', '/articles'), breadcrumbItem($article['title'], '/articles/' . $article['slug'])];
 $articleBodyHtml = safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory]);
 $articleBodyHtml = injectInlineOfferCta($articleBodyHtml, $inlineArticleOffer, 2, $article['slug']);
 
 ob_start();
 ?>
 <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" itemscope itemtype="https://schema.org/Article">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a> → 
-        <a href="/articles" class="hover:text-primary">Статьи</a> → 
-        <?= e($article['title']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <?php if ($cover): ?>
     <div class="rounded-2xl overflow-hidden mb-8 max-h-96">
@@ -165,7 +162,7 @@ ob_start();
 // Используем улучшенную E-E-A-T schema
 $jsonLdSchemas = [
     jsonLdArticleEEAT($article),
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Статьи','url'=>'/articles'],['name'=>$article['title'],'url'=>'/articles/'.$article['slug']]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/articles/' . $article['slug'];
 $ogImage = $cover;

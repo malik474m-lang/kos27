@@ -1,10 +1,11 @@
 <?php
 $pageTitle = 'Источники информации — ' . SITE_NAME;
 $metaDescription = 'Официальные и публичные источники данных, которые используются при подготовке материалов на сайте ' . SITE_NAME . '.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Источники информации', '/sources')];
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Источники информации</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Источники информации</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p>При подготовке карточек, обзоров и статей мы используем открытые и официальные источники.</p>
@@ -22,7 +23,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Источники информации','url'=>'/sources']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/sources';
 $content = ob_get_clean();

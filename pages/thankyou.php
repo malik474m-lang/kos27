@@ -55,18 +55,17 @@ if ($clickedOffer) {
 }
 $pageTitle = 'Заявка отправлена — ' . SITE_NAME;
 $metaDescription = 'Ваша заявка отправлена. Пока ждёте ответ, посмотрите другие выгодные предложения.';
+$breadcrumbs = [breadcrumbItem('Главная', '/')];
+if ($clickedOffer) {
+    $breadcrumbs[] = breadcrumbItem($thankyouCatMeta['label'], $thankyouCatMeta['url']);
+    $breadcrumbs[] = breadcrumbItem($clickedOffer['title'], '/offer/' . $clickedOffer['slug']);
+}
+$breadcrumbs[] = breadcrumbItem('Заявка отправлена', '/thankyou');
 
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a>
-        <?php if ($clickedOffer): ?>
-            → <a href="<?= e($thankyouCatMeta['url']) ?>" class="hover:text-primary"><?= e($thankyouCatMeta['label']) ?></a>
-            → <a href="/offer/<?= e($clickedOffer['slug']) ?>" class="hover:text-primary"><?= e($clickedOffer['title']) ?></a>
-        <?php endif; ?>
-        → Заявка отправлена
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <!-- Блок подтверждения -->
     <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 sm:p-12 text-center mb-12 border border-green-100">
@@ -195,12 +194,6 @@ document.getElementById('ty-subscribe-form').addEventListener('submit', function
 </script>
 <?php
 $canonicalUrl = SITE_URL . '/thankyou';
-$breadcrumbItems = [['name' => 'Главная', 'url' => '/']];
-if ($clickedOffer) {
-    $breadcrumbItems[] = ['name' => $thankyouCatMeta['label'], 'url' => $thankyouCatMeta['url']];
-    $breadcrumbItems[] = ['name' => $clickedOffer['title'], 'url' => '/offer/' . $clickedOffer['slug']];
-}
-$breadcrumbItems[] = ['name' => 'Заявка отправлена', 'url' => '/thankyou'];
-$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbItems)];
+$jsonLdSchemas = [jsonLdBreadcrumb($breadcrumbs)];
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

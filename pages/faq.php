@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/autolinks.php';
 
 $pageTitle = 'Частые вопросы — ' . SITE_NAME;
 $metaDescription = 'Ответы на популярные вопросы о займах, кредитах и банковских картах.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('FAQ', '/faq')];
 
 $faqs = [
     ['q'=>'Что такое микрозайм?','a'=>'Микрозайм — это небольшой краткосрочный заём от микрофинансовой организации (МФО). Суммы обычно от 1 000 до 100 000 рублей, сроки — от нескольких дней до нескольких месяцев.'],
@@ -18,7 +19,7 @@ $faqs = [
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → FAQ</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Частые вопросы</h1>
     <div class="space-y-4">
         <?php foreach ($faqs as $i => $faq): ?>
@@ -35,7 +36,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdFAQ($faqs),
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'FAQ','url'=>'/faq']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/faq';
 $content = ob_get_clean();

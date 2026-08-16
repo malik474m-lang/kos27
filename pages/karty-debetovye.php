@@ -13,7 +13,7 @@ $metaDescription = 'Сравните дебетовые карты с кэшбе
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Дебетовые карты</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Дебетовые карты</h1>
     <p class="text-gray-600 mb-8">Сравните <?= count($offers) ?> дебетовых карт</p>
     <?php if ($debitTags): ?>
@@ -53,7 +53,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Дебетовые карты','url'=>'/karty/debetovye']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

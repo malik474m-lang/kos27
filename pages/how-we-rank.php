@@ -4,7 +4,7 @@ $metaDescription = 'Описание принципов ранжирования
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Как мы оцениваем предложения</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Как мы оцениваем предложения</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p>Порядок отображения предложений на сайте формируется автоматически и/или вручную на основе набора параметров, которые помогают пользователю быстрее найти подходящий вариант.</p>
@@ -25,7 +25,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Как мы оцениваем предложения','url'=>'/how-we-rank']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/how-we-rank';
 $content = ob_get_clean();

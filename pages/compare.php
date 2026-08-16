@@ -18,7 +18,7 @@ HTML;
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Сравнение</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Сравнение предложений</h1>
 
     <div class="grid lg:grid-cols-3 gap-8">
@@ -173,7 +173,7 @@ cmpFilter();
 </script>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Сравнение','url'=>'/compare']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/compare';
 $content = ob_get_clean();

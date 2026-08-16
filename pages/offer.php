@@ -61,6 +61,8 @@ $catUrl = match($offer['category']) {
     default => '/zajmy',
 };
 
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem($catLabel, $catUrl), breadcrumbItem($offer['title'], '/offer/' . $offer['slug'])];
+
 $pageTitle = (!empty($offer['meta_title'])) ? $offer['meta_title'] : ($offer['title'] . ' — ' . SITE_NAME);
 $metaDescription = (!empty($offer['meta_description'])) ? $offer['meta_description'] : ($offer['description'] ?: ("Оформите {$offer['title']} онлайн. Сумма от " . formatMoney($offer['amount_min']) . " до " . formatMoney($offer['amount_max'])));
 $rating = (float)$offer['rating'];
@@ -101,11 +103,7 @@ HTML;
 ob_start();
 ?>
 <section class="offer-page-wrap max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-primary">Главная</a> → 
-        <a href="<?= $catUrl ?>" class="hover:text-primary"><?= $catLabel ?></a> → 
-        <?= e($offer['title']) ?>
-    </nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <div class="offer-main-card bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         <div class="offer-top flex items-center gap-6 mb-6">
@@ -591,7 +589,7 @@ ob_start();
 <?php
 $jsonLdSchemas = [
     jsonLdOffer($offer),
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$catLabel,'url'=>$catUrl],['name'=>$offer['title'],'url'=>'/offer/'.$offer['slug']]]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/offer/' . $offer['slug'];
 $ogImage = normalizeMediaUrl($offer['logo_url'] ?? '');

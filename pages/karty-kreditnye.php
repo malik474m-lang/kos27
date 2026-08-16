@@ -13,7 +13,7 @@ $metaDescription = 'Сравните кредитные карты с льгот
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Кредитные карты</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Кредитные карты</h1>
     <p class="text-gray-600 mb-8">Сравните <?= count($offers) ?> кредитных карт</p>
     <?php if ($cardTags): ?>
@@ -37,7 +37,7 @@ ob_start();
 </div>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Кредитные карты','url'=>'/karty/kreditnye']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 // Schema.org ItemList
 $_ilItems = [];

@@ -49,7 +49,7 @@ ob_start();
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Займы онлайн</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Займы онлайн</h1>
     <p class="text-gray-600 mb-6">Подберите выгодный микрозайм на карту. Сравните условия от надёжных МФО.</p>
 
@@ -138,7 +138,7 @@ foreach ($offers as $i => $offer) {
     ];
 }
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Займы онлайн','url'=>'/zajmy']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 if ($offerItems) {
     $jsonLdSchemas[] = json_encode([

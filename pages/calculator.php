@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Калькулятор займа — ' . SITE_NAME;
 $metaDescription = 'Рассчитайте стоимость займа онлайн. Калькулятор процентов, переплаты и подбор подходящих предложений.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Калькулятор', '/calculator')];
 
 $pageHeadHtml = <<<'HTML'
 <style>
@@ -21,7 +22,7 @@ $allOffers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_
 ob_start();
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Калькулятор</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Калькулятор займа</h1>
 
     <div class="grid lg:grid-cols-2 gap-8">
@@ -191,7 +192,7 @@ calcUpdate();
 </script>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Калькулятор','url'=>'/calculator']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/calculator';
 $content = ob_get_clean();

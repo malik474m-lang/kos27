@@ -1,10 +1,11 @@
 <?php
 $pageTitle = 'О проекте — ' . SITE_NAME;
 $metaDescription = 'Информация о проекте ' . SITE_NAME . ', целях сервиса, принципах работы и подходе к подбору финансовых продуктов.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('О проекте', '/about')];
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → О проекте</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">О проекте</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p><strong><?= SITE_NAME ?></strong> — это информационный сервис сравнения займов, кредитов и банковских карт. Мы собираем предложения партнёрских организаций, структурируем условия и помогаем пользователям быстрее ориентироваться в финансовых продуктах.</p>
@@ -25,7 +26,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'О проекте','url'=>'/about']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/about';
 $content = ob_get_clean();

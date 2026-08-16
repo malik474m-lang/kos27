@@ -3,11 +3,12 @@ require_once __DIR__ . '/../data/glossary.php';
 
 $pageTitle = 'Глоссарий финансовых терминов — ' . SITE_NAME;
 $metaDescription = 'Словарь финансовых терминов: ПСК, грейс-период, кредитная история и другие.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Глоссарий', '/glossary')];
 
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Глоссарий</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Глоссарий финансовых терминов</h1>
     <div class="space-y-4">
         <?php foreach ($glossaryTerms as $term): ?>
@@ -20,7 +21,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Глоссарий','url'=>'/glossary']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/glossary';
 $content = ob_get_clean();

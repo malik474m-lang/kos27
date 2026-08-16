@@ -4,7 +4,7 @@ $metaDescription = 'Политика конфиденциальности сай
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Политика конфиденциальности</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Политика конфиденциальности</h1>
     <div class="bg-white rounded-xl border border-gray-100 p-8 prose max-w-none text-gray-700">
         <p>Настоящая Политика конфиденциальности определяет порядок обработки персональных данных пользователей сайта <?= SITE_NAME ?> (<?= SITE_URL ?>).</p>
@@ -22,7 +22,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Политика конфиденциальности','url'=>'/privacy']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/privacy';
 $content = ob_get_clean();

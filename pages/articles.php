@@ -4,11 +4,12 @@ $articles = $db->query("SELECT * FROM articles WHERE is_published = 1 ORDER BY c
 
 $pageTitle = 'Полезные статьи — ' . SITE_NAME;
 $metaDescription = 'Статьи о займах, кредитах и финансовой грамотности.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Статьи', '/articles')];
 
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Статьи</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Полезные статьи</h1>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($articles as $a):
@@ -47,7 +48,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Статьи','url'=>'/articles']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/articles';
 $content = ob_get_clean();

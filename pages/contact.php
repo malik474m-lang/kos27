@@ -5,6 +5,7 @@ $contactEmail = $settings['contact_email'] ?? '';
 
 $pageTitle = 'Обратная связь — ' . SITE_NAME;
 $metaDescription = 'Форма обратной связи сайта ' . SITE_NAME . '. Свяжитесь с нами по любым вопросам.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Обратная связь', '/contact')];
 
 $sent = false;
 $error = '';
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ob_start();
 ?>
 <section class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="text-sm text-gray-500 mb-6"><a href="/" class="hover:text-primary">Главная</a> → Обратная связь</nav>
+    <?= renderBreadcrumbs($breadcrumbs) ?>
     <h1 class="text-3xl font-bold text-gray-900 mb-4">Обратная связь</h1>
     <p class="text-gray-600 mb-8">Есть вопрос, предложение или проблема? Напишите нам — мы ответим на указанный email.</p>
 
@@ -95,7 +96,7 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Обратная связь','url'=>'/contact']]),
+    jsonLdBreadcrumb($breadcrumbs),
 ];
 $canonicalUrl = SITE_URL . '/contact';
 $content = ob_get_clean();
