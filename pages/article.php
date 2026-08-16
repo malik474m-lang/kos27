@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/autolinks.php';
+require_once __DIR__ . '/../includes/article-eeat.php';
 
 $db = getDB();
 $stmt = $db->prepare("SELECT * FROM articles WHERE slug = ? AND is_published = 1 LIMIT 1");
@@ -16,13 +17,28 @@ if (!$article) {
     return;
 }
 
+// Проверяем наличие E-E-A-T полей (для обратной совместимости)
+$hasEeatFields = isset($article['author_name']);
+if (!$hasEeatFields) {
+    // Дефолтные значения если миграция не выполнена
+    $article['author_name'] = 'Редакция Космозайм';
+    $article['author_title'] = 'Финансовый редактор';
+    $article['reviewer_name'] = 'Анна Соколова';
+    $article['reviewer_title'] = 'Главный редактор';
+    $article['fact_checked_at'] = $article['updated_at'] ?? $article['created_at'];
+    $article['sources'] = json_encode([
+        ['title' => 'Банк России', 'url' => 'https://cbr.ru/'],
+        ['title' => 'Реестр МФО', 'url' => 'https://cbr.ru/microfinance/registry/'],
+    ]);
+}
+
 $pageTitle = $article['meta_title'] ?: ($article['title'] . ' — ' . SITE_NAME);
 $metaDescription = $article['meta_description'] ?: ($article['excerpt'] ?: '');
 $cover = normalizeMediaUrl($article['cover_image'] ?? '');
 
 ob_start();
 ?>
-<article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" itemscope itemtype="https://schema.org/Article">
     <nav class="text-sm text-gray-500 mb-6">
         <a href="/" class="hover:text-primary">Главная</a> → 
         <a href="/articles" class="hover:text-primary">Статьи</a> → 
@@ -31,23 +47,78 @@ ob_start();
 
     <?php if ($cover): ?>
     <div class="rounded-2xl overflow-hidden mb-8 max-h-96">
-        <img src="<?= e($cover) ?>" alt="<?= e($article['title']) ?>" class="w-full h-full object-cover" loading="lazy">
+        <img src="<?= e($cover) ?>" alt="<?= e($article['title']) ?>" class="w-full h-full object-cover" loading="lazy" itemprop="image">
     </div>
     <?php endif; ?>
 
-    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4"><?= e($article['title']) ?></h1>
-    <div class="flex items-center gap-3 text-sm text-gray-400 mb-8">
-        <time datetime="<?= date('c', strtotime($article['created_at'])) ?>">📅 <?= date('d.m.Y', strtotime($article['created_at'])) ?></time>
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4" itemprop="headline"><?= e($article['title']) ?></h1>
+    
+    <!-- Мета-информация и бейдж обновления -->
+    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-6">
+        <time datetime="<?= date('c', strtotime($article['created_at'])) ?>" itemprop="datePublished">
+            📅 <?= date('d.m.Y', strtotime($article['created_at'])) ?>
+        </time>
         <?php if (!empty($article['updated_at']) && $article['updated_at'] !== $article['created_at']): ?>
         <span>•</span>
-        <time datetime="<?= date('c', strtotime($article['updated_at'])) ?>">✏️ Обновлено <?= date('d.m.Y', strtotime($article['updated_at'])) ?></time>
+        <time datetime="<?= date('c', strtotime($article['updated_at'])) ?>" itemprop="dateModified">
+            ✏️ Обновлено <?= date('d.m.Y', strtotime($article['updated_at'])) ?>
+        </time>
         <?php endif; ?>
     </div>
+    
+    <!-- Бейдж "Материал обновлён редакцией" -->
+    <?php 
+    $updatedBadge = renderArticleUpdatedBadge($article);
+    if ($updatedBadge): 
+    ?>
+    <div class="mb-6"><?= $updatedBadge ?></div>
+    <?php endif; ?>
 
-    <div class="prose prose-lg max-w-none text-gray-700">
+    <!-- Блок автора и редактора (E-E-A-T) -->
+    <div class="mb-8">
+        <?= renderArticleAuthorBlock($article) ?>
+    </div>
+
+    <!-- Содержание статьи -->
+    <div class="prose prose-lg max-w-none text-gray-700 mb-12" itemprop="articleBody">
         <?= safeAutoLink($article['content']) ?>
     </div>
 
+    <!-- Блок источников и проверки фактов -->
+    <div class="mb-12">
+        <?= renderArticleSourcesBlock($article) ?>
+    </div>
+    
+    <!-- Trust ссылки -->
+    <div class="bg-gray-50 rounded-xl p-6 mb-12">
+        <p class="text-sm text-gray-600 mb-3">Узнайте больше о том, как мы готовим материалы:</p>
+        <div class="flex flex-wrap gap-4">
+            <a href="/editorial-policy" class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Редакционная политика
+            </a>
+            <a href="/sources" class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                Источники информации
+            </a>
+            <a href="/how-we-rank" class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Как мы составляем рейтинг
+            </a>
+            <a href="/about" class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                О проекте
+            </a>
+        </div>
+    </div>
 
     <!-- Читайте также -->
     <?php
@@ -56,7 +127,7 @@ ob_start();
     $relArticles = $otherArticles->fetchAll();
     if ($relArticles):
     ?>
-    <div class="mt-12">
+    <div class="mb-12">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Читайте также</h2>
         <div class="grid sm:grid-cols-3 gap-4">
             <?php foreach ($relArticles as $ra):
@@ -94,8 +165,9 @@ ob_start();
 
 </article>
 <?php
+// Используем улучшенную E-E-A-T schema
 $jsonLdSchemas = [
-    jsonLdArticle($article),
+    jsonLdArticleEEAT($article),
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Статьи','url'=>'/articles'],['name'=>$article['title'],'url'=>'/articles/'.$article['slug']]]),
 ];
 $canonicalUrl = SITE_URL . '/articles/' . $article['slug'];

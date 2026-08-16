@@ -27,7 +27,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 .btn-p:disabled{opacity:0.5;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<?php include __DIR__ . "/patch-eeat.php"; ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<?php include __DIR__ . "/patch-eeat.php"; ?>
 </head>
 <body class="bg-gray-100 min-h-screen">
 <div class="bg-gray-900 text-white"><div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div class="flex items-center gap-4 flex-wrap"><div class="flex items-center space-x-3"><span class="text-2xl">⚙️</span><h1 class="text-lg font-bold">Админ-панель <?= e(SITE_NAME) ?></h1></div><div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium <?= $adminLicenseActive ? 'bg-green-500/15 text-green-300 border border-green-400/20' : 'bg-red-500/15 text-red-300 border border-red-400/20' ?>"><span><?= $adminLicenseActive ? '✅' : '⚠️' ?></span><span>Тариф: <strong><?= e((string)$adminLicensePlan) ?></strong></span><span class="opacity-70">•</span><span>До: <strong><?= e($adminLicenseExpires) ?></strong></span></div></div><div class="flex items-center flex-wrap gap-3"><button onclick="show2FA()" class="text-gray-300 hover:text-white text-sm">🔐 2FA</button><button onclick="showChangePw()" class="text-gray-300 hover:text-white text-sm">🔑 Пароль</button><button onclick="clearCache()" class="text-gray-300 hover:text-white text-sm">🗑 Сбросить кэш</button><button onclick="clearApiCache()" class="text-gray-300 hover:text-white text-sm">⚡ API-кэш</button><a href="/admin/about" class="text-gray-300 hover:text-white text-sm">ℹ️ О системе</a><button onclick="logout()" class="text-gray-300 hover:text-white text-sm">Выйти →</button></div></div></div>
@@ -4684,5 +4686,6 @@ function loadAppStats(p){
 var _sw2=sw;sw=function(t){_sw2(t);if(t==='mobileapp')loadAppStats(30);};
 
 </script>
+<?php include __DIR__ . "/patch-eeat.php"; ?>
 </body>
 </html>
