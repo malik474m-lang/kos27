@@ -228,8 +228,25 @@ function leadsSuExtractRateData(array $offer, string $category): array {
     return [$rateVal, $pskVal, $rateUnit, $freeTermDays];
 }
 
+function leadsSuCleanOfferName(string $name): string {
+    $name = trim($name);
+    if ($name === '') return 'Без названия';
+
+    // Убираем все дополнения в квадратных скобках: [CPA], [RU], [Акция] и т.п.
+    $name = preg_replace('/\s*\[[^\]]*\]/u', '', $name);
+
+    // Убираем хвостовые разделители, которые могли остаться перед скобками.
+    $name = preg_replace('/\s*[-–—|:,;]+\s*$/u', '', $name);
+
+    // Нормализуем пробелы.
+    $name = preg_replace('/\s{2,}/u', ' ', $name);
+    $name = trim($name);
+
+    return $name !== '' ? $name : 'Без названия';
+}
+
 function leadsSuNormalizeOffer(array $apiOffer, int $platformId, string $categoryOverride = ''): array {
-    $name = trim((string)($apiOffer['name'] ?? 'Без названия'));
+    $name = leadsSuCleanOfferName((string)($apiOffer['name'] ?? 'Без названия'));
     $category = $categoryOverride !== '' ? $categoryOverride : leadsSuMapCategory($apiOffer);
     [$amountMin, $amountMax] = leadsSuExtractAmountRange($apiOffer, $category);
     [$termMin, $termMax] = leadsSuExtractTermRange($apiOffer, $category);

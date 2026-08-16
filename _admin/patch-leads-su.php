@@ -45,8 +45,10 @@ sel.innerHTML+='<option value="'+p.id+'"'+(isKosmo?' selected':'')+'>'+e(p.name)
 });
 }
 
+function lsCleanOfferName(name){name=(name||'').trim();if(!name)return 'Без названия';name=name.replace(/\s*\[[^\]]*\]/g,'');name=name.replace(/\s*[-–—|:,;]+\s*$/g,'');name=name.replace(/\s{2,}/g,' ').trim();return name||'Без названия';}
+
 function lsGuessCategory(o){
-var txt=((o.name||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
+var txt=((lsCleanOfferName(o.name)||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
 if(/кредитн(ая|ые)\s+карт/.test(txt))return 'credit_cards';
 if(/дебетов(ая|ые)\s+карт/.test(txt))return 'debit_cards';
 if(/\b(кредит|кредиты|потребительский)\b/.test(txt))return 'credits';
@@ -90,7 +92,7 @@ d.offers.forEach(function(o,i){
 var p=lsExtractPreview(o,forcedCategory,platformId);
 var catLabel=catLabels[p.category]||p.category;
 var info=[p.amount,p.term,p.rate,p.free].filter(Boolean).join(' • ')||'Нет данных';
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3"><input type="checkbox" class="ls-offer-cb w-4 h-4" data-idx="'+i+'"></td><td class="p-3 font-medium"><div>'+e(o.name||'—')+'</div><div class="text-xs text-gray-400 mt-1">ID #'+e(o.id||'')+'</div></td><td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">'+e(catLabel)+'</span></td><td class="p-3 text-gray-600 text-xs">'+e(info)+'</td><td class="p-3 text-xs text-gray-400 break-all">'+e(p.link)+'</td></tr>';
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3"><input type="checkbox" class="ls-offer-cb w-4 h-4" data-idx="'+i+'"></td><td class="p-3 font-medium"><div>'+e(lsCleanOfferName(o.name)||'—')+'</div><div class="text-xs text-gray-400 mt-1">ID #'+e(o.id||'')+'</div></td><td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">'+e(catLabel)+'</span></td><td class="p-3 text-gray-600 text-xs">'+e(info)+'</td><td class="p-3 text-xs text-gray-400 break-all">'+e(p.link)+'</td></tr>';
 });
 h+='</tbody></table></div>';
 list.innerHTML=h;
