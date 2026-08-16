@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/page-cache.php';
 /**
  * API для настроек виджета социального доказательства
  */
@@ -55,9 +56,30 @@ if ($method === 'POST' || $method === 'PUT') {
             : 'bottom-left';
     }
     
-    file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    
-    echo json_encode(['success' => true]);
+    $saved = file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    if ($saved === false) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Не удалось сохранить настройки виджета']);
+        exit;
+    }
+
+    $pageCleared = function_exists('pageCacheClear') ? pageCacheClear() : 0;
+    $apiCleared = function_exists('apiCacheClear') ? apiCacheClear() : 0;
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Настройки виджета сохранены',
+        'saved' => [
+            'enabled' => (bool)($settings['social_proof_enabled'] ?? true),
+            'interval' => (int)($settings['social_proof_interval'] ?? 8000),
+            'duration' => (int)($settings['social_proof_duration'] ?? 5000),
+            'min_amount' => (int)($settings['social_proof_min_amount'] ?? 5000),
+            'max_amount' => (int)($settings['social_proof_max_amount'] ?? 30000),
+            'position' => $settings['social_proof_position'] ?? 'bottom-left',
+        ],
+        'page_cache_cleared' => $pageCleared,
+        'api_cache_cleared' => $apiCleared,
+    ]);
     exit;
 }
 

@@ -71,7 +71,18 @@ function saveSocialProof() {
         body: JSON.stringify(data)
     }).then(function(res) {
         if (res.success) {
-            alert('✅ Настройки виджета сохранены!');
+            var saved = res.saved || data;
+            alert([
+                '✅ Настройки виджета сохранены!',
+                '',
+                'Включен: ' + (saved.enabled ? 'Да' : 'Нет'),
+                'Интервал: ' + saved.interval + ' мс',
+                'Длительность: ' + saved.duration + ' мс',
+                'Позиция: ' + saved.position,
+                '',
+                'Очищено page cache: ' + (res.page_cache_cleared || 0),
+                'Очищено api cache: ' + (res.api_cache_cleared || 0)
+            ].join('\n'));
         } else {
             alert('Ошибка: ' + (res.error || 'Неизвестная ошибка'));
         }
