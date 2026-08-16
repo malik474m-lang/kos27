@@ -80,7 +80,26 @@ $topCities = [
             </div>
         </div>
 
-        <div class="border-t border-gray-800 mt-6 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+        <!-- E-E-A-T: Финансовый дисклеймер -->
+        <div class="border-t border-gray-800 mt-6 pt-6">
+            <div class="bg-gray-800/50 rounded-lg p-4 mb-6">
+                <p class="text-xs text-gray-400 leading-relaxed">
+                    <strong class="text-gray-300">⚠️ Важная информация:</strong> <?= e(SITE_NAME) ?> не является кредитной организацией, МФО или банком. 
+                    Сайт предоставляет информационные услуги по подбору финансовых продуктов. Все представленные организации 
+                    имеют действующую лицензию Центрального Банка Российской Федерации и внесены в 
+                    <a href="https://cbr.ru/microfinance/registry/" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300">реестр ЦБ РФ</a>. 
+                    Конечные условия предоставления займов/кредитов определяются организацией-партнёром. 
+                    Перед оформлением внимательно ознакомьтесь с условиями договора и полной стоимостью кредита (ПСК).
+                </p>
+                <p class="text-xs text-gray-500 mt-2">
+                    Минимальная процентная ставка — от 0% в день (для первого займа). Максимальная ставка — до 1% в день. 
+                    Срок займа — от 1 до 365 дней. Сумма — от 1 000 до 100 000 ₽. 
+                    Пример расчёта: при займе 10 000 ₽ на 30 дней под 0.8% в день переплата составит 2 400 ₽, общая сумма к возврату — 12 400 ₽.
+                </p>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>© <?= date('Y') ?> Космозайм. Все права защищены. <?php if(isset($GLOBALS['page_start_time'])):?><span class="text-gray-600 text-xs ml-2"><?= round((microtime(true)-$GLOBALS['page_start_time'])*1000) ?> мс</span><?php endif;?></p>
             <div class="flex gap-4">
                 <a href="/privacy" class="hover:text-white transition-colors">Конфиденциальность</a>

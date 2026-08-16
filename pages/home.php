@@ -122,6 +122,26 @@ ob_start();
 
 <?php
 $canonicalUrl = SITE_URL . '/';
+
+// Schema.org: ItemList для топ офферов (Google карусель)
+$itemListItems = [];
+foreach ($topOffers as $i => $offer) {
+    $itemListItems[] = [
+        '@type' => 'ListItem',
+        'position' => $i + 1,
+        'name' => $offer['title'],
+        'url' => SITE_URL . '/offer/' . $offer['slug'],
+    ];
+}
 $jsonLdSchemas = [];
+if ($itemListItems) {
+    $jsonLdSchemas[] = json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        'name' => 'Лучшие предложения по займам, кредитам и картам',
+        'numberOfItems' => count($itemListItems),
+        'itemListElement' => $itemListItems,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

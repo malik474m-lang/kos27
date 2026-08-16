@@ -127,9 +127,28 @@ ob_start();
 </div>
 
 <?php
+// Schema.org ItemList для списка займов
+$offerItems = [];
+foreach ($offers as $i => $offer) {
+    $offerItems[] = [
+        '@type' => 'ListItem',
+        'position' => $i + 1,
+        'name' => $offer['title'],
+        'url' => SITE_URL . '/offer/' . $offer['slug'],
+    ];
+}
 $jsonLdSchemas = [
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Займы онлайн','url'=>'/zajmy']]),
 ];
+if ($offerItems) {
+    $jsonLdSchemas[] = json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        'name' => 'Займы онлайн — лучшие предложения МФО',
+        'numberOfItems' => count($offerItems),
+        'itemListElement' => $offerItems,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 $canonicalUrl = SITE_URL . '/zajmy';
 $content = ob_get_clean();
 $content .= renderStickyCta([

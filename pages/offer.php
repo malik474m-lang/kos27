@@ -121,6 +121,9 @@ ob_start();
                     <span class="text-sm text-gray-500"><?= number_format($rating, 1) ?> (<?= $offer['review_count'] ?> отзывов)</span>
                 </div>
                 <?php endif; ?>
+                <?php if (!empty($offer['updated_at'])): ?>
+                <p class="text-xs text-gray-400 mt-2">Обновлено: <time datetime="<?= date('c', strtotime($offer['updated_at'])) ?>"><?= date('d.m.Y', strtotime($offer['updated_at'])) ?></time></p>
+                <?php endif; ?>
             </div>
         </div>
 

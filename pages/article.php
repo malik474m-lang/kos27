@@ -36,7 +36,13 @@ ob_start();
     <?php endif; ?>
 
     <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4"><?= e($article['title']) ?></h1>
-    <p class="text-sm text-gray-400 mb-8"><?= date('d.m.Y', strtotime($article['created_at'])) ?></p>
+    <div class="flex items-center gap-3 text-sm text-gray-400 mb-8">
+        <time datetime="<?= date('c', strtotime($article['created_at'])) ?>">📅 <?= date('d.m.Y', strtotime($article['created_at'])) ?></time>
+        <?php if (!empty($article['updated_at']) && $article['updated_at'] !== $article['created_at']): ?>
+        <span>•</span>
+        <time datetime="<?= date('c', strtotime($article['updated_at'])) ?>">✏️ Обновлено <?= date('d.m.Y', strtotime($article['updated_at'])) ?></time>
+        <?php endif; ?>
+    </div>
 
     <div class="prose prose-lg max-w-none text-gray-700">
         <?= safeAutoLink($article['content']) ?>

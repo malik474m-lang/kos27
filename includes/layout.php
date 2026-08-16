@@ -76,6 +76,10 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <?= getPwaHeadTags() ?>
     <?php endif; ?>
+    <!-- Preconnect для метрик -->
+    <?php if (YANDEX_METRIKA_ID): ?><link rel="dns-prefetch" href="//mc.yandex.ru"><?php endif; ?>
+    <!-- Preload критических ресурсов -->
+    <link rel="preload" href="/assets/tailwind.css?v=20260801" as="style">
     <link rel="stylesheet" href="/assets/tailwind.css?v=20260801">
     <link rel="stylesheet" href="/assets/site.min.css?v=20260728">
     <style>
