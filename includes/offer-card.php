@@ -24,6 +24,16 @@ function renderOfferCard(array $offer): string {
         $decoded = json_decode($offer['display_fields'], true);
         if (is_array($decoded)) $displayFields = array_merge($displayFields, $decoded);
     }
+    // Для дебетовых карт принудительно скрываем кредитные/займовые метрики,
+    // даже если они по ошибке включены в display_fields.
+    if (($offer['category'] ?? '') === 'debit_cards') {
+        $displayFields['amount'] = false;
+        $displayFields['term'] = false;
+        $displayFields['rate'] = false;
+        $displayFields['psk'] = false;
+        $displayFields['free_term'] = false;
+        $displayFields['borrower'] = false;
+    }
 
     $fieldCards = [];
     if (!empty($displayFields['amount'])) {

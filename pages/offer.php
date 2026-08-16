@@ -81,6 +81,7 @@ $displayDefaults = [
 ];
 $displayFields = $displayDefaults[$offer['category']] ?? ['amount'=>true,'term'=>true,'rate'=>true,'psk'=>true,'free_term'=>((int)$offer['free_term_days']>0),'borrower'=>false];
 if (!empty($offer['display_fields'])) { $tmp = json_decode($offer['display_fields'], true); if (is_array($tmp)) $displayFields = array_merge($displayFields, $tmp); }
+if (($offer['category'] ?? '') === 'debit_cards') { $displayFields = ['amount'=>false,'term'=>false,'rate'=>false,'psk'=>false,'free_term'=>false,'borrower'=>false]; }
 $borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
 
 $pageHeadHtml = <<<'HTML'
