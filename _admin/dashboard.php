@@ -3188,8 +3188,8 @@ h+='<div class="bg-white rounded-xl border mt-6"><div class="p-4 border-b"><h3 c
 if(bonusHistory&&bonusHistory.length){
 h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Пользователь</th><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Сумма</th><th class="p-3 text-left">Тип</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
 bonusHistory.forEach(function(b){
-var typeLabel=b.type==='withdrawal'?'Списание':(b.type==='accrual'?'Начисление':b.type);
-var statusLabel=b.status==='confirmed'?'Подтверждено':(b.status==='pending'?'Ожидание':'Отменено');
+var typeLabel=b.type==='withdrawal'?'Вывод':(b.type==='accrual'?'Начисление':(b.type==='manual'?'Ручное начисление':b.type));
+var statusLabel=b.status==='confirmed'?(b.type==='withdrawal'?'Оплачено':'Подтверждено'):(b.status==='pending'?'Ожидание':'Отменено');
 var statusClass=b.status==='confirmed'?'text-green-600':(b.status==='pending'?'text-yellow-600':'text-red-500');
 var amountClass=Number(b.amount)>=0?'text-amber-600':'text-red-600';
 h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(b.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+e(b.name||b.email||'—')+'</td><td class="p-3">'+e(b.offer_title||'—')+'</td><td class="p-3 text-right font-semibold '+amountClass+'">'+(Number(b.amount)>0?'+':'')+b.amount+' ₽</td><td class="p-3">'+e(typeLabel)+'</td><td class="p-3 '+statusClass+'">'+e(statusLabel)+'</td></tr>';
