@@ -89,7 +89,8 @@ function processFunnel(int $batchLimit = 50): array {
         return ['sent' => 0, 'errors' => 0, 'debug' => 'Нет активных шагов воронки'];
     }
 
-    $subscribers = $db->query("SELECT id, email, unsubscribe_token, created_at FROM subscribers WHERE is_active = 1")->fetchAll();
+    $subDateCol = function_exists('dbFirstExistingColumn') ? dbFirstExistingColumn('subscribers', ['created_at', 'subscribed_at']) : 'subscribed_at';
+    $subscribers = $db->query("SELECT id, email, unsubscribe_token, {$subDateCol} AS created_at FROM subscribers WHERE is_active = 1")->fetchAll();
     if (!$subscribers) {
         return ['sent' => 0, 'errors' => 0, 'debug' => 'Нет активных подписчиков'];
     }
