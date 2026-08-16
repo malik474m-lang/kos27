@@ -101,7 +101,11 @@ $topCities = [
 
         <div class="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>© <?= date('Y') ?> Космозайм. Все права защищены. <?php if(isset($GLOBALS['page_start_time'])):?><span class="text-gray-600 text-xs ml-2"><?= round((microtime(true)-$GLOBALS['page_start_time'])*1000) ?> мс</span><?php endif;?></p>
-            <div class="flex gap-4">
+            <div class="flex flex-wrap gap-4 justify-center sm:justify-end">
+                <a href="/about" class="hover:text-white transition-colors">О проекте</a>
+                <a href="/editorial-policy" class="hover:text-white transition-colors">Редполитика</a>
+                <a href="/how-we-rank" class="hover:text-white transition-colors">Как мы оцениваем</a>
+                <a href="/sources" class="hover:text-white transition-colors">Источники</a>
                 <a href="/privacy" class="hover:text-white transition-colors">Конфиденциальность</a>
                 <a href="/terms" class="hover:text-white transition-colors">Соглашение</a>
                 <a href="/disclaimer" class="hover:text-white transition-colors">Отказ от ответственности</a>
