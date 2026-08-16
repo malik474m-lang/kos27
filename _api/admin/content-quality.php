@@ -13,23 +13,46 @@ $content = (string)($data['content'] ?? '');
 $field = trim((string)($data['field'] ?? 'content'));
 $targetScore = max(1, min(100, (int)($data['targetScore'] ?? 80)));
 $maxPasses = max(1, min(5, (int)($data['maxPasses'] ?? 3)));
+$context = is_array($data['context'] ?? null) ? $data['context'] : [];
 
-function cq_ai_improve_once(string $content, string $entity, string $field, string $title, string $description, array $analysisBefore, int $targetScore): array {
+function cq_ai_improve_once(string $content, string $entity, string $field, string $title, string $description, array $analysisBefore, int $targetScore, array $context = []): array {
     $recommendations = $analysisBefore['recommendations'] ?? [];
     $issuesList = array_map(fn($i) => $i['msg'] ?? '', $analysisBefore['issues'] ?? []);
     $improved = null;
     $provider = 'template';
 
     if (defined('YANDEX_GPT_API_KEY') && YANDEX_GPT_API_KEY && defined('YANDEX_FOLDER_ID') && YANDEX_FOLDER_ID) {
-        $prompt = "Улучши текст для финансового сайта с учётом конкретных замечаний. "
-            . "Сущность: {$entity}. Поле: {$field}. Заголовок: {$title}. Описание: {$description}. "
-            . "Целевой score качества: не ниже {$targetScore}. "
-            . "Минимум слов для этого типа контента: " . cq_min_words($entity) . ". "
-            . "Нужно обязательно устранить замечания: " . implode('; ', array_filter($issuesList)) . ". "
-            . "Нужно обязательно выполнить рекомендации: " . implode('; ', array_filter($recommendations)) . ". "
-            . "Сделай текст более полезным, менее шаблонным, убери markdown-мусор, повторы и слишком рекламные фразы. "
-            . "Если в тексте нет упоминания темы, естественно добавь формулировку заголовка в текст. "
-            . "Верни только улучшенный текст без пояснений. Если в исходнике есть HTML — верни аккуратный HTML без <html><body>. Если HTML нет — верни просто текст.\n\nИсходный текст:\n" . $content;
+        if ($entity === 'offer' && $field === 'description') {
+            $contextBits = [];
+            if (!empty($context['category'])) $contextBits[] = 'категория: ' . $context['category'];
+            if (!empty($context['amountMin']) || !empty($context['amountMax'])) $contextBits[] = 'сумма: ' . ($context['amountMin'] ?? '') . ' - ' . ($context['amountMax'] ?? '');
+            if (!empty($context['termMinDays']) || !empty($context['termMaxDays'])) $contextBits[] = 'срок: ' . ($context['termMinDays'] ?? '') . ' - ' . ($context['termMaxDays'] ?? '') . ' дней';
+            if (!empty($context['rate'])) $contextBits[] = 'ставка: ' . $context['rate'] . '% ' . (($context['rateUnit'] ?? 'day') === 'year' ? 'в год' : 'в день');
+            if (!empty($context['freeTermDays'])) $contextBits[] = 'льготный период: ' . $context['freeTermDays'] . ' дней';
+            $contextLine = implode('; ', $contextBits);
+
+            $prompt = "Перепиши описание конкретного финансового оффера для карточки на сайте. "
+                . "Название оффера: {$title}. "
+                . ($contextLine ? "Параметры: {$contextLine}. " : '')
+                . "Нужно получить уникальное, не шаблонное описание длиной 45-90 слов. "
+                . "Не начинай со слов 'мы собрали', 'на этой странице', 'актуальные условия', 'подходит для'. "
+                . "Не пиши общие фразы, одинаковые для всех офферов. Опирайся на конкретные параметры и тему оффера. "
+                . "Сделай 2-4 предложения, нейтральный тон, без markdown, без списков, без HTML. "
+                . "Обязательно устрани замечания: " . implode('; ', array_filter($issuesList)) . ". "
+                . "Учитывай рекомендации: " . implode('; ', array_filter($recommendations)) . ". "
+                . "Если в исходнике есть полезные детали — сохрани их, но переформулируй. "
+                . "Верни только итоговый текст.\n\nИсходный текст:\n" . $content;
+        } else {
+            $prompt = "Улучши текст для финансового сайта с учётом конкретных замечаний. "
+                . "Сущность: {$entity}. Поле: {$field}. Заголовок: {$title}. Описание: {$description}. "
+                . "Целевой score качества: не ниже {$targetScore}. "
+                . "Минимум слов для этого типа контента: " . cq_min_words($entity) . ". "
+                . "Нужно обязательно устранить замечания: " . implode('; ', array_filter($issuesList)) . ". "
+                . "Нужно обязательно выполнить рекомендации: " . implode('; ', array_filter($recommendations)) . ". "
+                . "Сделай текст более полезным, менее шаблонным, убери markdown-мусор, повторы и слишком рекламные фразы. "
+                . "Если в тексте нет упоминания темы, естественно добавь формулировку заголовка в текст. "
+                . "Верни только улучшенный текст без пояснений. Если в исходнике есть HTML — верни аккуратный HTML без <html><body>. Если HTML нет — верни просто текст.\n\nИсходный текст:\n" . $content;
+        }
 
         $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
             'http' => [
@@ -59,7 +82,7 @@ function cq_ai_improve_once(string $content, string $entity, string $field, stri
     }
 
     if ($improved === null) {
-        $improved = cq_improve_fallback($content, $entity, $title, $description);
+        $improved = cq_improve_fallback($content, $entity, $title, $description, $context);
     }
 
     $improved = cq_strip_markdown($improved);
@@ -67,7 +90,7 @@ function cq_ai_improve_once(string $content, string $entity, string $field, stri
     $analysisAfter = cq_analyze($improved, $entity, $title, $description);
 
     if (($analysisAfter['score'] ?? 0) < ($analysisBefore['score'] ?? 0) || ($analysisAfter['score'] ?? 0) < 80) {
-        $fallbackImproved = cq_enforce_recommendations(cq_improve_fallback($content, $entity, $title, $description), $analysisBefore, $entity, $title, $description);
+        $fallbackImproved = cq_enforce_recommendations(cq_improve_fallback($content, $entity, $title, $description, $context), $analysisBefore, $entity, $title, $description);
         $fallbackAnalysis = cq_analyze($fallbackImproved, $entity, $title, $description);
         if (($fallbackAnalysis['score'] ?? 0) > ($analysisAfter['score'] ?? 0)) {
             $improved = $fallbackImproved;
@@ -130,7 +153,7 @@ if ($action === 'improve' || $action === 'improve_until') {
     $passesToRun = $action === 'improve_until' ? $maxPasses : 1;
 
     for ($i = 1; $i <= $passesToRun; $i++) {
-        $result = cq_ai_improve_once($currentText, $entity, $field, $title, $description, $currentAnalysis, $targetScore);
+        $result = cq_ai_improve_once($currentText, $entity, $field, $title, $description, $currentAnalysis, $targetScore, $context);
         $currentText = $result['improved'];
         $currentAnalysis = $result['analysis_after'];
         $usedProviders[] = $result['provider'];

@@ -4543,7 +4543,15 @@ function cqCollect(prefix){
     title:(document.getElementById(prefix+'-t')||document.getElementById(prefix+'-title')||document.getElementById(prefix+'-name')||{}).value||'',
     h1:(document.getElementById(prefix+'-h1')||{}).value||'',
     description:(document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de')||{}).value||'',
-    content:(document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content')||{}).value||''
+    content:(document.getElementById(prefix+'-co')||document.getElementById(prefix+'-content')||{}).value||'',
+    category:(document.getElementById(prefix+'-c')||{}).value||'',
+    amountMin:(document.getElementById(prefix+'-am1')||{}).value||'',
+    amountMax:(document.getElementById(prefix+'-am2')||{}).value||'',
+    termMinDays:(document.getElementById(prefix+'-t1')||{}).value||'',
+    termMaxDays:(document.getElementById(prefix+'-t2')||{}).value||'',
+    rate:(document.getElementById(prefix+'-r')||{}).value||'',
+    rateUnit:(document.getElementById(prefix+'-ru')||{}).value||'',
+    freeTermDays:(document.getElementById(prefix+'-fr')||{}).value||''
   };
 }
 
@@ -4596,7 +4604,7 @@ function cqImproveField(prefix, entity, field, targetScore, maxPasses){
   var msg=untilMode ? ('Улучшать текст до score '+targetScore+'+ (до '+(maxPasses||3)+' проходов)?') : 'Улучшить текст через AI/шаблонный редактор?';
   if(!confirm(msg)) return;
   var action=untilMode ? 'improve_until' : 'improve';
-  ap('/content-quality',{method:'POST',body:JSON.stringify({action:action,entity:entity,field:field,title:data.title||data.h1,description:data.description,content:sourceField,targetScore:targetScore||80,maxPasses:maxPasses||3})}).then(function(d){
+  ap('/content-quality',{method:'POST',body:JSON.stringify({action:action,entity:entity,field:field,title:data.title||data.h1,description:data.description,content:sourceField,targetScore:targetScore||80,maxPasses:maxPasses||3,context:{category:data.category,amountMin:data.amountMin,amountMax:data.amountMax,termMinDays:data.termMinDays,termMaxDays:data.termMaxDays,rate:data.rate,rateUnit:data.rateUnit,freeTermDays:data.freeTermDays}})}).then(function(d){
     if(d.error){ alert(d.error); return; }
     cqApplyImprovedText(prefix, field, d.improved, sourceField);
     var before=d.analysis_before?.score||0, after=d.analysis_after?.score||0;

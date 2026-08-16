@@ -258,9 +258,78 @@ function cq_analyze(string $text, string $entity = 'generic', string $title = ''
     ];
 }
 
-function cq_improve_fallback(string $text, string $entity = 'generic', string $title = '', string $description = ''): string {
+function cq_offer_context_line(array $context): string {
+    $parts = [];
+    if (!empty($context['amountMin']) || !empty($context['amountMax'])) {
+        $amountMin = !empty($context['amountMin']) ? formatMoney((int)$context['amountMin']) : '';
+        $amountMax = !empty($context['amountMax']) ? formatMoney((int)$context['amountMax']) : '';
+        if ($amountMin && $amountMax) $parts[] = 'сумма от ' . $amountMin . ' до ' . $amountMax;
+        elseif ($amountMax) $parts[] = 'сумма до ' . $amountMax;
+    }
+    if (!empty($context['termMinDays']) || !empty($context['termMaxDays'])) {
+        $termMin = !empty($context['termMinDays']) ? formatDays((int)$context['termMinDays']) : '';
+        $termMax = !empty($context['termMaxDays']) ? formatDays((int)$context['termMaxDays']) : '';
+        if ($termMin && $termMax) $parts[] = 'срок от ' . $termMin . ' до ' . $termMax;
+        elseif ($termMax) $parts[] = 'срок до ' . $termMax;
+    }
+    if (!empty($context['rate']) && (float)$context['rate'] > 0) {
+        $rateUnit = ($context['rateUnit'] ?? 'day') === 'year' ? 'в год' : 'в день';
+        $parts[] = 'ставка от ' . $context['rate'] . '% ' . $rateUnit;
+    }
+    if (!empty($context['freeTermDays']) && (int)$context['freeTermDays'] > 0) {
+        $parts[] = 'льготный период ' . formatDays((int)$context['freeTermDays']);
+    }
+    return implode(', ', $parts);
+}
+
+function cq_improve_offer_fallback(string $text, string $title = '', string $description = '', array $context = []): string {
+    $base = cq_strip_text($text);
+    $title = trim($title);
+    $details = cq_offer_context_line($context);
+    $category = $context['category'] ?? 'microloans';
+
+    $actionLine = match ($category) {
+        'credits' => 'Подходит тем, кто хочет заранее оценить базовые условия кредита и сравнить их с альтернативами.',
+        'credit_cards' => 'Удобно, если нужен кредитный лимит, льготный период и понятные условия использования карты.',
+        'debit_cards' => 'Полезно тем, кто выбирает карту для ежедневных покупок, переводов, кэшбэка и обслуживания.',
+        default => 'Подходит тем, кто хочет быстро сравнить основные параметры займа и выбрать подходящий вариант.',
+    };
+
+    $lines = [];
+    if ($title !== '') {
+        $lines[] = $title . ' — предложение с понятными условиями оформления онлайн.';
+    }
+    if ($details !== '') {
+        $lines[] = 'По открытым параметрам доступны ' . $details . '.';
+    }
+    if ($base !== '') {
+        $base = preg_replace('/\s+/u', ' ', $base);
+        $base = trim($base);
+        if ($base !== '' && mb_strlen($base) > 30) {
+            $lines[] = rtrim($base, '. ') . '.';
+        }
+    }
+    $lines[] = $actionLine;
+    $lines[] = 'Перед оформлением стоит проверить итоговые условия на сайте партнёра, включая лимиты, обслуживание и дополнительные требования.';
+
+    $unique = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+        $key = mb_strtolower($line);
+        if (!isset($unique[$key])) $unique[$key] = $line;
+    }
+
+    return implode(' ', array_values($unique));
+}
+
+function cq_improve_fallback(string $text, string $entity = 'generic', string $title = '', string $description = '', array $context = []): string {
     $text = trim($text);
     if ($text === '') return $text;
+
+    if ($entity === 'offer') {
+        return cq_improve_offer_fallback($text, $title, $description, $context);
+    }
 
     // базовая очистка
     $text = preg_replace('/^```\s*html?\s*\n?/i', '', $text);
