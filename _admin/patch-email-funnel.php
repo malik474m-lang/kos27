@@ -41,7 +41,17 @@ el.innerHTML=h;
 function efRun(){
 if(!confirm('Запустить отправку писем воронки?'))return;
 ap('/email-funnel?action=run',{method:'POST',body:'{}'}).then(function(r){
-alert('Отправлено: '+(r.sent||0)+', ошибок: '+(r.errors||0));
+var msg='Результат:\n';
+msg+='Отправлено: '+(r.sent||0)+'\n';
+msg+='Ошибок: '+(r.errors||0)+'\n';
+msg+='Подписчиков: '+(r.total_subscribers||0)+'\n';
+msg+='Шагов: '+(r.total_steps||0)+'\n';
+if(r.skipped_already_sent)msg+='Уже получили: '+r.skipped_already_sent+'\n';
+if(r.skipped_too_early)msg+='Ещё рано: '+r.skipped_too_early+'\n';
+if(r.skipped_prev_not_sent)msg+='Ждут предыдущий шаг: '+r.skipped_prev_not_sent+'\n';
+if(r.debug)msg+='\n'+r.debug;
+if(r.error_details&&r.error_details.length)msg+='\nОшибки:\n'+r.error_details.join('\n');
+alert(msg);
 lEF();
 });
 }
