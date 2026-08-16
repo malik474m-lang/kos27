@@ -36,6 +36,12 @@ function loadSettings(): array {
         'stability_api_key' => '',
         'gigachat_auth_key' => '',
         'gigachat_scope' => 'GIGACHAT_API_PERS',
+        'social_proof_enabled' => true,
+        'social_proof_interval' => 8000,
+        'social_proof_duration' => 5000,
+        'social_proof_min_amount' => 5000,
+        'social_proof_max_amount' => 30000,
+        'social_proof_position' => 'bottom-left',
     ];
     
     // Сначала из .env
@@ -183,16 +189,16 @@ if ($method === 'POST') {
     $settings = loadSettings();
     
     // Обновляем только переданные поля
-    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template', 'article_image_provider', 'stability_api_key', 'gigachat_auth_key', 'gigachat_scope', 'leads_su_api_token'];
+    $allowedFields = ['site_name', 'site_url', 'site_favicon', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_metrika_id', 'google_analytics_id', 'contact_email', 'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'mail_from', 'mail_from_name', 'article_image_prompt_template', 'article_image_provider', 'stability_api_key', 'gigachat_auth_key', 'gigachat_scope', 'leads_su_api_token', 'social_proof_enabled', 'social_proof_interval', 'social_proof_duration', 'social_proof_min_amount', 'social_proof_max_amount', 'social_proof_position'];
     
     foreach ($allowedFields as $field) {
         if (array_key_exists($field, $data)) {
             if (in_array($field, ['yandex_gpt_api_key','stability_api_key','gigachat_auth_key','leads_su_api_token'], true) && (!is_string($data[$field]) || $data[$field] === '' || strpos((string)$data[$field], '...') !== false)) {
                 continue;
             }
-            if ($field === 'smtp_enabled') {
+            if (in_array($field, ['smtp_enabled', 'social_proof_enabled'], true)) {
                 $settings[$field] = !empty($data[$field]);
-            } elseif ($field === 'smtp_port') {
+            } elseif (in_array($field, ['smtp_port', 'social_proof_interval', 'social_proof_duration', 'social_proof_min_amount', 'social_proof_max_amount'], true)) {
                 $settings[$field] = (int)$data[$field];
             } else {
                 $settings[$field] = is_string($data[$field]) ? trim($data[$field]) : $data[$field];

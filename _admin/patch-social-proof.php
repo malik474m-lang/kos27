@@ -19,7 +19,7 @@
             if (document.getElementById('sp-settings-section')) return;
             
             // Загружаем настройки виджета
-            ap('/social-proof').then(function(sp) {
+            ap('/settings').then(function(resp) { var sp = resp.settings || {};
                 var section = document.createElement('div');
                 section.id = 'sp-settings-section';
                 section.className = 'bg-white rounded-xl border p-6 mt-6';
@@ -66,22 +66,27 @@ function saveSocialProof() {
         position: document.getElementById('sp-position').value
     };
     
-    ap('/social-proof', {
+    ap('/settings', {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            social_proof_enabled: data.enabled,
+            social_proof_interval: data.interval,
+            social_proof_duration: data.duration,
+            social_proof_min_amount: data.min_amount,
+            social_proof_max_amount: data.max_amount,
+            social_proof_position: data.position
+        })
     }).then(function(res) {
         if (res.success) {
-            var saved = res.saved || data;
             alert([
                 '✅ Настройки виджета сохранены!',
                 '',
-                'Включен: ' + (saved.enabled ? 'Да' : 'Нет'),
-                'Интервал: ' + saved.interval + ' мс',
-                'Длительность: ' + saved.duration + ' мс',
-                'Позиция: ' + saved.position,
+                'Включен: ' + (data.enabled ? 'Да' : 'Нет'),
+                'Интервал: ' + data.interval + ' мс',
+                'Длительность: ' + data.duration + ' мс',
+                'Позиция: ' + data.position,
                 '',
-                'Очищено page cache: ' + (res.page_cache_cleared || 0),
-                'Очищено api cache: ' + (res.api_cache_cleared || 0)
+                'Если страница сайта уже открыта — обновите её.'
             ].join('\n'));
         } else {
             alert('Ошибка: ' + (res.error || 'Неизвестная ошибка'));
