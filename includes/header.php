@@ -39,6 +39,7 @@ $headerCats = getHeaderCategories();
                     <?php endif; ?>
                 <?php endforeach; ?>
 
+                <button type="button" onclick="toggleTheme()" id="theme-toggle-btn" class="text-gray-500 hover:text-blue-600 transition-colors" title="Тема" aria-label="Переключить тему"><span id="theme-icon">🌙</span></button>
                 <a href="/favorites" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Избранное">❤️</a>
                 <?php if (isLoggedIn()): ?>
                 <a href="/cabinet" class="text-gray-700 hover:text-blue-600 font-medium transition-colors" title="Кабинет">👤</a>
@@ -65,6 +66,7 @@ $headerCats = getHeaderCategories();
             <?php endforeach; endforeach; ?>
             <div class="pt-2 mt-2 border-t border-gray-100 flex flex-wrap items-center gap-3">
                 <button type="button" onclick="openCityPicker();document.getElementById('mobile-menu').classList.add('hidden')" class="text-sm text-gray-600 hover:text-blue-600">📍 Выбрать город</button>
+                <button type="button" onclick="toggleTheme()" class="text-sm text-gray-600 hover:text-blue-600"><span id="theme-icon-mobile">🌙</span> Тема</button>
                 <a href="/favorites" class="text-sm text-gray-600 hover:text-blue-600">❤️ Избранное</a>
                 <?php if (isLoggedIn()): ?>
                 <a href="/cabinet" class="text-sm text-gray-600 hover:text-blue-600">👤 Кабинет</a>

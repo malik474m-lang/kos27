@@ -157,6 +157,44 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
 
     <!-- JSON-LD SEO разметка -->
     <?= renderJsonLd(...$jsonLdSchemas) ?>
+
+    <!-- Dark mode: FOUC prevention -->
+    <script>
+    (function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+    </script>
+    <style>
+    /* Dark mode */
+    .dark body,.dark main{background:#0f172a;color:#e2e8f0;}
+    .dark header{background:#1e293b !important;border-color:#334155 !important;}
+    .dark footer{background:#020617 !important;}
+    .dark .bg-white,.dark .offer-card-box,.dark .bg-gray-50,.dark .offer-main-card,.dark .offer-calc-card,.dark .offer-review-card,.dark .offer-form-card,.dark .offer-related-card{background:#1e293b !important;color:#e2e8f0 !important;}
+    .dark .bg-gray-100{background:#1e293b !important;}
+    .dark .border-gray-100,.dark .border-gray-200{border-color:#334155 !important;}
+    .dark .text-gray-900,.dark .text-gray-800{color:#f1f5f9 !important;}
+    .dark .text-gray-700,.dark .text-gray-600{color:#cbd5e1 !important;}
+    .dark .text-gray-500,.dark .text-gray-400{color:#94a3b8 !important;}
+    .dark .text-gray-300{color:#64748b !important;}
+    .dark .shadow-sm{box-shadow:0 1px 2px rgba(0,0,0,.3) !important;}
+    .dark .prose h2,.dark .prose h3,.dark .prose h4{color:#f1f5f9 !important;}
+    .dark .prose p,.dark .prose li{color:#cbd5e1 !important;}
+    .dark .prose a{color:#60a5fa !important;}
+    .dark .prose th{background:#334155 !important;color:#e2e8f0 !important;}
+    .dark .prose td,.dark .prose th{border-color:#475569 !important;}
+    .dark input,.dark textarea,.dark select{background:#334155 !important;color:#e2e8f0 !important;border-color:#475569 !important;}
+    .dark .card-hover:hover{box-shadow:0 10px 25px -5px rgba(0,0,0,.3) !important;}
+    .dark .bg-blue-50,.dark .bg-green-50,.dark .bg-emerald-50,.dark .bg-purple-50,.dark .bg-indigo-50,.dark .bg-orange-50,.dark .bg-amber-50,.dark .bg-yellow-50,.dark .bg-red-50{background:#1e293b !important;}
+    .dark .border-blue-100,.dark .border-green-100,.dark .border-emerald-100,.dark .border-purple-100,.dark .border-amber-200{border-color:#334155 !important;}
+    .dark .offer-card-logo,.dark .offer-logo{background:#334155 !important;border-color:#475569 !important;}
+    .dark .offer-metric{background:#334155 !important;}
+    .dark .offer-metric-label{color:#94a3b8 !important;}
+    .dark .offer-metric-value{color:#f1f5f9 !important;}
+    .dark details{border-color:#475569 !important;}
+    .dark details summary{color:#e2e8f0 !important;}
+    .dark details summary:hover{background:#334155 !important;}
+    .dark .not-prose{border-color:#475569 !important;}
+    .dark #social-proof-widget .bg-white{background:#1e293b !important;border-color:#334155 !important;}
+    .dark #social-proof-widget #sp-text{color:#e2e8f0 !important;}
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col">
 <?php $giveawayBanner = renderGiveawayBanner(); echo $giveawayBanner; ?>
@@ -422,6 +460,23 @@ document.addEventListener('DOMContentLoaded',function(){
 <?= getPwaInstallBanner() ?>
 <?= getPwaScripts() ?>
 <?php require_once __DIR__ . "/social-proof.php"; echo renderSocialProofWidget(); ?>
+
+<script>
+function toggleTheme(){
+    var html=document.documentElement;
+    var isDark=html.classList.toggle('dark');
+    try{localStorage.setItem('theme',isDark?'dark':'light');}catch(e){}
+    updateThemeIcons(isDark);
+}
+function updateThemeIcons(isDark){
+    var icon=isDark?'☀️':'🌙';
+    var el=document.getElementById('theme-icon');if(el)el.textContent=icon;
+    var el2=document.getElementById('theme-icon-mobile');if(el2)el2.textContent=icon;
+}
+(function(){
+    try{var isDark=document.documentElement.classList.contains('dark');updateThemeIcons(isDark);}catch(e){}
+})();
+</script>
 </body>
 </html>
 <?php pageCacheEnd(); ?>
