@@ -17,9 +17,9 @@ h+='<div class="bg-green-50 border border-green-200 rounded-xl p-4 text-green-70
 h+='<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">';
 h+='<p class="font-semibold mb-1">ℹ️ Как работает импорт:</p>';
 h+='<ul class="list-disc ml-4 space-y-1">';
-h+='<li>Выберите <strong>площадку</strong> (kosmozaim) — она определяет вашу партнёрскую ссылку</li>';
-h+='<li>Выберите <strong>категорию</strong> — в какой раздел сайта попадут офферы</li>';
-h+='<li>Партнёрская ссылка: <code>pxl.leads.su/aff_c?offer_id=...&pltfm_id=...&aff_sub1=kosmozaim</code></li>';
+h+='<li>Выберите <strong>площадку</strong> — она определяет параметр <code>pltfm_id</code> в партнёрской ссылке</li>';
+h+='<li>Выберите <strong>категорию</strong> вручную или оставьте автоопределение — офферы попадут в нужный раздел сайта</li>';
+h+='<li>Партнёрская ссылка: <code>pxl.leads.su/aff_c?offer_id=...&pltfm_id=...&source=kosmozaim</code></li>';
 h+='<li>Импортированные офферы можно потом редактировать (ставки, суммы, описание)</li>';
 h+='</ul></div>';
 
@@ -90,7 +90,7 @@ var offers=[];
 cbs.forEach(function(cb){var idx=parseInt(cb.dataset.idx);if(window._lsOffers[idx])offers.push(window._lsOffers[idx]);});
 var activate=confirm('Сразу активировать импортированные офферы?\n\nОК = Активировать\nОтмена = Сохранить как черновик');
 var catLabel=category?({'microloans':'Займы','credits':'Кредиты','credit_cards':'Кредитные карты','debit_cards':'Дебетовые карты'}[category]||category):'Авто';
-if(!confirm('Импортировать '+offers.length+' офферов?\n\nПлощадка: ID '+platformId+'\nКатегория: '+catLabel+'\nСсылка: pxl.leads.su/aff_c?...&aff_sub1=kosmozaim'))return;
+if(!confirm('Импортировать '+offers.length+' офферов?\n\nПлощадка: ID '+platformId+'\nКатегория: '+catLabel+'\nИсточник: source=kosmozaim\nСсылка: pxl.leads.su/aff_c?...&source=kosmozaim'))return;
 ap('/leads-su?action=import',{method:'POST',body:JSON.stringify({offers:offers,platform_id:platformId,activate:activate,category:category})}).then(function(r){
 var msg='Импорт завершён!\n\nИмпортировано: '+(r.imported||0)+'\nПропущено (дубли): '+(r.skipped||0);
 if(r.errors&&r.errors.length)msg+='\n\nОшибки:\n'+r.errors.join('\n');

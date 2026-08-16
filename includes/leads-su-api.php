@@ -62,7 +62,7 @@ function leadsSuGetPlatforms(): array {
 }
 
 function leadsSuGetOfferLink(int $offerId, int $platformId): string {
-    return 'https://pxl.leads.su/aff_c?offer_id=' . $offerId . '&pltfm_id=' . $platformId . '&aff_sub1=kosmozaim';
+    return 'https://pxl.leads.su/aff_c?offer_id=' . $offerId . '&pltfm_id=' . $platformId . '&source=kosmozaim';
 }
 
 function leadsSuMapCategory(array $offer): string {
