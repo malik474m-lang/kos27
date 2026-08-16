@@ -3163,7 +3163,7 @@ aTopics=[];cm();setTimeout(()=>{aGen();},200);
 }).catch(()=>{btn.textContent='🔄 Сгенерировать новые темы';btn.disabled=false;st.textContent='❌ Ошибка';});}
 
 /* ============ USERS ============ */
-function lUsers(){Promise.all([ap('/users'),ap('/bonuses?action=history')]).then(([users,bonusHistory])=>{
+function lUsers(){Promise.all([ap('/users'),ap('/bonuses?action=history'),ap('/bonuses?action=requests')]).then(([users,bonusHistory,withdrawRequests])=>{
 var h='<div class="flex items-center justify-between mb-6"><h2 class="text-xl font-bold">👥 Пользователи ('+users.length+')</h2><span class="text-xs text-gray-400">КосмоБонус: 1 бонус = 1 ₽</span></div>';
 if(!users.length){h+='<p class="text-gray-500 text-center py-8">Нет зарегистрированных пользователей</p>';}
 else{
@@ -3196,7 +3196,28 @@ h+='</tbody></table></div>';
 }else{h+='<p class="p-4 text-gray-400">Пока нет бонусных операций</p>';}
 h+='</div>';
 
+h+='<div class="bg-white rounded-xl border mt-6"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">💸 Заявки на вывод бонусов</h3></div>';
+if(withdrawRequests&&withdrawRequests.length){
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Пользователь</th><th class="p-3 text-left">Банк</th><th class="p-3 text-left">Телефон</th><th class="p-3 text-left">Владелец</th><th class="p-3 text-right">Сумма</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
+withdrawRequests.forEach(function(r){
+var st=r.status==='paid'?'<span class="text-green-600">Выплачено</span>':(r.status==='pending'?'<span class="text-yellow-600">Ожидает</span>':'<span class="text-red-500">Отклонено</span>');
+var actions=r.status==='pending'?'<button onclick="bonusProcessRequest('+r.id+',\'paid\')" class="text-green-600 hover:underline text-sm mr-3">Выплачено</button><button onclick="bonusProcessRequest('+r.id+',\'rejected\')" class="text-red-500 hover:underline text-sm">Отклонить</button>':'—';
+h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(r.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+e(r.name||r.email||'—')+'</td><td class="p-3">'+e(r.bank_name||'—')+'</td><td class="p-3">'+e(r.phone||'—')+'</td><td class="p-3">'+e(r.cardholder_name||'—')+'</td><td class="p-3 text-right font-semibold text-amber-600">'+r.amount+' ₽</td><td class="p-3">'+st+'</td><td class="p-3 text-right">'+actions+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}else{h+='<p class="p-4 text-gray-400">Нет заявок на вывод</p>';}
+h+='</div>';
+
 document.getElementById('p-users').innerHTML=h;});}
+
+function bonusProcessRequest(requestId,action){
+var comment=prompt(action==='paid'?'Комментарий к выплате (необязательно):':'Причина отклонения (необязательно):','')||'';
+ap('/bonuses?action=process-request',{method:'POST',body:JSON.stringify({request_id:requestId,process_action:action,admin_comment:comment})}).then(function(r){
+if(r.error){alert(r.error);return;}
+alert(action==='paid'?'✅ Заявка отмечена как выплаченная':'⚠️ Заявка отклонена');
+lUsers();
+}).catch(function(){alert('Ошибка обработки заявки');});
+}
 
 function bonusWithdrawForm(userId,name,balance){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🎁 Списание бонусов</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+

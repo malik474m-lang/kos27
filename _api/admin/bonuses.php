@@ -10,6 +10,35 @@ if ($action === 'history' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     exit;
 }
 
+
+if ($action === 'requests' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+    echo json_encode(kosmoBonusAdminWithdrawalRequests(120));
+    exit;
+}
+
+if ($action === 'process-request' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true) ?: [];
+    $requestId = (int)($data['request_id'] ?? 0);
+    $processAction = trim((string)($data['process_action'] ?? ''));
+    $adminComment = trim((string)($data['admin_comment'] ?? ''));
+
+    if ($requestId <= 0 || $processAction === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'request_id и process_action обязательны']);
+        exit;
+    }
+
+    $result = kosmoBonusProcessWithdrawalRequest($requestId, $processAction, $adminComment);
+    if (!$result['ok']) {
+        http_response_code(400);
+        echo json_encode(['error' => $result['error'] ?? 'Ошибка обработки заявки']);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'status' => $result['status'], 'new_balance' => $result['new_balance'] ?? null]);
+    exit;
+}
+
 if ($action === 'withdraw' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true) ?: [];
     $userId = (int)($data['user_id'] ?? 0);

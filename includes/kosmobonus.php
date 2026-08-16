@@ -10,22 +10,14 @@ function ensureKosmoBonusTables(): void {
     $db = getDB();
 
     try { $db->query("SELECT kosmobonus_enabled FROM offers LIMIT 1"); }
-    catch (Exception $e) {
-        try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER license"); } catch (Exception $e2) {}
-    }
+    catch (Exception $e) { try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER license"); } catch (Exception $e2) {} }
     try { $db->query("SELECT kosmobonus_amount FROM offers LIMIT 1"); }
-    catch (Exception $e) {
-        try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_amount INT NOT NULL DEFAULT 0 AFTER kosmobonus_enabled"); } catch (Exception $e2) {}
-    }
+    catch (Exception $e) { try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_amount INT NOT NULL DEFAULT 0 AFTER kosmobonus_enabled"); } catch (Exception $e2) {} }
     try { $db->query("SELECT kosmobonus_conditions FROM offers LIMIT 1"); }
-    catch (Exception $e) {
-        try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_conditions TEXT DEFAULT NULL AFTER kosmobonus_amount"); } catch (Exception $e2) {}
-    }
+    catch (Exception $e) { try { $db->exec("ALTER TABLE offers ADD COLUMN kosmobonus_conditions TEXT DEFAULT NULL AFTER kosmobonus_amount"); } catch (Exception $e2) {} }
 
     try { $db->query("SELECT bonus_balance FROM users LIMIT 1"); }
-    catch (Exception $e) {
-        try { $db->exec("ALTER TABLE users ADD COLUMN bonus_balance INT NOT NULL DEFAULT 0"); } catch (Exception $e2) {}
-    }
+    catch (Exception $e) { try { $db->exec("ALTER TABLE users ADD COLUMN bonus_balance INT NOT NULL DEFAULT 0"); } catch (Exception $e2) {} }
 
     try { $db->query("SELECT 1 FROM bonus_transactions LIMIT 1"); }
     catch (Exception $e) {
@@ -36,6 +28,7 @@ function ensureKosmoBonusTables(): void {
                 offer_id INT DEFAULT NULL,
                 click_stat_id INT DEFAULT NULL,
                 postback_id INT DEFAULT NULL,
+                withdrawal_request_id INT DEFAULT NULL,
                 amount INT NOT NULL,
                 type ENUM('accrual','withdrawal','manual','reversal') NOT NULL DEFAULT 'accrual',
                 status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
@@ -45,10 +38,35 @@ function ensureKosmoBonusTables(): void {
                 KEY idx_user_id (user_id),
                 KEY idx_click_stat_id (click_stat_id),
                 KEY idx_postback_id (postback_id),
+                KEY idx_withdrawal_request_id (withdrawal_request_id),
                 KEY idx_status (status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
         } catch (Exception $e2) {}
     }
+    try { $db->query("SELECT withdrawal_request_id FROM bonus_transactions LIMIT 1"); }
+    catch (Exception $e) { try { $db->exec("ALTER TABLE bonus_transactions ADD COLUMN withdrawal_request_id INT DEFAULT NULL AFTER postback_id"); } catch (Exception $e2) {} }
+
+    try { $db->query("SELECT 1 FROM bonus_withdraw_requests LIMIT 1"); }
+    catch (Exception $e) {
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS bonus_withdraw_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                amount INT NOT NULL,
+                bank_name VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                cardholder_name VARCHAR(255) NOT NULL,
+                status ENUM('pending','paid','rejected','cancelled') NOT NULL DEFAULT 'pending',
+                admin_comment VARCHAR(500) DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                processed_at TIMESTAMP NULL DEFAULT NULL,
+                KEY idx_user_id (user_id),
+                KEY idx_status (status),
+                KEY idx_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+        } catch (Exception $e2) {}
+    }
+
     $checked = true;
 }
 
@@ -148,6 +166,92 @@ function kosmoBonusHistory(int $userId, int $limit = 50): array {
     return $stmt->fetchAll();
 }
 
+function kosmoBonusCreateWithdrawalRequest(int $userId, int $amount, string $bankName, string $phone, string $cardholderName): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+
+    $amount = abs((int)$amount);
+    $bankName = trim($bankName);
+    $phone = trim($phone);
+    $cardholderName = trim($cardholderName);
+
+    if ($amount <= 0) return ['ok' => false, 'error' => 'Сумма должна быть больше нуля'];
+    if ($bankName === '' || $phone === '' || $cardholderName === '') return ['ok' => false, 'error' => 'Заполните все поля заявки'];
+
+    $pending = $db->prepare("SELECT COUNT(*) FROM bonus_withdraw_requests WHERE user_id = ? AND status = 'pending'");
+    $pending->execute([$userId]);
+    if ((int)$pending->fetchColumn() > 0) return ['ok' => false, 'error' => 'У вас уже есть заявка на вывод в обработке'];
+
+    $balance = kosmoBonusBalance($userId);
+    if ($balance < $amount) return ['ok' => false, 'error' => 'Недостаточно бонусов на балансе'];
+
+    try {
+        $db->beginTransaction();
+        $db->prepare("UPDATE users SET bonus_balance = bonus_balance - ? WHERE id = ?")->execute([$amount, $userId]);
+        $db->prepare("INSERT INTO bonus_withdraw_requests (user_id, amount, bank_name, phone, cardholder_name, status) VALUES (?,?,?,?,?,'pending')")
+           ->execute([$userId, $amount, $bankName, $phone, $cardholderName]);
+        $requestId = (int)$db->lastInsertId();
+        $db->prepare("INSERT INTO bonus_transactions (user_id, withdrawal_request_id, amount, type, status, description) VALUES (?, ?, ?, 'withdrawal', 'pending', ?)")
+           ->execute([$userId, $requestId, -$amount, 'Заявка на вывод бонусов']);
+        $db->commit();
+        return ['ok' => true, 'request_id' => $requestId, 'new_balance' => kosmoBonusBalance($userId)];
+    } catch (Exception $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
+function kosmoBonusWithdrawRequestsByUser(int $userId, int $limit = 30): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+    $limit = max(1, min(100, (int)$limit));
+    $stmt = $db->prepare("SELECT * FROM bonus_withdraw_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT {$limit}");
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll();
+}
+
+function kosmoBonusAdminWithdrawalRequests(int $limit = 100): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+    $limit = max(1, min(300, (int)$limit));
+    return $db->query("SELECT r.*, u.email, u.name FROM bonus_withdraw_requests r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT {$limit}")->fetchAll();
+}
+
+function kosmoBonusProcessWithdrawalRequest(int $requestId, string $action, string $adminComment = ''): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+
+    $stmt = $db->prepare("SELECT * FROM bonus_withdraw_requests WHERE id = ? LIMIT 1");
+    $stmt->execute([$requestId]);
+    $req = $stmt->fetch();
+    if (!$req) return ['ok' => false, 'error' => 'Заявка не найдена'];
+    if ($req['status'] !== 'pending') return ['ok' => false, 'error' => 'Заявка уже обработана'];
+
+    $action = trim($action);
+    if (!in_array($action, ['paid', 'rejected'], true)) return ['ok' => false, 'error' => 'Некорректное действие'];
+
+    try {
+        $db->beginTransaction();
+        if ($action === 'paid') {
+            $db->prepare("UPDATE bonus_withdraw_requests SET status = 'paid', admin_comment = ?, processed_at = NOW() WHERE id = ?")
+               ->execute([$adminComment ?: null, $requestId]);
+            $db->prepare("UPDATE bonus_transactions SET status = 'confirmed', confirmed_at = NOW(), description = ? WHERE withdrawal_request_id = ? AND type = 'withdrawal'")
+               ->execute([$adminComment ?: 'Выплачено пользователю', $requestId]);
+        } else {
+            $db->prepare("UPDATE users SET bonus_balance = bonus_balance + ? WHERE id = ?")->execute([(int)$req['amount'], (int)$req['user_id']]);
+            $db->prepare("UPDATE bonus_withdraw_requests SET status = 'rejected', admin_comment = ?, processed_at = NOW() WHERE id = ?")
+               ->execute([$adminComment ?: null, $requestId]);
+            $db->prepare("UPDATE bonus_transactions SET status = 'cancelled', description = ? WHERE withdrawal_request_id = ? AND type = 'withdrawal'")
+               ->execute([$adminComment ?: 'Заявка отклонена', $requestId]);
+        }
+        $db->commit();
+        return ['ok' => true, 'status' => $action, 'new_balance' => kosmoBonusBalance((int)$req['user_id'])];
+    } catch (Exception $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
 function kosmoBonusWithdraw(int $userId, int $amount, string $description = ''): array {
     $db = getDB();
     ensureKosmoBonusTables();
@@ -155,12 +259,9 @@ function kosmoBonusWithdraw(int $userId, int $amount, string $description = ''):
     if ($amount <= 0) return ['ok' => false, 'error' => 'Сумма должна быть больше нуля'];
 
     $balance = kosmoBonusBalance($userId);
-    if ($balance < $amount) {
-        return ['ok' => false, 'error' => 'Недостаточно бонусов на балансе'];
-    }
+    if ($balance < $amount) return ['ok' => false, 'error' => 'Недостаточно бонусов на балансе'];
 
     $description = trim($description) ?: 'Ручное списание бонусов';
-
     $db->prepare("UPDATE users SET bonus_balance = bonus_balance - ? WHERE id = ?")->execute([$amount, $userId]);
     $db->prepare("INSERT INTO bonus_transactions (user_id, amount, type, status, description, confirmed_at) VALUES (?, ?, 'withdrawal', 'confirmed', ?, NOW())")
        ->execute([$userId, -$amount, $description]);

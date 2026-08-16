@@ -20,4 +20,4 @@ $apps = $db->prepare("
 $apps->execute([$user['id']]);
 $applications = $apps->fetchAll();
 
-echo json_encode(['profile' => $profile, 'applications' => $applications, 'bonus_balance' => kosmoBonusBalance((int)$user['id']), 'bonus_history' => kosmoBonusHistory((int)$user['id'], 20)]);
+echo json_encode(['profile' => $profile, 'applications' => $applications, 'bonus_balance' => kosmoBonusBalance((int)$user['id']), 'bonus_history' => kosmoBonusHistory((int)$user['id'], 20), 'bonus_withdraw_requests' => kosmoBonusWithdrawRequestsByUser((int)$user['id'], 20)]);
