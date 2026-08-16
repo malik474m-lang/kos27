@@ -18,6 +18,7 @@ if ($apiUri === '/pwa-track') { require __DIR__ . '/pwa-track.php'; exit; }
 if ($apiUri === '/app-track') { require __DIR__ . '/app-track.php'; exit; }
 if ($apiUri === '/app-download-track') { require __DIR__ . '/app-download-track.php'; exit; }
 if ($apiUri === '/download-apk') { require __DIR__ . '/download-apk.php'; exit; }
+if ($apiUri === '/article-inline-cta-track') { require __DIR__ . '/article-inline-cta-track.php'; exit; }
 // User API
 if (str_starts_with($apiUri, '/user/')) {
     $userAction = substr($apiUri, 6);

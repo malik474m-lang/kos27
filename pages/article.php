@@ -42,7 +42,7 @@ $articleOfferMeta = $articleOfferContext['meta'];
 $articleTopicOffers = $articleOfferContext['offers'];
 $inlineArticleOffer = !empty($articleTopicOffers) ? $articleTopicOffers[0] : null;
 $articleBodyHtml = safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory]);
-$articleBodyHtml = injectInlineOfferCta($articleBodyHtml, $inlineArticleOffer, 2);
+$articleBodyHtml = injectInlineOfferCta($articleBodyHtml, $inlineArticleOffer, 2, $article['slug']);
 
 ob_start();
 ?>

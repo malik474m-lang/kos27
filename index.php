@@ -98,6 +98,17 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
 
         // Добавляем aff_sub (наш click_stats.id) в affiliate URL для postback
         $lastClickId = $db->lastInsertId();
+
+        // Отдельный трекинг inline CTA из статей
+        $inlineCtaVariant = trim((string)($_GET['inline_cta_variant'] ?? ''));
+        $inlineArticleSlug = trim((string)($_GET['article_slug'] ?? ''));
+        if ($inlineCtaVariant !== '' && $inlineArticleSlug !== '') {
+            try {
+                require_once __DIR__ . '/includes/article-inline-cta.php';
+                trackArticleInlineCtaClick($inlineArticleSlug, (int)$m[1], $inlineCtaVariant, $clickIp, (int)$lastClickId);
+            } catch (Exception $e) {}
+        }
+
         $affUrl = $row['affiliate_url'];
         $separator = str_contains($affUrl, '?') ? '&' : '?';
         $affUrl .= $separator . 'aff_sub=' . $lastClickId;

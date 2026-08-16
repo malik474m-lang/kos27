@@ -44,6 +44,8 @@ if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positi
 if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
 // Email-воронка
 if (str_starts_with($adminUri, "/email-funnel")) { require __DIR__ . "/admin/email-funnel.php"; exit; }
+// Статистика inline CTA статей
+if ($adminUri === "/article-inline-cta-stats") { require __DIR__ . "/admin/article-inline-cta-stats.php"; exit; }
 // Социальное доказательство
 if (str_starts_with($adminUri, "/social-proof")) { require __DIR__ . "/admin/social-proof.php"; exit; }
 

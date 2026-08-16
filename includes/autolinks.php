@@ -535,7 +535,7 @@ function getArticleInlineCtaVariant(): string {
     return $variant;
 }
 
-function renderArticleInlineOfferCta(array $offer): string {
+function renderArticleInlineOfferCta(array $offer, string $articleSlug = ""): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
     $amount = '';
     if (!empty($offer['amount_max'])) {
@@ -593,7 +593,7 @@ function renderArticleInlineOfferCta(array $offer): string {
                 </div>
             </div>
             <div class="flex-shrink-0">
-                <a href="/click/<?= (int)$offer['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
+                <a href="/click/<?= (int)$offer['id'] ?>?inline_cta_variant=<?= e($variant) ?>&article_slug=<?= urlencode($articleSlug) ?>" target="_blank" rel="noopener noreferrer nofollow sponsored"
                    onclick="setTimeout(function(){window.location='/thankyou?offer=<?= (int)$offer['id'] ?>';},300)"
                    class="<?= $buttonClass ?>">
                     <?= e($buttonText) ?>
@@ -601,14 +601,26 @@ function renderArticleInlineOfferCta(array $offer): string {
             </div>
         </div>
     </div>
+    <?php if ($articleSlug !== ''): ?>
+    <script>
+    (function(){
+        try {
+            var key='article_inline_cta_imp_<?= e($articleSlug) ?>_<?= (int)$offer['id'] ?>_<?= e($variant) ?>';
+            if(sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key,'1');
+            fetch('/api/article-inline-cta-track?event=impression&article_slug=<?= urlencode($articleSlug) ?>&offer_id=<?= (int)$offer['id'] ?>&variant=<?= e($variant) ?>', {credentials:'same-origin', keepalive:true}).catch(function(){});
+        } catch(e) {}
+    })();
+    </script>
+    <?php endif; ?>
     <?php return ob_get_clean();
 }
 
-function injectInlineOfferCta(string $html, ?array $offer = null, int $afterParagraph = 2): string {
+function injectInlineOfferCta(string $html, ?array $offer = null, int $afterParagraph = 2, string $articleSlug = ""): string {
     if (!$offer) return $html;
     if (stripos($html, '/offer/' . ($offer['slug'] ?? '')) !== false) return $html;
 
-    $cta = renderArticleInlineOfferCta($offer);
+    $cta = renderArticleInlineOfferCta($offer, $articleSlug);
 
     if (preg_match_all('/<p\b[^>]*>.*?<\/p>/isu', $html, $matches, PREG_OFFSET_CAPTURE) && count($matches[0]) > $afterParagraph) {
         $target = $matches[0][$afterParagraph - 1];

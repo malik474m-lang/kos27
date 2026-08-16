@@ -5035,5 +5035,6 @@ function saveSocialProof() {
 
 </script>
 <?php include __DIR__ . "/patch-email-funnel.php"; ?>
+<?php include __DIR__ . "/patch-article-inline-cta-stats.php"; ?>
 </body>
 </html>
