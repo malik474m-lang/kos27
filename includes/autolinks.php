@@ -1,5 +1,5 @@
 <?php
-function getOfferLinks(): array {
+function getOfferLinks(string $preferredCategory = ""): array {
     $cacheFile = __DIR__ . '/../data/offer-links-cache.json';
     if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
         $cached = json_decode(file_get_contents($cacheFile), true);
@@ -8,13 +8,14 @@ function getOfferLinks(): array {
     $links = [];
     try {
         $db = getDB();
-        $offers = $db->query("SELECT title, slug FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+        $offers = $db->query("SELECT title, slug, category FROM offers WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
         foreach ($offers as $offer) {
             $url = '/offer/' . $offer['slug'];
-            $links[] = ['phrase' => $offer['title'], 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => 20];
+            $priorityBase = ($preferredCategory !== '' && ($offer['category'] ?? '') === $preferredCategory) ? 28 : 20;
+            $links[] = ['phrase' => $offer['title'], 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => $priorityBase];
             $lower = mb_strtolower($offer['title']);
             if ($lower !== $offer['title']) {
-                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => 19];
+                $links[] = ['phrase' => $lower, 'url' => $url, 'title' => $offer['title'] . ' — оформить онлайн', 'priority' => $priorityBase - 1];
             }
         }
         @file_put_contents($cacheFile, json_encode($links, JSON_UNESCAPED_UNICODE));
@@ -263,6 +264,116 @@ function findRelatedArticles(array $currentArticle, int $limit = 3): array {
     }
 }
 
+
+function detectArticleOfferCategory(array $article): string {
+    $text = mb_strtolower(trim(
+        (string)($article['title'] ?? '') . ' ' .
+        (string)($article['excerpt'] ?? '') . ' ' .
+        mb_substr((string)($article['content'] ?? ''), 0, 3000)
+    ));
+
+    $scores = [
+        'microloans' => 0,
+        'credits' => 0,
+        'credit_cards' => 0,
+        'debit_cards' => 0,
+    ];
+
+    $rules = [
+        'microloans' => [
+            'займ' => 3, 'займы' => 3, 'микрозайм' => 4, 'микрозаймы' => 4, 'мфо' => 5,
+            'до зарплаты' => 4, 'займ на карту' => 5, 'первый займ' => 4,
+        ],
+        'credits' => [
+            'кредит ' => 3, 'кредиты' => 3, 'кредит наличными' => 5, 'потребительский кредит' => 5,
+            'рефинансирование' => 5, 'ежемесячный платеж' => 3, 'ставка по кредиту' => 4,
+        ],
+        'credit_cards' => [
+            'кредитная карта' => 6, 'кредитные карты' => 6, 'грейс' => 4, 'льготный период' => 4,
+            'кредитный лимит' => 5, 'минимальный платеж' => 3,
+        ],
+        'debit_cards' => [
+            'дебетовая карта' => 6, 'дебетовые карты' => 6, 'карта с кэшбеком' => 5,
+            'процент на остаток' => 5, 'обслуживание карты' => 3, 'банковская карта' => 2,
+        ],
+    ];
+
+    foreach ($rules as $category => $phrases) {
+        foreach ($phrases as $phrase => $weight) {
+            if (str_contains($text, $phrase)) $scores[$category] += $weight;
+        }
+    }
+
+    arsort($scores);
+    $best = array_key_first($scores);
+    return ($scores[$best] ?? 0) > 0 ? $best : 'microloans';
+}
+
+function getArticleCategoryMeta(string $category): array {
+    return match ($category) {
+        'credits' => ['label' => 'Кредиты по теме статьи', 'url' => '/kredity'],
+        'credit_cards' => ['label' => 'Кредитные карты по теме статьи', 'url' => '/karty/kreditnye'],
+        'debit_cards' => ['label' => 'Дебетовые карты по теме статьи', 'url' => '/karty/debetovye'],
+        default => ['label' => 'Займы по теме статьи', 'url' => '/zajmy'],
+    };
+}
+
+function findRelatedOffersForArticle(array $article, int $limit = 3): array {
+    try {
+        $db = getDB();
+        $category = detectArticleOfferCategory($article);
+        $meta = getArticleCategoryMeta($category);
+
+        $sourceText = mb_strtolower(trim(
+            (string)($article['title'] ?? '') . ' ' .
+            (string)($article['excerpt'] ?? '') . ' ' .
+            mb_substr((string)($article['content'] ?? ''), 0, 2500)
+        ));
+        $keywords = extractArticleKeywords($sourceText, 16);
+
+        $stmt = $db->prepare("SELECT * FROM offers WHERE is_active = 1 AND category = ? ORDER BY rating DESC, review_count DESC, sort_order ASC LIMIT 30");
+        $stmt->execute([$category]);
+        $offers = $stmt->fetchAll();
+
+        if (!$offers) {
+            return ['offers' => [], 'category' => $category, 'meta' => $meta];
+        }
+
+        foreach ($offers as &$offer) {
+            $score = (float)($offer['rating'] ?? 0) * 4 + min(10, ((int)($offer['review_count'] ?? 0)) / 10);
+            $haystack = mb_strtolower(trim(
+                (string)($offer['title'] ?? '') . ' ' .
+                (string)($offer['description'] ?? '') . ' ' .
+                (string)($offer['seo_keywords'] ?? '')
+            ));
+
+            foreach ($keywords as $kw) {
+                if (mb_strlen($kw) >= 4 && str_contains($haystack, $kw)) {
+                    $score += 3;
+                }
+            }
+
+            if ($category === 'microloans' && str_contains($sourceText, 'первый займ') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
+                $score += 5;
+            }
+            if ($category === 'credit_cards' && str_contains($sourceText, 'льготн') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
+                $score += 4;
+            }
+            if ($category === 'debit_cards' && str_contains($sourceText, 'кэшбек') && str_contains($haystack, 'кэшбек')) {
+                $score += 4;
+            }
+
+            $offer['_article_score'] = $score;
+        }
+        unset($offer);
+
+        usort($offers, fn($a, $b) => (($b['_article_score'] ?? 0) <=> ($a['_article_score'] ?? 0)));
+        return ['offers' => array_slice($offers, 0, $limit), 'category' => $category, 'meta' => $meta];
+    } catch (Exception $e) {
+        return ['offers' => [], 'category' => 'microloans', 'meta' => getArticleCategoryMeta('microloans')];
+    }
+}
+
 function buildAutoLinkMap(array $options = []): array {
     $staticLinks = [
         ['phrase' => 'микрозаймы онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн', 'priority' => 5],
@@ -307,7 +418,8 @@ function buildAutoLinkMap(array $options = []): array {
         ['phrase' => 'Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
     ];
     $currentArticleSlug = (string)($options['current_article_slug'] ?? '');
-    $linkMap = array_merge(getTagLinks(), getCityLinks(), $staticLinks, getOfferLinks(), getArticleLinks($currentArticleSlug));
+    $preferredOfferCategory = (string)($options['preferred_offer_category'] ?? '');
+    $linkMap = array_merge(getTagLinks(), getCityLinks(), $staticLinks, getOfferLinks($preferredOfferCategory), getArticleLinks($currentArticleSlug));
     usort($linkMap, function($a, $b) {
         $ap = (int)($a['priority'] ?? 0);
         $bp = (int)($b['priority'] ?? 0);

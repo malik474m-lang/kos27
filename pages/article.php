@@ -36,6 +36,10 @@ $pageTitle = $article['meta_title'] ?: ($article['title'] . ' — ' . SITE_NAME)
 $metaDescription = $article['meta_description'] ?: ($article['excerpt'] ?: '');
 $cover = normalizeMediaUrl($article['cover_image'] ?? '');
 $relatedArticles = findRelatedArticles($article, 3);
+$articleOfferContext = findRelatedOffersForArticle($article, 3);
+$articleOfferCategory = $articleOfferContext['category'];
+$articleOfferMeta = $articleOfferContext['meta'];
+$articleTopicOffers = $articleOfferContext['offers'];
 
 ob_start();
 ?>
@@ -82,7 +86,7 @@ ob_start();
 
     <!-- Содержание статьи -->
     <div class="prose prose-lg max-w-none text-gray-700 mb-10" itemprop="articleBody">
-        <?= safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug']]) ?>
+        <?= safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory]) ?>
     </div>
 
     <?php if (!empty($relatedArticles)): ?>
@@ -135,19 +139,20 @@ ob_start();
     </div>
 
 
-    <!-- Лучшие предложения -->
-    <?php
-    $topOffers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 3")->fetchAll();
-    if ($topOffers):
+    <!-- Релевантные офферы по теме статьи -->
+    <?php if (!empty($articleTopicOffers)):
     require_once __DIR__ . '/../includes/offer-card.php';
     ?>
     <div class="mt-12">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">Лучшие предложения</h2>
-            <a href="/zajmy" class="text-primary hover:underline font-medium text-sm">Все предложения →</a>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900"><?= e($articleOfferMeta['label']) ?></h2>
+                <p class="text-sm text-gray-500 mt-1">Подобрали предложения, которые лучше подходят к теме этой статьи</p>
+            </div>
+            <a href="<?= e($articleOfferMeta['url']) ?>" class="text-primary hover:underline font-medium text-sm">Все предложения →</a>
         </div>
         <div class="grid gap-4">
-            <?php foreach ($topOffers as $topOffer): echo renderOfferCard($topOffer); endforeach; ?>
+            <?php foreach ($articleTopicOffers as $topOffer): echo renderOfferCard($topOffer); endforeach; ?>
         </div>
     </div>
     <?php endif; ?>
