@@ -1,5 +1,75 @@
 <?php
 // Компонент карточки оффера
+function getOfferExtraFieldsList(array $offer): array {
+    $extraFields = !empty($offer['extra_fields']) ? (json_decode($offer['extra_fields'], true) ?: []) : [];
+    return is_array($extraFields) ? $extraFields : [];
+}
+
+function getVisibleOfferExtraFields(array $offer): array {
+    return array_values(array_filter(getOfferExtraFieldsList($offer), fn($f) => !empty($f['visible']) && trim((string)($f['value'] ?? '')) !== ''));
+}
+
+function getDebitCardPriorityFieldPatterns(): array {
+    return [
+        'Кэшбэк' => '/кэшб[еэ]к|cashback/u',
+        'Процент на остаток' => '/остаток|процент\s+на\s+остаток|доход\s+на\s+остаток/u',
+        'Обслуживание' => '/обслуживан|выпуск/u',
+        'Снятие наличных' => '/сняти|наличн/u',
+        'Переводы' => '/перевод|сбп/u',
+        'Бонусы' => '/бонус|мил|балл/u',
+    ];
+}
+
+function getPromotedDebitCardFields(array $offer, int $limit = 4): array {
+    $visible = getVisibleOfferExtraFields($offer);
+    if (!$visible) return [];
+
+    $patterns = getDebitCardPriorityFieldPatterns();
+    $picked = [];
+    $used = [];
+
+    foreach ($patterns as $normalizedLabel => $pattern) {
+        foreach ($visible as $field) {
+            $label = trim((string)($field['label'] ?? ''));
+            $value = trim((string)($field['value'] ?? ''));
+            $hash = mb_strtolower($label . '|' . $value);
+            if (isset($used[$hash])) continue;
+            if ($label !== '' && preg_match($pattern, mb_strtolower($label))) {
+                $picked[] = ['label' => $normalizedLabel, 'value' => $value, '_hash' => $hash];
+                $used[$hash] = true;
+                break;
+            }
+        }
+        if (count($picked) >= $limit) break;
+    }
+
+    foreach ($visible as $field) {
+        if (count($picked) >= $limit) break;
+        $label = trim((string)($field['label'] ?? ''));
+        $value = trim((string)($field['value'] ?? ''));
+        $hash = mb_strtolower($label . '|' . $value);
+        if ($label === '' || $value === '' || isset($used[$hash])) continue;
+        $picked[] = ['label' => $label, 'value' => $value, '_hash' => $hash];
+        $used[$hash] = true;
+    }
+
+    return $picked;
+}
+
+function getRemainingVisibleDebitCardFields(array $offer, array $promoted): array {
+    $visible = getVisibleOfferExtraFields($offer);
+    if (!$visible) return [];
+    $used = [];
+    foreach ($promoted as $field) {
+        $used[$field['_hash'] ?? mb_strtolower(($field['label'] ?? '') . '|' . ($field['value'] ?? ''))] = true;
+    }
+    return array_values(array_filter($visible, function($field) use ($used) {
+        $label = trim((string)($field['label'] ?? ''));
+        $value = trim((string)($field['value'] ?? ''));
+        $hash = mb_strtolower($label . '|' . $value);
+        return !isset($used[$hash]);
+    }));
+}
 function renderOfferCard(array $offer): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
     $rating = (float)($offer['rating'] ?? 0);
@@ -53,6 +123,14 @@ function renderOfferCard(array $offer): string {
     if (!empty($displayFields['borrower']) && !empty($offer['borrower_category']) && $offer['borrower_category'] !== 'any') {
         $borrowerMap = ['employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
         $fieldCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
+    }
+
+    $promotedDebitFields = [];
+    if (($offer['category'] ?? '') === 'debit_cards') {
+        $promotedDebitFields = getPromotedDebitCardFields($offer, 4);
+        if ($promotedDebitFields) {
+            $fieldCards = array_map(fn($f) => ['label' => $f['label'], 'value' => $f['value']], $promotedDebitFields);
+        }
     }
 
     ob_start();
@@ -122,8 +200,9 @@ function renderOfferCard(array $offer): string {
         <?php endif; ?>
 
         <?php
-        $extraFields = !empty($offer['extra_fields']) ? (json_decode($offer['extra_fields'], true) ?: []) : [];
-        $visibleFields = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
+        $visibleFields = (($offer['category'] ?? '') === 'debit_cards')
+            ? getRemainingVisibleDebitCardFields($offer, $promotedDebitFields)
+            : getVisibleOfferExtraFields($offer);
         if ($visibleFields):
         ?>
         <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 <?= $fieldCards ? 'pt-4 border-t border-gray-100' : '' ?>">

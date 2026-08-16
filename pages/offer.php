@@ -154,6 +154,13 @@ ob_start();
         if (!empty($displayFields['borrower']) && !empty($offer['borrower_category']) && $offer['borrower_category'] !== 'any') {
             $mainCards[] = ['label' => 'Заёмщик', 'value' => $borrowerMap[$offer['borrower_category']] ?? $offer['borrower_category']];
         }
+        $promotedDebitFields = [];
+        if (($offer['category'] ?? '') === 'debit_cards') {
+            $promotedDebitFields = getPromotedDebitCardFields($offer, 4);
+            if ($promotedDebitFields) {
+                $mainCards = array_map(fn($f) => ['label' => $f['label'], 'value' => $f['value']], $promotedDebitFields);
+            }
+        }
         if ($mainCards): ?>
         <div class="offer-main-grid-4 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <?php foreach ($mainCards as $card): ?>
@@ -167,8 +174,9 @@ ob_start();
 
         <?php
         // Дополнительные поля
-        $extraFields = !empty($offer['extra_fields']) ? (json_decode($offer['extra_fields'], true) ?: []) : [];
-        $visibleExtra = array_filter($extraFields, fn($f) => !empty($f['visible']) && trim($f['value'] ?? '') !== '');
+        $visibleExtra = (($offer['category'] ?? '') === 'debit_cards')
+            ? getRemainingVisibleDebitCardFields($offer, $promotedDebitFields)
+            : getVisibleOfferExtraFields($offer);
         if ($visibleExtra):
         ?>
         <div class="offer-main-grid-4 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
