@@ -421,6 +421,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <script src="/assets/site.min.js?v=20260728" defer></script>
 <?= getPwaInstallBanner() ?>
 <?= getPwaScripts() ?>
+<?php require_once __DIR__ . "/social-proof.php"; echo renderSocialProofWidget(); ?>
 </body>
 </html>
 <?php pageCacheEnd(); ?>
