@@ -60,8 +60,8 @@ $catUrl = match($offer['category']) {
     default => '/zajmy',
 };
 
-$pageTitle = (!empty($offer['meta_title'])) ? $offer['meta_title'] : $offer['title'] . ' — ' . SITE_NAME;
-$metaDescription = (!empty($offer['meta_description'])) ? $offer['meta_description'] : ($offer['description'] ?: "Оформите {$offer['title']} онлайн. Сумма от " . formatMoney($offer['amount_min']) . " до " . formatMoney($offer['amount_max']);
+$pageTitle = (!empty($offer['meta_title'])) ? $offer['meta_title'] : ($offer['title'] . ' — ' . SITE_NAME);
+$metaDescription = (!empty($offer['meta_description'])) ? $offer['meta_description'] : ($offer['description'] ?: ("Оформите {$offer['title']} онлайн. Сумма от " . formatMoney($offer['amount_min']) . " до " . formatMoney($offer['amount_max'])));
 $rating = (float)$offer['rating'];
 $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
 require_once __DIR__ . '/../includes/ab-test.php';
