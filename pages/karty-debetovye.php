@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/offer-card.php';
+require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../includes/sticky-cta.php';
 require_once __DIR__ . '/../data/cities.php';
 
