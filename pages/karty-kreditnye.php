@@ -9,6 +9,7 @@ $cardTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND categor
 
 $pageTitle = 'Кредитные карты онлайн — Сравнение | ' . SITE_NAME;
 $metaDescription = 'Сравните кредитные карты с льготным периодом и кэшбеком.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Кредитные карты', '/karty/kreditnye')];
 
 ob_start();
 ?>

@@ -9,6 +9,7 @@ $debitTags = $db->query("SELECT * FROM offer_tags WHERE is_active = 1 AND catego
 
 $pageTitle = 'Дебетовые карты | ' . SITE_NAME;
 $metaDescription = 'Сравните дебетовые карты с кэшбеком и процентом на остаток.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Дебетовые карты', '/karty/debetovye')];
 
 ob_start();
 ?>

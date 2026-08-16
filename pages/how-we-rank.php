@@ -1,6 +1,7 @@
 <?php
 $pageTitle = pageMetaTitle('Как мы оцениваем предложения');
 $metaDescription = 'Описание принципов ранжирования карточек офферов на сайте ' . SITE_NAME . ': какие факторы влияют на порядок вывода предложений.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Как мы оцениваем предложения', '/how-we-rank')];
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

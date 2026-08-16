@@ -1,6 +1,7 @@
 <?php
 $pageTitle = pageMetaTitle('Пользовательское соглашение');
 $metaDescription = 'Пользовательское соглашение сайта ' . SITE_NAME . '. Условия использования сервиса и правила работы с финансовыми предложениями.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Пользовательское соглашение', '/terms')];
 ob_start();
 ?>
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

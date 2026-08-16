@@ -4,6 +4,7 @@ $offers = $db->query("SELECT * FROM offers WHERE is_active = 1 ORDER BY sort_ord
 
 $pageTitle = 'Сравнение предложений — ' . SITE_NAME;
 $metaDescription = 'Сравните условия займов, кредитов и банковских карт. Выберите до 4 предложений для сравнения.';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Сравнение', '/compare')];
 
 $pageHeadHtml = <<<'HTML'
 <style>
