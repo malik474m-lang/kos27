@@ -110,7 +110,160 @@ function getTagLinks(): array {
     return $links;
 }
 
-function buildAutoLinkMap(): array {
+
+function getArticleTitleLinkPhrases(string $title): array {
+    $title = trim(preg_replace('/\s+/u', ' ', $title));
+    if ($title === '') return [];
+
+    $variants = [$title];
+    $clean = trim(str_replace(['«','»','"'], '', $title));
+    if ($clean !== $title) $variants[] = $clean;
+
+    foreach ([
+        '/^как\s+/iu',
+        '/^что\s+такое\s+/iu',
+        '/^почему\s+/iu',
+        '/^когда\s+/iu',
+        '/^зачем\s+/iu',
+        '/^можно\s+ли\s+/iu',
+    ] as $pattern) {
+        $short = trim((string)preg_replace($pattern, '', $clean));
+        if (mb_strlen($short) >= 12) $variants[] = $short;
+    }
+
+    if (preg_match('/[:—-]\s*(.+)$/u', $clean, $m)) {
+        $tail = trim($m[1]);
+        if (mb_strlen($tail) >= 12) $variants[] = $tail;
+    }
+
+    $unique = [];
+    foreach ($variants as $variant) {
+        $variant = trim($variant);
+        if (mb_strlen($variant) < 8 || mb_strlen($variant) > 120) continue;
+        $unique[$variant] = true;
+        $lower = mb_strtolower($variant);
+        $unique[$lower] = true;
+    }
+
+    return array_keys($unique);
+}
+
+function getArticleLinks(string $currentSlug = ''): array {
+    $cacheFile = __DIR__ . '/../data/article-links-cache.json';
+    $articles = [];
+
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 900) {
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if (is_array($cached)) $articles = $cached;
+    }
+
+    if (!$articles) {
+        try {
+            $db = getDB();
+            $articles = $db->query("SELECT title, slug FROM articles WHERE is_published = 1 ORDER BY updated_at DESC, created_at DESC LIMIT 200")->fetchAll();
+            @file_put_contents($cacheFile, json_encode($articles, JSON_UNESCAPED_UNICODE));
+        } catch (Exception $e) {
+            $articles = [];
+        }
+    }
+
+    $links = [];
+    foreach ($articles as $article) {
+        if (!empty($currentSlug) && ($article['slug'] ?? '') === $currentSlug) continue;
+        $url = '/articles/' . $article['slug'];
+        $title = trim((string)($article['title'] ?? ''));
+        if ($title === '') continue;
+
+        foreach (getArticleTitleLinkPhrases($title) as $phrase) {
+            $links[] = [
+                'phrase' => $phrase,
+                'url' => $url,
+                'title' => $title,
+                'priority' => mb_strtolower($phrase) === mb_strtolower($title) ? 16 : 12,
+            ];
+        }
+    }
+
+    return $links;
+}
+
+function extractArticleKeywords(string $text, int $limit = 18): array {
+    $text = trim(strip_tags($text));
+    $text = mb_strtolower($text);
+    $text = preg_replace('/[^\p{L}\p{N}\s-]+/u', ' ', $text);
+    $text = preg_replace('/\s+/u', ' ', $text);
+
+    $stop = [
+        'это','для','при','над','под','после','перед','если','когда','чтобы','также','который','которая','которые','можно','нужно','через','между','такой','такая','такие','займ','займы','кредит','кредиты','карта','карты','банк','банки','онлайн','2024','2025','2026','как','что','или','где','про','его','её','них','она','они','оно','все','всё','ещё','этот','эта','эти','для','без','под','над','вам','нас','при','из','на','по','до','от','со','не','но','а','и','в','с','у','к','о','об','за','то','же'
+    ];
+    $stopMap = array_fill_keys($stop, true);
+
+    $weights = [];
+    foreach (explode(' ', $text) as $word) {
+        $word = trim($word, '-');
+        if (mb_strlen($word) < 4) continue;
+        if (isset($stopMap[$word])) continue;
+        if (preg_match('/^\d+$/', $word)) continue;
+        $weights[$word] = ($weights[$word] ?? 0) + 1;
+    }
+
+    arsort($weights);
+    return array_slice(array_keys($weights), 0, $limit);
+}
+
+function findRelatedArticles(array $currentArticle, int $limit = 3): array {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id, title, slug, cover_image, excerpt, content, created_at, updated_at FROM articles WHERE is_published = 1 AND id != ? ORDER BY updated_at DESC, created_at DESC LIMIT 80");
+        $stmt->execute([(int)$currentArticle['id']]);
+        $candidates = $stmt->fetchAll();
+        if (!$candidates) return [];
+
+        $sourceText = trim((string)($currentArticle['title'] ?? '') . ' ' . ($currentArticle['excerpt'] ?? '') . ' ' . mb_substr((string)($currentArticle['content'] ?? ''), 0, 2500));
+        $keywords = extractArticleKeywords($sourceText, 18);
+        if (!$keywords) {
+            return array_slice($candidates, 0, $limit);
+        }
+        $keywordSet = array_fill_keys($keywords, true);
+
+        foreach ($candidates as &$candidate) {
+            $score = 0;
+            $candidateText = trim((string)($candidate['title'] ?? '') . ' ' . ($candidate['excerpt'] ?? '') . ' ' . mb_substr((string)($candidate['content'] ?? ''), 0, 1800));
+            $candidateKeywords = extractArticleKeywords($candidateText, 18);
+
+            foreach ($candidateKeywords as $kw) {
+                if (isset($keywordSet[$kw])) $score += 4;
+            }
+
+            $titleLower = mb_strtolower((string)$candidate['title']);
+            foreach ($keywords as $kw) {
+                if (mb_strlen($kw) >= 5 && str_contains($titleLower, $kw)) $score += 3;
+            }
+
+            similar_text(
+                mb_strtolower((string)$currentArticle['title']),
+                mb_strtolower((string)$candidate['title']),
+                $titleSimilarity
+            );
+            $score += (int)floor($titleSimilarity / 12);
+
+            $candidate['_score'] = $score;
+        }
+        unset($candidate);
+
+        usort($candidates, function($a, $b) {
+            $scoreDiff = ($b['_score'] ?? 0) <=> ($a['_score'] ?? 0);
+            if ($scoreDiff !== 0) return $scoreDiff;
+            return strtotime($b['updated_at'] ?? $b['created_at'] ?? 'now') <=> strtotime($a['updated_at'] ?? $a['created_at'] ?? 'now');
+        });
+
+        return array_slice($candidates, 0, $limit);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+function buildAutoLinkMap(array $options = []): array {
     $staticLinks = [
         ['phrase' => 'микрозаймы онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн', 'priority' => 5],
         ['phrase' => 'микрозайм онлайн', 'url' => '/zajmy', 'title' => 'Микрозаймы онлайн', 'priority' => 5],
@@ -153,7 +306,8 @@ function buildAutoLinkMap(): array {
         ['phrase' => 'сайте Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
         ['phrase' => 'Космозайм', 'url' => '/', 'title' => 'Космозайм', 'priority' => 1],
     ];
-    $linkMap = array_merge(getTagLinks(), getCityLinks(), $staticLinks, getOfferLinks());
+    $currentArticleSlug = (string)($options['current_article_slug'] ?? '');
+    $linkMap = array_merge(getTagLinks(), getCityLinks(), $staticLinks, getOfferLinks(), getArticleLinks($currentArticleSlug));
     usort($linkMap, function($a, $b) {
         $ap = (int)($a['priority'] ?? 0);
         $bp = (int)($b['priority'] ?? 0);
@@ -167,7 +321,8 @@ function plainTextToHtml(string $text): string {
     $text = trim($text);
     if ($text === '') return '';
     $text = str_replace(["
-", ""], "
+", "
+"], "
 ", $text);
     $blocks = preg_split('/
 {2,}/', $text);
@@ -201,11 +356,12 @@ function plainTextToHtml(string $text): string {
 ", $htmlBlocks);
 }
 
-function autoLinkText(string $html, int $maxLinks = 10): string {
+function autoLinkText(string $html, int $maxLinks = 10, array $options = []): string {
     if (!preg_match('/<[^>]+>/', $html)) {
         $html = plainTextToHtml($html);
     }
-    $linkMap = buildAutoLinkMap();
+    $linkMap = buildAutoLinkMap($options);
+    $currentUrl = (string)($options['current_url'] ?? '');
     $usedUrls = [];
     $usedPhrases = [];
     $linkedCount = 0;
@@ -220,6 +376,7 @@ function autoLinkText(string $html, int $maxLinks = 10): string {
         foreach ($linkMap as $item) {
             if ($linkedCount >= $maxLinks) break;
             if (in_array($item['url'], $usedUrls, true)) continue;
+            if ($currentUrl !== '' && $item['url'] === $currentUrl) continue;
 
             $phrase = trim((string)$item['phrase']);
             if ($phrase === '' || mb_strlen($phrase) < 3) continue;
@@ -249,8 +406,8 @@ function autoLinkText(string $html, int $maxLinks = 10): string {
     return implode('', $parts);
 }
 
-function safeAutoLink(string $text, int $maxLinks = 10): string {
+function safeAutoLink(string $text, int $maxLinks = 10, array $options = []): string {
     $html = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     $html = nl2br($html);
-    return autoLinkText($html, $maxLinks);
+    return autoLinkText($html, $maxLinks, $options);
 }

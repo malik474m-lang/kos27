@@ -35,6 +35,7 @@ if (!$hasEeatFields) {
 $pageTitle = $article['meta_title'] ?: ($article['title'] . ' — ' . SITE_NAME);
 $metaDescription = $article['meta_description'] ?: ($article['excerpt'] ?: '');
 $cover = normalizeMediaUrl($article['cover_image'] ?? '');
+$relatedArticles = findRelatedArticles($article, 3);
 
 ob_start();
 ?>
@@ -80,9 +81,22 @@ ob_start();
     </div>
 
     <!-- Содержание статьи -->
-    <div class="prose prose-lg max-w-none text-gray-700 mb-12" itemprop="articleBody">
-        <?= safeAutoLink($article['content']) ?>
+    <div class="prose prose-lg max-w-none text-gray-700 mb-10" itemprop="articleBody">
+        <?= safeAutoLink($article['content'], 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug']]) ?>
     </div>
+
+    <?php if (!empty($relatedArticles)): ?>
+    <div class="mb-12 rounded-2xl border border-blue-100 bg-blue-50 p-6">
+        <h2 class="mb-3 text-lg font-bold text-gray-900">По теме</h2>
+        <div class="flex flex-wrap gap-3">
+            <?php foreach ($relatedArticles as $ra): ?>
+            <a href="/articles/<?= e($ra['slug']) ?>" class="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm ring-1 ring-blue-100 transition hover:bg-blue-100 hover:no-underline">
+                <?= e($ra['title']) ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Блок источников и проверки фактов -->
     <div class="mb-12">
@@ -120,31 +134,6 @@ ob_start();
         </div>
     </div>
 
-    <!-- Читайте также -->
-    <?php
-    $otherArticles = $db->prepare("SELECT title, slug, cover_image FROM articles WHERE is_published = 1 AND id != ? ORDER BY created_at DESC LIMIT 3");
-    $otherArticles->execute([$article['id']]);
-    $relArticles = $otherArticles->fetchAll();
-    if ($relArticles):
-    ?>
-    <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Читайте также</h2>
-        <div class="grid sm:grid-cols-3 gap-4">
-            <?php foreach ($relArticles as $ra):
-                $raCover = normalizeMediaUrl($ra['cover_image'] ?? '');
-            ?>
-            <a href="/articles/<?= e($ra['slug']) ?>" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden card-hover block">
-                <?php if ($raCover): ?>
-                <div class="h-32 bg-gray-100"><img src="<?= e($raCover) ?>" alt="<?= e($ra['title']) ?>" class="w-full h-full object-cover" loading="lazy"></div>
-                <?php endif; ?>
-                <div class="p-4">
-                    <h3 class="font-semibold text-gray-900 line-clamp-2 text-sm"><?= e($ra['title']) ?></h3>
-                </div>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
 
     <!-- Лучшие предложения -->
     <?php
