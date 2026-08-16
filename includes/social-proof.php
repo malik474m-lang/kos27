@@ -1,7 +1,6 @@
 <?php
 /**
  * Виджет социального доказательства
- * "Иван из Москвы получил 15 000 ₽ 2 минуты назад"
  */
 
 function getSocialProofSettings(): array {
@@ -23,18 +22,28 @@ function renderSocialProofWidget(): string {
         return '';
     }
 
-    // Мужские имена
-    $maleNames = ['Александр', 'Дмитрий', 'Максим', 'Сергей', 'Андрей', 'Алексей', 'Артём', 'Илья', 'Кирилл', 'Михаил', 'Никита', 'Матвей', 'Роман', 'Егор', 'Арсений', 'Иван', 'Денис', 'Евгений'];
+    $maleNames = ['Александр','Дмитрий','Максим','Сергей','Андрей','Алексей','Артём','Илья','Кирилл','Михаил','Никита','Матвей','Роман','Егор','Арсений','Иван','Денис','Евгений'];
+    $femaleNames = ['Анна','Мария','Елена','Дарья','Алина','Ирина','Екатерина','Ольга','Татьяна','Наталья','Юлия','Виктория','Полина','Анастасия','Ксения','Светлана','Валерия'];
+    $cities = ['Москвы','Санкт-Петербурга','Новосибирска','Екатеринбурга','Казани','Нижнего Новгорода','Челябинска','Самары','Омска','Ростова-на-Дону','Уфы','Красноярска','Воронежа','Перми','Волгограда','Краснодара','Саратова','Тюмени','Тольятти','Ижевска','Барнаула','Ульяновска','Иркутска','Хабаровска','Ярославля','Владивостока','Махачкалы','Томска','Оренбурга','Кемерово'];
 
-    // Женские имена
-    $femaleNames = ['Анна', 'Мария', 'Елена', 'Дарья', 'Алина', 'Ирина', 'Екатерина', 'Ольга', 'Татьяна', 'Наталья', 'Юлия', 'Виктория', 'Полина', 'Анастасия', 'Ксения', 'Светлана', 'Валерия'];
-
-    // Города
-    $cities = ['Москвы', 'Санкт-Петербурга', 'Новосибирска', 'Екатеринбурга', 'Казани', 'Нижнего Новгорода', 'Челябинска', 'Самары', 'Омска', 'Ростова-на-Дону', 'Уфы', 'Красноярска', 'Воронежа', 'Перми', 'Волгограда', 'Краснодара', 'Саратова', 'Тюмени', 'Тольятти', 'Ижевска', 'Барнаула', 'Ульяновска', 'Иркутска', 'Хабаровска', 'Ярославля', 'Владивостока', 'Махачкалы', 'Томска', 'Оренбурга', 'Кемерово'];
-
-    // Действия — мужской / женский род
-    $actionsMale = ['получил займ', 'оформил займ', 'получил деньги', 'оформил заявку на'];
-    $actionsFemale = ['получила займ', 'оформила займ', 'получила деньги', 'оформила заявку на'];
+    // Сценарии по категориям продуктов (м/ж)
+    $scenarios = [
+        // Займы
+        ['m' => 'получил займ', 'f' => 'получила займ', 'icon' => '💵', 'amount' => true],
+        ['m' => 'оформил займ на', 'f' => 'оформила займ на', 'icon' => '💵', 'amount' => true],
+        ['m' => 'получил деньги —', 'f' => 'получила деньги —', 'icon' => '💰', 'amount' => true],
+        // Кредиты
+        ['m' => 'одобрен кредит на', 'f' => 'одобрен кредит на', 'icon' => '🏦', 'amount' => true, 'min' => 50000, 'max' => 500000],
+        ['m' => 'оформил кредит на', 'f' => 'оформила кредит на', 'icon' => '🏦', 'amount' => true, 'min' => 50000, 'max' => 500000],
+        ['m' => 'получил кредит на', 'f' => 'получила кредит на', 'icon' => '🏦', 'amount' => true, 'min' => 30000, 'max' => 300000],
+        // Кредитные карты
+        ['m' => 'оформил кредитную карту', 'f' => 'оформила кредитную карту', 'icon' => '💳', 'amount' => false],
+        ['m' => 'получил кредитную карту', 'f' => 'получила кредитную карту', 'icon' => '💳', 'amount' => false],
+        ['m' => 'одобрена кредитная карта', 'f' => 'одобрена кредитная карта', 'icon' => '💳', 'amount' => false],
+        // Дебетовые карты
+        ['m' => 'оформил дебетовую карту', 'f' => 'оформила дебетовую карту', 'icon' => '🪪', 'amount' => false],
+        ['m' => 'заказал дебетовую карту', 'f' => 'заказала дебетовую карту', 'icon' => '🪪', 'amount' => false],
+    ];
 
     $configJson = json_encode([
         'interval' => $config['interval'],
@@ -44,8 +53,7 @@ function renderSocialProofWidget(): string {
         'maleNames' => $maleNames,
         'femaleNames' => $femaleNames,
         'cities' => $cities,
-        'actionsMale' => $actionsMale,
-        'actionsFemale' => $actionsFemale,
+        'scenarios' => $scenarios,
     ], JSON_UNESCAPED_UNICODE);
 
     $positionClass = $config['position'] === 'bottom-right' ? 'right-4' : 'left-4';
@@ -55,9 +63,9 @@ function renderSocialProofWidget(): string {
     <!-- Social Proof Widget -->
     <div id="social-proof-widget"
          class="fixed bottom-4 <?= $positionClass ?> z-50 transform translate-y-full opacity-0 transition-all duration-500 pointer-events-none"
-         style="max-width: 320px;">
+         style="max-width: 340px;">
         <div class="bg-white rounded-xl shadow-2xl border border-gray-100 p-4 flex items-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xl flex-shrink-0">
+            <div id="sp-icon" class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-xl flex-shrink-0">
                 ✓
             </div>
             <div class="min-w-0">
@@ -74,26 +82,25 @@ function renderSocialProofWidget(): string {
         var widget = document.getElementById('social-proof-widget');
         var textEl = document.getElementById('sp-text');
         var timeEl = document.getElementById('sp-time');
+        var iconEl = document.getElementById('sp-icon');
         var isPaused = false;
         var hideTimeout = null;
         var showTimeout = null;
 
-        function randomItem(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
+        function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-        function randomAmount() {
+        function randomAmount(min, max) {
             var step = 1000;
-            var min = Math.ceil(config.minAmount / step);
-            var max = Math.floor(config.maxAmount / step);
-            return (Math.floor(Math.random() * (max - min + 1)) + min) * step;
+            var lo = Math.ceil((min || config.minAmount) / step);
+            var hi = Math.floor((max || config.maxAmount) / step);
+            return (Math.floor(Math.random() * (hi - lo + 1)) + lo) * step;
         }
 
         function randomMinutes() {
-            var mins = Math.floor(Math.random() * 15) + 1;
-            if (mins === 1) return '1 минуту назад';
-            if (mins < 5) return mins + ' минуты назад';
-            return mins + ' минут назад';
+            var m = Math.floor(Math.random() * 15) + 1;
+            if (m === 1) return '1 минуту назад';
+            if (m < 5) return m + ' минуты назад';
+            return m + ' минут назад';
         }
 
         function formatMoney(n) {
@@ -103,31 +110,31 @@ function renderSocialProofWidget(): string {
         function showNotification() {
             if (isPaused) return;
 
-            // Случайно выбираем пол
-            var isMale = Math.random() > 0.5;
+            var isMale = Math.random() > 0.45;
             var name = isMale ? randomItem(config.maleNames) : randomItem(config.femaleNames);
-            var action = isMale ? randomItem(config.actionsMale) : randomItem(config.actionsFemale);
             var city = randomItem(config.cities);
-            var amount = randomAmount();
+            var sc = randomItem(config.scenarios);
+            var action = isMale ? sc.m : sc.f;
 
-            textEl.textContent = name + ' из ' + city + ' ' + action + ' ' + formatMoney(amount);
+            var msg = name + ' из ' + city + ' ' + action;
+            if (sc.amount) {
+                msg += ' ' + formatMoney(randomAmount(sc.min, sc.max));
+            }
+
+            textEl.textContent = msg;
             timeEl.textContent = randomMinutes();
+            iconEl.textContent = sc.icon || '✓';
 
             widget.classList.remove('translate-y-full', 'opacity-0');
             widget.classList.add('translate-y-0', 'opacity-100');
 
-            hideTimeout = setTimeout(function() {
-                hideNotification();
-            }, config.duration);
+            hideTimeout = setTimeout(hideNotification, config.duration);
         }
 
         function hideNotification() {
             widget.classList.remove('translate-y-0', 'opacity-100');
             widget.classList.add('translate-y-full', 'opacity-0');
-
-            showTimeout = setTimeout(function() {
-                showNotification();
-            }, config.interval);
+            showTimeout = setTimeout(showNotification, config.interval);
         }
 
         window.closeSocialProof = function() {
@@ -139,13 +146,9 @@ function renderSocialProofWidget(): string {
             try { sessionStorage.setItem('sp_closed', '1'); } catch(e) {}
         };
 
-        // Не показываем если уже закрывали
-        try {
-            if (sessionStorage.getItem('sp_closed') === '1') return;
-        } catch(e) {}
+        try { if (sessionStorage.getItem('sp_closed') === '1') return; } catch(e) {}
 
-        // Первый показ через 3 секунды
-        setTimeout(function() { showNotification(); }, 3000);
+        setTimeout(showNotification, 3000);
     })();
     </script>
     <?php
