@@ -48,7 +48,7 @@ ob_start();
         <a href="/zajmy" class="inline-block bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors">Займы онлайн</a>
         <a href="/kredity" class="inline-block bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors">Кредиты</a>
         <a href="/karty/kreditnye" class="inline-block bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors">Кредитные карты</a>
-        <a href="/calculator" class="inline-block bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors">Калькулятор</a>
+        <a href="/compare" class="inline-block bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:border-blue-500 hover:text-primary transition-colors">Сравнение предложений</a>
     </div>
 
 </section>
