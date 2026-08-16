@@ -47,7 +47,7 @@ function loadCabinet(){
         h+='</div>';
         h+='<div class="flex-shrink-0">';
         if((d.bonus_balance||0) > 0){
-            h+='<button type="button" onclick="document.getElementById(\'bw-amount-user\')?.focus();window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'});" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg transition hover:shadow-xl" style="background:#f59e0b;color:#111827;border:1px solid #d97706;"><span>💸</span><span>Вывести бонусы</span></button>';
+            h+='<button type="button" onclick="scrollToBonusWithdraw()" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg transition hover:shadow-xl" style="background:#f59e0b;color:#111827;border:1px solid #d97706;"><span>💸</span><span>Вывести бонусы</span></button>';
         } else {
             h+='<div class="rounded-2xl bg-white px-5 py-4 text-center ring-1 ring-amber-200"><p class="text-xs uppercase tracking-wide text-gray-400">Сейчас доступно</p><p class="mt-1 text-lg font-bold text-gray-700">0 ₽</p><p class="mt-1 text-xs text-gray-500">Бонусы появятся после одобрения заявки</p></div>';
         }
@@ -74,7 +74,7 @@ h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl f
         h+='</tbody></table></div></div>';
     }
 
-    h+='<div class="mt-6 overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">';
+    h+='<div id="bonus-withdraw-section" class="mt-6 overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">';
     h+='<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">';
     h+='<div><h2 class="font-bold text-gray-900 text-lg mb-2">💸 Заявка на вывод КосмоБонусов</h2><p class="text-sm text-gray-600">Укажите банк, номер телефона, привязанный к карте, и имя владельца карты. <strong>1 бонус = 1 ₽</strong>.</p></div>';
     h+='<div class="rounded-xl bg-white border border-amber-200 px-4 py-3 text-center min-w-[160px]"><p class="text-xs uppercase tracking-wide text-amber-600 font-semibold">Доступно к выводу</p><p class="text-2xl font-extrabold text-amber-700">'+(d.bonus_balance||0)+' ₽</p></div>';
@@ -119,6 +119,8 @@ h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl f
         document.getElementById('cab-content').innerHTML=h;
     }).catch(function(){document.getElementById('cab-content').innerHTML='<p class="text-red-500 text-center">Ошибка загрузки</p>';});
 }
+function scrollToBonusWithdraw(){var box=document.getElementById('bonus-withdraw-section');if(box){box.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(function(){document.getElementById('bw-amount-user')?.focus();},350);}}
+
 function submitBonusWithdraw(ev){
     ev.preventDefault();
     var amount=parseInt(document.getElementById('bw-amount-user').value)||0;
