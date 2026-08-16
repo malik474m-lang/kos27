@@ -81,18 +81,20 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
     $reviewCount = (int)($offer['review_count'] ?? 0);
     $category = (string)($offer['category'] ?? 'microloans');
 
+    $categoryConfig = [
+        'microloans' => ['boost' => 3, 'min_live' => 5, 'max_live' => 18, 'fallback_today_min' => 1, 'fallback_today_max' => 5],
+        'credits' => ['boost' => 2, 'min_live' => 2, 'max_live' => 9, 'fallback_today_min' => 1, 'fallback_today_max' => 3],
+        'credit_cards' => ['boost' => 4, 'min_live' => 6, 'max_live' => 22, 'fallback_today_min' => 1, 'fallback_today_max' => 6],
+        'debit_cards' => ['boost' => 1, 'min_live' => 3, 'max_live' => 11, 'fallback_today_min' => 1, 'fallback_today_max' => 4],
+    ][$category] ?? ['boost' => 2, 'min_live' => 4, 'max_live' => 14, 'fallback_today_min' => 1, 'fallback_today_max' => 4];
+
     // У офферов теперь разные сиды по часу/офферу/категории — значения перестают быть одинаковыми.
     $seed = abs(crc32($offerPagePath . '|' . $category . '|' . date('Y-m-d-H')));
     $hourJitter = $seed % 6;           // 0..5
     $microJitter = ($seed >> 3) % 3;   // 0..2
     $ratingBoost = (int)floor($rating);
     $reviewBoost = min(6, (int)floor($reviewCount / 15));
-    $categoryBoost = [
-        'microloans' => 3,
-        'credits' => 2,
-        'credit_cards' => 4,
-        'debit_cards' => 1,
-    ][$category] ?? 2;
+    $categoryBoost = $categoryConfig['boost'];
 
     $liveNow = (int)round($recentUniqueViews * 1.8)
         + (int)ceil($clicks24h / 4)
@@ -103,12 +105,12 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
         + $microJitter;
 
     // Если живых данных мало, строим правдоподобное значение на базе оффера, но разное для каждого.
-    if ($liveNow <= 4) {
+    if ($liveNow <= $categoryConfig['min_live'] - 1) {
         $dayHourBoost = ((int)date('G') >= 9 && (int)date('G') <= 22) ? 2 : 0;
-        $liveNow = 4 + ($seed % 9) + $categoryBoost + $dayHourBoost;
+        $liveNow = $categoryConfig['min_live'] + ($seed % max(2, $categoryConfig['max_live'] - $categoryConfig['min_live'] - 1)) + $dayHourBoost;
     }
 
-    $liveNow = max(4, min(41, $liveNow));
+    $liveNow = max($categoryConfig['min_live'], min($categoryConfig['max_live'], $liveNow));
 
     $trendLabel = 'Стабильный интерес';
     if ($views24h >= 50 || $clicks24h >= 15 || $approvedToday >= 3) {
@@ -122,7 +124,10 @@ function getOfferInterestStats(int $offerId, string $offerPagePath, array $offer
 
     // Лёгкий fallback, если данных нет совсем.
     if ($todayCount <= 0) {
-        $todayCount = max(1, min(8, (int)floor($liveNow / 4)));
+        $todayCount = max(
+            $categoryConfig['fallback_today_min'],
+            min($categoryConfig['fallback_today_max'], (int)floor($liveNow / 4))
+        );
         $todayLabel = 'Подали сегодня';
     }
 
