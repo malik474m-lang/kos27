@@ -68,53 +68,6 @@ function jsonLdOffer(array $offer, array $reviews = []): string {
     return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
-/**
- * Отдельный JSON-LD для отзывов — как Product с reviews
- * Google не поддерживает review внутри FinancialProduct,
- * но поддерживает для Product
- */
-function jsonLdOfferReviews(array $offer, array $reviews): string {
-    if (!$reviews) return '';
-    
-    $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
-    $image = $logo ? (str_starts_with($logo, 'http') ? $logo : SITE_URL . $logo) : SITE_URL . '/favicon.svg';
-    
-    $data = [
-        '@context' => 'https://schema.org',
-        '@type' => 'Product',
-        'name' => $offer['title'],
-        'image' => $image,
-        'description' => $offer['description'] ?: "Финансовое предложение от {$offer['title']}",
-        'brand' => ['@type' => 'Brand', 'name' => $offer['title']],
-    ];
-    
-    if ((float)($offer['rating'] ?? 0) > 0 && (int)($offer['review_count'] ?? 0) > 0) {
-        $data['aggregateRating'] = [
-            '@type' => 'AggregateRating',
-            'ratingValue' => number_format((float)$offer['rating'], 1, '.', ''),
-            'reviewCount' => (int)$offer['review_count'],
-            'bestRating' => '5',
-            'worstRating' => '1',
-        ];
-    }
-    
-    $data['review'] = array_map(function($review) {
-        return [
-            '@type' => 'Review',
-            'author' => ['@type' => 'Person', 'name' => $review['author_name'] ?: 'Пользователь'],
-            'reviewBody' => $review['comment'] ?: '',
-            'datePublished' => !empty($review['created_at']) ? date('c', strtotime($review['created_at'])) : date('c'),
-            'reviewRating' => [
-                '@type' => 'Rating',
-                'ratingValue' => (int)($review['rating'] ?? 5),
-                'bestRating' => '5',
-                'worstRating' => '1',
-            ],
-        ];
-    }, array_slice($reviews, 0, 10));
-    
-    return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-}
 
 function jsonLdArticle(array $article): string {
     $cover = normalizeMediaUrl($article['cover_image'] ?? '');
