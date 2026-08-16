@@ -239,6 +239,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 setTimeout(function(){ cqSetInlineScore('of', 0); }, 0);
 // Инициализируем видимость стандартных полей
 ofInitDisplayFields(f);
+ofToggleOfferFieldGroups();
 ofToggleExtraTemplateActions();
 
 // Инициализируем дополнительные поля (из шаблона категории или существующих)
@@ -275,9 +276,11 @@ if(catSelect&&!catSelect.dataset.boundTpl){
             ofRenderExtraFields(tpl);
           }
         }
+        ofToggleOfferFieldGroups();
         ofToggleExtraTemplateActions();
       });
     }
+    ofToggleOfferFieldGroups();
     ofToggleExtraTemplateActions();
   });
 }
@@ -289,6 +292,27 @@ var linArr=linked.map(Number);
 box.innerHTML=allTags.filter(t=>t.category===f.category||!id).map(t=>'<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer '+(linArr.includes(Number(t.id))?'bg-blue-50 border-blue-300':'bg-white border-gray-200')+' hover:border-blue-400"><input type="checkbox" class="of-tag-cb w-3.5 h-3.5" value="'+t.id+'"'+(linArr.includes(Number(t.id))?' checked':'')+'> '+(t.icon||'🏷️')+' '+e(t.title)+'</label>').join('');
 if(!allTags.length)box.innerHTML='<span class="text-xs text-gray-400">Нет тегов. Создайте на вкладке 🏷️ Теги</span>';
 });}
+
+function ofToggleOfferFieldGroups(){
+var catSel=document.getElementById('of-c');
+if(!catSel)return;
+var category=catSel.value||'microloans';
+var isDebit=category==='debit_cards';
+var ids=['of-am1','of-am2','of-t1','of-t2','of-psk','of-r','of-fr','of-b'];
+ids.forEach(function(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var wrap=el.closest('div');
+  if(wrap) wrap.style.display=isDebit?'none':'';
+});
+  var rateUnit=document.getElementById('of-ru');
+  if(rateUnit){
+    var rateWrap=rateUnit.closest('div');
+    if(rateWrap) rateWrap.style.display=isDebit?'none':'';
+  }
+  var borrower=document.getElementById('of-borrower-wrap');
+  if(borrower) borrower.style.display=isDebit?'none':(['microloans','credits'].includes(category)?'block':'none');
+}
 
 function ofDefaultDisplayFields(category, freeTermDays){
 return {
@@ -318,8 +342,10 @@ catSel.dataset.boundDisplay='1';
 catSel.addEventListener('change',function(){
 var category=this.value;
 var borrower=document.getElementById('of-borrower-wrap');
-if(borrower) borrower.style.display=['microloans','credits'].includes(category)?'block':'none';
+if(borrower) borrower.style.display=(category==='debit_cards'?'none':(['microloans','credits'].includes(category)?'block':'none'));
 document.querySelectorAll('[data-display-key="borrower"]').forEach(function(el){el.style.display=['microloans','credits'].includes(category)?'flex':'none';});
+ofToggleOfferFieldGroups();
+ofToggleExtraTemplateActions();
 });
 }
 }
@@ -417,7 +443,7 @@ if(v==='credits') return ofApplyCreditTemplate(merge);
 alert('Для категории "'+(cat&&cat.options[cat.selectedIndex]?cat.options[cat.selectedIndex].text:'')+'" готового шаблона пока нет.');
 }
 
-function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,rateUnit:document.getElementById('of-ru').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value,extraFields:ofCollectExtraFields(),displayFields:ofCollectDisplayFields(),phone:document.getElementById('of-phone').value,address:document.getElementById('of-address').value,trademark:document.getElementById('of-trademark').value,license:document.getElementById('of-license').value};ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{
+function oS(ev,id){ev.preventDefault();let d={title:document.getElementById('of-t').value,category:document.getElementById('of-c').value,amountMin:document.getElementById('of-am1').value,amountMax:document.getElementById('of-am2').value,termMinDays:document.getElementById('of-t1').value,termMaxDays:document.getElementById('of-t2').value,psk:document.getElementById('of-psk').value,rate:document.getElementById('of-r').value,rateUnit:document.getElementById('of-ru').value,freeTermDays:document.getElementById('of-fr').value,logoUrl:document.getElementById('of-lo').value,affiliateUrl:document.getElementById('of-af').value,borrowerCategory:document.getElementById('of-b').value,description:document.getElementById('of-de').value,seoKeywords:document.getElementById('of-sk').value,isActive:document.getElementById('of-ac').checked,sortOrder:document.getElementById('of-so').value,extraFields:ofCollectExtraFields(),displayFields:ofCollectDisplayFields(),phone:document.getElementById('of-phone').value,address:document.getElementById('of-address').value,trademark:document.getElementById('of-trademark').value,license:document.getElementById('of-license').value};if(d.category==='debit_cards'){d.amountMin=0;d.amountMax=0;d.termMinDays=0;d.termMaxDays=0;d.psk='0';d.rate='0';d.rateUnit='year';d.freeTermDays=0;d.borrowerCategory='any';}ap(id?'/offers/'+id:'/offers',{method:id?'PUT':'POST',body:JSON.stringify(d)}).then(r=>{
 var oid=id||r.id;
 var tagIds=Array.from(document.querySelectorAll('.of-tag-cb:checked')).map(x=>Number(x.value));
 return ap('/tag-links',{method:'POST',body:JSON.stringify({offerId:oid,tagIds:tagIds})});
@@ -4539,7 +4565,7 @@ function cqSetInlineScore(prefix, score){
 }
 
 function cqCollect(prefix){
-  return {
+  var data={
     title:(document.getElementById(prefix+'-t')||document.getElementById(prefix+'-title')||document.getElementById(prefix+'-name')||{}).value||'',
     h1:(document.getElementById(prefix+'-h1')||{}).value||'',
     description:(document.getElementById(prefix+'-desc')||document.getElementById(prefix+'-ex')||document.getElementById(prefix+'-de')||{}).value||'',
@@ -4553,6 +4579,10 @@ function cqCollect(prefix){
     rateUnit:(document.getElementById(prefix+'-ru')||{}).value||'',
     freeTermDays:(document.getElementById(prefix+'-fr')||{}).value||''
   };
+  if(prefix==='of' && data.category==='debit_cards'){
+    data.amountMin=''; data.amountMax=''; data.termMinDays=''; data.termMaxDays=''; data.rate=''; data.rateUnit=''; data.freeTermDays='';
+  }
+  return data;
 }
 
 function cqAnalyzeForm(prefix, entity){
