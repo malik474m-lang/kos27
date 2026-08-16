@@ -73,14 +73,192 @@ function leadsSuMapCategory(array $offer): string {
     return 'microloans';
 }
 
+function leadsSuWalkScalars(mixed $value, array &$bucket): void {
+    if (is_array($value)) {
+        foreach ($value as $v) leadsSuWalkScalars($v, $bucket);
+        return;
+    }
+    if (is_scalar($value)) {
+        $str = trim((string)$value);
+        if ($str !== '') $bucket[] = $str;
+    }
+}
+
+function leadsSuCollectTexts(array $offer): array {
+    $bucket = [];
+    leadsSuWalkScalars($offer, $bucket);
+    $bucket = array_values(array_unique($bucket));
+    return array_slice($bucket, 0, 400);
+}
+
+function leadsSuFindValueByKeys(array $data, array $keys): mixed {
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+            return $data[$key];
+        }
+    }
+    foreach ($data as $value) {
+        if (is_array($value)) {
+            $found = leadsSuFindValueByKeys($value, $keys);
+            if ($found !== null && $found !== '') return $found;
+        }
+    }
+    return null;
+}
+
+function leadsSuExtractLogo(array $offer): string {
+    $logo = leadsSuFindValueByKeys($offer, ['logo', 'image', 'image_url', 'logo_url', 'icon', 'preview', 'picture']);
+    return is_string($logo) ? trim($logo) : '';
+}
+
+function leadsSuExtractDescription(array $offer): string {
+    $desc = leadsSuFindValueByKeys($offer, ['description', 'short_description', 'about', 'text', 'conditions']);
+    if (is_string($desc) && trim($desc) !== '') {
+        return mb_substr(trim(strip_tags($desc)), 0, 500);
+    }
+    $texts = leadsSuCollectTexts($offer);
+    $chunks = [];
+    foreach ($texts as $text) {
+        if (mb_strlen($text) >= 40 && !preg_match('/^https?:\/\//i', $text)) {
+            $chunks[] = trim(strip_tags($text));
+        }
+        if (count($chunks) >= 2) break;
+    }
+    return mb_substr(trim(implode(' ', $chunks)), 0, 500);
+}
+
+function leadsSuParseMoneyString(string $raw): ?int {
+    $raw = preg_replace('/[^\d]/u', '', $raw);
+    if ($raw === '') return null;
+    $num = (int)$raw;
+    if ($num <= 0) return null;
+    return $num;
+}
+
+function leadsSuExtractAmountRange(array $offer, string $category): array {
+    $min = leadsSuFindValueByKeys($offer, ['amount_min', 'min_amount', 'loan_amount_min', 'sum_from', 'credit_from']);
+    $max = leadsSuFindValueByKeys($offer, ['amount_max', 'max_amount', 'loan_amount_max', 'sum_to', 'credit_to']);
+    $minVal = is_numeric($min) ? (int)$min : null;
+    $maxVal = is_numeric($max) ? (int)$max : null;
+
+    $text = mb_strtolower(implode(' ', leadsSuCollectTexts($offer)));
+    if (!$maxVal && preg_match('/до\s*([\d\s]{3,})\s*(₽|руб|рублей)?/u', $text, $m)) {
+        $maxVal = leadsSuParseMoneyString($m[1]);
+    }
+    if ((!$minVal || !$maxVal) && preg_match('/от\s*([\d\s]{3,})\s*до\s*([\d\s]{3,})\s*(₽|руб|рублей)?/u', $text, $m)) {
+        $minVal = $minVal ?: leadsSuParseMoneyString($m[1]);
+        $maxVal = $maxVal ?: leadsSuParseMoneyString($m[2]);
+    }
+
+    if (!$minVal || !$maxVal) {
+        $defaults = match ($category) {
+            'credits' => [10000, 500000],
+            'credit_cards' => [10000, 300000],
+            'debit_cards' => [0, 0],
+            default => [1000, 100000],
+        };
+        $minVal = $minVal ?: $defaults[0];
+        $maxVal = $maxVal ?: $defaults[1];
+    }
+
+    if ($maxVal < $minVal) [$minVal, $maxVal] = [$maxVal, $minVal];
+    return [$minVal, $maxVal];
+}
+
+function leadsSuExtractTermRange(array $offer, string $category): array {
+    $min = leadsSuFindValueByKeys($offer, ['term_min_days', 'min_term', 'days_min', 'period_min']);
+    $max = leadsSuFindValueByKeys($offer, ['term_max_days', 'max_term', 'days_max', 'period_max']);
+    $minVal = is_numeric($min) ? (int)$min : null;
+    $maxVal = is_numeric($max) ? (int)$max : null;
+
+    $text = mb_strtolower(implode(' ', leadsSuCollectTexts($offer)));
+    if ((!$minVal || !$maxVal) && preg_match('/от\s*(\d{1,3})\s*до\s*(\d{1,3})\s*(дн|дней|дня|сут|суток)/u', $text, $m)) {
+        $minVal = $minVal ?: (int)$m[1];
+        $maxVal = $maxVal ?: (int)$m[2];
+    }
+    if (!$maxVal && preg_match('/до\s*(\d{1,3})\s*(дн|дней|дня|сут|суток)/u', $text, $m)) {
+        $maxVal = (int)$m[1];
+    }
+    if (!$maxVal && preg_match('/до\s*(\d{1,2})\s*(мес|месяц|месяцев)/u', $text, $m)) {
+        $maxVal = (int)$m[1] * 30;
+    }
+
+    if (!$minVal || !$maxVal) {
+        $defaults = match ($category) {
+            'credits' => [30, 365 * 5],
+            'credit_cards' => [0, 0],
+            'debit_cards' => [0, 0],
+            default => [1, 365],
+        };
+        $minVal = $minVal ?? $defaults[0];
+        $maxVal = $maxVal ?? $defaults[1];
+    }
+
+    if ($maxVal < $minVal) [$minVal, $maxVal] = [$maxVal, $minVal];
+    return [$minVal, $maxVal];
+}
+
+function leadsSuExtractRateData(array $offer, string $category): array {
+    $rate = leadsSuFindValueByKeys($offer, ['rate', 'percent', 'interest_rate', 'stavka']);
+    $psk = leadsSuFindValueByKeys($offer, ['psk', 'apr', 'full_cost']);
+    $rateVal = is_numeric($rate) ? (string)$rate : '0';
+    $pskVal = is_numeric($psk) ? (string)$psk : '0';
+    $rateUnit = $category === 'microloans' ? 'day' : 'year';
+    $freeTermDays = 0;
+
+    $text = mb_strtolower(implode(' ', leadsSuCollectTexts($offer)));
+    if ($rateVal === '0' && preg_match('/(от\s*)?(\d+[\.,]?\d*)\s*%\s*(в\s*день|дневн)/u', $text, $m)) {
+        $rateVal = str_replace(',', '.', $m[2]);
+        $rateUnit = 'day';
+    } elseif ($rateVal === '0' && preg_match('/(от\s*)?(\d+[\.,]?\d*)\s*%\s*(годовых|в\s*год|год)/u', $text, $m)) {
+        $rateVal = str_replace(',', '.', $m[2]);
+        $rateUnit = 'year';
+    } elseif ($rateVal === '0' && preg_match('/(от\s*)?(\d+[\.,]?\d*)\s*%/u', $text, $m)) {
+        $rateVal = str_replace(',', '.', $m[2]);
+    }
+
+    if ($pskVal === '0' && preg_match('/пск[^\d]{0,20}(\d+[\.,]?\d*)\s*%/u', $text, $m)) {
+        $pskVal = str_replace(',', '.', $m[1]);
+    }
+
+    if (preg_match('/0\s*%\s*на\s*(\d{1,3})\s*(дн|дней|дня)/u', $text, $m)) {
+        $freeTermDays = (int)$m[1];
+    }
+
+    return [$rateVal, $pskVal, $rateUnit, $freeTermDays];
+}
+
+function leadsSuNormalizeOffer(array $apiOffer, int $platformId, string $categoryOverride = ''): array {
+    $name = trim((string)($apiOffer['name'] ?? 'Без названия'));
+    $category = $categoryOverride !== '' ? $categoryOverride : leadsSuMapCategory($apiOffer);
+    [$amountMin, $amountMax] = leadsSuExtractAmountRange($apiOffer, $category);
+    [$termMin, $termMax] = leadsSuExtractTermRange($apiOffer, $category);
+    [$rate, $psk, $rateUnit, $freeTermDays] = leadsSuExtractRateData($apiOffer, $category);
+
+    return [
+        'external_id' => (string)($apiOffer['id'] ?? ''),
+        'title' => $name,
+        'slug' => slugify($name) . '-' . time(),
+        'category' => $category,
+        'amount_min' => $amountMin,
+        'amount_max' => $amountMax,
+        'term_min_days' => $termMin,
+        'term_max_days' => $termMax,
+        'rate' => $rate,
+        'psk' => $psk,
+        'rate_unit' => $rateUnit,
+        'free_term_days' => $freeTermDays,
+        'logo_url' => leadsSuExtractLogo($apiOffer),
+        'description' => leadsSuExtractDescription($apiOffer),
+        'affiliate_url' => leadsSuGetOfferLink((int)($apiOffer['id'] ?? 0), $platformId),
+        'borrower_category' => 'any',
+    ];
+}
+
 function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = false, string $categoryOverride = ''): array {
     $db = getDB();
-    $name = trim((string)($apiOffer['name'] ?? 'Без названия'));
-    $description = trim(strip_tags((string)($apiOffer['description'] ?? '')));
-    $category = $categoryOverride !== '' ? $categoryOverride : leadsSuMapCategory($apiOffer);
-    $slug = slugify($name) . '-' . time();
-    $affiliateUrl = leadsSuGetOfferLink((int)($apiOffer['id'] ?? 0), $platformId);
-    $logo = $apiOffer['logo'] ?? $apiOffer['image'] ?? '';
+    $prepared = leadsSuNormalizeOffer($apiOffer, $platformId, $categoryOverride);
+    $name = $prepared['title'];
 
     $existing = $db->prepare("SELECT id FROM offers WHERE title = ? LIMIT 1");
     $existing->execute([$name]);
@@ -88,8 +266,26 @@ function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = f
 
     try {
         $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, rate_unit, free_term_days, logo_url, affiliate_url, borrower_category, description, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-        ->execute([$name, $slug, $category, 1000, 100000, 1, 365, '0', '0', 'day', 0, $logo, $affiliateUrl, 'any', mb_substr($description, 0, 500), $activate ? 1 : 0, 999]);
-        return ['ok' => true, 'id' => $db->lastInsertId(), 'title' => $name, 'category' => $category];
+        ->execute([
+            $prepared['title'],
+            $prepared['slug'],
+            $prepared['category'],
+            $prepared['amount_min'],
+            $prepared['amount_max'],
+            $prepared['term_min_days'],
+            $prepared['term_max_days'],
+            $prepared['psk'],
+            $prepared['rate'],
+            $prepared['rate_unit'],
+            $prepared['free_term_days'],
+            $prepared['logo_url'],
+            $prepared['affiliate_url'],
+            $prepared['borrower_category'],
+            mb_substr($prepared['description'], 0, 500),
+            $activate ? 1 : 0,
+            999
+        ]);
+        return ['ok' => true, 'id' => $db->lastInsertId(), 'title' => $name, 'category' => $prepared['category']];
     } catch (Exception $e) {
         return ['ok' => false, 'error' => $e->getMessage()];
     }

@@ -13,14 +13,13 @@ h+='</div>';el.innerHTML=h;return;
 }
 
 h+='<div class="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 text-sm">✅ Подключение к leads.su работает</div>';
-
 h+='<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">';
 h+='<p class="font-semibold mb-1">ℹ️ Как работает импорт:</p>';
 h+='<ul class="list-disc ml-4 space-y-1">';
 h+='<li>Выберите <strong>площадку</strong> — она определяет параметр <code>pltfm_id</code> в партнёрской ссылке</li>';
 h+='<li>Выберите <strong>категорию</strong> вручную или оставьте автоопределение — офферы попадут в нужный раздел сайта</li>';
 h+='<li>Партнёрская ссылка: <code>pxl.leads.su/aff_c?offer_id=...&pltfm_id=...&source=kosmozaim</code></li>';
-h+='<li>Импортированные офферы можно потом редактировать (ставки, суммы, описание)</li>';
+h+='<li>Импортируется не только название, но и: <strong>сумма, срок, ставка, логотип, описание</strong> — если API это отдаёт</li>';
 h+='</ul></div>';
 
 h+='<div class="flex flex-wrap gap-4 items-end">';
@@ -46,8 +45,38 @@ sel.innerHTML+='<option value="'+p.id+'"'+(isKosmo?' selected':'')+'>'+e(p.name)
 });
 }
 
+function lsGuessCategory(o){
+var txt=((o.name||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
+if(/кредитн(ая|ые)\s+карт/.test(txt))return 'credit_cards';
+if(/дебетов(ая|ые)\s+карт/.test(txt))return 'debit_cards';
+if(/\b(кредит|кредиты|потребительский)\b/.test(txt))return 'credits';
+return 'microloans';
+}
+
+function lsExtractPreview(o, forcedCategory, platformId){
+var category=forcedCategory||lsGuessCategory(o);
+var txt=((o.name||'')+' '+(o.description||'')+' '+(o.category||'')+' '+(o.vertical||'')).replace(/<[^>]*>/g,' ').toLowerCase();
+var amount='';
+var term='';
+var rate='';
+var free='';
+var m=txt.match(/от\s*([\d\s]{3,})\s*до\s*([\d\s]{3,})\s*(₽|руб|рублей)?/);
+if(m)amount=(m[1].trim()+'—'+m[2].trim()+' ₽').replace(/\s+/g,' ');
+else {m=txt.match(/до\s*([\d\s]{3,})\s*(₽|руб|рублей)?/); if(m) amount='до '+m[1].trim()+' ₽';}
+m=txt.match(/от\s*(\d{1,3})\s*до\s*(\d{1,3})\s*(дн|дней|дня|сут|суток)/);
+if(m)term=m[1]+'—'+m[2]+' дн';
+else {m=txt.match(/до\s*(\d{1,3})\s*(дн|дней|дня|сут|суток)/); if(m) term='до '+m[1]+' дн';}
+m=txt.match(/(от\s*)?(\d+[\.,]?\d*)\s*%\s*(в\s*день|дневн)/);
+if(m)rate='от '+m[2]+'% в день';
+else {m=txt.match(/(от\s*)?(\d+[\.,]?\d*)\s*%\s*(годовых|в\s*год|год)/); if(m) rate='от '+m[2]+'% в год';}
+m=txt.match(/0\s*%\s*на\s*(\d{1,3})\s*(дн|дней|дня)/); if(m) free='0% на '+m[1]+' дн';
+var link='https://pxl.leads.su/aff_c?offer_id='+(o.id||'')+'&pltfm_id='+(platformId||0)+'&source=kosmozaim';
+return {category:category, amount:amount, term:term, rate:rate, free:free, link:link};
+}
+
 function lsLoadOffers(){
-var platformId=document.getElementById('ls-platform').value||0;
+var platformId=parseInt(document.getElementById('ls-platform').value)||0;
+var forcedCategory=document.getElementById('ls-category').value||'';
 var list=document.getElementById('ls-offers-list');
 list.innerHTML='<p class="text-gray-400 text-center py-6">Загрузка офферов из leads.su...</p>';
 ap('/leads-su?action=offers&platform_id='+platformId).then(function(d){
@@ -56,25 +85,16 @@ if(!d.offers||!d.offers.length){list.innerHTML='<p class="text-gray-400 text-cen
 window._lsOffers=d.offers;
 var catLabels={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
 var h='<div class="flex items-center justify-between mb-4"><p class="text-sm text-gray-600">Найдено: <strong>'+d.offers.length+'</strong> офферов</p><div class="flex gap-2"><button onclick="lsSelectAll()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">☑ Выбрать все</button><button onclick="lsImportSelected()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">📥 Импортировать выбранные</button></div></div>';
-h+='<div class="overflow-x-auto bg-white rounded-xl border"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 w-8"><input type="checkbox" id="ls-check-all" onchange="lsToggleAll(this.checked)" class="w-4 h-4"></th><th class="text-left p-3">Название</th><th class="text-left p-3">Категория leads.su</th><th class="text-left p-3">→ Категория сайта</th><th class="text-left p-3">ID</th><th class="text-left p-3">Статус</th></tr></thead><tbody>';
+h+='<div class="overflow-x-auto bg-white rounded-xl border"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 w-8"><input type="checkbox" id="ls-check-all" onchange="lsToggleAll(this.checked)" class="w-4 h-4"></th><th class="text-left p-3">Название</th><th class="text-left p-3">→ Категория</th><th class="text-left p-3">Сумма/срок/ставка</th><th class="text-left p-3">Партнёрская ссылка</th></tr></thead><tbody>';
 d.offers.forEach(function(o,i){
-var status=o.status||'active';
-var badge=status==='active'?'<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">active</span>':'<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-xs">'+e(status)+'</span>';
-var autoCat=lsGuessCategory(o);
-var autoCatLabel=catLabels[autoCat]||autoCat;
-h+='<tr class="border-t hover:bg-gray-50"><td class="p-3"><input type="checkbox" class="ls-offer-cb w-4 h-4" data-idx="'+i+'"></td><td class="p-3 font-medium">'+e(o.name||'—')+'</td><td class="p-3 text-gray-500">'+e(o.category||o.vertical||'—')+'</td><td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">'+e(autoCatLabel)+'</span></td><td class="p-3 text-gray-400">#'+e(o.id||'')+'</td><td class="p-3">'+badge+'</td></tr>';
+var p=lsExtractPreview(o,forcedCategory,platformId);
+var catLabel=catLabels[p.category]||p.category;
+var info=[p.amount,p.term,p.rate,p.free].filter(Boolean).join(' • ')||'Нет данных';
+h+='<tr class="border-t hover:bg-gray-50"><td class="p-3"><input type="checkbox" class="ls-offer-cb w-4 h-4" data-idx="'+i+'"></td><td class="p-3 font-medium"><div>'+e(o.name||'—')+'</div><div class="text-xs text-gray-400 mt-1">ID #'+e(o.id||'')+'</div></td><td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">'+e(catLabel)+'</span></td><td class="p-3 text-gray-600 text-xs">'+e(info)+'</td><td class="p-3 text-xs text-gray-400 break-all">'+e(p.link)+'</td></tr>';
 });
 h+='</tbody></table></div>';
 list.innerHTML=h;
 });
-}
-
-function lsGuessCategory(o){
-var txt=((o.name||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
-if(/кредитн(ая|ые)\s+карт/.test(txt))return 'credit_cards';
-if(/дебетов(ая|ые)\s+карт/.test(txt))return 'debit_cards';
-if(/\b(кредит|кредиты|потребительский)\b/.test(txt))return 'credits';
-return 'microloans';
 }
 
 function lsSelectAll(){document.querySelectorAll('.ls-offer-cb').forEach(function(cb){cb.checked=true;});document.getElementById('ls-check-all').checked=true;}
