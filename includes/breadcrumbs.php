@@ -24,8 +24,8 @@ function breadcrumbAbsoluteUrl(string $url): string {
     return str_starts_with($url, 'http') ? $url : SITE_URL . $url;
 }
 
-function renderBreadcrumbs(array $items, string $className = 'text-sm text-gray-500 mb-6'): string {
-    if (!$items) return '';
+function renderBreadcrumbs(?array $items, string $className = 'text-sm text-gray-500 mb-6'): string {
+    if (!$items || !is_array($items)) return '';
 
     $normalized = [];
     foreach ($items as $item) {

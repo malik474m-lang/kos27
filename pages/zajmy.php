@@ -41,6 +41,7 @@ $offers = $stmt->fetchAll();
 $pageTitle = 'Займы онлайн — Подбор микрозаймов на карту | ' . SITE_NAME;
 $metaDescription = 'Подберите выгодный микрозайм онлайн. Сравните ставки, суммы и сроки от проверенных МФО.';
 $metaKeywords = 'займы онлайн, микрозаймы, займ на карту, быстрый займ, МФО';
+$breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Займы онлайн', '/zajmy')];
 
 $borrowerLabels = [''=>'Все категории','employed'=>'Работающий','unemployed'=>'Безработный','pensioner'=>'Пенсионер','student'=>'Студент','self_employed'=>'Самозанятый'];
 $bestOffer = getBestOfferByCategory('microloans', ['amount'=>$fAmount, 'term'=>$fTerm, 'borrower'=>$fBorrower]);
