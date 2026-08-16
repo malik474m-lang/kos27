@@ -142,8 +142,9 @@ function kosmoBonusBalance(int $userId): int {
 function kosmoBonusHistory(int $userId, int $limit = 50): array {
     $db = getDB();
     ensureKosmoBonusTables();
-    $stmt = $db->prepare("SELECT bt.*, o.title as offer_title FROM bonus_transactions bt LEFT JOIN offers o ON bt.offer_id = o.id WHERE bt.user_id = ? ORDER BY bt.created_at DESC LIMIT ?");
-    $stmt->execute([$userId, $limit]);
+    $limit = max(1, min(200, (int)$limit));
+    $stmt = $db->prepare("SELECT bt.*, o.title as offer_title FROM bonus_transactions bt LEFT JOIN offers o ON bt.offer_id = o.id WHERE bt.user_id = ? ORDER BY bt.created_at DESC LIMIT {$limit}");
+    $stmt->execute([$userId]);
     return $stmt->fetchAll();
 }
 
