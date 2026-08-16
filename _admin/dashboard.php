@@ -3178,7 +3178,7 @@ h+='<td class="p-3 text-green-600 font-semibold">'+(u.approved_count||0)+'</td>'
 h+='<td class="p-3 font-mono text-xs text-gray-500">'+e(u.last_login_ip||'—')+'</td>';
 h+='<td class="p-3 text-xs text-gray-500">'+new Date(u.created_at).toLocaleDateString('ru-RU')+'</td>';
 h+='<td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(u.is_verified?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+'">'+(u.is_verified?'Подтверждён':'Не подтв.')+'</span></td>';
-h+='<td class="p-3 text-right"><button onclick="bonusWithdrawForm('+u.id+',\''+e((u.name||u.email)).replace(/'/g,"\\'")+'\','+(u.bonus_balance||0)+')" class="text-sm text-blue-600 hover:underline">Списать бонусы</button></td>';
+h+='<td class="p-3 text-right"><button onclick="bonusAccrualForm('+u.id+',\''+e((u.name||u.email)).replace(/'/g,"\\'")+'\')" class="text-sm text-green-600 hover:underline mr-3">Начислить бонусы</button><button onclick="bonusWithdrawForm('+u.id+',\''+e((u.name||u.email)).replace(/'/g,"\\'")+'\','+(u.bonus_balance||0)+')" class="text-sm text-blue-600 hover:underline">Списать бонусы</button></td>';
 h+='</tr>';});
 h+='</tbody></table></div>';}
 
@@ -3244,6 +3244,26 @@ cm();
 }).catch(function(){alert('Ошибка отправки');}).finally(function(){if(btn){btn.disabled=false;btn.textContent='📧 Отправить письмо';}});
 return false;
 }
+
+function bonusAccrualForm(userId,name){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🎁 Начислить бонусы</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return bonusAccrualSave(event,'+userId+')"><div class="space-y-3">'+
+'<p class="text-sm text-gray-600">Пользователь: <strong>'+e(name)+'</strong></p>'+
+'<div><label class="block text-xs font-medium mb-1">Сумма начисления</label><input id="ba-amount" type="number" class="input-f" min="1" value="100" required></div>'+
+'<div><label class="block text-xs font-medium mb-1">Комментарий</label><input id="ba-desc" class="input-f" placeholder="Например: Тестовое начисление бонусов"></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Начислить</button></div></form>');
+}
+
+function bonusAccrualSave(ev,userId){
+ev.preventDefault();
+var amount=parseInt(document.getElementById('ba-amount').value)||0;
+var description=document.getElementById('ba-desc').value||'';
+ap('/bonuses?action=accrue',{method:'POST',body:JSON.stringify({user_id:userId,amount:amount,description:description})}).then(function(r){
+if(r.error){alert(r.error);return;}
+alert('✅ Начислено '+amount+' ₽. Новый баланс: '+(r.new_balance||0)+' ₽');
+cm();lUsers();
+}).catch(function(){alert('Ошибка начисления бонусов');});
+return false;}
 
 function bonusWithdrawForm(userId,name,balance){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🎁 Списание бонусов</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+

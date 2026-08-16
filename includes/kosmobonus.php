@@ -252,6 +252,20 @@ function kosmoBonusProcessWithdrawalRequest(int $requestId, string $action, stri
     }
 }
 
+function kosmoBonusManualAccrual(int $userId, int $amount, string $description = ''): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+    $amount = abs((int)$amount);
+    if ($amount <= 0) return ['ok' => false, 'error' => 'Сумма должна быть больше нуля'];
+
+    $description = trim($description) ?: 'Ручное начисление бонусов';
+    $db->prepare("UPDATE users SET bonus_balance = bonus_balance + ? WHERE id = ?")->execute([$amount, $userId]);
+    $db->prepare("INSERT INTO bonus_transactions (user_id, amount, type, status, description, confirmed_at) VALUES (?, ?, 'manual', 'confirmed', ?, NOW())")
+       ->execute([$userId, $amount, $description]);
+
+    return ['ok' => true, 'amount' => $amount, 'new_balance' => kosmoBonusBalance($userId)];
+}
+
 function kosmoBonusWithdraw(int $userId, int $amount, string $description = ''): array {
     $db = getDB();
     ensureKosmoBonusTables();
