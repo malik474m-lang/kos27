@@ -47,7 +47,7 @@ function renderOfferCard(array $offer): string {
 
     ob_start();
     ?>
-    <article class="offer-card-box bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 card-hover" itemscope itemtype="https://schema.org/FinancialProduct">
+    <article class="offer-card-box bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 card-hover">
         <div class="offer-card-head flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div class="offer-card-logo flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                 <?php if ($logo): ?>
@@ -58,7 +58,7 @@ function renderOfferCard(array $offer): string {
             </div>
             <div class="flex-1 min-w-0">
                 <a href="/offer/<?= e($offer['slug']) ?>" class="hover:text-primary transition-colors">
-                    <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight" itemprop="name"><?= e($offer['title']) ?></h3>
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight"><?= e($offer['title']) ?></h3>
                 </a>
                 <div class="flex items-center gap-2 flex-wrap">
                     <?php if ($rating > 0): ?>
@@ -127,7 +127,7 @@ function renderOfferCard(array $offer): string {
         <?php endif; ?>
 
         <?php if (!empty($offer['description'])): ?>
-        <p class="offer-card-desc text-sm text-gray-600 mt-3 sm:mt-4 line-clamp-2" itemprop="description"><?= e($offer['description']) ?></p>
+        <p class="offer-card-desc text-sm text-gray-600 mt-3 sm:mt-4 line-clamp-2"><?= e($offer['description']) ?></p>
         <?php endif; ?>
 
         <div class="offer-card-actions mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

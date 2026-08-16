@@ -334,18 +334,15 @@ ob_start();
         <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Отзывы о <?= e($offer['title']) ?></h2>
         <div class="space-y-4">
             <?php foreach ($offerReviews as $rev): ?>
-            <div class="offer-review-card bg-white rounded-xl border border-gray-100 p-5" itemprop="review" itemscope itemtype="https://schema.org/Review">
+            <div class="offer-review-card bg-white rounded-xl border border-gray-100 p-5">
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="font-semibold text-gray-900" itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name"><?= e($rev['author_name']) ?></span></span>
-                    <div class="flex text-yellow-400" itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating">
-                        <meta itemprop="bestRating" content="5">
-                        <meta itemprop="worstRating" content="1">
-                        <meta itemprop="ratingValue" content="<?= (int)$rev['rating'] ?>">
+                    <span class="font-semibold text-gray-900"><?= e($rev['author_name']) ?></span>
+                    <div class="flex text-yellow-400">
                         <?php for($i=1;$i<=5;$i++): ?><span class="<?= $i <= $rev['rating'] ? '' : 'text-gray-300' ?>">★</span><?php endfor; ?>
                     </div>
-                    <time class="text-xs text-gray-400" itemprop="datePublished" datetime="<?= date('c', strtotime($rev['created_at'])) ?>"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></time>
+                    <time class="text-xs text-gray-400" datetime="<?= date('c', strtotime($rev['created_at'])) ?>"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></time>
                 </div>
-                <p class="text-gray-700" itemprop="reviewBody"><?= e($rev['comment']) ?></p>
+                <p class="text-gray-700"><?= e($rev['comment']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -457,15 +454,15 @@ ob_start();
     ?>
     <div class="mt-12">
         <h2 class="offer-title-2 text-2xl font-bold text-gray-900 mb-6">Частые вопросы о <?= e($offer['title']) ?></h2>
-        <div class="space-y-3" itemscope itemtype="https://schema.org/FAQPage">
+        <div class="space-y-3">
             <?php foreach ($offerFaqs as $fi => $faq): ?>
-            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <button onclick="this.nextElementSibling.classList.toggle('hidden');this.querySelector('svg').classList.toggle('rotate-180')" class="w-full text-left p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                    <span class="font-semibold text-gray-900 pr-4" itemprop="name"><?= e($faq['question']) ?></span>
+                    <span class="font-semibold text-gray-900 pr-4"><?= e($faq['question']) ?></span>
                     <svg class="w-5 h-5 text-gray-400 transition-transform flex-shrink-0 <?= $fi === 0 ? 'rotate-180' : '' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
-                <div class="<?= $fi === 0 ? '' : 'hidden' ?> px-5 pb-5 text-gray-600 leading-relaxed" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-                    <span itemprop="text"><?= e($faq['answer']) ?></span>
+                <div class="<?= $fi === 0 ? '' : 'hidden' ?> px-5 pb-5 text-gray-600 leading-relaxed">
+                    <span><?= e($faq['answer']) ?></span>
                 </div>
             </div>
             <?php endforeach; ?>
