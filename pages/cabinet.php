@@ -47,7 +47,7 @@ function loadCabinet(){
         h+='</div>';
         h+='<div class="flex-shrink-0">';
         if((d.bonus_balance||0) > 0){
-            h+='<button type="button" onclick="document.getElementById(\'bw-amount-user\')?.focus();window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'});" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-amber-600 hover:shadow-xl"><span>💸</span><span>Вывести бонусы</span></button>';
+            h+='<button type="button" onclick="document.getElementById(\'bw-amount-user\')?.focus();window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'});" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg transition hover:shadow-xl" style="background:#f59e0b;color:#111827;border:1px solid #d97706;"><span>💸</span><span>Вывести бонусы</span></button>';
         } else {
             h+='<div class="rounded-2xl bg-white px-5 py-4 text-center ring-1 ring-amber-200"><p class="text-xs uppercase tracking-wide text-gray-400">Сейчас доступно</p><p class="mt-1 text-lg font-bold text-gray-700">0 ₽</p><p class="mt-1 text-xs text-gray-500">Бонусы появятся после одобрения заявки</p></div>';
         }
@@ -85,7 +85,7 @@ h+='<div class="bg-white rounded-xl border p-5 text-center"><p class="text-2xl f
       h+='<div><label class="block text-sm font-medium text-gray-700 mb-1">Название банка</label><input type="text" id="bw-bank" class="w-full border border-amber-300 rounded-xl px-4 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="Например, Сбербанк" required></div>';
       h+='<div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон, привязанный к карте</label><input type="text" id="bw-phone" class="w-full border border-amber-300 rounded-xl px-4 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="+7 9XX XXX-XX-XX" required></div>';
       h+='<div><label class="block text-sm font-medium text-gray-700 mb-1">Имя владельца карты</label><input type="text" id="bw-cardholder" class="w-full border border-amber-300 rounded-xl px-4 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="Иван Иванов" required></div>';
-      h+='<div class="sm:col-span-2 pt-2"><button type="submit" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3.5 font-bold text-white shadow-lg transition hover:bg-amber-600 hover:shadow-xl"><span>🎁</span><span>Отправить заявку на вывод</span></button></div>';
+      h+='<div class="sm:col-span-2 pt-2"><button type="submit" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-bold shadow-lg transition hover:shadow-xl" style="background:#f59e0b;color:#111827;border:1px solid #d97706;"><span>🎁</span><span>Отправить заявку на вывод</span></button></div>';
       h+='</form>';
     } else {
       h+='<div class="rounded-xl bg-white/80 border border-white px-4 py-4 text-sm text-gray-500">У вас пока нет доступных бонусов для вывода.</div>';
