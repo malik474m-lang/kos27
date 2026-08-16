@@ -35,22 +35,22 @@ if ($method === 'POST' || $method === 'PUT') {
     }
     
     // Обновляем только social_proof поля
-    if (isset($data['enabled'])) {
+    if (is_array($data) && array_key_exists('enabled', $data)) {
         $settings['social_proof_enabled'] = (bool)$data['enabled'];
     }
-    if (isset($data['interval'])) {
+    if (is_array($data) && array_key_exists('interval', $data)) {
         $settings['social_proof_interval'] = max(3000, min(30000, (int)$data['interval']));
     }
-    if (isset($data['duration'])) {
+    if (is_array($data) && array_key_exists('duration', $data)) {
         $settings['social_proof_duration'] = max(2000, min(10000, (int)$data['duration']));
     }
-    if (isset($data['min_amount'])) {
+    if (is_array($data) && array_key_exists('min_amount', $data)) {
         $settings['social_proof_min_amount'] = max(1000, (int)$data['min_amount']);
     }
-    if (isset($data['max_amount'])) {
+    if (is_array($data) && array_key_exists('max_amount', $data)) {
         $settings['social_proof_max_amount'] = max(5000, (int)$data['max_amount']);
     }
-    if (isset($data['position'])) {
+    if (is_array($data) && array_key_exists('position', $data)) {
         $settings['social_proof_position'] = in_array($data['position'], ['bottom-left', 'bottom-right']) 
             ? $data['position'] 
             : 'bottom-left';
