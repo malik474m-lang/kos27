@@ -128,6 +128,19 @@ try {
             $db->prepare("UPDATE postback_conversions SET click_id = COALESCE(?, click_id), offer_id = COALESCE(?, offer_id), external_offer_id = COALESCE(?, external_offer_id), status = ?, payout = ?, ip = COALESCE(?, ip), aff_sub = COALESCE(?, aff_sub), aff_sub2 = COALESCE(?, aff_sub2), aff_sub3 = COALESCE(?, aff_sub3), goal_id = COALESCE(?, goal_id), raw_query = ?, source = COALESCE(?, source) WHERE transaction_id = ?")
                ->execute([$clickId, $internalOfferId, $externalOfferId, $normalizedStatus, $payout, $ip, $affSub, $affSub2, $affSub3, $goalId, $rawQuery, $source, $transactionId]);
             syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
+            if ($internalOfferId && $affSub) {
+                try {
+                    $bonusUser = $db->prepare("SELECT ua.user_id FROM user_applications ua WHERE ua.click_stat_id = ? LIMIT 1");
+                    $bonusUser->execute([(int)$affSub]);
+                    $bonusRow = $bonusUser->fetch();
+                    if ($bonusRow && $bonusRow['user_id']) {
+                        $existingPb = $db->prepare("SELECT id FROM postback_conversions WHERE transaction_id = ? LIMIT 1");
+                        $existingPb->execute([$transactionId]);
+                        $pbRow = $existingPb->fetch();
+                        if ($pbRow) kosmoBonusHandlePostback((int)$bonusRow['user_id'], $internalOfferId, (int)$affSub, (int)$pbRow['id'], $normalizedStatus);
+                    }
+                } catch (Exception $e) {}
+            }
             echo json_encode(['ok' => true, 'action' => 'updated_by_transaction', 'status' => $normalizedStatus]);
             exit;
         }
@@ -150,22 +163,15 @@ try {
 
     syncUserApplicationStatus($db, $affSub, $internalOfferId, $normalizedStatus);
 
-    // КосмоБонус: автоначисление при конверсии
+    // КосмоБонус: автоначисление/подтверждение/отмена по postback
     if ($internalOfferId && $affSub) {
         try {
-            require_once __DIR__ . '/../includes/kosmobonus.php';
-            // Ищем user через click_stats → user_applications
             $bonusUser = $db->prepare("SELECT ua.user_id FROM user_applications ua WHERE ua.click_stat_id = ? LIMIT 1");
             $bonusUser->execute([(int)$affSub]);
             $bonusRow = $bonusUser->fetch();
             if ($bonusRow && $bonusRow['user_id']) {
-                $postbackInsertId = $db->lastInsertId();
-                $bonusResult = kosmoBonusAccrue((int)$bonusRow['user_id'], $internalOfferId, (int)$affSub, (int)$postbackInsertId);
-                if ($bonusResult['ok'] && $normalizedStatus === 'approved') {
-                    // Сразу подтверждаем если конверсия approved
-                    $lastBonusTx = $db->query("SELECT id FROM bonus_transactions ORDER BY id DESC LIMIT 1")->fetch();
-                    if ($lastBonusTx) kosmoBonusConfirm((int)$lastBonusTx['id']);
-                }
+                $postbackInsertId = (int)$db->lastInsertId();
+                kosmoBonusHandlePostback((int)$bonusRow['user_id'], $internalOfferId, (int)$affSub, $postbackInsertId, $normalizedStatus);
             }
         } catch (Exception $e) {}
     }
