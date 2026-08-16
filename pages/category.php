@@ -88,6 +88,25 @@ if ($parentCat) {
 } else {
     $jsonLdSchemas[] = jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$cat['name'],'url'=>getCategoryUrl($cat)]]);
 }
+// Schema.org ItemList
+$_ilItems = [];
+foreach ($offersList as $_ii => $_io) {
+    $_ilItems[] = [
+        '@type' => 'ListItem',
+        'position' => $_ii + 1,
+        'name' => $_io['title'],
+        'url' => SITE_URL . '/offer/' . $_io['slug'],
+    ];
+}
+if ($_ilItems) {
+    $jsonLdSchemas[] = json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        'name' => $cat['name'] . ' — предложения',
+        'numberOfItems' => count($_ilItems),
+        'itemListElement' => $_ilItems,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 $canonicalUrl = SITE_URL . getCategoryUrl($cat);
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';

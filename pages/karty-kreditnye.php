@@ -39,6 +39,25 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Кредитные карты','url'=>'/karty/kreditnye']]),
 ];
+// Schema.org ItemList
+$_ilItems = [];
+foreach ($offers as $_ii => $_io) {
+    $_ilItems[] = [
+        '@type' => 'ListItem',
+        'position' => $_ii + 1,
+        'name' => $_io['title'],
+        'url' => SITE_URL . '/offer/' . $_io['slug'],
+    ];
+}
+if ($_ilItems) {
+    $jsonLdSchemas[] = json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        'name' => 'Кредитные карты — лучшие предложения',
+        'numberOfItems' => count($_ilItems),
+        'itemListElement' => $_ilItems,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 $canonicalUrl = SITE_URL . '/karty/kreditnye';
 $content = ob_get_clean();
 $content .= renderStickyCta([

@@ -61,6 +61,25 @@ ob_start();
 $jsonLdSchemas = [
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>'Кредиты','url'=>'/kredity'],['name'=>'Кредиты в '.$city['prep'],'url'=>'/kredity/'.$citySlug]]),
 ];
+// Schema.org ItemList
+$_ilItems = [];
+foreach ($offers as $_ii => $_io) {
+    $_ilItems[] = [
+        '@type' => 'ListItem',
+        'position' => $_ii + 1,
+        'name' => $_io['title'],
+        'url' => SITE_URL . '/offer/' . $_io['slug'],
+    ];
+}
+if ($_ilItems) {
+    $jsonLdSchemas[] = json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        'name' => 'Кредиты — предложения банков',
+        'numberOfItems' => count($_ilItems),
+        'itemListElement' => $_ilItems,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 $canonicalUrl = SITE_URL . '/kredity/' . $citySlug;
 $content = ob_get_clean();
 require __DIR__ . '/../includes/layout.php';
