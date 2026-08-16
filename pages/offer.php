@@ -527,7 +527,8 @@ ob_start();
 </section>
 <?php
 $jsonLdSchemas = [
-    jsonLdOffer($offer, $offerReviews),
+    jsonLdOffer($offer),
+    jsonLdOfferReviews($offer, $offerReviews),
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$catLabel,'url'=>$catUrl],['name'=>$offer['title'],'url'=>'/offer/'.$offer['slug']]]),
 ];
 $canonicalUrl = SITE_URL . '/offer/' . $offer['slug'];
