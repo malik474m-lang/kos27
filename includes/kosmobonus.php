@@ -148,6 +148,34 @@ function kosmoBonusHistory(int $userId, int $limit = 50): array {
     return $stmt->fetchAll();
 }
 
+function kosmoBonusWithdraw(int $userId, int $amount, string $description = ''): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+    $amount = abs((int)$amount);
+    if ($amount <= 0) return ['ok' => false, 'error' => 'Сумма должна быть больше нуля'];
+
+    $balance = kosmoBonusBalance($userId);
+    if ($balance < $amount) {
+        return ['ok' => false, 'error' => 'Недостаточно бонусов на балансе'];
+    }
+
+    $description = trim($description) ?: 'Ручное списание бонусов';
+
+    $db->prepare("UPDATE users SET bonus_balance = bonus_balance - ? WHERE id = ?")->execute([$amount, $userId]);
+    $db->prepare("INSERT INTO bonus_transactions (user_id, amount, type, status, description, confirmed_at) VALUES (?, ?, 'withdrawal', 'confirmed', ?, NOW())")
+       ->execute([$userId, -$amount, $description]);
+
+    return ['ok' => true, 'amount' => $amount, 'new_balance' => kosmoBonusBalance($userId)];
+}
+
+function kosmoBonusAdminHistory(int $limit = 100): array {
+    $db = getDB();
+    ensureKosmoBonusTables();
+    $limit = max(1, min(300, (int)$limit));
+    $stmt = $db->query("SELECT bt.*, u.email, u.name, o.title as offer_title FROM bonus_transactions bt LEFT JOIN users u ON bt.user_id = u.id LEFT JOIN offers o ON bt.offer_id = o.id ORDER BY bt.created_at DESC LIMIT {$limit}");
+    return $stmt->fetchAll();
+}
+
 function isKosmoBonusOffer(array $offer): bool {
     return !empty($offer['kosmobonus_enabled']) && (int)($offer['kosmobonus_amount'] ?? 0) > 0;
 }

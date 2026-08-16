@@ -209,6 +209,9 @@ if (preg_match('#^/categories/(\d+)$#', $adminUri, $m)) {
     if ($method === 'DELETE') { require __DIR__ . '/admin/categories-delete.php'; exit; }
 }
 
+// Бонусы
+if (str_starts_with($adminUri, '/bonuses')) { require __DIR__ . '/admin/bonuses.php'; exit; }
+
 // Пользователи
 if ($adminUri === '/users' && $method === 'GET') { require __DIR__ . '/admin/users-list.php'; exit; }
 

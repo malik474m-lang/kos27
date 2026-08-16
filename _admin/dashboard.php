@@ -3163,23 +3163,62 @@ aTopics=[];cm();setTimeout(()=>{aGen();},200);
 }).catch(()=>{btn.textContent='🔄 Сгенерировать новые темы';btn.disabled=false;st.textContent='❌ Ошибка';});}
 
 /* ============ USERS ============ */
-function lUsers(){ap('/users').then(users=>{
-var h='<h2 class="text-xl font-bold mb-6">👥 Пользователи ('+users.length+')</h2>';
+function lUsers(){Promise.all([ap('/users'),ap('/bonuses?action=history')]).then(([users,bonusHistory])=>{
+var h='<div class="flex items-center justify-between mb-6"><h2 class="text-xl font-bold">👥 Пользователи ('+users.length+')</h2><span class="text-xs text-gray-400">КосмоБонус: 1 бонус = 1 ₽</span></div>';
 if(!users.length){h+='<p class="text-gray-500 text-center py-8">Нет зарегистрированных пользователей</p>';}
 else{
-h+='<div class="bg-white rounded-xl border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Email</th><th class="p-3 text-left">Имя</th><th class="p-3 text-left">Заявки</th><th class="p-3 text-left">Одобрено</th><th class="p-3 text-left">Последний IP</th><th class="p-3 text-left">Регистрация</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+h+='<div class="bg-white rounded-xl border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Email</th><th class="p-3 text-left">Имя</th><th class="p-3 text-left">Бонусы</th><th class="p-3 text-left">Заявки</th><th class="p-3 text-left">Одобрено</th><th class="p-3 text-left">Последний IP</th><th class="p-3 text-left">Регистрация</th><th class="p-3 text-left">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
 users.forEach(u=>{
 h+='<tr class="border-t hover:bg-gray-50">';
 h+='<td class="p-3 font-mono text-xs">'+e(u.email)+'</td>';
 h+='<td class="p-3">'+e(u.name||'—')+'</td>';
+h+='<td class="p-3"><span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold">'+(u.bonus_balance||0)+' ₽</span></td>';
 h+='<td class="p-3 font-semibold">'+(u.app_count||0)+'</td>';
 h+='<td class="p-3 text-green-600 font-semibold">'+(u.approved_count||0)+'</td>';
 h+='<td class="p-3 font-mono text-xs text-gray-500">'+e(u.last_login_ip||'—')+'</td>';
 h+='<td class="p-3 text-xs text-gray-500">'+new Date(u.created_at).toLocaleDateString('ru-RU')+'</td>';
 h+='<td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-semibold '+(u.is_verified?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+'">'+(u.is_verified?'Подтверждён':'Не подтв.')+'</span></td>';
+h+='<td class="p-3 text-right"><button onclick="bonusWithdrawForm('+u.id+',\''+e((u.name||u.email)).replace(/'/g,"\\'")+'\','+(u.bonus_balance||0)+')" class="text-sm text-blue-600 hover:underline">Списать бонусы</button></td>';
 h+='</tr>';});
 h+='</tbody></table></div>';}
+
+h+='<div class="bg-white rounded-xl border mt-6"><div class="p-4 border-b"><h3 class="font-bold text-gray-900">🎁 Последние бонусные операции</h3></div>';
+if(bonusHistory&&bonusHistory.length){
+h+='<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="p-3 text-left">Дата</th><th class="p-3 text-left">Пользователь</th><th class="p-3 text-left">Оффер</th><th class="p-3 text-right">Сумма</th><th class="p-3 text-left">Тип</th><th class="p-3 text-left">Статус</th></tr></thead><tbody>';
+bonusHistory.forEach(function(b){
+var typeLabel=b.type==='withdrawal'?'Списание':(b.type==='accrual'?'Начисление':b.type);
+var statusLabel=b.status==='confirmed'?'Подтверждено':(b.status==='pending'?'Ожидание':'Отменено');
+var statusClass=b.status==='confirmed'?'text-green-600':(b.status==='pending'?'text-yellow-600':'text-red-500');
+var amountClass=Number(b.amount)>=0?'text-amber-600':'text-red-600';
+h+='<tr class="border-t"><td class="p-3 text-xs text-gray-500">'+new Date(b.created_at).toLocaleString('ru-RU')+'</td><td class="p-3">'+e(b.name||b.email||'—')+'</td><td class="p-3">'+e(b.offer_title||'—')+'</td><td class="p-3 text-right font-semibold '+amountClass+'">'+(Number(b.amount)>0?'+':'')+b.amount+' ₽</td><td class="p-3">'+e(typeLabel)+'</td><td class="p-3 '+statusClass+'">'+e(statusLabel)+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}else{h+='<p class="p-4 text-gray-400">Пока нет бонусных операций</p>';}
+h+='</div>';
+
 document.getElementById('p-users').innerHTML=h;});}
+
+function bonusWithdrawForm(userId,name,balance){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🎁 Списание бонусов</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<form onsubmit="return bonusWithdrawSave(event,'+userId+')"><div class="space-y-3">'+
+'<p class="text-sm text-gray-600">Пользователь: <strong>'+e(name)+'</strong></p>'+
+'<p class="text-sm text-gray-600">Доступно бонусов: <strong>'+balance+' ₽</strong></p>'+
+'<div><label class="block text-xs font-medium mb-1">Сумма списания</label><input id="bw-amount" type="number" class="input-f" min="1" max="'+balance+'" value="'+balance+'" required></div>'+
+'<div><label class="block text-xs font-medium mb-1">Комментарий</label><input id="bw-desc" class="input-f" placeholder="Например: Выплачено на карту"></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Списать</button></div></form>');
+}
+
+function bonusWithdrawSave(ev,userId){
+ev.preventDefault();
+var amount=parseInt(document.getElementById('bw-amount').value)||0;
+var description=document.getElementById('bw-desc').value||'';
+ap('/bonuses?action=withdraw',{method:'POST',body:JSON.stringify({user_id:userId,amount:amount,description:description})}).then(function(r){
+if(r.error){alert(r.error);return;}
+alert('✅ Списано '+amount+' ₽. Новый баланс: '+(r.new_balance||0)+' ₽');
+cm();lUsers();
+}).catch(function(){alert('Ошибка списания бонусов');});
+return false;}
+
 
 /* ============ SECURITY ============ */
 function secAp(action,opts){return fetch(A+'/security?action='+action,{headers:{'Content-Type':'application/json'},...opts}).then(r=>r.json());}
