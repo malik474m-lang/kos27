@@ -106,8 +106,9 @@ function cq_enforce_recommendations(string $text, array $analysis, string $entit
     $issues = $analysis['issues'] ?? [];
     $plain = cq_strip_text($text);
 
-    // Если тема не отражена — добавляем в начало короткий вводный абзац
-    if ($title && mb_stripos($plain, mb_strtolower($title)) === false) {
+    // Для офферов не вставляем искусственные фразы вроде
+    // «ключевая тема этого материала» — они выглядят шаблонно.
+    if ($entity !== 'offer' && $title && mb_stripos($plain, mb_strtolower($title)) === false) {
         $intro = $title . ' — ключевая тема этого материала.';
         if (preg_match('/<[^>]+>/', $text)) {
             $text = '<p>' . htmlspecialchars($intro, ENT_QUOTES, 'UTF-8') . '</p>' . "
@@ -288,30 +289,40 @@ function cq_improve_offer_fallback(string $text, string $title = '', string $des
     $details = cq_offer_context_line($context);
     $category = $context['category'] ?? 'microloans';
 
-    $actionLine = match ($category) {
-        'credits' => 'Подходит тем, кто хочет заранее оценить базовые условия кредита и сравнить их с альтернативами.',
-        'credit_cards' => 'Удобно, если нужен кредитный лимит, льготный период и понятные условия использования карты.',
-        'debit_cards' => 'Полезно тем, кто выбирает карту для ежедневных покупок, переводов, кэшбэка и обслуживания.',
-        default => 'Подходит тем, кто хочет быстро сравнить основные параметры займа и выбрать подходящий вариант.',
+    $opening = match ($category) {
+        'credits' => $title !== '' ? ($title . ' подойдёт тем, кто ищет кредит с понятными базовыми условиями оформления.') : 'Предложение подойдёт тем, кто ищет кредит с понятными базовыми условиями оформления.',
+        'credit_cards' => $title !== '' ? ($title . ' — вариант для тех, кому важны кредитный лимит, льготный период и условия использования карты.') : 'Это вариант для тех, кому важны кредитный лимит, льготный период и условия использования карты.',
+        'debit_cards' => $title !== '' ? ($title . ' может быть интересна для повседневных покупок, переводов и бонусов по карте.') : 'Эта дебетовая карта может быть интересна для повседневных покупок, переводов и бонусов.',
+        default => $title !== '' ? ($title . ' стоит рассмотреть тем, кто хочет быстро оценить условия займа и сравнить их с альтернативами.') : 'Предложение стоит рассмотреть тем, кто хочет быстро оценить условия займа и сравнить их с альтернативами.',
     };
 
-    $lines = [];
-    if ($title !== '') {
-        $lines[] = $title . ' — предложение с понятными условиями оформления онлайн.';
-    }
+    $detailsLine = '';
     if ($details !== '') {
-        $lines[] = 'По открытым параметрам доступны ' . $details . '.';
+        $detailsLine = match ($category) {
+            'debit_cards' => 'Среди открытых параметров можно отметить: ' . $details . '.',
+            'credit_cards' => 'По карте доступны такие условия: ' . $details . '.',
+            'credits' => 'По кредиту доступны такие параметры: ' . $details . '.',
+            default => 'По предложению доступны такие параметры: ' . $details . '.',
+        };
     }
+
+    $baseLine = '';
     if ($base !== '') {
         $base = preg_replace('/\s+/u', ' ', $base);
         $base = trim($base);
         if ($base !== '' && mb_strlen($base) > 30) {
-            $lines[] = rtrim($base, '. ') . '.';
+            $baseLine = rtrim($base, '. ') . '.';
         }
     }
-    $lines[] = $actionLine;
-    $lines[] = 'Перед оформлением стоит проверить итоговые условия на сайте партнёра, включая лимиты, обслуживание и дополнительные требования.';
 
+    $closing = match ($category) {
+        'debit_cards' => 'Перед оформлением проверьте обслуживание, условия переводов, снятие наличных и бонусную программу на стороне банка.',
+        'credit_cards' => 'Перед оформлением уточните лимит, правила льготного периода, комиссии и условия снятия наличных на стороне банка.',
+        'credits' => 'Перед подачей заявки стоит уточнить итоговую ставку, график платежей, комиссии и требования к заёмщику на стороне банка.',
+        default => 'Перед оформлением стоит проверить итоговую ставку, срок, ограничения и требования к клиенту на сайте партнёра.',
+    };
+
+    $lines = array_filter([$opening, $detailsLine, $baseLine, $closing], fn($line) => trim($line) !== '');
     $unique = [];
     foreach ($lines as $line) {
         $line = trim($line);
@@ -355,7 +366,7 @@ function cq_improve_fallback(string $text, string $entity = 'generic', string $t
         $improved = preg_replace('/' . preg_quote($from, '/') . '/ui', $to, $improved, 1);
     }
 
-    if ($title && mb_stripos(cq_strip_text($improved), mb_strtolower($title)) === false) {
+    if ($entity !== 'offer' && $title && mb_stripos(cq_strip_text($improved), mb_strtolower($title)) === false) {
         $improved = '<p>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — ключевая тема этой страницы.</p>' . "\n" . $improved;
     }
 
