@@ -204,7 +204,7 @@ function ydTableExists(string $table): bool {
 }
 
 /**
- * Анализ эффективности рекламного трафика — безопасная версия
+ * Анализ эффективности рекламного трафика
  */
 function analyzeDirectTraffic(int $days = 30): array {
     $db = getDB();
@@ -214,7 +214,7 @@ function analyzeDirectTraffic(int $days = 30): array {
     $summary = [];
     $topKeywords = [];
 
-    // Определяем имя колонки даты
+    // Определяем структуру click_stats
     $hasCreatedAt = ydHasColumn('click_stats', 'created_at');
     $hasClickedAt = ydHasColumn('click_stats', 'clicked_at');
     $dateCol = $hasCreatedAt ? 'created_at' : ($hasClickedAt ? 'clicked_at' : null);
@@ -223,13 +223,22 @@ function analyzeDirectTraffic(int $days = 30): array {
     $hasIp = ydHasColumn('click_stats', 'ip');
 
     if (!$dateCol || !$hasUtmSource) {
-        // Таблица click_stats слишком старая — возвращаем пустые данные
-        return ['clicks' => [], 'conversions' => [], 'summary' => [], 'top_keywords' => [], 'period_days' => $days, 'notice' => 'Таблица click_stats не содержит UTM-полей. Данные появятся после первых кликов с UTM-метками.'];
+        return [
+            'clicks' => [], 'conversions' => [], 'summary' => [], 'top_keywords' => [],
+            'period_days' => $days,
+            'notice' => 'Нужна миграция click_stats. Выполните SQL из файла database-analytics-migration.sql'
+        ];
     }
 
     // Клики с utm_source = yandex
     try {
-        $clicksStmt = $db->prepare("SELECT DATE({$dateCol}) as date, utm_campaign, utm_content, utm_term, COUNT(*) as clicks FROM click_stats WHERE utm_source = 'yandex' AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) GROUP BY DATE({$dateCol}), utm_campaign, utm_content, utm_term ORDER BY date DESC");
+        $clicksStmt = $db->prepare("
+            SELECT DATE({$dateCol}) as date, utm_campaign, utm_content, utm_term, COUNT(*) as clicks 
+            FROM click_stats 
+            WHERE utm_source = 'yandex' AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) 
+            GROUP BY DATE({$dateCol}), utm_campaign, utm_content, utm_term 
+            ORDER BY date DESC
+        ");
         $clicksStmt->execute([$days]);
         $clicks = $clicksStmt->fetchAll();
     } catch (Exception $e) {}
@@ -237,7 +246,13 @@ function analyzeDirectTraffic(int $days = 30): array {
     // Сводка по кампаниям
     try {
         $ipCol = $hasIp ? 'ip' : 'user_agent';
-        $summaryStmt = $db->prepare("SELECT utm_campaign, COUNT(*) as total_clicks, COUNT(DISTINCT {$ipCol}) as unique_visitors FROM click_stats WHERE utm_source = 'yandex' AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) GROUP BY utm_campaign ORDER BY total_clicks DESC");
+        $summaryStmt = $db->prepare("
+            SELECT utm_campaign, COUNT(*) as total_clicks, COUNT(DISTINCT {$ipCol}) as unique_visitors 
+            FROM click_stats 
+            WHERE utm_source = 'yandex' AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) 
+            GROUP BY utm_campaign 
+            ORDER BY total_clicks DESC
+        ");
         $summaryStmt->execute([$days]);
         $summary = $summaryStmt->fetchAll();
     } catch (Exception $e) {}
@@ -247,22 +262,48 @@ function analyzeDirectTraffic(int $days = 30): array {
         $hasUtmTerm = ydHasColumn('click_stats', 'utm_term');
         if ($hasUtmTerm) {
             $ipCol = $hasIp ? 'ip' : 'user_agent';
-            $keywordsStmt = $db->prepare("SELECT utm_term as keyword, COUNT(*) as clicks, COUNT(DISTINCT {$ipCol}) as visitors FROM click_stats WHERE utm_source = 'yandex' AND utm_term IS NOT NULL AND utm_term != '' AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) GROUP BY utm_term ORDER BY clicks DESC LIMIT 20");
+            $keywordsStmt = $db->prepare("
+                SELECT utm_term as keyword, COUNT(*) as clicks, COUNT(DISTINCT {$ipCol}) as visitors 
+                FROM click_stats 
+                WHERE utm_source = 'yandex' AND utm_term IS NOT NULL AND utm_term != '' 
+                  AND {$dateCol} >= DATE_SUB(NOW(), INTERVAL ? DAY) 
+                GROUP BY utm_term 
+                ORDER BY clicks DESC LIMIT 20
+            ");
             $keywordsStmt->execute([$days]);
             $topKeywords = $keywordsStmt->fetchAll();
         }
     } catch (Exception $e) {}
 
-    // Конверсии (postback)
-    if (ydTableExists('postback_log')) {
+    // Конверсии (postback_conversions связь через aff_sub = click_stats.id)
+    if (ydTableExists('postback_conversions')) {
         try {
-            $convStmt = $db->prepare("SELECT DATE(p.created_at) as date, c.utm_campaign, c.utm_content, COUNT(*) as conversions, COALESCE(SUM(p.payout), 0) as revenue FROM postback_log p JOIN click_stats c ON p.click_id = c.id WHERE c.utm_source = 'yandex' AND p.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) GROUP BY DATE(p.created_at), c.utm_campaign, c.utm_content");
+            $convStmt = $db->prepare("
+                SELECT 
+                    DATE(p.created_at) as date, 
+                    c.utm_campaign, 
+                    c.utm_content, 
+                    COUNT(*) as conversions, 
+                    COALESCE(SUM(p.payout), 0) as revenue 
+                FROM postback_conversions p 
+                JOIN click_stats c ON c.id = CAST(p.aff_sub AS UNSIGNED) 
+                WHERE c.utm_source = 'yandex' 
+                  AND p.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                  AND p.status = 'approved'
+                GROUP BY DATE(p.created_at), c.utm_campaign, c.utm_content
+            ");
             $convStmt->execute([$days]);
             $conversions = $convStmt->fetchAll();
         } catch (Exception $e) {}
     }
 
-    return ['clicks' => $clicks, 'conversions' => $conversions, 'summary' => $summary, 'top_keywords' => $topKeywords, 'period_days' => $days];
+    return [
+        'clicks' => $clicks, 
+        'conversions' => $conversions, 
+        'summary' => $summary, 
+        'top_keywords' => $topKeywords, 
+        'period_days' => $days
+    ];
 }
 
 /**
@@ -277,15 +318,18 @@ function getDirectOptimizationTips(array $analytics): array {
             if ($kw['clicks'] > $avgClicks * 2) {
                 $tips[] = ['type' => 'success', 'title' => 'Эффективное ключевое слово', 'message' => "«{$kw['keyword']}» — {$kw['clicks']} кликов. Увеличьте ставку."];
             }
+        }
+        foreach ($analytics['top_keywords'] as $kw) {
             if ($kw['clicks'] < 3) {
                 $tips[] = ['type' => 'warning', 'title' => 'Низкая эффективность', 'message' => "«{$kw['keyword']}» — мало кликов. Проверьте релевантность."];
+                break; // показываем только одну такую рекомендацию
             }
         }
     }
 
-    $tips[] = ['type' => 'info', 'title' => 'A/B тестирование', 'message' => 'Создайте варианты объявлений: срочность, выгода, доверие.'];
-    $tips[] = ['type' => 'info', 'title' => 'Корректировки ставок', 'message' => 'Пик трафика: 10:00-14:00, 18:00-22:00. Мобильные: +20% к ставке.'];
-    $tips[] = ['type' => 'info', 'title' => 'Ретаргетинг', 'message' => 'Настройте ретаргетинг на посетителей страниц офферов — они уже проявили интерес.'];
+    $tips[] = ['type' => 'info', 'title' => 'A/B тестирование', 'message' => 'Создайте 2-3 варианта объявлений для каждой группы.'];
+    $tips[] = ['type' => 'info', 'title' => 'Корректировки ставок', 'message' => 'Пик: 10:00-14:00, 18:00-22:00. Мобильные: +20%.'];
+    $tips[] = ['type' => 'info', 'title' => 'Ретаргетинг', 'message' => 'Настройте показ тем, кто был на сайте, но не оформил заявку.'];
 
     return $tips;
 }
