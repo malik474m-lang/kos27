@@ -38,6 +38,9 @@ if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/
 // Позиции
 if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
 
+// Яндекс Директ
+if (str_starts_with($adminUri, "/yandex-direct")) { require __DIR__ . "/admin/yandex-direct.php"; exit; }
+
 // Yandex Webmaster
 if (str_starts_with($adminUri, "/yandex-webmaster")) { require __DIR__ . "/admin/yandex-webmaster.php"; exit; }
 
