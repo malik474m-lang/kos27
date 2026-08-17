@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-providers.php";
 require_once __DIR__ . '/../../includes/article-image.php';
 // Базовый список тем
 $baseTopics = [
@@ -286,27 +287,12 @@ if ($isBank) {
     // Промпт для картинки задаётся в generateArticleCoverImage(): 'нарисуй 16:9 [Заголовок статьи]' ;
 }
 
-// Генерация текста
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $ctx = stream_context_create(['http' => [
-        'method' => 'POST',
-        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-        'content' => json_encode([
-            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-            'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 8000],
-            'messages' => [
-                ['role' => 'system', 'text' => $systemPrompt],
-                ['role' => 'user', 'text' => $userPrompt],
-            ],
-        ]),
-        'timeout' => 120,
-    ]]);
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, $ctx);
-    if ($response) {
-        $result = json_decode($response, true);
-        $text = $result['result']['alternatives'][0]['message']['text'] ?? null;
-        if ($text) { $content = $text; $aiProvider = 'YandexGPT'; }
-    }
+// Генерация текста через unified AI providers
+$aiResult = aiGenerateText($userPrompt, $systemPrompt);
+$aiProvider = 'fallback';
+if ($aiResult['success']) {
+    $content = $aiResult['text'];
+    $aiProvider = ($aiResult['provider'] ?? 'unknown') . ' (' . ($aiResult['model'] ?? '') . ')';
 }
 
 if ($content) {
@@ -326,10 +312,13 @@ if (!$content) {
         : "$selectedTopic\n\nОбращайте внимание на ставку и ПСК.\n\nНа сайте Космозайм сравните условия и выберите лучшее предложение.");
 }
 
-// Генерация картинки
-$imageResult = generateArticleCoverImageResult($selectedTopic);
+// Генерация картинки через unified AI providers
+$imageResult = aiGenerateImage(buildArticleImagePrompt($selectedTopic));
 $coverImage = $imageResult['path'] ?? '';
-$imageProvider = $imageResult['provider'] ?? '';
+$imageProvider = ($imageResult['provider'] ?? '') . (isset($imageResult['model']) ? ' (' . $imageResult['model'] . ')' : '');
+$imageRequestedProvider = '';
+$imageFallback = !$imageResult['success'];
+$imageError = $imageResult['error'] ?? null;
 $imageRequestedProvider = $imageResult['requested_provider'] ?? '';
 $imageFallback = !empty($imageResult['fallback']);
 $imageError = $imageResult['error'] ?? null;
@@ -371,8 +360,6 @@ echo json_encode([
 // Функция генерации новых тем через YandexGPT
 // ============================================================
 function generateNewTopics(string $category, array $existingTitles): array {
-    if (!YANDEX_GPT_API_KEY || !YANDEX_FOLDER_ID) return [];
-
     $catDescriptions = [
         'займы' => 'микрозаймы, МФО, займы онлайн, займы на карту в России',
         'кредиты' => 'банковские кредиты, ипотека, потребительские кредиты, автокредиты в России',
@@ -383,37 +370,20 @@ function generateNewTopics(string $category, array $existingTitles): array {
 
     $existingList = implode("\n", array_slice($existingTitles, 0, 30));
 
-    $ctx = stream_context_create(['http' => [
-        'method' => 'POST',
-        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-        'content' => json_encode([
-            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt-lite/latest',
-            'completionOptions' => ['stream' => false, 'temperature' => 0.8, 'maxTokens' => 1000],
-            'messages' => [
-                ['role' => 'system', 'text' => "Ты генератор тем для финансового блога. Предлагай уникальные, интересные темы для статей."],
-                ['role' => 'user', 'text' => "Придумай 10 новых уникальных тем для статей про $catDesc.\n\nЭти темы уже использованы, НЕ повторяй их:\n$existingList\n\nВыведи только список тем, по одной на строку, без нумерации, без пояснений."],
-            ],
-        ]),
-        'timeout' => 30,
-    ]]);
+    $systemPrompt = "Ты генератор тем для финансового блога. Предлагай уникальные, интересные темы для статей.";
+    $userPrompt = "Придумай 10 новых уникальных тем для статей про $catDesc.\n\nЭти темы уже использованы, НЕ повторяй их:\n$existingList\n\nВыведи только список тем, по одной на строку, без нумерации, без пояснений.";
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, $ctx);
-    if (!$response) return [];
+    $result = aiGenerateText($userPrompt, $systemPrompt);
+    if (!$result['success'] || empty($result['text'])) return [];
 
-    $data = json_decode($response, true);
-    $text = $data['result']['alternatives'][0]['message']['text'] ?? '';
-    if (!$text) return [];
-
+    $text = $result['text'];
     $lines = array_filter(array_map('trim', explode("\n", $text)));
     $topics = [];
     foreach ($lines as $line) {
-        // Убираем нумерацию и лишние символы
-        $line = preg_replace('/^\d+[\.\)]\s*/', '', $line);
+        $line = preg_replace('/^\d+[\.\\)]\s*/', '', $line);
         $line = preg_replace('/^[-–—•]\s*/', '', $line);
         $line = trim($line, ' "«»');
         if (mb_strlen($line) > 10 && mb_strlen($line) < 150) {
-            // Проверяем что не дубль
-            $lineLower = mb_strtolower($line);
             if (!isTopicDuplicate($line, $existingTitles)) $topics[] = $line;
         }
     }

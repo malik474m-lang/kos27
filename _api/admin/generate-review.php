@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../includes/ai-providers.php';
+
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $targetOfferId = (int)($data['offerId'] ?? 0);
 
@@ -32,39 +34,24 @@ $gender = mt_rand(0,1) ? 'male' : 'female';
 $name = $gender === 'male' ? $maleNames[array_rand($maleNames)] : $femaleNames[array_rand($femaleNames)];
 $rating = weightedRating();
 $comment = null;
+$aiProvider = 'fallback';
 
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $mood = $rating >= 4 ? 'положительный' : ($rating === 3 ? 'нейтральный' : 'негативный');
-    $genderRu = $gender === 'male' ? 'мужчина' : 'женщина';
-    $genderVerb = $gender === 'male' ? 'Используй мужской род: оформил, получил, доволен' : 'Используй женский род: оформила, получила, довольна';
-    $situation = $situations[array_rand($situations)];
-    $style = $styles[array_rand($styles)];
+// Используем unified AI providers
+$mood = $rating >= 4 ? 'положительный' : ($rating === 3 ? 'нейтральный' : 'негативный');
+$genderRu = $gender === 'male' ? 'мужчина' : 'женщина';
+$genderVerb = $gender === 'male' ? 'Используй мужской род: оформил, получил, доволен' : 'Используй женский род: оформила, получила, довольна';
+$situation = $situations[array_rand($situations)];
+$style = $styles[array_rand($styles)];
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt-lite/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.9, 'maxTokens' => 150],
-                'messages' => [
-                    ['role' => 'system', 'text' => "Ты обычный $genderRu из России. $genderVerb. Пиши $style. Ситуация: $situation. НЕ начинай с названия сервиса. Без markdown."],
-                    ['role' => 'user', 'text' => "Напиши $mood отзыв на \"{$offer['title']}\". Оценка $rating из 5."],
-                ],
-            ]),
-            'timeout' => 15,
-        ],
-    ]));
+$systemPrompt = "Ты обычный $genderRu из России. $genderVerb. Пиши $style. Ситуация: $situation. НЕ начинай с названия сервиса. Без markdown.";
+$userPrompt = "Напиши $mood отзыв на \"{$offer['title']}\". Оценка $rating из 5.";
 
-    if ($response) {
-        $respData = json_decode($response, true);
-        $text = $respData['result']['alternatives'][0]['message']['text'] ?? null;
-        if ($text) {
-            $comment = preg_replace('/\*/', '', $text);
-            $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
-            $comment = trim($comment);
-        }
-    }
+$result = aiGenerateText($userPrompt, $systemPrompt);
+if ($result['success'] && !empty($result['text'])) {
+    $comment = preg_replace('/\*/', '', $result['text']);
+    $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
+    $comment = trim($comment);
+    $aiProvider = ($result['provider'] ?? 'unknown') . ' (' . ($result['model'] ?? '') . ')';
 }
 
 if (!$comment) {
@@ -78,4 +65,8 @@ $db->prepare("INSERT INTO reviews (offer_id, author_name, rating, {$reviewTextCo
 $db->prepare("UPDATE offers SET rating = (SELECT COALESCE(ROUND(AVG(r.rating),1),0) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1), review_count = (SELECT COUNT(*) FROM reviews r WHERE r.offer_id = ? AND r.is_approved = 1) WHERE id = ?")
    ->execute([$offer['id'], $offer['id'], $offer['id']]);
 
-echo json_encode(['success' => true, 'review' => ['offer' => $offer['title'], 'offerId' => $offer['id'], 'name' => $name, 'rating' => $rating, 'comment' => $comment]]);
+echo json_encode([
+    'success' => true,
+    'review' => ['offer' => $offer['title'], 'name' => $name, 'rating' => $rating, 'comment' => $comment],
+    'ai_provider' => $aiProvider,
+]);
