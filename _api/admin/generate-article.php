@@ -328,9 +328,6 @@ $imageProvider = ($imageResult['provider'] ?? '') . (isset($imageResult['model']
 $imageRequestedProvider = '';
 $imageFallback = !$imageResult['success'];
 $imageError = $imageResult['error'] ?? null;
-$imageRequestedProvider = $imageResult['requested_provider'] ?? '';
-$imageFallback = !empty($imageResult['fallback']);
-$imageError = $imageResult['error'] ?? null;
 
 // Мета
 $paragraphs = array_filter(explode("\n\n", $content));
@@ -359,10 +356,10 @@ echo json_encode([
     'aiProvider' => $aiProvider,
     'hasImage' => !empty($coverImage),
     'category' => $selectedCategory,
-    'imageProvider' => $imageProvider ? articleImageProviderLabel($imageProvider) : '',
-    'requestedImageProvider' => articleImageProviderLabel($imageRequestedProvider ?: (getArticleImageSettings()['provider'] ?? 'yandex')),
-    'imageFallback' => $imageFallback,
-    'imageError' => $imageError,
+    'imageProvider' => $imageProvider,
+    'imageFallback' => !$imageResult['success'],
+    'imageError' => $imageResult['error'] ?? null,
+    'textError' => $aiResult['error'] ?? null,
 ]);
 
 // ============================================================

@@ -109,7 +109,7 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
     
     switch ($provider) {
         case 'odirouter':
-            return !empty($config['odirouter_enabled']) && !empty($config['odirouter_api_key']);
+            return !empty($config["odirouter_enabled"]) && (!empty($config["odirouter_api_key"]) || !empty($config["odirouter_image_api_key"]));
         case 'yandex_art':
             return !empty($config['yandex_art_enabled']) && !empty($config['yandex_gpt_api_key']) && !empty($config['yandex_folder_id']);
         case 'stability':
