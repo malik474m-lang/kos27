@@ -35,36 +35,28 @@ for ($i = 0; $i < $count; $i++) {
     $name = $gender === 'male' ? rnd($maleNames) : rnd($femaleNames);
     $rating = weightedRating();
     $comment = null;
+    require_once __DIR__ . '/../includes/ai-compat.php';
 
-    if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-        $mood = $rating >= 4 ? 'положительный' : ($rating === 3 ? 'нейтральный' : 'негативный');
-        $genderRu = $gender === 'male' ? 'мужчина' : 'женщина';
-        $genderVerb = $gender === 'male' ? 'Используй мужской род: оформил, получил, доволен' : 'Используй женский род: оформила, получила, довольна';
-        $situation = rnd($situations);
-        $style = rnd($styles);
+    $mood = $rating >= 4 ? 'положительный' : ($rating === 3 ? 'нейтральный' : 'негативный');
+    $genderRu = $gender === 'male' ? 'мужчина' : 'женщина';
+    $genderVerb = $gender === 'male' ? 'Используй мужской род: оформил, получил, доволен' : 'Используй женский род: оформила, получила, довольна';
+    $situation = rnd($situations);
+    $style = rnd($styles);
 
-        $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-                'content' => json_encode([
-                    'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt-lite/latest',
-                    'completionOptions' => ['stream' => false, 'temperature' => 0.9, 'maxTokens' => 150],
-                    'messages' => [
-                        ['role' => 'system', 'text' => "Ты обычный $genderRu из России, который оформил финансовый продукт (займ, кредит или карту) через интернет. $genderVerb. Пиши $style. Ситуация: $situation. НЕ начинай с названия сервиса. Не используй слова 'покупка', 'товар', 'магазин', 'покупатель'. Речь о финансовом продукте — займе, кредите или карте. Без markdown."],
-                        ['role' => 'user', 'text' => "Напиши $mood отзыв на \"{$offer['title']}\". Оценка $rating из 5."],
-                    ],
-                ]),
-                'timeout' => 15,
-            ],
-        ]));
+    $systemPrompt = "Ты обычный $genderRu из России, который оформил финансовый продукт. $genderVerb. Пиши $style. Ситуация: $situation. НЕ начинай с названия сервиса. Без markdown.";
+    $userPrompt = "Напиши $mood отзыв на \"{$offer['title']}\". Оценка $rating из 5.";
+    $aiText = kosmozaimAIComplete($systemPrompt, $userPrompt);
 
-        if ($response) {
-            $data = json_decode($response, true);
-            $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
-            if ($text) {
-                $comment = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
-                $comment = preg_replace('/\*/', '', $comment);
+    if ($aiText) {
+        $comment = preg_replace('/\*\*(.+?)\*\*/', '$1', $aiText);
+        $comment = preg_replace('/\*/', '', $comment);
+        $comment = preg_replace('/^```\s*\w*\s*/i', '', $comment);
+        $comment = preg_replace('/```/', '', $comment);
+        $comment = preg_replace('/^#{1,6}\s+/m', '', $comment);
+        $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
+        $comment = trim($comment);
+        if (mb_strlen($comment) < 20) $comment = null;
+    }
                 $comment = preg_replace('/^```\s*\w*\s*/i', '', $comment);
                 $comment = preg_replace('/```/', '', $comment);
                 $comment = preg_replace('/^#{1,6}\s+/m', '', $comment);

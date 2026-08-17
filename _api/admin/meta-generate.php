@@ -57,58 +57,41 @@ function fallbackMeta(array $data, string $entity, string $siteName): array {
 }
 
 // GPT optional
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $fallback = fallbackMeta($data, $entity, $siteName);
-    $prompt = "Сгенерируй SEO meta title и meta description на русском языке. "
-        . "Верни ТОЛЬКО JSON без markdown и без тройных кавычек. Формат: {\"metaTitle\":\"...\",\"metaDescription\":\"...\"}. "
-        . "Ограничения: meta title до 70 символов, meta description до 160 символов. "
-        . "Данные страницы: " . json_encode([
-            'entity' => $entity,
-            'title' => $data['title'] ?? null,
-            'h1' => $data['h1'] ?? null,
-            'description' => $data['description'] ?? null,
-            'categoryName' => $data['categoryName'] ?? null,
-            'cityName' => $data['cityName'] ?? null,
-            'cityPrep' => $data['cityPrep'] ?? null,
-            'siteName' => $siteName,
-        ], JSON_UNESCAPED_UNICODE);
+require_once __DIR__ . '/../../includes/ai-compat.php';
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.3, 'maxTokens' => 1200],
-                'messages' => [
-                    ['role' => 'system', 'text' => 'Ты SEO-специалист. Генерируешь только JSON с metaTitle и metaDescription. Без markdown, без пояснений.'],
-                    ['role' => 'user', 'text' => $prompt],
-                ],
-            ]),
-            'timeout' => 35,
-        ],
-    ]));
+$fallback = fallbackMeta($data, $entity, $siteName);
+$prompt = "Сгенерируй SEO meta title и meta description на русском языке. "
+    . "Верни ТОЛЬКО JSON без markdown и без тройных кавычек. Формат: {\"metaTitle\":\"...\",\"metaDescription\":\"...\"}. "
+    . "Ограничения: meta title до 70 символов, meta description до 160 символов. "
+    . "Данные страницы: " . json_encode([
+        'entity' => $entity,
+        'title' => $data['title'] ?? null,
+        'h1' => $data['h1'] ?? null,
+        'description' => $data['description'] ?? null,
+        'categoryName' => $data['categoryName'] ?? null,
+        'cityName' => $data['cityName'] ?? null,
+        'cityPrep' => $data['cityPrep'] ?? null,
+        'siteName' => $siteName,
+    ], JSON_UNESCAPED_UNICODE);
 
-    if ($response) {
-        $jsonText = json_decode($response, true)['result']['alternatives'][0]['message']['text'] ?? '';
-        $jsonText = trim($jsonText);
-        $jsonText = preg_replace('/^```\s*json\s*/i', '', $jsonText);
-        $jsonText = preg_replace('/```$/', '', $jsonText);
-        $jsonText = trim($jsonText);
-        $parsed = json_decode($jsonText, true);
-        if (is_array($parsed) && !empty($parsed['metaTitle']) && !empty($parsed['metaDescription'])) {
-            echo json_encode([
-                'success' => true,
-                'metaTitle' => mb_limit($parsed['metaTitle'], 70),
-                'metaDescription' => mb_limit($parsed['metaDescription'], 160),
-                'provider' => 'YandexGPT',
-            ]);
-            exit;
-        }
+$systemPrompt = 'Ты SEO-специалист. Генерируешь только JSON с metaTitle и metaDescription. Без markdown, без пояснений.';
+$aiText = kosmozaimAIComplete($systemPrompt, $prompt);
+
+if ($aiText) {
+    $jsonText = trim($aiText);
+    $jsonText = preg_replace('/^```\s*json\s*/i', '', $jsonText);
+    $jsonText = preg_replace('/```$/', '', $jsonText);
+    $jsonText = trim($jsonText);
+    $parsed = json_decode($jsonText, true);
+    if (is_array($parsed) && !empty($parsed['metaTitle']) && !empty($parsed['metaDescription'])) {
+        echo json_encode([
+            'success' => true,
+            'metaTitle' => mb_limit($parsed['metaTitle'], 70),
+            'metaDescription' => mb_limit($parsed['metaDescription'], 160),
+            'provider' => 'AI',
+        ]);
+        exit;
     }
-
-    echo json_encode(array_merge(['success' => true, 'provider' => 'template'], $fallback));
-    exit;
 }
 
-echo json_encode(array_merge(['success' => true, 'provider' => 'template'], fallbackMeta($data, $entity, $siteName)));
+echo json_encode(array_merge(['success' => true, 'provider' => 'template'], $fallback));

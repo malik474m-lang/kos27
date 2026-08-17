@@ -329,11 +329,27 @@ $imageRequestedProvider = '';
 $imageFallback = !$imageResult['success'];
 $imageError = $imageResult['error'] ?? null;
 
-// Мета
+// Мета — генерируем через AI если возможно
 $paragraphs = array_filter(explode("\n\n", $content));
-$excerpt = isset($paragraphs[1]) ? mb_substr($paragraphs[1], 0, 200) . '...' : mb_substr($content, 0, 200) . '...';
+$paragraphsList = array_values($paragraphs);
+
+// Excerpt: первый содержательный абзац (не заголовок)
+$excerpt = '';
+foreach ($paragraphsList as $p) {
+    $p = trim($p);
+    if (mb_strlen($p) > 50 && !preg_match('/^[А-ЯA-Z\s\d:—–-]+$/u', $p)) {
+        $excerpt = mb_substr($p, 0, 250);
+        if (mb_strlen($p) > 250) $excerpt .= '...';
+        break;
+    }
+}
+if (!$excerpt) {
+    $excerpt = mb_substr(strip_tags($content), 0, 250) . '...';
+}
+
 $slug = slugify($selectedTopic) . '-' . time();
 
+// Meta title и description
 if ($isBank) {
     $metaTitle = $selectedTopic . ' — обзор банка, кредиты, карты | ' . SITE_NAME;
     $metaDescription = 'Обзор банка ' . $selectedTopic . ': кредиты, карты, вклады, лицензия ЦБ, контакты.';
@@ -342,7 +358,16 @@ if ($isBank) {
     $metaDescription = 'Обзор ' . $selectedTopic . ': условия займов, лицензия ЦБ, контакты, преимущества и недостатки.';
 } else {
     $metaTitle = $selectedTopic . ' | ' . SITE_NAME;
-    $metaDescription = mb_substr($excerpt, 0, 155);
+    // Meta description из содержания
+    $metaDescription = mb_substr(preg_replace('/\s+/', ' ', strip_tags($excerpt)), 0, 155);
+    if (mb_strlen($metaDescription) < 50) {
+        $metaDescription = $selectedTopic . '. ' . mb_substr(preg_replace('/\s+/', ' ', strip_tags($content)), 0, 140);
+    }
+}
+
+// Если excerpt пустой — fallback
+if (!trim($excerpt)) {
+    $excerpt = mb_substr($metaDescription, 0, 200) . '...';
 }
 
 $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published) VALUES (?,?,?,?,?,?,?,0)")

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-compat.php";
 require_once __DIR__ . '/../../includes/offer-faq.php';
 /**
  * Генерация FAQ для оффера — YandexGPT + шаблонный fallback

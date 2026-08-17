@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-compat.php";
 /**
  * API: Исправление дублей title / description через Yandex GPT
  * POST /api/admin/seo-duplicates-fix

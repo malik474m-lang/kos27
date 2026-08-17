@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-compat.php";
 require_once __DIR__ . '/../../includes/content-quality.php';
 header('Content-Type: application/json; charset=UTF-8');
 requireAdmin();

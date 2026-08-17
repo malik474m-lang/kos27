@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-compat.php";
 /**
  * Пакетная автогенерация текстов/метаданных
  * POST /api/admin/batch-generate

@@ -51,42 +51,24 @@ $content = null;
 $provider = 'template';
 
 echo "[START] Генерация статьи: $topic\n";
+require_once __DIR__ . '/../includes/ai-compat.php';
 
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 8000],
-                'messages' => [
-                    ['role' => 'system', 'text' => 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском языке. Подзаголовки на отдельной строке. ВАЖНО: пиши ТОЛЬКО чистый текст без форматирования. Без markdown, без тройных кавычек, без блоков кода, без звёздочек, без решёток.'],
-                    ['role' => 'user', 'text' => "Напиши развёрнутую статью на тему \"$topic\". Минимум 1500 слов."],
-                ],
-            ]),
-            'timeout' => 120,
-        ],
-    ]));
+$systemPrompt = 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском языке. Подзаголовки на отдельной строке. ВАЖНО: пиши ТОЛЬКО чистый текст без форматирования. Без markdown, без тройных кавычек, без блоков кода, без звёздочек, без решёток.';
+$userPrompt = "Напиши развёрнутую статью на тему \"$topic\". Минимум 1500 слов.";
+$aiText = kosmozaimAIComplete($systemPrompt, $userPrompt);
 
-    if ($response) {
-        $data = json_decode($response, true);
-        $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
-        if ($text) {
-            // Убираем markdown мусор
-            $content = preg_replace('/^```\s*\w*\s*\n?/i', '', $text);
-            $content = preg_replace('/\n?```\s*$/', '', $content);
-            $content = preg_replace('/```/', '', $content);
-            $content = preg_replace('/\*\*(.+?)\*\*/', '$1', $content);
-            $content = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '$1', $content);
-            $content = preg_replace('/^#{1,6}\s+/m', '', $content);
-            $content = preg_replace('/__(.+?)__/s', '$1', $content);
-            $content = preg_replace('/~~(.+?)~~/s', '$1', $content);
-            $content = preg_replace('/^>\s?/m', '', $content);
-            $content = trim($content);
-            $provider = 'YandexGPT';
-        }
-    }
+if ($aiText) {
+    $content = preg_replace('/^```\s*\w*\s*\n?/i', '', $aiText);
+    $content = preg_replace('/\n?```\s*$/', '', $content);
+    $content = preg_replace('/```/', '', $content);
+    $content = preg_replace('/\*\*(.+?)\*\*/', '$1', $content);
+    $content = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '$1', $content);
+    $content = preg_replace('/^#{1,6}\s+/m', '', $content);
+    $content = preg_replace('/__(.+?)__/s', '$1', $content);
+    $content = preg_replace('/~~(.+?)~~/s', '$1', $content);
+    $content = preg_replace('/^>\s?/m', '', $content);
+    $content = trim($content);
+    $provider = 'AI';
 }
 
 if (!$content) {

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../includes/ai-compat.php";
 $data = json_decode(file_get_contents('php://input'), true);
 $action = $data['action'] ?? 'topics'; // topics | body
 
