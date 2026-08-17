@@ -982,43 +982,58 @@ var _ctsCityFilter='';
 var _ctsTagFilter='';
 var _ctsOverwrite=false;
 var _ctsCitySlugs=[];
+function csCityLabelBySlug(slug){var c=(adminCities||[]).find(function(x){return x.slug===slug;});return c?c.name:slug;}
+function csCityPrepBySlug(slug){var c=(adminCities||[]).find(function(x){return x.slug===slug;});return c?(c.prep||c.name):slug;}
+function csBuildCitySeoRows(list){
+  var map={};
+  (list||[]).forEach(function(item){map[item.city_slug]=item;});
+  var pool=(_csCitySlugs&&_csCitySlugs.length)?adminCities.filter(function(c){return _csCitySlugs.indexOf(c.slug)!==-1;}):adminCities.slice();
+  return pool.map(function(city){
+    if(map[city.slug]) return Object.assign({}, map[city.slug], {_missing:false, city_name:city.name, city_prep:city.prep});
+    return {id:0, city_slug:city.slug, city_name:city.name, city_prep:city.prep, seo_h1:'', meta_title:'', meta_description:'', seo_text:'', generated_by:'missing', _missing:true};
+  });
+}
 function lCS(){
 var cat=_csCat;
-Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), ap('/tags')]).then(([list, cityTagList, allTags])=>{
-var scopedList=(_csCitySlugs&&_csCitySlugs.length)?list.filter(function(item){return _csCitySlugs.indexOf(item.city_slug)!==-1;}):list;
+Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), ap('/tags')]).then(function(res){
+var list=res[0]||[], cityTagList=res[1]||[], allTags=res[2]||[];
+var scopedList=csBuildCitySeoRows(list);
+var generatedCount=scopedList.filter(function(x){return !x._missing;}).length;
+var missingCount=scopedList.filter(function(x){return !!x._missing;}).length;
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏙️ SEO-тексты для городов</h2><div class="flex gap-2">';
 h+='<select id="cs-cat" onchange="_csCat=this.value;lCS()" class="sel-f text-sm w-auto"><option value="microloans"'+(cat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(cat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(cat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(cat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select>';
-h+='<select id="cs-overwrite" onchange="_csOverwrite=this.value===\'1\'" class="sel-f text-sm w-auto"><option value="0"'+(!_csOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_csOverwrite?' selected':'')+'>Перезаписать существующие</option></select>';
-h+='<button type="button" onclick="openCityScopePicker(\'cs\')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-50">🏙 '+cityScopeLabel(_csCitySlugs)+'</button>';
+h+='<select id="cs-overwrite" onchange="_csOverwrite=this.value==='1'" class="sel-f text-sm w-auto"><option value="0"'+(!_csOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_csOverwrite?' selected':'')+'>Перезаписать существующие</option></select>';
+h+='<button type="button" onclick="openCityScopePicker('cs')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-50">🏙 '+cityScopeLabel(_csCitySlugs)+'</button>';
 h+='<button onclick="csGen(false)" class="btn-p text-sm" id="cs-gen-btn">⚡ Шаблоны</button>';
 h+='<button onclick="csGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cs-gpt-btn">🤖 YandexGPT</button>';
-h+='<button onclick="csClean(&#39;markdown&#39;)" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Markdown</button>';
-h+='<button onclick="csClean(&#39;plain&#39;)" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button>';
+h+='<button onclick="csClean('markdown')" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Markdown</button>';
+h+='<button onclick="csClean('plain')" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button>';
 h+='</div></div>';
 
-h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700">';
-h+='<strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов (бесплатно). 🤖 YandexGPT — уникальные AI-тексты (нужен API-ключ в настройках). Можно генерировать только отсутствующие записи или перезаписывать уже существующие.';
-h+='</div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов. 🤖 YandexGPT — уникальные AI-тексты. Теперь список показывает и города без SEO, чтобы их было проще заполнить.</div>';
 
 h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">';
-h+='<p class="text-sm text-gray-500">Показано: <strong>'+scopedList.length+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
+h+='<p class="text-sm text-gray-500">Всего городов: <strong>'+scopedList.length+'</strong> • С SEO: <strong>'+generatedCount+'</strong> • Без SEO: <strong>'+missingCount+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
 h+='<div class="flex gap-2 items-center">';
 h+='<select id="cs-city-filter" onchange="csFilterCity()" class="sel-f text-sm w-auto"><option value="">Все города</option>';
-var seenSlugs={};
-scopedList.forEach(function(s){ if(!seenSlugs[s.city_slug]){ seenSlugs[s.city_slug]=1; h+='<option value="'+e(s.city_slug)+'">'+e(s.city_slug)+'</option>'; }});
+scopedList.forEach(function(s){h+='<option value="'+e(s.city_slug)+'">'+e(s.city_name||s.city_slug)+'</option>';});
 h+='</select>';
 h+='<input id="cs-city-search" class="input-f text-sm" placeholder="🔍 Поиск..." oninput="csFilterCity()" style="width:160px">';
 h+='</div></div>';
 
 if(scopedList.length){
-h+='<div class="bg-white rounded-xl border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-20">Способ</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
-scopedList.forEach(s=>{
-var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
-h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'"><td class="p-3 font-medium">'+e(s.city_slug)+'</td><td class="p-3 text-gray-600 text-xs">'+e((s.seo_h1||'').substring(0,60))+'...</td><td class="p-3">'+badge+'</td><td class="p-3 text-right"><button onclick="csEdit('+s.id+','+JSON.stringify(s).replace(/"/g,"&quot;")+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="csDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button></td></tr>';
+h+='<div class="bg-white rounded-xl border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-24">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
+scopedList.forEach(function(s){
+var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':s._missing?'<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">— Нет SEO</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
+var h1Text=s.seo_h1?e((s.seo_h1||'').substring(0,80))+(s.seo_h1&&s.seo_h1.length>80?'...':''):'<span class="text-gray-300">Не сгенерировано</span>';
+var actions=s._missing
+ ? '<button onclick="csGenOne(\''+e(s.city_slug)+'\',false)" class="text-green-600 hover:underline text-sm mr-2">⚡ Создать</button><button onclick="csGenOne(\''+e(s.city_slug)+'\',true)" class="text-purple-600 hover:underline text-sm">🤖 GPT</button>'
+ : '<button onclick="csEdit('+s.id+','+JSON.stringify(s).replace(/"/g,'&quot;')+')" class="text-blue-600 hover:underline text-sm mr-2">Ред.</button><button onclick="csDel('+s.id+')" class="text-red-500 hover:underline text-sm">Уд.</button>';
+h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'"><td class="p-3 font-medium">'+e(s.city_name||s.city_slug)+'<div class="text-xs text-gray-400 mt-0.5">'+e(s.city_slug)+'</div></td><td class="p-3 text-gray-600 text-xs">'+h1Text+'</td><td class="p-3">'+badge+'</td><td class="p-3 text-right">'+actions+'</td></tr>';
 });
 h+='</tbody></table></div>';
 }else{
-h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет сгенерированных текстов для выбранной категории/города. Нажмите ⚡ Шаблоны для генерации.</p></div>';
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет городов для отображения. Проверьте фильтры.</p></div>';
 }
 h+=renderCityTagSeoBlock(cityTagList, allTags, cat);
 document.getElementById('p-cityseo').innerHTML=h;
@@ -1029,19 +1044,33 @@ function csGen(useGPT){
 var btn=document.getElementById(useGPT?'cs-gpt-btn':'cs-gen-btn');
 var oldText=btn.textContent;
 btn.disabled=true;btn.textContent='⏳ Генерация...';
-ap('/city-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:_csOverwrite,citySlugs:_csCitySlugs})}).then(d=>{
+var cityFilterEl=document.getElementById('cs-city-filter');
+var cityFilter=cityFilterEl&&cityFilterEl.value?cityFilterEl.value:'';
+var citySlugs=Array.isArray(_csCitySlugs)?_csCitySlugs.slice():[];
+var payload={category:_csCat,useGPT:useGPT,overwrite:_csOverwrite,citySlugs:citySlugs};
+if(cityFilter) payload.citySlug=cityFilter;
+ap('/city-seo/generate',{method:'POST',body:JSON.stringify(payload)}).then(function(d){
 btn.disabled=false;btn.textContent=oldText;
-if(d.success)alert('Сгенерировано: '+d.generated+' из '+d.total);
+if(d.success)alert('Сгенерировано: '+d.generated+'; пропущено: '+d.skipped+'; ошибок: '+d.errors+'; всего: '+d.total);
 else alert(d.error||'Ошибка');
 lCS();
-}).catch(()=>{btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
+}).catch(function(){btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
+
+function csGenOne(citySlug,useGPT){
+var modeText=useGPT?'YandexGPT':'шаблон';
+if(!confirm('Сгенерировать SEO для города '+citySlug+' ('+modeText+')?')) return;
+ap('/city-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:true,citySlug:citySlug})}).then(function(d){
+if(d.success) alert('Готово: '+d.generated+' из '+d.total);
+else alert(d.error||'Ошибка');
+lCS();
+}).catch(function(){alert('Ошибка');});}
 
 function csClean(mode){var cleanupMode=mode==='plain'?'plain':'markdown';var cityFilterEl=document.getElementById('cs-city-filter');var cityFilter=cityFilterEl&&cityFilterEl.value?cityFilterEl.value:'';var citySlugs=Array.isArray(_csCitySlugs)?_csCitySlugs.slice():[];if(cityFilter) citySlugs=[cityFilter];var scopeText=citySlugs.length?(' для '+citySlugs.join(', ')):' для всех городов';var modeText=cleanupMode==='plain'?'с полным удалением HTML':'с очисткой markdown-мусора';if(!confirm('Очистить тексты '+modeText+' в категории '+_csCat+scopeText+'?'))return;ap('/city-seo/clean',{method:'POST',body:JSON.stringify({category:_csCat,citySlugs:citySlugs,mode:cleanupMode})}).then(d=>{if(d.success)alert('Режим: '+(d.mode==='plain'?'HTML':'Markdown')+'; очищено записей: '+d.cleaned+' из '+d.total+'; SEO-текст: '+(d.updated_seo_text||0)+'; H1: '+(d.updated_seo_h1||0)+'; Meta title: '+(d.updated_meta_title||0)+'; Meta description: '+(d.updated_meta_description||0));else alert(d.error||'Ошибка');lCS();}).catch(()=>alert('Ошибка'));}
 function csEdit(id,s){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать SEO: '+e(s.city_slug)+'</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return csSave(event,'+id+')">'+
 '<div class="mb-3"><label class="block text-xs font-medium mb-1">H1</label><input id="cs-h1" class="input-f" value="'+e(s.seo_h1||'')+'"></div>'+
-'<input type="hidden" id="cs-city-slug" value="'+e(s.city_slug||'')+'">'+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="cs-mt" class="input-f flex-1" value="'+e(s.meta_title||'')+'"><button type="button" id="cs-meta-btn" onclick="fillMeta(&quot;cs&quot;,&quot;city&quot;,{cityName:document.getElementById(&quot;cs-city-slug&quot;).value,cityPrep:document.getElementById(&quot;cs-city-slug&quot;).value,categoryName:(document.getElementById(&quot;cs-cat&quot;)?document.getElementById(&quot;cs-cat&quot;).selectedOptions[0].text:&quot;Город&quot;)})" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div>'+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="cs-md" class="input-f" value="'+e(s.meta_description||'')+'"></div>'+
+'<input type="hidden" id="cs-city-slug" value="'+e(s.city_slug||'')+'">'+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Title</label><div class="flex gap-2"><input id="cs-mt" class="input-f flex-1" value="'+e(s.meta_title||'')+'"><button type="button" id="cs-meta-btn" onclick="fillMeta(&quot;cs&quot;,&quot;city&quot;,{cityName:csCityLabelBySlug(document.getElementById(&quot;cs-city-slug&quot;).value),cityPrep:csCityPrepBySlug(document.getElementById(&quot;cs-city-slug&quot;).value),categoryName:(document.getElementById(&quot;cs-cat&quot;)?document.getElementById(&quot;cs-cat&quot;).selectedOptions[0].text:&quot;Город&quot;)})" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 whitespace-nowrap">🤖 Meta</button></div></div>'+'<div class="mb-3"><label class="block text-xs font-medium mb-1">Meta Description</label><input id="cs-md" class="input-f" value="'+e(s.meta_description||'')+'"></div>'+
 '<div class="mb-3"><label class="block text-xs font-medium mb-1">SEO-текст (HTML)</label><textarea id="cs-text" class="input-f font-mono text-xs" rows="12">'+e(s.seo_text||'')+'</textarea></div>'+
 '<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>');
 }
