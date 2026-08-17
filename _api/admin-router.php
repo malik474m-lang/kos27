@@ -47,6 +47,9 @@ if ($adminUri === "/article-regenerate-image" && $method === "POST") { require _
 // Перегенерация картинки статьи
 if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }
 
+// Генерация описания оффера
+if ($adminUri === "/offer-generate-desc" && $method === "POST") { require __DIR__ . "/admin/offer-generate-desc.php"; exit; }
+
 // Генерация справочной информации оффера
 if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
 // leads.su API

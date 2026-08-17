@@ -234,7 +234,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
 '<div class="col-span-2 border-t pt-3 mt-2"><div class="flex items-center justify-between mb-2"><span class="text-xs font-bold text-gray-700">📋 Справочная информация</span><div class="flex items-center gap-3"><button type="button" onclick="genOfferInfo(this)" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs">🤖 ИИ</button><a href="https://cbr.ru/microfinance/registry/" target="_blank" class="text-blue-600 hover:underline text-xs">Реестр ЦБ ↗</a></div></div><div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium mb-1">Телефон</label><input id="of-phone" class="input-f" value="'+e(f.phone||'')+'" placeholder="8-800-..."></div><div><label class="block text-xs font-medium mb-1">Лицензия ЦБ</label><input id="of-license" class="input-f" value="'+e(f.license||'')+'" placeholder="№..."></div><div><label class="block text-xs font-medium mb-1">Торговая марка</label><input id="of-trademark" class="input-f" value="'+e(f.trademark||'')+'" placeholder="ООО..."></div><div><label class="block text-xs font-medium mb-1">Адрес</label><input id="of-address" class="input-f" value="'+e(f.address||'')+'" placeholder="г. Москва..."></div></div></div>'+
 '<div class="col-span-2 border-t pt-3 mt-2"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-bold text-amber-700">🎁 КосмоБонус</span></div><div class="grid grid-cols-3 gap-2"><div><label class="flex items-center gap-2"><input type="checkbox" id="of-kb-enabled" '+(f.kosmobonus_enabled?'checked':'')+' class="w-4 h-4"><span class="text-xs">Участвует в акции</span></label></div><div><label class="block text-xs font-medium mb-1">Бонус (₽)</label><input id="of-kb-amount" type="number" class="input-f" value="'+(f.kosmobonus_amount||0)+'" min="0"></div><div><label class="block text-xs font-medium mb-1">Условия</label><input id="of-kb-conditions" class="input-f" value="'+e(f.kosmobonus_conditions||'')+'" placeholder="Условия акции..."></div></div></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,80,3)" style="background:#059669;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,90,4)" style="background:#0f766e;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🚀 До 90+</button><button type="button" onclick="cqCleanupOnly(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" style="background:#475569;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🧹 Только мусор</button><span id="of-quality-badge" class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-xs font-semibold">score —</span></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Описание</label><div class="flex flex-wrap gap-2 mb-2"><button type="button" onclick="aiGenOfferDesc()" id="of-ai-desc-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">🤖 Создать AI</button><button type="button" onclick="cqAnalyzeForm(&#39;of&#39;,&#39;offer&#39;)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold">🧪 Качество</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">✨ Улучшить</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,80,3)" style="background:#059669;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🎯 До 80+</button><button type="button" onclick="cqImproveField(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;,90,4)" style="background:#0f766e;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🚀 До 90+</button><button type="button" onclick="cqCleanupOnly(&#39;of&#39;,&#39;offer&#39;,&#39;description&#39;)" style="background:#475569;color:#fff;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center">🧹 Только мусор</button><span id="of-quality-badge" class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-xs font-semibold">score —</span></div><textarea id="of-de" class="input-f" rows="3">'+e(f.description||'')+'</textarea></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO ключевые слова</label><input id="of-sk" class="input-f" value="'+e(f.seo_keywords||'')+'"></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-2">🧩 Стандартные поля</label><div id="of-display-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div></div>'+'<div class="col-span-2"><label class="block text-xs font-medium mb-2">📋 Дополнительные поля</label><div id="of-extra-template-actions" class="mb-3 rounded-xl border border-gray-200 bg-gray-50 p-3"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-semibold text-gray-700">Быстрые шаблоны полей</p><p id="of-extra-template-hint" class="text-xs text-gray-500">Выберите категорию оффера, чтобы подставить готовые поля.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="ofApplyCurrentCategoryTemplate(false)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">Подставить шаблон категории</button><button type="button" onclick="ofApplyCurrentCategoryTemplate(true)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">Добавить шаблон категории</button></div></div></div><div id="of-extra-fields"></div><button type="button" onclick="ofAddExtraField()" class="text-sm text-blue-600 hover:underline mt-1">+ Добавить поле</button></div>'+
 '<div class="col-span-2"><label class="flex items-center gap-2"><input type="checkbox" id="of-ac" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активно</span></label></div>'+
@@ -5286,6 +5286,42 @@ function saveSocialProof() {
 
 
 // === AI Providers (lAIP) ===
+// === Генерация описания оффера через AI ===
+function aiGenOfferDesc(){
+    var title=document.getElementById('of-t')?.value||'';
+    if(!title){alert('Сначала заполните название оффера');return;}
+    var btn=document.getElementById('of-ai-desc-btn');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Генерация...';}
+    var data={
+        title:title,
+        category:document.getElementById('of-c')?.value||'microloans',
+        amountMin:document.getElementById('of-am1')?.value||'',
+        amountMax:document.getElementById('of-am2')?.value||'',
+        termMinDays:document.getElementById('of-t1')?.value||'',
+        termMaxDays:document.getElementById('of-t2')?.value||'',
+        rate:document.getElementById('of-r')?.value||'',
+        rateUnit:document.getElementById('of-ru')?.value||'day',
+        freeTermDays:document.getElementById('of-fr')?.value||'',
+        borrowerCategory:document.getElementById('of-b')?.value||'any'
+    };
+    fetch(A+'/offer-generate-desc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.json();}).then(function(d){
+        if(btn){btn.disabled=false;btn.textContent='\u{1F916} Создать AI';}
+        if(d.success&&d.description){
+            var el=document.getElementById('of-de');
+            if(el){
+                if(el.value&&!confirm('Заменить текущее описание?'))return;
+                el.value=d.description;
+            }
+            alert('\u2705 Описание сгенерировано!');
+        }else{
+            alert('\u274C '+(d.error||'Ошибка'));
+        }
+    }).catch(function(err){
+        if(btn){btn.disabled=false;btn.textContent='\u{1F916} Создать AI';}
+        alert('Ошибка: '+err.message);
+    });
+}
+
 // === Перегенерация картинки статьи ===
 function aiRegenImage(articleId){
     if(!articleId){alert('Сначала сохраните статью');return;}
