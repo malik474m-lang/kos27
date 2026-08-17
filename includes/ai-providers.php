@@ -94,7 +94,7 @@ function isTextProviderAvailable(string $provider, ?array $config = null): bool 
     
     switch ($provider) {
         case 'odirouter':
-            return !empty($config['odirouter_enabled']) && !empty($config['odirouter_api_key']);
+            return !empty($config['odirouter_enabled']) && (!empty($config['odirouter_api_key']) || !empty($config['odirouter_image_api_key']));
         case 'yandex_gpt':
             return !empty($config['yandex_gpt_enabled']) && !empty($config['yandex_gpt_api_key']) && !empty($config['yandex_folder_id']);
         case 'gigachat':
@@ -125,7 +125,7 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
-    $apiKey = $config['odirouter_image_api_key'] ?? $config['odirouter_api_key'] ?? '';
+    $apiKey = $config['odirouter_api_key'] ?: ($config['odirouter_image_api_key'] ?? '');
     $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gpt-5.6-luna');
     
     if (!$apiKey) {
