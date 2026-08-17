@@ -24,7 +24,7 @@ function getAIProvidersConfig(): array {
         'odirouter_enabled' => false,
         'odirouter_api_key' => '',
         'odirouter_image_api_key' => '',
-        'odirouter_text_model' => 'free-gpt-5.6-luna',
+        'odirouter_text_model' => 'free-gemini-2.5-flash',
         'odirouter_image_model' => 'free-nano-banana-2',
         
         // YandexGPT
@@ -126,11 +126,17 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
     $apiKey = $config['odirouter_api_key'] ?: ($config['odirouter_image_api_key'] ?? '');
-    $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gpt-5.6-luna');
+    $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gemini-2.5-flash');
     
     if (!$apiKey) {
         return ['success' => false, 'error' => 'OdiRouter API key not set'];
     }
+    
+    // Список моделей для retry при таймауте
+    $fallbackModels = ['free-gemini-2.5-flash', 'free-gpt-5.4-mini', 'free-qwen3.7-plus', 'free-gemini-3.5-flash'];
+    // Ставим выбранную модель первой
+    array_unshift($fallbackModels, $model);
+    $fallbackModels = array_unique($fallbackModels);
     
     $messages = [];
     if ($systemPrompt) {
@@ -138,54 +144,71 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     }
     $messages[] = ['role' => 'user', 'content' => $prompt];
     
-    $payload = [
-        'model' => $model,
-        'messages' => $messages,
-        'temperature' => 0.7,
-        'max_tokens' => 4096,
-    ];
+    $lastError = '';
     
-    $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 120,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey,
-        ],
-        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-    ]);
-    
-    $response = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err = curl_error($ch);
-    curl_close($ch);
-    
-    if ($err) {
-        return ['success' => false, 'error' => 'cURL error: ' . $err];
+    foreach ($fallbackModels as $tryModel) {
+        $payload = [
+            'model' => $tryModel,
+            'messages' => $messages,
+            'temperature' => 0.7,
+            'max_tokens' => 4096,
+        ];
+        
+        $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 90,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        ]);
+        
+        $response = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+        
+        if ($err) {
+            $lastError = "cURL [{$tryModel}]: " . $err;
+            error_log("OdiRouter model {$tryModel} cURL error: " . $err);
+            continue;
+        }
+        
+        // Таймаут или серверная ошибка — пробуем следующую модель
+        if ($code >= 500 || $code === 408) {
+            $lastError = "HTTP {$code} [{$tryModel}]";
+            error_log("OdiRouter model {$tryModel} error: HTTP {$code}");
+            continue;
+        }
+        
+        if ($code < 200 || $code >= 300) {
+            return ['success' => false, 'error' => "HTTP {$code} [{$tryModel}]: " . mb_substr(strip_tags($response), 0, 300)];
+        }
+        
+        $data = json_decode($response, true);
+        $text = $data['choices'][0]['message']['content'] ?? '';
+        
+        if (!$text) {
+            $lastError = "Empty response [{$tryModel}]";
+            continue;
+        }
+        
+        return [
+            'success' => true,
+            'text' => $text,
+            'provider' => 'odirouter',
+            'model' => $tryModel,
+            'usage' => $data['usage'] ?? null,
+        ];
     }
     
-    if ($code < 200 || $code >= 300) {
-        return ['success' => false, 'error' => 'HTTP ' . $code . ': ' . mb_substr($response, 0, 500)];
-    }
-    
-    $data = json_decode($response, true);
-    $text = $data['choices'][0]['message']['content'] ?? '';
-    
-    if (!$text) {
-        return ['success' => false, 'error' => 'Empty response from OdiRouter'];
-    }
-    
-    return [
-        'success' => true,
-        'text' => $text,
-        'provider' => 'odirouter',
-        'model' => $model,
-        'usage' => $data['usage'] ?? null,
-    ];
+    return ['success' => false, 'error' => 'OdiRouter all models failed. Last: ' . $lastError];
 }
 
 function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
@@ -847,7 +870,7 @@ function getAIProvidersStatus(): array {
                 'enabled' => !empty($config['odirouter_enabled']),
                 'configured' => !empty($config['odirouter_api_key']),
                 'available' => isTextProviderAvailable('odirouter', $config),
-                'model' => $config['odirouter_text_model'] ?? 'free-gpt-5.6-luna',
+                'model' => $config['odirouter_text_model'] ?? 'free-gemini-2.5-flash',
             ],
             'yandex_gpt' => [
                 'name' => 'YandexGPT',
