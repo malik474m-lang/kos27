@@ -403,6 +403,8 @@ function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forc
     }
     
     $priority = $config['text_provider_priority'] ?? ['yandex_gpt'];
+    $lastError = '';
+    $tried = [];
     
     foreach ($priority as $provider) {
         if (!isTextProviderAvailable($provider, $config)) continue;
@@ -412,11 +414,17 @@ function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forc
             return $result;
         }
         
-        error_log("AI Text Provider '{$provider}' failed: " . ($result['error'] ?? 'unknown'));
+        $lastError = $result['error'] ?? 'unknown';
+        $tried[] = $provider . ': ' . $lastError;
+        error_log("AI Text Provider '{$provider}' failed: " . $lastError);
     }
     
-    return ['success' => false, 'error' => 'No available AI text providers'];
+    if ($tried) {
+        return ['success' => false, 'error' => 'All providers failed: ' . implode('; ', $tried)];
+    }
+    return ['success' => false, 'error' => 'No AI text providers enabled/configured'];
 }
+
 
 function aiGenerateTextWithProvider(string $prompt, string $systemPrompt, string $provider, array $config): array {
     switch ($provider) {
