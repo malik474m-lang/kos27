@@ -23,8 +23,8 @@ function getAIProvidersConfig(): array {
         // OdiRouter
         'odirouter_enabled' => false,
         'odirouter_api_key' => '',
-        'odirouter_text_model' => 'gpt-5.6-luna-free',
-        'odirouter_image_model' => 'nano_banana_2',
+        'odirouter_text_model' => 'free-gpt-5.6-luna',
+        'odirouter_image_model' => 'free-nano-banana-2',
         
         // YandexGPT
         'yandex_gpt_enabled' => true,
@@ -125,7 +125,7 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
     $apiKey = $config['odirouter_api_key'] ?? '';
-    $model = $model ?? ($config['odirouter_text_model'] ?? 'gpt-5.6-luna-free');
+    $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gpt-5.6-luna');
     
     if (!$apiKey) {
         return ['success' => false, 'error' => 'OdiRouter API key not set'];
@@ -190,22 +190,28 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     $config = getAIProvidersConfig();
     $apiKey = $config['odirouter_api_key'] ?? '';
-    $model = $model ?? ($config['odirouter_image_model'] ?? 'nano_banana_2');
+    $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
     
     if (!$apiKey) {
         return ['success' => false, 'error' => 'OdiRouter API key not set'];
     }
     
+    // Nano Banana 2 (free) использует chat/completions endpoint
+    // Изображение возвращается как base64 data URI в content ответа
     $payload = [
-        'prompt' => $prompt,
-        'aspect_ratio' => '16:9',
+        'model' => $model,
+        'messages' => [
+            ['role' => 'user', 'content' => 'Generate an image: ' . $prompt],
+        ],
+        'temperature' => 0.8,
+        'max_tokens' => 4096,
     ];
     
-    $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
+    $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
+        CURLOPT_TIMEOUT => 120,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_HTTPHEADER => [
@@ -229,96 +235,49 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     }
     
     $data = json_decode($response, true);
-    $requestId = $data['request_id'] ?? '';
-    $statusUrl = $data['status_url'] ?? '';
-    $responseUrl = $data['response_url'] ?? '';
+    $content = $data['choices'][0]['message']['content'] ?? '';
     
-    if (!$requestId) {
-        return ['success' => false, 'error' => 'No request_id in response'];
+    if (!$content) {
+        return ['success' => false, 'error' => 'Empty response from OdiRouter'];
     }
     
-    // Polling статуса (до 2 минут)
-    for ($i = 0; $i < 24; $i++) {
-        sleep(5);
-        
-        $ch = curl_init($statusUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_HTTPHEADER => [
-                'Authorization: Bearer ' . $apiKey,
-            ],
-        ]);
-        
-        $statusResp = curl_exec($ch);
-        curl_close($ch);
-        
-        $statusData = json_decode($statusResp, true);
-        $status = $statusData['status'] ?? '';
-        
-        if ($status === 'COMPLETED') {
-            if (!empty($statusData['error'])) {
-                return ['success' => false, 'error' => $statusData['error']['message'] ?? 'Task failed'];
+    // Ищем base64 data URI в ответе: data:image/png;base64,XXXX
+    if (preg_match('/data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+\/=]+)/', $content, $m)) {
+        $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
+        $binary = base64_decode($m[2]);
+        if ($binary) {
+            $path = saveAIImage($binary);
+            if ($path) {
+                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
             }
-            
-            $ch = curl_init($responseUrl);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => 0,
-                CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $apiKey,
-                ],
-            ]);
-            
-            $resultResp = curl_exec($ch);
-            curl_close($ch);
-            
-            $resultData = json_decode($resultResp, true);
-            
-            $imageUrl = $resultData['output']['image_url'] 
-                ?? $resultData['images'][0]['url'] 
-                ?? $resultData['result']['url']
-                ?? $resultData['url']
-                ?? null;
-            
-            $imageBase64 = $resultData['output']['image'] 
-                ?? $resultData['images'][0]['base64']
-                ?? $resultData['result']['base64']
-                ?? null;
-            
-            if ($imageUrl) {
-                $imageData = @file_get_contents($imageUrl);
-                if ($imageData) {
-                    $path = saveAIImage($imageData);
-                    if ($path) {
-                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
-                    }
-                }
-                return ['success' => false, 'error' => 'Failed to download image'];
-            }
-            
-            if ($imageBase64) {
-                $imageData = base64_decode($imageBase64);
-                $path = saveAIImage($imageData);
-                if ($path) {
-                    return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
-                }
-                return ['success' => false, 'error' => 'Failed to save image'];
-            }
-            
-            return ['success' => false, 'error' => 'No image in response: ' . mb_substr($resultResp, 0, 300)];
         }
-        
-        if (!in_array($status, ['IN_QUEUE', 'IN_PROGRESS', ''])) {
-            return ['success' => false, 'error' => 'Unexpected status: ' . $status];
+        return ['success' => false, 'error' => 'Failed to decode base64 image'];
+    }
+    
+    // Может быть чистый base64 без data URI
+    $cleanContent = trim($content);
+    if (preg_match('/^[A-Za-z0-9+\/=]{100,}$/', $cleanContent)) {
+        $binary = base64_decode($cleanContent);
+        if ($binary && strlen($binary) > 1000) {
+            $path = saveAIImage($binary);
+            if ($path) {
+                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+            }
         }
     }
     
-    return ['success' => false, 'error' => 'Timeout waiting for image generation'];
+    // Может быть URL изображения в ответе
+    if (preg_match('/(https?:\/\/[^\s"\'<>]+\.(?:png|jpg|jpeg|webp))/i', $content, $urlM)) {
+        $imageData = @file_get_contents($urlM[1]);
+        if ($imageData && strlen($imageData) > 1000) {
+            $path = saveAIImage($imageData);
+            if ($path) {
+                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+            }
+        }
+    }
+    
+    return ['success' => false, 'error' => 'No image found in response. Content preview: ' . mb_substr($content, 0, 200)];
 }
 
 function saveAIImage(string $binary): string {
@@ -787,7 +746,7 @@ function getAIProvidersStatus(): array {
                 'enabled' => !empty($config['odirouter_enabled']),
                 'configured' => !empty($config['odirouter_api_key']),
                 'available' => isTextProviderAvailable('odirouter', $config),
-                'model' => $config['odirouter_text_model'] ?? 'gpt-5.6-luna-free',
+                'model' => $config['odirouter_text_model'] ?? 'free-gpt-5.6-luna',
             ],
             'yandex_gpt' => [
                 'name' => 'YandexGPT',
@@ -810,7 +769,7 @@ function getAIProvidersStatus(): array {
                 'enabled' => !empty($config['odirouter_enabled']),
                 'configured' => !empty($config['odirouter_api_key']),
                 'available' => isImageProviderAvailable('odirouter', $config),
-                'model' => $config['odirouter_image_model'] ?? 'nano_banana_2',
+                'model' => $config['odirouter_image_model'] ?? 'free-nano-banana-2',
             ],
             'yandex_art' => [
                 'name' => 'YandexART',
