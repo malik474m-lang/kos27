@@ -23,6 +23,7 @@ function getAIProvidersConfig(): array {
         // OdiRouter
         'odirouter_enabled' => false,
         'odirouter_api_key' => '',
+        'odirouter_image_api_key' => '',
         'odirouter_text_model' => 'free-gpt-5.6-luna',
         'odirouter_image_model' => 'free-nano-banana-2',
         
@@ -124,7 +125,7 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
-    $apiKey = $config['odirouter_api_key'] ?? '';
+    $apiKey = $config['odirouter_image_api_key'] ?? $config['odirouter_api_key'] ?? '';
     $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gpt-5.6-luna');
     
     if (!$apiKey) {
@@ -189,7 +190,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 
 function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     $config = getAIProvidersConfig();
-    $apiKey = $config['odirouter_api_key'] ?? '';
+    $apiKey = $config['odirouter_image_api_key'] ?? $config['odirouter_api_key'] ?? '';
     $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
     
     if (!$apiKey) {

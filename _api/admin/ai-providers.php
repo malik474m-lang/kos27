@@ -17,7 +17,7 @@ if ($method === 'GET') {
     
     // Маскируем ключи
     $masked = [];
-    $sensitiveFields = ['odirouter_api_key', 'yandex_gpt_api_key', 'stability_api_key', 'gigachat_auth_key'];
+    $sensitiveFields = ['odirouter_api_key', 'odirouter_image_api_key', 'odirouter_image_api_key', 'yandex_gpt_api_key', 'stability_api_key', 'gigachat_auth_key'];
     
     foreach ($config as $key => $value) {
         if (in_array($key, $sensitiveFields) && !empty($value)) {
@@ -93,7 +93,7 @@ if ($method === 'POST') {
     
     // Сохранение настроек
     $allowedFields = [
-        'odirouter_enabled', 'odirouter_api_key', 'odirouter_text_model', 'odirouter_image_model',
+        'odirouter_enabled', 'odirouter_api_key', 'odirouter_image_api_key', 'odirouter_text_model', 'odirouter_image_model',
         'yandex_gpt_enabled', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_gpt_model',
         'yandex_art_enabled',
         'gigachat_enabled', 'gigachat_auth_key', 'gigachat_scope',
@@ -107,7 +107,7 @@ if ($method === 'POST') {
             $value = $data[$field];
             
             // Пропускаем замаскированные ключи
-            if (str_contains($field, '_api_key') || str_contains($field, '_auth_key')) {
+            if (str_contains($field, '_api_key') || str_contains($field, '_image_api_key') || str_contains($field, '_auth_key')) {
                 if (empty($value) || str_contains((string)$value, '...')) {
                     continue;
                 }
