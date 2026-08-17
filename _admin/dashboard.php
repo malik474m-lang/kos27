@@ -978,6 +978,7 @@ function gD(id){if(confirm('Удалить?'))ap('/geo-redirects/'+id,{method:'D
 var _csCat='microloans';
 var _csOverwrite=false;
 var _csCitySlugs=[];
+var _csShowMissingOnly=false;
 var _ctsCityFilter='';
 var _ctsTagFilter='';
 var _ctsOverwrite=false;
@@ -999,13 +1000,14 @@ Promise.all([ap('/city-seo?category='+cat), ap('/city-tag-seo?category='+cat), a
 var list=res[0]||[], cityTagList=res[1]||[], allTags=res[2]||[];
 var scopedList=csBuildCitySeoRows(list);
 var generatedCount=scopedList.filter(function(x){return !x._missing;}).length;
+var displayList=_csShowMissingOnly?scopedList.filter(function(x){return !!x._missing;}):scopedList;
 var missingCount=scopedList.filter(function(x){return !!x._missing;}).length;
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🏙️ SEO-тексты для городов</h2><div class="flex gap-2">';
 h+='<select id="cs-cat" onchange="_csCat=this.value;lCS()" class="sel-f text-sm w-auto"><option value="microloans"'+(cat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(cat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(cat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(cat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select>';
 h+='<select id="cs-overwrite" onchange="_csOverwrite=this.value==='1'" class="sel-f text-sm w-auto"><option value="0"'+(!_csOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_csOverwrite?' selected':'')+'>Перезаписать существующие</option></select>';
 h+='<button type="button" onclick="openCityScopePicker('cs')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-50">🏙 '+cityScopeLabel(_csCitySlugs)+'</button>';
-h+='<button onclick="csGen(false)" class="btn-p text-sm" id="cs-gen-btn">⚡ Шаблоны</button>';
-h+='<button onclick="csGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cs-gpt-btn">🤖 YandexGPT</button>';
+h+='<button onclick="csGen(false)" class="btn-p text-sm" id="cs-gen-btn">'+(_csOverwrite?'⚡ Перегенерировать шаблоны':'⚡ Создать отсутствующие')+'</button>';
+h+='<button onclick="csGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cs-gpt-btn">'+(_csOverwrite?'🤖 Перегенерировать GPT':'🤖 GPT для отсутствующих')+'</button>';
 h+='<button onclick="csClean('markdown')" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Markdown</button>';
 h+='<button onclick="csClean('plain')" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button>';
 h+='</div></div>';
@@ -1013,17 +1015,18 @@ h+='</div></div>';
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов. 🤖 YandexGPT — уникальные AI-тексты. Теперь список показывает и города без SEO, чтобы их было проще заполнить.</div>';
 
 h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">';
-h+='<p class="text-sm text-gray-500">Всего городов: <strong>'+scopedList.length+'</strong> • С SEO: <strong>'+generatedCount+'</strong> • Без SEO: <strong>'+missingCount+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
-h+='<div class="flex gap-2 items-center">';
+h+='<p class="text-sm text-gray-500">Всего городов: <strong>'+scopedList.length+'</strong> • Показано: <strong>'+displayList.length+'</strong> • С SEO: <strong>'+generatedCount+'</strong> • Без SEO: <strong>'+missingCount+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
+h+='<div class="flex gap-2 items-center flex-wrap">';
 h+='<select id="cs-city-filter" onchange="csFilterCity()" class="sel-f text-sm w-auto"><option value="">Все города</option>';
-scopedList.forEach(function(s){h+='<option value="'+e(s.city_slug)+'">'+e(s.city_name||s.city_slug)+'</option>';});
+displayList.forEach(function(s){h+='<option value="'+e(s.city_slug)+'">'+e(s.city_name||s.city_slug)+'</option>';});
 h+='</select>';
 h+='<input id="cs-city-search" class="input-f text-sm" placeholder="🔍 Поиск..." oninput="csFilterCity()" style="width:160px">';
+h+='<label class="inline-flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap"><input type="checkbox" '+(_csShowMissingOnly?'checked':'')+' onchange="_csShowMissingOnly=this.checked;lCS()" class="w-4 h-4">Только без SEO</label>';
 h+='</div></div>';
 
-if(scopedList.length){
+if(displayList.length){
 h+='<div class="bg-white rounded-xl border overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">Город</th><th class="p-3 text-left">H1</th><th class="p-3 text-left w-24">Статус</th><th class="p-3 text-right">Действия</th></tr></thead><tbody>';
-scopedList.forEach(function(s){
+displayList.forEach(function(s){
 var badge=s.generated_by==='yandexgpt'?'<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🤖 GPT</span>':s.generated_by==='manual'?'<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">✏️ Ручной</span>':s._missing?'<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">— Нет SEO</span>':'<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">⚡ Шаблон</span>';
 var h1Text=s.seo_h1?e((s.seo_h1||'').substring(0,80))+(s.seo_h1&&s.seo_h1.length>80?'...':''):'<span class="text-gray-300">Не сгенерировано</span>';
 var actions=s._missing
@@ -1033,7 +1036,7 @@ h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'">
 });
 h+='</tbody></table></div>';
 }else{
-h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет городов для отображения. Проверьте фильтры.</p></div>';
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">'+(_csShowMissingOnly?'Все города уже имеют SEO-тексты.':'Нет городов для отображения. Проверьте фильтры.')+'</p></div>';
 }
 h+=renderCityTagSeoBlock(cityTagList, allTags, cat);
 document.getElementById('p-cityseo').innerHTML=h;
