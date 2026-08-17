@@ -3077,7 +3077,7 @@ h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-
 h+='<div class="grid md:grid-cols-2 gap-4">';
 h+='<div><label class="block text-sm font-medium mb-1">API Key</label><input type="text" id="set-gpt-key" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_gpt_api_key_masked||siteSettings.yandex_gpt_api_key||'')+'" placeholder="AQVN..."></div>';
 h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input type="text" id="set-folder" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_folder_id||'')+'" placeholder="b1g..."></div>';
-h+='<div><label class="block text-sm font-medium mb-1">Провайдер картинок статей</label><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">Управление провайдерами перенесено → <a href="#" onclick="sw('aiproviders');return false" class="font-bold underline">🤖 AI провайдеры</a></div></div>';
+h+='<div><label class="block text-sm font-medium mb-1">Провайдер картинок статей</label><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">Управление провайдерами перенесено в раздел <strong>AI провайдеры</strong> (вкладка в навигации)</div></div>';
 h+='<div><label class="block text-sm font-medium mb-1">GigaChat scope</label><select id="set-gigachat-scope" class="sel-f"><option value="GIGACHAT_API_PERS"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_PERS'?' selected':'')+'>GIGACHAT_API_PERS</option><option value="GIGACHAT_API_B2B"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_B2B'?' selected':'')+'>GIGACHAT_API_B2B</option><option value="GIGACHAT_API_CORP"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_CORP'?' selected':'')+'>GIGACHAT_API_CORP</option></select></div>';
 h+='<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка статьи. Пример: <code>нарисуй 16:9 {title}</code></p></div>';
 h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label><input type="text" id="set-stability-key" class="input-f font-mono text-sm" value="'+e(siteSettings.stability_api_key_masked||siteSettings.stability_api_key||'')+'" placeholder="sk-..."><button type="button" onclick="testImageProvider(&#39;stability&#39;)" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест Stability</button></div>';
@@ -3137,7 +3137,7 @@ site_url:document.getElementById('set-url').value,
 yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
 yandex_folder_id:document.getElementById('set-folder').value,
 article_image_prompt_template:document.getElementById('set-article-image-prompt').value,
-article_image_provider:document.getElementById('set-article-image-provider').value,
+article_image_provider:siteSettings.article_image_provider||'yandex',
 stability_api_key:document.getElementById('set-stability-key').value,
 leads_su_api_token:document.getElementById('set-leads-su-token').value,
 gigachat_auth_key:document.getElementById('set-gigachat-auth').value,
