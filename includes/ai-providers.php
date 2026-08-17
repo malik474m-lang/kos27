@@ -196,22 +196,18 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
         return ['success' => false, 'error' => 'OdiRouter API key not set'];
     }
     
-    // Nano Banana 2 (free) использует chat/completions endpoint
-    // Изображение возвращается как base64 data URI в content ответа
+    // Шаг 1: Запуск задачи
     $payload = [
-        'model' => $model,
-        'messages' => [
-            ['role' => 'user', 'content' => 'Generate an image: ' . $prompt],
-        ],
-        'temperature' => 0.8,
-        'max_tokens' => 4096,
+        'prompt' => $prompt,
+        'aspect_ratio' => '16:9',
+        'resolution' => '1K',
     ];
     
-    $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
+    $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 120,
+        CURLOPT_TIMEOUT => 30,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_HTTPHEADER => [
@@ -235,49 +231,119 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     }
     
     $data = json_decode($response, true);
-    $content = $data['choices'][0]['message']['content'] ?? '';
+    $requestId = $data['request_id'] ?? '';
+    $statusUrl = $data['status_url'] ?? '';
+    $responseUrl = $data['response_url'] ?? '';
     
-    if (!$content) {
-        return ['success' => false, 'error' => 'Empty response from OdiRouter'];
+    if (!$requestId || !$statusUrl || !$responseUrl) {
+        return ['success' => false, 'error' => 'Invalid queue response: ' . mb_substr($response, 0, 300)];
     }
     
-    // Ищем base64 data URI в ответе: data:image/png;base64,XXXX
-    if (preg_match('/data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+\/=]+)/', $content, $m)) {
-        $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
-        $binary = base64_decode($m[2]);
-        if ($binary) {
-            $path = saveAIImage($binary);
-            if ($path) {
-                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
-            }
+    // Шаг 2: Polling статуса (до 3 минут)
+    for ($i = 0; $i < 36; $i++) {
+        sleep(5);
+        
+        $ch = curl_init($statusUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiKey,
+            ],
+        ]);
+        
+        $statusResp = curl_exec($ch);
+        $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($statusCode < 200 || $statusCode >= 300) {
+            continue; // Retry
         }
-        return ['success' => false, 'error' => 'Failed to decode base64 image'];
-    }
-    
-    // Может быть чистый base64 без data URI
-    $cleanContent = trim($content);
-    if (preg_match('/^[A-Za-z0-9+\/=]{100,}$/', $cleanContent)) {
-        $binary = base64_decode($cleanContent);
-        if ($binary && strlen($binary) > 1000) {
-            $path = saveAIImage($binary);
-            if ($path) {
-                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+        
+        $statusData = json_decode($statusResp, true);
+        $status = $statusData['status'] ?? '';
+        
+        if ($status === 'COMPLETED') {
+            // Проверяем ошибку
+            if (!empty($statusData['error'])) {
+                $errMsg = $statusData['error']['message'] ?? $statusData['error']['error_type'] ?? 'Task failed';
+                return ['success' => false, 'error' => $errMsg];
             }
+            
+            // Шаг 3: Получаем результат
+            $ch = curl_init($responseUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $apiKey,
+                ],
+            ]);
+            
+            $resultResp = curl_exec($ch);
+            $resultCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($resultCode < 200 || $resultCode >= 300) {
+                return ['success' => false, 'error' => 'Failed to get result: HTTP ' . $resultCode];
+            }
+            
+            $resultData = json_decode($resultResp, true);
+            
+            // Ищем изображение в разных возможных форматах ответа
+            $imageUrl = $resultData['output']['image_url'] 
+                ?? $resultData['output']['url']
+                ?? $resultData['images'][0]['url'] 
+                ?? $resultData['result']['url']
+                ?? $resultData['url']
+                ?? $resultData['image_url']
+                ?? null;
+            
+            $imageBase64 = $resultData['output']['image'] 
+                ?? $resultData['output']['base64']
+                ?? $resultData['images'][0]['base64']
+                ?? $resultData['result']['base64']
+                ?? $resultData['base64']
+                ?? $resultData['image']
+                ?? null;
+            
+            if ($imageUrl) {
+                $ctx = stream_context_create(['http' => ['timeout' => 30]]);
+                $imageData = @file_get_contents($imageUrl, false, $ctx);
+                if ($imageData && strlen($imageData) > 1000) {
+                    $path = saveAIImage($imageData);
+                    if ($path) {
+                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+                    }
+                }
+                return ['success' => false, 'error' => 'Failed to download image from: ' . $imageUrl];
+            }
+            
+            if ($imageBase64) {
+                $imageData = base64_decode($imageBase64);
+                if ($imageData && strlen($imageData) > 1000) {
+                    $path = saveAIImage($imageData);
+                    if ($path) {
+                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+                    }
+                }
+                return ['success' => false, 'error' => 'Failed to decode base64 image'];
+            }
+            
+            return ['success' => false, 'error' => 'No image in response: ' . mb_substr($resultResp, 0, 500)];
+        }
+        
+        // Если ошибка на этапе статуса
+        if (!in_array($status, ['IN_QUEUE', 'IN_PROGRESS', 'PENDING', ''])) {
+            return ['success' => false, 'error' => 'Task status: ' . $status];
         }
     }
     
-    // Может быть URL изображения в ответе
-    if (preg_match('/(https?:\/\/[^\s"\'<>]+\.(?:png|jpg|jpeg|webp))/i', $content, $urlM)) {
-        $imageData = @file_get_contents($urlM[1]);
-        if ($imageData && strlen($imageData) > 1000) {
-            $path = saveAIImage($imageData);
-            if ($path) {
-                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
-            }
-        }
-    }
-    
-    return ['success' => false, 'error' => 'No image found in response. Content preview: ' . mb_substr($content, 0, 200)];
+    return ['success' => false, 'error' => 'Timeout waiting for image generation (3 min)'];
 }
 
 function saveAIImage(string $binary): string {
