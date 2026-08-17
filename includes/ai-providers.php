@@ -295,25 +295,51 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
             
             $resultData = json_decode($resultResp, true);
             
-            // Ищем изображение в разных возможных форматах ответа
-            $imageUrl = $resultData['output']['image_url'] 
-                ?? $resultData['output']['url']
-                ?? $resultData['images'][0]['url'] 
-                ?? $resultData['result']['url']
-                ?? $resultData['url']
-                ?? $resultData['image_url']
-                ?? null;
+            // Ищем изображение — реальный формат: output[0].content[0].url
+            $imageUrl = null;
             
-            $imageBase64 = $resultData['output']['image'] 
+            // Формат OdiRouter: output[].content[].url
+            if (isset($resultData['output']) && is_array($resultData['output'])) {
+                foreach ($resultData['output'] as $outputItem) {
+                    if (isset($outputItem['content']) && is_array($outputItem['content'])) {
+                        foreach ($outputItem['content'] as $contentItem) {
+                            if (($contentItem['type'] ?? '') === 'image' && !empty($contentItem['url'])) {
+                                $imageUrl = $contentItem['url'];
+                                break 2;
+                            }
+                        }
+                    }
+                    // Прямой url в output
+                    if (!empty($outputItem['url'])) {
+                        $imageUrl = $outputItem['url'];
+                        break;
+                    }
+                }
+                // Fallback: output.image_url / output.url
+                if (!$imageUrl) {
+                    $imageUrl = $resultData['output']['image_url'] ?? $resultData['output']['url'] ?? null;
+                }
+            }
+            
+            // Другие возможные форматы
+            if (!$imageUrl) {
+                $imageUrl = $resultData['images'][0]['url'] 
+                    ?? $resultData['result']['url']
+                    ?? $resultData['url']
+                    ?? $resultData['image_url']
+                    ?? null;
+            }
+            
+            $imageBase64 = $resultData['output'][0]['content'][0]['base64']
+                ?? $resultData['output']['image'] 
                 ?? $resultData['output']['base64']
                 ?? $resultData['images'][0]['base64']
-                ?? $resultData['result']['base64']
                 ?? $resultData['base64']
                 ?? $resultData['image']
                 ?? null;
             
             if ($imageUrl) {
-                $ctx = stream_context_create(['http' => ['timeout' => 30]]);
+                $ctx = stream_context_create(['http' => ['timeout' => 30], 'ssl' => ['verify_peer' => false]]);
                 $imageData = @file_get_contents($imageUrl, false, $ctx);
                 if ($imageData && strlen($imageData) > 1000) {
                     $path = saveAIImage($imageData);
@@ -321,7 +347,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
                         return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
                     }
                 }
-                return ['success' => false, 'error' => 'Failed to download image from: ' . $imageUrl];
+                return ['success' => false, 'error' => 'Failed to download image from URL'];
             }
             
             if ($imageBase64) {
