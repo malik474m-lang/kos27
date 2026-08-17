@@ -471,7 +471,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">🤖
 function agUpd(){let c=document.getElementById('ag-c').value,s=document.getElementById('ag-t');s.innerHTML='<option value="">Случайная</option>';if(c){let g=aTopics.find(t=>t.category===c);if(g)g.themes.forEach(th=>{s.innerHTML+='<option value="'+th+'">'+th+'</option>';});}}
 
 function agDo(){let cu=document.getElementById('ag-cu').value.trim(),tp=cu||document.getElementById('ag-t').value,ct=document.getElementById('ag-c').value,b=document.getElementById('ag-btn');b.disabled=true;b.textContent='⏳ Генерация...';
-ap('/generate-article',{method:'POST',body:JSON.stringify({topic:tp||null,category:ct||null})}).then(d=>{cm();if(d.success){let im=d.hasImage?'
+ap('/generate-article',{method:'POST',body:JSON.stringify({topic:tp||null,category:ct||null})}).then(d=>{cm();if(d.success){let im=d.hasImage?'\n\U0001f4f7 Обложка: '+(d.imageProvider||'есть'):'\n\U0001f4f7 Без обложки';let errNote=d.imageError?'\n\u26a0\ufe0f Картинка: '+d.imageError:'';let textErr=d.textError?'\n\u26a0\ufe0f Текст: '+d.textError:'';alert('Статья "'+d.article.title+'" создана!\n\U0001f916 '+d.aiProvider+im+errNote+textErr);}else alert('Ошибка: '+(d.error||d.textError||'неизвестная'));lA();}).catch(()=>{alert('Ошибка');b.disabled=false;b.textContent='\U0001f680 Сгенерировать';});}
 📷 Обложка: '+(d.imageProvider||'есть'):'
 📷 Без обложки';let errNote=d.imageError?'
 ⚠️ Картинка: '+d.imageError:'';let textErr=d.textError?'

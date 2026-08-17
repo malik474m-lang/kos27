@@ -252,6 +252,9 @@ if ($adminUri === '/app-stats') { require __DIR__ . '/admin/app-stats.php'; exit
 // Подписчики
 if ($adminUri === '/subscribers') { require __DIR__ . '/admin/subscribers.php'; exit; }
 
+// AI диагностика
+if ($adminUri === "/ai-debug") { require __DIR__ . "/admin/ai-debug.php"; exit; }
+
 // AI провайдеры
 if (str_starts_with($adminUri, "/ai-providers")) { require __DIR__ . "/admin/ai-providers.php"; exit; }
 
