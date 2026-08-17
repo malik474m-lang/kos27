@@ -350,6 +350,9 @@ $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, m
 
 $newArticle = $db->query("SELECT * FROM articles ORDER BY id DESC LIMIT 1")->fetch();
 
+// Диагностика AI провайдеров
+$aiDiag = getAIProvidersStatus();
+
 echo json_encode([
     'success' => true,
     'article' => $newArticle,
@@ -360,6 +363,12 @@ echo json_encode([
     'imageFallback' => !$imageResult['success'],
     'imageError' => $imageResult['error'] ?? null,
     'textError' => $aiResult['error'] ?? null,
+    'debug' => [
+        'activeText' => $aiDiag['active']['text'],
+        'activeImage' => $aiDiag['active']['image'],
+        'textPriority' => $aiDiag['priority']['text'],
+        'providers' => $aiDiag['text'],
+    ],
 ]);
 
 // ============================================================
