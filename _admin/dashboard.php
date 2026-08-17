@@ -5299,7 +5299,7 @@ function lAIP(){
         var tPri=d.status?.priority?.text||[],iPri=d.status?.priority?.image||[];
         var actT=d.status?.active?.text||'нет',actI=d.status?.active?.image||'нет';
         var tModels=d.availableTextModels||{},iModels=d.availableImageModels||{};
-        function optSel(arr,cur){return (arr||[]).map(function(m){return '<option value="'+m+'"'+(cur===m?' selected':'')+'>'+m+'</option>';}).join('');}
+        function optSel(obj,cur){if(!obj)return '';if(Array.isArray(obj)){return obj.map(function(m){return '<option value="'+m+'"'+(cur===m?' selected':'')+'>'+m+'</option>';}).join('');}return Object.keys(obj).map(function(k){var v=obj[k];return '<option value="'+k+'"'+(cur===k?' selected':'')+'>'+v+'</option>';}).join('');}
         function priItems(list,provs){return list.map(function(p){var pr=provs[p]||{};return '<div class="flex items-center gap-2 bg-gray-50 border p-3 rounded-lg cursor-move hover:bg-gray-100" data-provider="'+p+'"><span class="text-gray-400">☰</span><span class="flex-1 font-medium">'+(pr.name||p)+'</span><span class="text-xs text-gray-500">'+(pr.model||'')+'</span><span>'+(pr.available?'✅':'⚪')+'</span></div>';}).join('');}
 
         c.innerHTML='<div class="space-y-6">'+

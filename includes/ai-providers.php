@@ -23,7 +23,7 @@ function getAIProvidersConfig(): array {
         // OdiRouter
         'odirouter_enabled' => false,
         'odirouter_api_key' => '',
-        'odirouter_text_model' => 'gpt-5.5',
+        'odirouter_text_model' => 'gpt-5.6-luna-free',
         'odirouter_image_model' => 'nano_banana_2',
         
         // YandexGPT
@@ -125,7 +125,7 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
     $apiKey = $config['odirouter_api_key'] ?? '';
-    $model = $model ?? ($config['odirouter_text_model'] ?? 'gpt-5.5');
+    $model = $model ?? ($config['odirouter_text_model'] ?? 'gpt-5.6-luna-free');
     
     if (!$apiKey) {
         return ['success' => false, 'error' => 'OdiRouter API key not set'];
@@ -787,7 +787,7 @@ function getAIProvidersStatus(): array {
                 'enabled' => !empty($config['odirouter_enabled']),
                 'configured' => !empty($config['odirouter_api_key']),
                 'available' => isTextProviderAvailable('odirouter', $config),
-                'model' => $config['odirouter_text_model'] ?? 'gpt-5.5',
+                'model' => $config['odirouter_text_model'] ?? 'gpt-5.6-luna-free',
             ],
             'yandex_gpt' => [
                 'name' => 'YandexGPT',

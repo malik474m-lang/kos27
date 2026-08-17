@@ -32,12 +32,24 @@ if ($method === 'GET') {
         'status' => $status,
         'config' => $masked,
         'availableTextModels' => [
-            'odirouter' => ['gpt-5.5', 'gpt-5.4-mini', 'gemini-3.1-pro-preview', 'gemini-2.5-flash', 'claude-haiku-4.5', 'qwen3.5-plus'],
+            'odirouter' => [
+                'gpt-5.6-luna-free' => 'GPT-5.6 Luna (free)',
+                'gpt-5.4-mini-free' => 'GPT-5.4 Mini (free)',
+                'gemini-3.1-pro-preview-free' => 'Gemini 3.1 Pro Preview (free)',
+                'gemini-3.1-flash-lite-free' => 'Gemini 3.1 Flash-Lite (free)',
+                'gemini-2.5-pro-free' => 'Gemini 2.5 Pro (free)',
+                'gemini-2.5-flash-free' => 'Gemini 2.5 Flash (free)',
+                'claude-haiku-4.5-free' => 'Claude Haiku 4.5 (free)',
+                'qwen3.5-plus-free' => 'Qwen 3.5 Plus (free)',
+                'minimax-m2.7-free' => 'MiniMax M2.7 (free)',
+            ],
             'yandex_gpt' => ['yandexgpt-lite', 'yandexgpt', 'yandexgpt-32k'],
             'gigachat' => ['GigaChat', 'GigaChat-Pro', 'GigaChat-Max'],
         ],
         'availableImageModels' => [
-            'odirouter' => ['nano_banana_2', 'flux-1.1-pro', 'ideogram-v2'],
+            'odirouter' => [
+                'nano_banana_2' => 'Nano Banana 2 (free)',
+            ],
             'yandex_art' => ['yandex-art/latest'],
             'stability' => ['stable-image-core', 'stable-diffusion-xl'],
             'gigachat' => ['Kandinsky'],
