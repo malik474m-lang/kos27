@@ -143,7 +143,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // GET — список тем
 if ($method === 'GET') {
-    require_once __DIR__ . '/../../includes/ai-providers.php';
     $provStatus = getAIProvidersStatus();
     $activeText = $provStatus['active']['text'] ?? null;
     $activeImage = $provStatus['active']['image'] ?? null;
