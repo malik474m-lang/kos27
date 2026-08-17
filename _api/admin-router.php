@@ -39,7 +39,13 @@ if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/
 // Позиции
 if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
 
+// Перегенерация картинки статьи
+if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }
+
 // Генерация контактов оффера
+
+// Перегенерация картинки статьи
+if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }
 
 // Генерация справочной информации оффера
 if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
@@ -268,6 +274,9 @@ if ($adminUri === '/scheduler') { require __DIR__ . '/admin/scheduler.php'; exit
 if (str_starts_with($adminUri, '/two-factor')) { require __DIR__ . '/admin/two-factor.php'; exit; }
 // Смена пароля
 if ($adminUri === '/change-password' && $method === 'POST') { require __DIR__ . '/admin/change-password.php'; exit; }
+
+// Перегенерация картинки статьи
+if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }
 
 // Генерация
 if ($adminUri === '/generate-article') { require __DIR__ . '/admin/generate-article.php'; exit; }
