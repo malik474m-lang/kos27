@@ -143,13 +143,23 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // GET — список тем
 if ($method === 'GET') {
+    require_once __DIR__ . '/../../includes/ai-providers.php';
+    $provStatus = getAIProvidersStatus();
+    $activeText = $provStatus['active']['text'] ?? null;
+    $activeImage = $provStatus['active']['image'] ?? null;
+    $textName = $activeText ? ($provStatus['text'][$activeText]['name'] ?? $activeText) : 'нет';
+    $imageName = $activeImage ? ($provStatus['image'][$activeImage]['name'] ?? $activeImage) : 'нет';
+    
     echo json_encode([
         'topics' => $topicsList,
         'aiStatus' => [
-            'yandexGPT' => !empty(YANDEX_GPT_API_KEY),
-            'gigaChat' => false,
-            'yandexART' => !empty(YANDEX_GPT_API_KEY) && !empty(YANDEX_FOLDER_ID),
-            'articleImageProvider' => articleImageProviderLabel(getArticleImageSettings()['provider'] ?? 'yandex'),
+            'activeText' => $textName,
+            'activeImage' => $imageName,
+            'textProvider' => $activeText ?? '',
+            'imageProvider' => $activeImage ?? '',
+            // Legacy поля для совместимости
+            'yandexGPT' => $activeText !== null,
+            'articleImageProvider' => $imageName,
         ],
     ]);
     exit;
