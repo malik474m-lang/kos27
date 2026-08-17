@@ -5312,6 +5312,47 @@ function aiRegenImage(articleId){
     });
 }
 
+// === OdiRouter Key Pool ===
+function odiLoadKeys(){
+    var c=document.getElementById('odi-keys-list');
+    if(!c)return;
+    c.innerHTML='Загрузка...';
+    fetch(A+'/odirouter-keys').then(function(r){return r.json();}).then(function(d){
+        var keys=d.keys||[];
+        if(!keys.length){c.innerHTML='<p class="text-gray-400 py-2">Нет ключей в пуле. Ключи из настроек будут использоваться автоматически.</p>';return;}
+        var h='<div class="mb-2 text-xs text-gray-500">Всего запросов сегодня: <b>'+(d.total_remaining||0)+'</b> осталось из '+(keys.length*50)+'</div>';
+        h+='<div class="space-y-2">';
+        keys.forEach(function(k){
+            var pct=Math.round(k.used/k.limit*100);
+            var color=pct>=100?'bg-red-500':(pct>=80?'bg-yellow-500':'bg-green-500');
+            h+='<div class="flex items-center gap-3 p-2 rounded-lg '+(k.enabled?'bg-gray-50':'bg-gray-100 opacity-60')+'">'+
+                '<div class="flex-1 min-w-0">'+
+                '<div class="font-medium text-sm truncate">'+(k.name||'Без имени')+' <span class="text-xs text-gray-400">'+(k.masked||'')+'</span></div>'+
+                '<div class="flex items-center gap-2 mt-1"><div class="flex-1 bg-gray-200 rounded-full h-2" style="max-width:120px"><div class="'+color+' h-2 rounded-full" style="width:'+pct+'%"></div></div>'+
+                '<span class="text-xs text-gray-500">'+k.used+'/'+k.limit+'</span></div>'+
+                '</div>'+
+                '<button onclick="odiToggleKey(\''+k.id+'\',this)" class="text-xs px-2 py-1 rounded '+(k.enabled?'bg-green-100 text-green-700':'bg-gray-200 text-gray-500')+'">'+(k.enabled?'Вкл':'Выкл')+'</button>'+
+                '<button onclick="odiRemoveKey(\''+k.id+'\',this)" class="text-xs text-red-500 hover:text-red-700">✕</button>'+
+                '</div>';
+        });
+        h+='</div>';
+        h+='<div class="mt-2 flex gap-2"><button onclick="odiResetCounters()" class="text-xs text-blue-600 hover:underline">🔄 Сбросить счётчики</button></div>';
+        c.innerHTML=h;
+    }).catch(function(e){c.innerHTML='Ошибка: '+e.message;});
+}
+function odiAddKey(){
+    var key=document.getElementById('odi-new-key').value.trim();
+    var name=document.getElementById('odi-new-name').value.trim();
+    if(!key){alert('Введите API ключ');return;}
+    fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',key:key,name:name})}).then(function(r){return r.json();}).then(function(d){
+        if(d.success){document.getElementById('odi-new-key').value='';document.getElementById('odi-new-name').value='';odiLoadKeys();alert('Ключ добавлен!');}
+        else alert(d.error||'Ошибка');
+    });
+}
+function odiRemoveKey(id){if(!confirm('Удалить ключ?'))return;fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'remove',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
+function odiToggleKey(id){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'toggle',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
+function odiResetCounters(){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset'})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'Готово');odiLoadKeys();});}
+
 function lAIP(){
     var c=document.getElementById('p-aiproviders');
     c.innerHTML='<p class="text-gray-500">Загрузка...</p>';
@@ -5369,7 +5410,16 @@ function lAIP(){
         '<div><h4 class="font-medium mb-2">🖼️ Изображения</h4><div id="ai-ip" class="space-y-2">'+priItems(iPri,ip)+'</div></div>'+
         '</div></div>'+
 
-        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.chat_enabled?'border-emerald-500':'border-gray-300')+'">'+ 
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 border-orange-400">'+
+        '<div class="flex items-center justify-between mb-4"><div class="flex items-center gap-3"><span class="text-3xl">🔑</span><div><h3 class="font-bold text-lg">Пул API ключей OdiRouter</h3><p class="text-sm text-gray-500">Автоматическая ротация при исчерпании лимита (50/день)</p></div></div><button onclick="odiLoadKeys()" class="text-sm text-blue-600 hover:underline">🔄 Обновить</button></div>'+
+        '<div id="odi-keys-list" class="text-sm text-gray-500">Загрузка...</div>'+
+        '<div class="mt-4 flex flex-wrap gap-2">'+
+        '<input type="text" id="odi-new-key" placeholder="API ключ" class="input-f flex-1" style="min-width:200px">'+
+        '<input type="text" id="odi-new-name" placeholder="Название (необязательно)" class="input-f" style="width:200px">'+
+        '<button onclick="odiAddKey()" class="btn-p text-sm">+ Добавить ключ</button>'+
+        '</div></div>'+
+
+'<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.chat_enabled?'border-emerald-500':'border-gray-300')+'">'+ 
         '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">\U0001f4ac</span><div><h3 class="font-bold text-lg">AI-чат для посетителей</h3><p class="text-sm text-gray-500">Виджет чата на сайте</p></div></div><label class="flex items-center gap-2"><input type="checkbox" id="ai_chat_en" '+(cfg.chat_enabled?'checked':'')+' class="w-5 h-5"><span class="font-medium">'+(cfg.chat_enabled?'Вкл':'Выкл')+'</span></label></div>'+
         '<div class="grid md:grid-cols-2 gap-4">'+
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель чата</label><select id="ai_chat_model" class="sel-f">'+optSel(tModels.odirouter||{},cfg.chat_model||'free-gemini-2.5-flash')+'</select></div>'+
@@ -5386,6 +5436,7 @@ function lAIP(){
             new Sortable(document.getElementById('ai-tp'),{animation:150,onEnd:aiSavePri});
             new Sortable(document.getElementById('ai-ip'),{animation:150,onEnd:aiSavePri});
         }
+    odiLoadKeys();
     }).catch(function(e){c.innerHTML='<p class="text-red-500">Ошибка загрузки: '+e.message+'</p>';});
 }
 

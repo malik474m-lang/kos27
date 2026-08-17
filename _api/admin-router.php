@@ -261,6 +261,9 @@ if ($adminUri === '/subscribers') { require __DIR__ . '/admin/subscribers.php'; 
 // AI диагностика
 if ($adminUri === "/ai-debug") { require __DIR__ . "/admin/ai-debug.php"; exit; }
 
+// OdiRouter ключи
+if (str_starts_with($adminUri, "/odirouter-keys")) { require __DIR__ . "/admin/odirouter-keys.php"; exit; }
+
 // AI провайдеры
 if (str_starts_with($adminUri, "/ai-providers")) { require __DIR__ . "/admin/ai-providers.php"; exit; }
 

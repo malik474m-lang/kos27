@@ -9,6 +9,8 @@
  * - Stability AI (изображения)
  */
 
+require_once __DIR__ . '/odirouter-keys.php';
+
 // === Конфигурация провайдеров ===
 
 function getAIProvidersConfig(): array {
@@ -125,12 +127,14 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
-    $apiKey = $config['odirouter_api_key'] ?: ($config['odirouter_image_api_key'] ?? '');
     $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gemini-2.5-flash');
     
-    if (!$apiKey) {
-        return ['success' => false, 'error' => 'OdiRouter API key not set'];
+    // Получаем ключ из пула ротации
+    $activeKey = odiGetActiveKey('text');
+    if (!$activeKey) {
+        return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
+    $apiKey = $activeKey['key'];
     
     // Список моделей для retry при таймауте
     $fallbackModels = ['free-gemini-2.5-flash', 'free-gpt-5.4-mini', 'free-qwen3.7-plus', 'free-gemini-3.5-flash'];
@@ -199,12 +203,16 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             continue;
         }
         
-        return [
+        // Записываем использование ключа
+            odiTrackUsage($activeKey['id']);
+            return [
             'success' => true,
             'text' => $text,
             'provider' => 'odirouter',
             'model' => $tryModel,
             'usage' => $data['usage'] ?? null,
+            'key_name' => $activeKey['name'] ?? '',
+            'key_remaining' => ($activeKey['remaining'] ?? 0) - 1,
         ];
     }
     
@@ -213,12 +221,14 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 
 function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     $config = getAIProvidersConfig();
-    $apiKey = $config['odirouter_image_api_key'] ?? $config['odirouter_api_key'] ?? '';
     $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
     
-    if (!$apiKey) {
-        return ['success' => false, 'error' => 'OdiRouter API key not set'];
+    // Получаем ключ из пула ротации
+    $activeKey = odiGetActiveKey('image');
+    if (!$activeKey) {
+        return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит. Добавьте ещё ключи.'];
     }
+    $apiKey = $activeKey['key'];
     
     // Шаг 1: Запуск задачи
     $payload = [
@@ -367,7 +377,8 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
                 if ($imageData && strlen($imageData) > 1000) {
                     $path = saveAIImage($imageData);
                     if ($path) {
-                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+                        odiTrackUsage($activeKey['id']);
+                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
                     }
                 }
                 return ['success' => false, 'error' => 'Failed to download image from URL'];
