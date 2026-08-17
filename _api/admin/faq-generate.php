@@ -74,26 +74,9 @@ if ($apiKey && $folderId) {
 "
         . "Верни строго JSON массив объектов [{\"q\":\"вопрос\",\"a\":\"ответ\"}] без markdown.";
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key {$apiKey}\r\n",
-            'content' => json_encode([
-                'modelUri' => "gpt://{$folderId}/yandexgpt/latest",
-                'completionOptions' => ['stream' => false, 'temperature' => 0.5, 'maxTokens' => 2000],
-                'messages' => [
-                    ['role' => 'system', 'text' => 'Ты SEO-копирайтер финансового сайта. Генерируешь FAQ. Отвечай только валидным JSON массивом без markdown.'],
-                    ['role' => 'user', 'text' => $prompt]
-                ]
-            ]),
-            'timeout' => 30,
-            'ignore_errors' => true,
-        ]
-    ]));
-
-    if ($response) {
-        $json = json_decode($response, true);
-        $text = $json['result']['alternatives'][0]['message']['text'] ?? '';
+    $response = kosmozaimAIComplete('Ты SEO-копирайтер финансового сайта. Генерируешь FAQ. Отвечай только валидным JSON массивом без markdown.', $prompt);
+if ($response) {
+        $text = $response;
         // Извлекаем JSON из ответа
         $text = trim($text);
         $text = preg_replace('/^```json\s*/i', '', $text);

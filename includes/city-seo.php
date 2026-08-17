@@ -218,7 +218,7 @@ function generateCitySeoTemplate(array $city, string $category = 'microloans'): 
 }
 
 function generateCitySeoGPT(array $city, string $category = 'microloans'): ?array {
-    if (!YANDEX_GPT_API_KEY || !YANDEX_FOLDER_ID) return null;
+    require_once __DIR__ . '/ai-compat.php';
 
     $catLabels = ['microloans'=>'микрозаймы','credits'=>'банковские кредиты','credit_cards'=>'кредитные карты','debit_cards'=>'дебетовые карты'];
     $catLabel = $catLabels[$category] ?? 'финансовые продукты';
@@ -231,25 +231,10 @@ function generateCitySeoGPT(array $city, string $category = 'microloans'): ?arra
         . "Упомяни особенности получения {$catLabel} в {$city['prep']}, требования к заёмщикам, преимущества онлайн-оформления. "
         . "ВАЖНО: не добавляй год в квадратных скобках и вообще не используй формат вроде [2026]. Пиши только чистый текст. НЕ оборачивай в блоки кода. Без тройных кавычек. Без слова html в начале. Просто текст с HTML-тегами.";
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.5, 'maxTokens' => 4000],
-                'messages' => [
-                    ['role' => 'system', 'text' => "Ты SEO-копирайтер. Пиши на русском. Форматируй текст HTML-тегами: h3 для подзаголовков, p для абзацев, ul и li для списков. Никогда не оборачивай ответ в блоки кода (без тройных обратных кавычек). Не пиши слово html. Не добавляй год в квадратных скобках и не используй конструкции вида [2026]. Просто отдай готовый HTML-текст."],
-                    ['role' => 'user', 'text' => $prompt],
-                ],
-            ]),
-            'timeout' => 60,
-        ],
-    ]));
+    $response = kosmozaimAIComplete("Ты SEO-копирайтер. Пиши на русском. Форматируй текст HTML-тегами: h3 для подзаголовков, p для абзацев, ul и li для списков. Никогда не оборачивай ответ в блоки кода (без тройных обратных кавычек). Не пиши слово html. Не добавляй год в квадратных скобках и не используй конструкции вида [2026, $prompt);
 
     if (!$response) return null;
-    $data = json_decode($response, true);
-    $text = $data['result']['alternatives'][0]['message']['text'] ?? null;
+    $text = $response;
     if (!$text || mb_strlen($text) < 200) return null;
 
     // Чистим от markdown-мусора
@@ -262,7 +247,7 @@ function generateCitySeoGPT(array $city, string $category = 'microloans'): ?arra
         'seo_h1' => "{$catLabelUp} в {$city['prep']} — онлайн оформление",
         'seo_text' => $text,
         'meta_description' => "{$catLabelUp} в {$city['prep']}. Сравните условия, оформите онлайн. Быстрое одобрение.",
-        'generated_by' => 'yandexgpt',
+        'generated_by' => 'ai',
     ];
 }
 
@@ -322,7 +307,7 @@ function generateCityTagSeoTemplate(array $city, array $tag, string $category = 
 }
 
 function generateCityTagSeoGPT(array $city, array $tag, string $category = 'microloans'): ?array {
-    if (!YANDEX_GPT_API_KEY || !YANDEX_FOLDER_ID) return null;
+    require_once __DIR__ . '/ai-compat.php';
 
     $catLabels = ['microloans'=>'займы','credits'=>'кредиты','credit_cards'=>'кредитные карты','debit_cards'=>'дебетовые карты'];
     $catLabel = $catLabels[$category] ?? 'финансовые предложения';
@@ -334,21 +319,7 @@ function generateCityTagSeoGPT(array $city, array $tag, string $category = 'micr
         . "seo_text — 300-500 слов в HTML с абзацами и 2-3 подзаголовками. Без markdown. Без тройных кавычек. "
         . "Избегай дублей и канцелярита. Упомяни онлайн-оформление, сравнение условий и особенности запроса пользователя.";
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 3000],
-                'messages' => [
-                    ['role' => 'system', 'text' => 'Ты SEO-редактор финансового сайта. Отвечаешь только валидным JSON без markdown.'],
-                    ['role' => 'user', 'text' => $prompt],
-                ],
-            ]),
-            'timeout' => 90,
-        ],
-    ]));
+    $response = kosmozaimAIComplete('Ты SEO-редактор финансового сайта. Отвечаешь только валидным JSON без markdown.', $prompt);
     if (!$response) return null;
 
     $result = json_decode($response, true);
@@ -365,7 +336,7 @@ function generateCityTagSeoGPT(array $city, array $tag, string $category = 'micr
         'seo_h1' => mb_substr((string)$parsed['seo_h1'], 0, 500),
         'seo_text' => cleanGptHtml((string)($parsed['seo_text'] ?? '')),
         'meta_description' => mb_substr((string)($parsed['meta_description'] ?? ''), 0, 500),
-        'generated_by' => 'yandexgpt',
+        'generated_by' => 'ai',
     ];
 }
 

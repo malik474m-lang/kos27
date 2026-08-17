@@ -79,23 +79,10 @@ function callYandexGPT(string $prompt, string $systemPrompt = ''): ?string {
     }
     $messages[] = ['role' => 'user', 'text' => $prompt];
     
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 2000],
-                'messages' => $messages,
-            ]),
-            'timeout' => 60,
-        ],
-    ]));
+    $response = kosmozaimAIComplete('Ты помощник', $prompt);
+if (!$response) return null;
     
-    if (!$response) return null;
-    
-    $result = json_decode($response, true);
-    $text = $result['result']['alternatives'][0]['message']['text'] ?? null;
+    $text = $response;
     
     return $text ? trim($text) : null;
 }

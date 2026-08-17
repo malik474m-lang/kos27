@@ -56,29 +56,13 @@ if ($action === 'topics') {
     $sysPrompt = "Ты email-маркетолог финансового сервиса. Пишешь HTML-письма для рассылки на русском языке. Используй HTML-теги для форматирования. Без markdown, без блоков кода, без тройных кавычек.";
 }
 
-$response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-    'http' => [
-        'method' => 'POST',
-        'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-        'content' => json_encode([
-            'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-            'completionOptions' => ['stream' => false, 'temperature' => 0.6, 'maxTokens' => $action === 'topics' ? 1000 : 4000],
-            'messages' => [
-                ['role' => 'system', 'text' => $sysPrompt],
-                ['role' => 'user', 'text' => $prompt],
-            ],
-        ]),
-        'timeout' => 60,
-    ],
-]));
-
+$response = kosmozaimAIComplete($sysPrompt, $prompt);
 if (!$response) {
     echo json_encode(['error' => 'Нет ответа от YandexGPT']);
     exit;
 }
 
-$result = json_decode($response, true);
-$text = $result['result']['alternatives'][0]['message']['text'] ?? '';
+$text = $response;
 
 if (!$text) {
     echo json_encode(['error' => 'Пустой ответ от GPT']);

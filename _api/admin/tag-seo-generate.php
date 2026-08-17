@@ -80,26 +80,9 @@ if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
         . "Требования: h1 до 120 символов, краткое описание до 220 символов, metaTitle до 70 символов, metaDescription до 160 символов. "
         . "content — полезный SEO-текст 2-4 абзаца в HTML, с 2-3 подзаголовками и одним списком. Без markdown. searchQueries — 5-8 естественных поисковых запросов.";
 
-    $response = @file_get_contents('https://llm.api.cloud.yandex.net/foundationModels/v1/completion', false, stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\nAuthorization: Api-Key " . YANDEX_GPT_API_KEY . "\r\nx-folder-id: " . YANDEX_FOLDER_ID,
-            'content' => json_encode([
-                'modelUri' => 'gpt://' . YANDEX_FOLDER_ID . '/yandexgpt/latest',
-                'completionOptions' => ['stream' => false, 'temperature' => 0.4, 'maxTokens' => 2500],
-                'messages' => [
-                    ['role' => 'system', 'text' => 'Ты SEO-редактор финансового сайта. Возвращаешь только валидный JSON без markdown и пояснений.'],
-                    ['role' => 'user', 'text' => $prompt],
-                ],
-            ]),
-            'timeout' => 45,
-            'ignore_errors' => true,
-        ],
-    ]));
-
-    if ($response) {
-        $json = json_decode($response, true);
-        $text = (string)($json['result']['alternatives'][0]['message']['text'] ?? '');
+    $response = kosmozaimAIComplete('Ты SEO-редактор финансового сайта. Возвращаешь только валидный JSON без markdown и пояснений.', $prompt);
+if ($response) {
+    $text = trim((string)$response);
         $text = tag_clean_json_block($text);
         $parsed = json_decode($text, true);
         if (is_array($parsed)) {
