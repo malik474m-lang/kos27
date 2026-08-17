@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . "/ai-compat.php";
 /**
  * Генерация SEO-текстов для городов
  */
