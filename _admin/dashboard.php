@@ -113,8 +113,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway})[t]?.();}
+const TAB_LABELS={aiproviders:'AI провайдеры',direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway,aiproviders:lAIP})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function resetOpcache(){fetch(A+'/opcache-reset',{method:'POST'}).then(r=>r.json()).then(d=>{alert((d.message||'Результат неизвестен') + (d.enabled===false ? '\n\nopcache_reset() недоступен на хостинге.' : ''));}).catch(()=>alert('Ошибка сброса OPcache'));}
@@ -5289,294 +5289,119 @@ function saveSocialProof() {
     });
 }
 
+
+// === AI Providers (lAIP) ===
+function lAIP(){
+    var c=document.getElementById('p-aiproviders');
+    c.innerHTML='<p class="text-gray-500">Загрузка...</p>';
+    fetch(A+'/ai-providers').then(r=>r.json()).then(function(d){
+        var tp=d.status?.text||{},ip=d.status?.image||{},cfg=d.config||{};
+        var tPri=d.status?.priority?.text||[],iPri=d.status?.priority?.image||[];
+        var actT=d.status?.active?.text||'нет',actI=d.status?.active?.image||'нет';
+        var tModels=d.availableTextModels||{},iModels=d.availableImageModels||{};
+        function optSel(arr,cur){return (arr||[]).map(function(m){return '<option value="'+m+'"'+(cur===m?' selected':'')+'>'+m+'</option>';}).join('');}
+        function priItems(list,provs){return list.map(function(p){var pr=provs[p]||{};return '<div class="flex items-center gap-2 bg-gray-50 border p-3 rounded-lg cursor-move hover:bg-gray-100" data-provider="'+p+'"><span class="text-gray-400">☰</span><span class="flex-1 font-medium">'+(pr.name||p)+'</span><span class="text-xs text-gray-500">'+(pr.model||'')+'</span><span>'+(pr.available?'✅':'⚪')+'</span></div>';}).join('');}
+
+        c.innerHTML='<div class="space-y-6">'+
+        '<div class="flex items-center justify-between flex-wrap gap-4"><h2 class="text-xl font-bold">🤖 Управление AI провайдерами</h2><div class="flex gap-4 text-sm"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full">Текст: <b>'+actT+'</b></span><span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Изображение: <b>'+actI+'</b></span></div></div>'+
+
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.odirouter_enabled?'border-green-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🌐</span><div><h3 class="font-bold text-lg">OdiRouter</h3><p class="text-sm text-gray-500">200+ AI моделей (GPT, Gemini, Claude) + генерация изображений</p></div></div>'+
+        '<label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="ai_odi_en" '+(cfg.odirouter_enabled?'checked':'')+' class="sr-only peer"><div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div></label></div>'+
+        '<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label><input type="password" id="ai_odi_key" value="'+(cfg.odirouter_api_key_masked||'')+'" placeholder="Ваш API ключ" class="input-f"></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label><select id="ai_odi_tm" class="sel-f">'+optSel(tModels.odirouter,cfg.odirouter_text_model)+'</select></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label><select id="ai_odi_im" class="sel-f">'+optSel(iModels.odirouter,cfg.odirouter_image_model)+'</select></div>'+
+        '<div class="flex items-end gap-2"><button onclick="aiTest(\'odirouter\',\'text\')" class="btn-p text-xs py-2">🧪 Тест текста</button><button onclick="aiTest(\'odirouter\',\'image\')" class="btn-p text-xs py-2" style="background:#7c3aed">🖼 Тест картинки</button></div>'+
+        '</div></div>'+
+
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.yandex_gpt_enabled?'border-yellow-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🟡</span><div><h3 class="font-bold text-lg">Yandex Cloud</h3><p class="text-sm text-gray-500">YandexGPT (текст) + YandexART (изображения)</p></div></div>'+
+        '<div class="flex gap-4"><label class="flex items-center gap-1"><input type="checkbox" id="ai_ygpt_en" '+(cfg.yandex_gpt_enabled?'checked':'')+' class="w-5 h-5"> GPT</label><label class="flex items-center gap-1"><input type="checkbox" id="ai_yart_en" '+(cfg.yandex_art_enabled?'checked':'')+' class="w-5 h-5"> ART</label></div></div>'+
+        '<div class="grid md:grid-cols-3 gap-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label><input type="password" id="ai_ygpt_key" value="'+(cfg.yandex_gpt_api_key_masked||'')+'" placeholder="Api-Key" class="input-f"></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Folder ID</label><input type="text" id="ai_yfid" value="'+(cfg.yandex_folder_id||'')+'" placeholder="b1g..." class="input-f"></div>'+
+        '<div class="flex items-end gap-2"><button onclick="aiTest(\'yandex_gpt\',\'text\')" class="btn-p text-xs py-2">🧪 GPT</button><button onclick="aiTest(\'yandex_art\',\'image\')" class="btn-p text-xs py-2" style="background:#ea580c">🖼 ART</button></div>'+
+        '</div></div>'+
+
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.gigachat_enabled?'border-blue-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🔵</span><div><h3 class="font-bold text-lg">GigaChat (Сбер)</h3><p class="text-sm text-gray-500">GigaChat текст + Kandinsky изображения</p></div></div>'+
+        '<label class="flex items-center gap-2"><input type="checkbox" id="ai_gc_en" '+(cfg.gigachat_enabled?'checked':'')+' class="w-5 h-5"><span class="font-medium">'+(cfg.gigachat_enabled?'Вкл':'Выкл')+'</span></label></div>'+
+        '<div class="grid md:grid-cols-3 gap-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Auth Key (Base64)</label><input type="password" id="ai_gc_key" value="'+(cfg.gigachat_auth_key_masked||'')+'" placeholder="Basic ключ" class="input-f"></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Scope</label><select id="ai_gc_scope" class="sel-f"><option value="GIGACHAT_API_PERS"'+(cfg.gigachat_scope==='GIGACHAT_API_PERS'?' selected':'')+'>Личный</option><option value="GIGACHAT_API_CORP"'+(cfg.gigachat_scope==='GIGACHAT_API_CORP'?' selected':'')+'>Корпоративный</option></select></div>'+
+        '<div class="flex items-end gap-2"><button onclick="aiTest(\'gigachat\',\'text\')" class="btn-p text-xs py-2">🧪 Текст</button><button onclick="aiTest(\'gigachat\',\'image\')" class="btn-p text-xs py-2" style="background:#0891b2">🖼 Kandinsky</button></div>'+
+        '</div></div>'+
+
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.stability_enabled?'border-pink-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🎨</span><div><h3 class="font-bold text-lg">Stability AI</h3><p class="text-sm text-gray-500">Stable Diffusion (только изображения)</p></div></div>'+
+        '<label class="flex items-center gap-2"><input type="checkbox" id="ai_st_en" '+(cfg.stability_enabled?'checked':'')+' class="w-5 h-5"><span class="font-medium">'+(cfg.stability_enabled?'Вкл':'Выкл')+'</span></label></div>'+
+        '<div class="grid md:grid-cols-2 gap-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label><input type="password" id="ai_st_key" value="'+(cfg.stability_api_key_masked||'')+'" placeholder="sk-..." class="input-f"></div>'+
+        '<div class="flex items-end"><button onclick="aiTest(\'stability\',\'image\')" class="btn-p text-xs py-2" style="background:#db2777">🖼 Тест</button></div>'+
+        '</div></div>'+
+
+        '<div class="bg-white rounded-xl shadow p-6"><h3 class="font-bold text-lg mb-1">📊 Приоритет провайдеров</h3><p class="text-sm text-gray-500 mb-4">Перетащите для изменения порядка. Система использует первый доступный ✅ провайдер.</p>'+
+        '<div class="grid md:grid-cols-2 gap-6">'+
+        '<div><h4 class="font-medium mb-2">📝 Текст</h4><div id="ai-tp" class="space-y-2">'+priItems(tPri,tp)+'</div></div>'+
+        '<div><h4 class="font-medium mb-2">🖼️ Изображения</h4><div id="ai-ip" class="space-y-2">'+priItems(iPri,ip)+'</div></div>'+
+        '</div></div>'+
+
+        '<div class="flex justify-end"><button onclick="aiSaveAll()" class="btn-p text-base px-8 py-3">💾 Сохранить все настройки</button></div>'+
+        '</div>';
+
+        if(typeof Sortable!=='undefined'){
+            new Sortable(document.getElementById('ai-tp'),{animation:150,onEnd:aiSavePri});
+            new Sortable(document.getElementById('ai-ip'),{animation:150,onEnd:aiSavePri});
+        }
+    }).catch(function(e){c.innerHTML='<p class="text-red-500">Ошибка загрузки: '+e.message+'</p>';});
+}
+
+function aiSaveAll(){
+    var data={
+        odirouter_enabled:document.getElementById('ai_odi_en')?.checked||false,
+        odirouter_api_key:document.getElementById('ai_odi_key')?.value||'',
+        odirouter_text_model:document.getElementById('ai_odi_tm')?.value||'',
+        odirouter_image_model:document.getElementById('ai_odi_im')?.value||'',
+        yandex_gpt_enabled:document.getElementById('ai_ygpt_en')?.checked||false,
+        yandex_gpt_api_key:document.getElementById('ai_ygpt_key')?.value||'',
+        yandex_folder_id:document.getElementById('ai_yfid')?.value||'',
+        yandex_art_enabled:document.getElementById('ai_yart_en')?.checked||false,
+        gigachat_enabled:document.getElementById('ai_gc_en')?.checked||false,
+        gigachat_auth_key:document.getElementById('ai_gc_key')?.value||'',
+        gigachat_scope:document.getElementById('ai_gc_scope')?.value||'GIGACHAT_API_PERS',
+        stability_enabled:document.getElementById('ai_st_en')?.checked||false,
+        stability_api_key:document.getElementById('ai_st_key')?.value||'',
+        text_provider_priority:[...document.querySelectorAll('#ai-tp [data-provider]')].map(function(el){return el.dataset.provider;}),
+        image_provider_priority:[...document.querySelectorAll('#ai-ip [data-provider]')].map(function(el){return el.dataset.provider;})
+    };
+    fetch(A+'/ai-providers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(function(res){
+        if(res.success){alert('✅ Настройки AI сохранены');lAIP();}
+        else alert('Ошибка: '+(res.error||''),true);
+    }).catch(function(e){alert('Ошибка: '+e.message,true);});
+}
+
+function aiSavePri(){
+    var data={
+        text_provider_priority:[...document.querySelectorAll('#ai-tp [data-provider]')].map(function(el){return el.dataset.provider;}),
+        image_provider_priority:[...document.querySelectorAll('#ai-ip [data-provider]')].map(function(el){return el.dataset.provider;})
+    };
+    fetch(A+'/ai-providers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(function(){alert('Приоритет сохранён');}).catch(function(){});
+}
+
+function aiTest(provider,type){
+    alert('Тестирование '+provider+'...');
+    fetch(A+'/ai-providers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test',provider:provider,type:type})}).then(r=>r.json()).then(function(res){
+        if(res.result?.success){
+            if(type==='image'&&res.result.path){alert('✅ Изображение: '+res.result.path);window.open(res.result.path,'_blank');}
+            else if(res.result.text){alert('✅ '+res.result.text.substring(0,80)+'...');}
+            else alert('✅ Провайдер работает');
+        }else{alert('❌ '+(res.result?.error||'Ошибка'),true);}
+    }).catch(function(e){alert('Ошибка: '+e.message,true);});
+}
 </script>
 <?php include __DIR__ . "/patch-email-funnel.php"; ?>
 <?php include __DIR__ . "/patch-leads-su.php"; ?>
 <?php include __DIR__ . "/patch-article-inline-cta-stats.php"; ?>
 </body>
 </html>
-
-<script>
-// === AI Providers Tab ===
-async function loadAIProviders() {
-    const c = document.getElementById('p-aiproviders');
-    c.innerHTML = '<p class="text-gray-500">Загрузка...</p>';
-    
-    try {
-        const r = await fetch(A + '/ai-providers');
-        const d = await r.json();
-        
-        const textProviders = d.status?.text || {};
-        const imageProviders = d.status?.image || {};
-        const cfg = d.config || {};
-        const textPriority = d.status?.priority?.text || [];
-        const imagePriority = d.status?.priority?.image || [];
-        
-        let h = `
-        <div class="space-y-6">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <h2 class="text-xl font-bold text-gray-800">🤖 Управление AI провайдерами</h2>
-                <div class="flex gap-4 text-sm">
-                    <span class="text-gray-500">Активный текст: <strong class="text-green-600">${d.status?.active?.text || 'нет'}</strong></span>
-                    <span class="text-gray-500">Активное изображение: <strong class="text-green-600">${d.status?.active?.image || 'нет'}</strong></span>
-                </div>
-            </div>
-            
-            <!-- OdiRouter -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 ${cfg.odirouter_enabled ? 'border-green-500' : 'border-gray-300'}">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">🌐</span>
-                        <div>
-                            <h3 class="font-bold text-lg">OdiRouter</h3>
-                            <p class="text-sm text-gray-500">Универсальный роутер 200+ AI моделей</p>
-                        </div>
-                    </div>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="ai_odirouter_enabled" ${cfg.odirouter_enabled ? 'checked' : ''} class="w-5 h-5">
-                        <span class="font-medium">${cfg.odirouter_enabled ? 'Вкл' : 'Выкл'}</span>
-                    </label>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label>
-                        <input type="password" id="ai_odirouter_api_key" value="${cfg.odirouter_api_key_masked || ''}" placeholder="or-..." class="input-f">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label>
-                        <select id="ai_odirouter_text_model" class="sel-f">
-                            ${(d.availableTextModels?.odirouter || ['gpt-5.5','gpt-5.4-mini','gemini-2.5-flash','claude-haiku-4.5']).map(m => `<option value="${m}" ${cfg.odirouter_text_model === m ? 'selected' : ''}>${m}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label>
-                        <select id="ai_odirouter_image_model" class="sel-f">
-                            ${(d.availableImageModels?.odirouter || ['nano_banana_2']).map(m => `<option value="${m}" ${cfg.odirouter_image_model === m ? 'selected' : ''}>${m}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button onclick="testAIProvider('odirouter','text')" class="btn-p text-xs py-2">🧪 Текст</button>
-                        <button onclick="testAIProvider('odirouter','image')" class="btn-p text-xs py-2 bg-purple-600 hover:bg-purple-700">🖼️ Картинка</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- YandexGPT -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 ${cfg.yandex_gpt_enabled ? 'border-yellow-500' : 'border-gray-300'}">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">🟡</span>
-                        <div>
-                            <h3 class="font-bold text-lg">Yandex Cloud</h3>
-                            <p class="text-sm text-gray-500">YandexGPT + YandexART</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" id="ai_yandex_gpt_enabled" ${cfg.yandex_gpt_enabled ? 'checked' : ''} class="w-5 h-5">
-                            <span class="text-sm">GPT</span>
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" id="ai_yandex_art_enabled" ${cfg.yandex_art_enabled ? 'checked' : ''} class="w-5 h-5">
-                            <span class="text-sm">ART</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label>
-                        <input type="password" id="ai_yandex_gpt_api_key" value="${cfg.yandex_gpt_api_key_masked || ''}" placeholder="Api-Key" class="input-f">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Folder ID</label>
-                        <input type="text" id="ai_yandex_folder_id" value="${cfg.yandex_folder_id || ''}" placeholder="b1g..." class="input-f">
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button onclick="testAIProvider('yandex_gpt','text')" class="btn-p text-xs py-2">🧪 GPT</button>
-                        <button onclick="testAIProvider('yandex_art','image')" class="btn-p text-xs py-2 bg-orange-500 hover:bg-orange-600">🖼️ ART</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- GigaChat -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 ${cfg.gigachat_enabled ? 'border-blue-500' : 'border-gray-300'}">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">🔵</span>
-                        <div>
-                            <h3 class="font-bold text-lg">GigaChat (Сбер)</h3>
-                            <p class="text-sm text-gray-500">GigaChat + Kandinsky</p>
-                        </div>
-                    </div>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="ai_gigachat_enabled" ${cfg.gigachat_enabled ? 'checked' : ''} class="w-5 h-5">
-                        <span class="font-medium">${cfg.gigachat_enabled ? 'Вкл' : 'Выкл'}</span>
-                    </label>
-                </div>
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Auth Key (Base64)</label>
-                        <input type="password" id="ai_gigachat_auth_key" value="${cfg.gigachat_auth_key_masked || ''}" placeholder="Basic ключ" class="input-f">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Scope</label>
-                        <select id="ai_gigachat_scope" class="sel-f">
-                            <option value="GIGACHAT_API_PERS" ${cfg.gigachat_scope === 'GIGACHAT_API_PERS' ? 'selected' : ''}>Личный</option>
-                            <option value="GIGACHAT_API_CORP" ${cfg.gigachat_scope === 'GIGACHAT_API_CORP' ? 'selected' : ''}>Корпоративный</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button onclick="testAIProvider('gigachat','text')" class="btn-p text-xs py-2">🧪 Текст</button>
-                        <button onclick="testAIProvider('gigachat','image')" class="btn-p text-xs py-2 bg-cyan-600">🖼️ Kandinsky</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Stability AI -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 ${cfg.stability_enabled ? 'border-pink-500' : 'border-gray-300'}">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">🎨</span>
-                        <div>
-                            <h3 class="font-bold text-lg">Stability AI</h3>
-                            <p class="text-sm text-gray-500">Stable Diffusion (изображения)</p>
-                        </div>
-                    </div>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="ai_stability_enabled" ${cfg.stability_enabled ? 'checked' : ''} class="w-5 h-5">
-                        <span class="font-medium">${cfg.stability_enabled ? 'Вкл' : 'Выкл'}</span>
-                    </label>
-                </div>
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">API ключ</label>
-                        <input type="password" id="ai_stability_api_key" value="${cfg.stability_api_key_masked || ''}" placeholder="sk-..." class="input-f">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="testAIProvider('stability','image')" class="btn-p text-xs py-2 bg-pink-600 hover:bg-pink-700">🖼️ Тест</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Приоритеты -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="font-bold text-lg mb-4">📊 Приоритет провайдеров <span class="text-sm font-normal text-gray-500">(перетащите для изменения)</span></h3>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="font-medium mb-2">Текст</h4>
-                        <div id="ai-text-priority" class="space-y-2">
-                            ${textPriority.map(p => `<div class="flex items-center gap-2 bg-gray-100 p-2 rounded cursor-move" data-provider="${p}"><span>☰</span><span class="flex-1">${textProviders[p]?.name || p}</span><span class="${textProviders[p]?.available ? 'text-green-500' : 'text-gray-400'}">${textProviders[p]?.available ? '✅' : '⚪'}</span></div>`).join('')}
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-medium mb-2">Изображения</h4>
-                        <div id="ai-image-priority" class="space-y-2">
-                            ${imagePriority.map(p => `<div class="flex items-center gap-2 bg-gray-100 p-2 rounded cursor-move" data-provider="${p}"><span>☰</span><span class="flex-1">${imageProviders[p]?.name || p}</span><span class="${imageProviders[p]?.available ? 'text-green-500' : 'text-gray-400'}">${imageProviders[p]?.available ? '✅' : '⚪'}</span></div>`).join('')}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex justify-end">
-                <button onclick="saveAllAI()" class="btn-p text-lg px-8">💾 Сохранить все настройки</button>
-            </div>
-        </div>`;
-        
-        c.innerHTML = h;
-        
-        if (typeof Sortable !== 'undefined') {
-            new Sortable(document.getElementById('ai-text-priority'), { animation: 150, onEnd: saveAIPriority });
-            new Sortable(document.getElementById('ai-image-priority'), { animation: 150, onEnd: saveAIPriority });
-        }
-    } catch (e) {
-        c.innerHTML = '<p class="text-red-500">Ошибка: ' + e.message + '</p>';
-    }
-}
-
-async function saveAllAI() {
-    const data = {
-        odirouter_enabled: document.getElementById('ai_odirouter_enabled')?.checked,
-        odirouter_api_key: document.getElementById('ai_odirouter_api_key')?.value,
-        odirouter_text_model: document.getElementById('ai_odirouter_text_model')?.value,
-        odirouter_image_model: document.getElementById('ai_odirouter_image_model')?.value,
-        yandex_gpt_enabled: document.getElementById('ai_yandex_gpt_enabled')?.checked,
-        yandex_gpt_api_key: document.getElementById('ai_yandex_gpt_api_key')?.value,
-        yandex_folder_id: document.getElementById('ai_yandex_folder_id')?.value,
-        yandex_art_enabled: document.getElementById('ai_yandex_art_enabled')?.checked,
-        gigachat_enabled: document.getElementById('ai_gigachat_enabled')?.checked,
-        gigachat_auth_key: document.getElementById('ai_gigachat_auth_key')?.value,
-        gigachat_scope: document.getElementById('ai_gigachat_scope')?.value,
-        stability_enabled: document.getElementById('ai_stability_enabled')?.checked,
-        stability_api_key: document.getElementById('ai_stability_api_key')?.value,
-        text_provider_priority: [...document.querySelectorAll('#ai-text-priority [data-provider]')].map(el => el.dataset.provider),
-        image_provider_priority: [...document.querySelectorAll('#ai-image-priority [data-provider]')].map(el => el.dataset.provider),
-    };
-    
-    try {
-        const r = await fetch(A + '/ai-providers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const res = await r.json();
-        if (res.success) {
-            toast('✅ Настройки AI сохранены');
-            loadAIProviders();
-        } else {
-            toast('Ошибка: ' + (res.error || 'неизвестная'), true);
-        }
-    } catch (e) {
-        toast('Ошибка: ' + e.message, true);
-    }
-}
-
-async function saveAIPriority() {
-    const data = {
-        text_provider_priority: [...document.querySelectorAll('#ai-text-priority [data-provider]')].map(el => el.dataset.provider),
-        image_provider_priority: [...document.querySelectorAll('#ai-image-priority [data-provider]')].map(el => el.dataset.provider),
-    };
-    try {
-        await fetch(A + '/ai-providers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        toast('Приоритет сохранён');
-    } catch (e) {}
-}
-
-async function testAIProvider(provider, type) {
-    toast('Тестирование ' + provider + '...');
-    try {
-        const r = await fetch(A + '/ai-providers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'test', provider, type })
-        });
-        const res = await r.json();
-        if (res.result?.success) {
-            if (type === 'image' && res.result.path) {
-                toast('✅ Изображение: ' + res.result.path);
-                window.open(res.result.path, '_blank');
-            } else if (res.result.text) {
-                toast('✅ ' + res.result.text.substring(0, 80) + '...');
-            } else {
-                toast('✅ Провайдер работает');
-            }
-        } else {
-            toast('❌ ' + (res.result?.error || 'Ошибка'), true);
-        }
-    } catch (e) {
-        toast('Ошибка: ' + e.message, true);
-    }
-}
-
-// Расширяем sw для загрузки AI провайдеров
-const _origSw = typeof sw === 'function' ? sw : null;
-if (_origSw) {
-    sw = function(t) {
-        _origSw(t);
-        if (t === 'aiproviders') loadAIProviders();
-    };
-}
-</script>
