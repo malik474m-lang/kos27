@@ -1153,7 +1153,7 @@ var filtered=list.filter(function(item){
   return (!_ctsCityFilter || item.city_slug===_ctsCityFilter) && (!_ctsTagFilter || item.tag_slug===_ctsTagFilter);
 });
 var h='';
-h+='<div class="mt-10 flex flex-col gap-4 mb-6"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"><h2 class="text-xl font-bold">🏷️ SEO-тексты для страниц город + тег</h2><div class="flex flex-wrap gap-2"><select id="cts-overwrite" onchange="_ctsOverwrite=this.value===\'1\'" class="sel-f text-sm w-auto"><option value="0"'+(!_ctsOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_ctsOverwrite?' selected':'')+'>Перезаписать существующие</option></select><button type="button" onclick="openCityScopePicker(&#39;cts&#39;)" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-50">🏙 '+cityScopeLabel(_ctsCitySlugs)+'</button><button onclick="ctsGen(false)" class="btn-p text-sm" id="cts-gen-btn">⚡ Шаблоны</button><button onclick="ctsGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cts-gpt-btn">🤖 YandexGPT</button><button onclick="ctsClean(&#39;markdown&#39;)" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Markdown</button><button onclick="ctsClean(&#39;plain&#39;)" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button></div></div>';
+h+='<div class="mt-10 flex flex-col gap-4 mb-6"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"><h2 class="text-xl font-bold">🏷️ SEO-тексты для страниц город + тег</h2><div class="flex flex-wrap gap-2"><select id="cts-overwrite" onchange="_ctsOverwrite=this.value===\'1\'" class="sel-f text-sm w-auto"><option value="0"'+(!_ctsOverwrite?' selected':'')+'>Только отсутствующие</option><option value="1"'+(_ctsOverwrite?' selected':'')+'>Перезаписать существующие</option></select><button type="button" onclick="openCityScopePicker(&#39;cts&#39;)" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-50">🏙 '+cityScopeLabel(_ctsCitySlugs)+'</button><button onclick="ctsGen(false)" class="btn-p text-sm" id="cts-gen-btn">⚡ Шаблоны</button><button onclick="ctsGen(true)" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-purple-700" id="cts-gpt-btn">🤖 AI</button><button onclick="ctsClean(&#39;markdown&#39;)" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-700">🧹 Markdown</button><button onclick="ctsClean(&#39;plain&#39;)" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button></div></div>';
 h+='<div class="grid md:grid-cols-2 gap-3 bg-white rounded-xl border p-4"><div><label class="block text-xs font-medium mb-1">Фильтр по городу</label><select id="cts-city-filter" onchange="_ctsCityFilter=this.value;lCS()" class="sel-f text-sm">'+cityOptions+'</select></div><div><label class="block text-xs font-medium mb-1">Фильтр по тегу</label><select id="cts-tag-filter" onchange="_ctsTagFilter=this.value;lCS()" class="sel-f text-sm">'+tagOptions+'</select></div></div></div>';
 h+='<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 text-sm text-indigo-700">';
 h+='<strong>Что генерируется:</strong> title, H1, description и SEO-текст для страниц вида <code>/город/type/тег</code>. Например: <code>/zajmy/tyumen/type/bez-otkaza</code>. Фильтры выше можно использовать для выборочной генерации, а режим справа — для перезаписи существующих записей.';
@@ -3072,17 +3072,12 @@ h+='<div><input type="file" id="set-favicon-file" accept="image/png,image/svg+xm
 h+='</div></div>';
 h+='</div>';
 
-// YandexGPT
-h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">🤖 Yandex GPT (генерация текстов и картинок)</h3>';
-h+='<div class="grid md:grid-cols-2 gap-4">';
-h+='<div><label class="block text-sm font-medium mb-1">API Key</label><input type="text" id="set-gpt-key" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_gpt_api_key_masked||siteSettings.yandex_gpt_api_key||'')+'" placeholder="AQVN..."></div>';
-h+='<div><label class="block text-sm font-medium mb-1">Folder ID</label><input type="text" id="set-folder" class="input-f font-mono text-sm" value="'+e(siteSettings.yandex_folder_id||'')+'" placeholder="b1g..."></div>';
-h+='<div><label class="block text-sm font-medium mb-1">Провайдер картинок статей</label><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">Управление AI → вкладка <b>🤖 AI провайдеры</b></div></div>';
-h+='<div><label class="block text-sm font-medium mb-1">GigaChat scope</label><select id="set-gigachat-scope" class="sel-f"><option value="GIGACHAT_API_PERS"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_PERS'?' selected':'')+'>GIGACHAT_API_PERS</option><option value="GIGACHAT_API_B2B"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_B2B'?' selected':'')+'>GIGACHAT_API_B2B</option><option value="GIGACHAT_API_CORP"'+((siteSettings.gigachat_scope||'GIGACHAT_API_PERS')==='GIGACHAT_API_CORP'?' selected':'')+'>GIGACHAT_API_CORP</option></select></div>';
-h+='<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка статьи. Пример: <code>нарисуй 16:9 {title}</code></p></div>';
-h+='<div><label class="block text-sm font-medium mb-1">Stability API Key</label><input type="text" id="set-stability-key" class="input-f font-mono text-sm" value="'+e(siteSettings.stability_api_key_masked||siteSettings.stability_api_key||'')+'" placeholder="sk-..."><button type="button" onclick="testImageProvider(&#39;stability&#39;)" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест Stability</button></div>';
-h+='<div><label class="block text-sm font-medium mb-1">GigaChat Authorization Key</label><input type="text" id="set-gigachat-auth" class="input-f font-mono text-sm" value="'+e(siteSettings.gigachat_auth_key_masked||siteSettings.gigachat_auth_key||'')+'" placeholder="Basic auth key"><button type="button" onclick="testImageProvider(&#39;gigachat&#39;)" class="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold">🧪 Тест GigaChat</button></div>';
-h+='<div class="md:col-span-2" id="image-provider-test-result"></div>';
+// AI провайдеры — настройки перенесены
+h+='<div class="bg-white rounded-xl border p-6"><h3 class="text-lg font-bold mb-4">🤖 AI провайдеры</h3>';
+h+='<p class="text-gray-600 mb-4">Все настройки AI (ключи, модели, приоритеты) перенесены в отдельный раздел.</p>';
+h+='<button type="button" onclick="sw(\'aiproviders\')" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold">🤖 Перейти к настройкам AI провайдеров →</button>';
+h+='<div class="mt-4"><label class="block text-sm font-medium mb-1">Шаблон промпта для картинок статей</label><input type="text" id="set-article-image-prompt" class="input-f" value="'+e(siteSettings.article_image_prompt_template||'нарисуй 16:9 {title}')+'" placeholder="нарисуй 16:9 {title}"><p class="text-xs text-gray-500 mt-1">Используйте <code>{title}</code> для подстановки заголовка</p></div>';
+h+='</div></div>';
 h+='</div>';
 h+='<div class="bg-white rounded-xl border p-6 mt-6"><h3 class="font-bold mb-4">🔗 Leads.su (партнёрская сеть)</h3>';
 h+='<div><label class="block text-sm font-medium mb-1">API токен leads.su</label><input type="text" id="set-leads-su-token" class="input-f font-mono text-sm" value="'+e(siteSettings.leads_su_api_token_masked||siteSettings.leads_su_api_token||'')+'" placeholder="Вставьте токен из webmaster.leads.su"><p class="text-xs text-gray-500 mt-1">Получить: <a href="https://webmaster.leads.su/account/default" target="_blank" class="text-blue-600 hover:underline">webmaster.leads.su → Аккаунт</a></p></div>';
@@ -3134,14 +3129,14 @@ function setSave(ev){if(ev)ev.preventDefault();
 var data={
 site_name:document.getElementById('set-name').value,
 site_url:document.getElementById('set-url').value,
-yandex_gpt_api_key:document.getElementById('set-gpt-key').value,
-yandex_folder_id:document.getElementById('set-folder').value,
+// (moved to AI providers tab)
+// (moved to AI providers tab)
 article_image_prompt_template:document.getElementById('set-article-image-prompt').value,
 article_image_provider:siteSettings.article_image_provider||'yandex',
-stability_api_key:document.getElementById('set-stability-key').value,
+// (moved to AI providers tab)
 leads_su_api_token:document.getElementById('set-leads-su-token').value,
-gigachat_auth_key:document.getElementById('set-gigachat-auth').value,
-gigachat_scope:document.getElementById('set-gigachat-scope').value,
+// (moved to AI providers tab)
+// (moved to AI providers tab)
 yandex_metrika_id:document.getElementById('set-metrika').value,
 google_analytics_id:document.getElementById('set-ga').value,
 contact_email:document.getElementById('set-contact-email').value,
@@ -4440,7 +4435,7 @@ h+='<div class="p-3 rounded-lg '+(svc.yandex_webmaster?'bg-green-50':'bg-yellow-
 h+='<div class="p-3 rounded-lg '+(svc.yandex_gpt?'bg-green-50':'bg-red-50')+'"><span class="text-lg">'+(svc.yandex_gpt?'✅':'❌')+'</span><p class="text-sm font-medium mt-1">YandexGPT / YandexART</p></div>';
 h+='<div class="p-3 rounded-lg bg-gray-50 lg:col-span-2"><p class="text-xs text-gray-500">Провайдер картинок статей</p><p class="text-sm font-semibold text-gray-900 mt-1">'+e((svc.article_image_provider||'yandex').toString())+'</p><p class="text-[11px] text-gray-400 mt-1">Промпт: '+e((svc.article_image_prompt_template||'').toString())+'</p></div>';
 h+='</div>';
-h+='<div class="mt-3 bg-white border border-gray-200 rounded-lg p-3"><div class="flex items-center justify-between gap-3 mb-2"><h4 class="font-semibold text-sm text-gray-800">🖼️ Последние генерации картинок</h4><span class="text-[11px] text-gray-400">Тесты провайдеров: Настройки → Yandex GPT</span></div>';
+h+='<div class="mt-3 bg-white border border-gray-200 rounded-lg p-3"><div class="flex items-center justify-between gap-3 mb-2"><h4 class="font-semibold text-sm text-gray-800">🖼️ Последние генерации картинок</h4><span class="text-[11px] text-gray-400">Настройки AI → вкладка AI провайдеры</span></div>';
 if(svc.article_image_recent&&svc.article_image_recent.length){
   h+='<div class="space-y-2 max-h-56 overflow-y-auto">';
   svc.article_image_recent.forEach(function(it){
