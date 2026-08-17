@@ -37,6 +37,7 @@ if ($apiUri === '/giveaway/active') {
     } catch (Exception $e) { echo json_encode(null); }
     exit;
 }
+if ($apiUri === '/chat' && $_SERVER['REQUEST_METHOD'] === 'POST') { require __DIR__ . '/chat.php'; exit; }
 if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 

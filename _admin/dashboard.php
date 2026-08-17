@@ -5369,6 +5369,16 @@ function lAIP(){
         '<div><h4 class="font-medium mb-2">🖼️ Изображения</h4><div id="ai-ip" class="space-y-2">'+priItems(iPri,ip)+'</div></div>'+
         '</div></div>'+
 
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.chat_enabled?'border-emerald-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">💬</span><div><h3 class="font-bold text-lg">AI-чат для посетителей</h3><p class="text-sm text-gray-500">Виджет чата на сайте — отвечает на вопросы посетителей</p></div></div>'+
+        '<label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="ai_chat_en" '+(cfg.chat_enabled?'checked':'')+' class="sr-only peer"><div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div></label></div>'+
+        '<div class="grid md:grid-cols-2 gap-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель чата</label><select id="ai_chat_model" class="sel-f">'+optSel(tModels.odirouter||{},cfg.chat_model||"free-gemini-2.5-flash")+'</select></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Лимит запросов/час на IP</label><input type="number" id="ai_chat_limit" value="'+(cfg.chat_rate_limit||30)+'" min="1" max="200" class="input-f"></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Заголовок чата</label><input type="text" id="ai_chat_title" value="'+(cfg.chat_title||"")+'" placeholder="Помощник '+siteName+'" class="input-f"></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Приветствие</label><input type="text" id="ai_chat_greeting" value="'+(cfg.chat_greeting||"")+'" placeholder="Здравствуйте! Задайте вопрос..." class="input-f"></div>'+
+        '<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Системный промпт (инструкция для AI)</label><textarea id="ai_chat_prompt" rows="3" class="input-f" placeholder="Ты помощник финансового сайта...">'+(cfg.chat_system_prompt||"")+'</textarea><p class="text-xs text-gray-500 mt-1">Оставьте пустым для промпта по умолчанию</p></div>'+
+        '</div></div>'+
         '<div class="flex justify-end"><button onclick="aiSaveAll()" class="btn-p text-base px-8 py-3">💾 Сохранить все настройки</button></div>'+
         '</div>';
 
@@ -5395,6 +5405,12 @@ function aiSaveAll(){
         gigachat_scope:document.getElementById('ai_gc_scope')?.value||'GIGACHAT_API_PERS',
         stability_enabled:document.getElementById('ai_st_en')?.checked||false,
         stability_api_key:document.getElementById('ai_st_key')?.value||'',
+        chat_enabled:document.getElementById('ai_chat_en')?.checked||false,
+        chat_model:document.getElementById('ai_chat_model')?.value||'',
+        chat_rate_limit:parseInt(document.getElementById('ai_chat_limit')?.value||'30'),
+        chat_title:document.getElementById('ai_chat_title')?.value||'',
+        chat_greeting:document.getElementById('ai_chat_greeting')?.value||'',
+        chat_system_prompt:document.getElementById('ai_chat_prompt')?.value||'',
         text_provider_priority:[...document.querySelectorAll('#ai-tp [data-provider]')].map(function(el){return el.dataset.provider;}),
         image_provider_priority:[...document.querySelectorAll('#ai-ip [data-provider]')].map(function(el){return el.dataset.provider;})
     };
@@ -5406,6 +5422,12 @@ function aiSaveAll(){
 
 function aiSavePri(){
     var data={
+        chat_enabled:document.getElementById('ai_chat_en')?.checked||false,
+        chat_model:document.getElementById('ai_chat_model')?.value||'',
+        chat_rate_limit:parseInt(document.getElementById('ai_chat_limit')?.value||'30'),
+        chat_title:document.getElementById('ai_chat_title')?.value||'',
+        chat_greeting:document.getElementById('ai_chat_greeting')?.value||'',
+        chat_system_prompt:document.getElementById('ai_chat_prompt')?.value||'',
         text_provider_priority:[...document.querySelectorAll('#ai-tp [data-provider]')].map(function(el){return el.dataset.provider;}),
         image_provider_priority:[...document.querySelectorAll('#ai-ip [data-provider]')].map(function(el){return el.dataset.provider;})
     };

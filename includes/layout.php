@@ -477,6 +477,7 @@ function updateThemeIcons(isDark){
     try{var isDark=document.documentElement.classList.contains('dark');updateThemeIcons(isDark);}catch(e){}
 })();
 </script>
+<?php require_once __DIR__ . "/chat-widget.php"; echo renderChatWidget(); ?>
 </body>
 </html>
 <?php pageCacheEnd(); ?>

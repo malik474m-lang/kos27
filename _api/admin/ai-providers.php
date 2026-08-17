@@ -99,6 +99,7 @@ if ($method === 'POST') {
         'gigachat_enabled', 'gigachat_auth_key', 'gigachat_scope',
         'stability_enabled', 'stability_api_key',
         'text_provider_priority', 'image_provider_priority',
+        'chat_enabled', 'chat_model', 'chat_title', 'chat_greeting', 'chat_system_prompt', 'chat_rate_limit',
     ];
     
     $toSave = [];
@@ -114,7 +115,7 @@ if ($method === 'POST') {
             }
             
             // Boolean поля
-            if (str_ends_with($field, '_enabled')) {
+            if (str_ends_with($field, '_enabled') || $field === 'chat_enabled') {
                 $toSave[$field] = !empty($value);
             }
             // Массивы приоритетов
