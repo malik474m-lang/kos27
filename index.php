@@ -222,6 +222,41 @@ if (preg_match('#^/karty/debetovye/q/([a-z0-9-]+)$#', $uri, $m)) {
     require __DIR__ . '/pages/subcategory.php'; exit;
 }
 
+
+// Подкатегории (дополнительные запросы)
+if (preg_match('#^/zajmy/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatSlug = $m[1]; $subcatCategory = 'microloans'; $subcatCitySlug = '';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/zajmy/([a-z0-9-]+)/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatCitySlug = $m[1]; $subcatSlug = $m[2]; $subcatCategory = 'microloans';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/kredity/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatSlug = $m[1]; $subcatCategory = 'credits'; $subcatCitySlug = '';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/kredity/([a-z0-9-]+)/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatCitySlug = $m[1]; $subcatSlug = $m[2]; $subcatCategory = 'credits';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/karty/kreditnye/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatSlug = $m[1]; $subcatCategory = 'credit_cards'; $subcatCitySlug = '';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/karty/kreditnye/([a-z0-9-]+)/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatCitySlug = $m[1]; $subcatSlug = $m[2]; $subcatCategory = 'credit_cards';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/karty/debetovye/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatSlug = $m[1]; $subcatCategory = 'debit_cards'; $subcatCitySlug = '';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+if (preg_match('#^/karty/debetovye/([a-z0-9-]+)/q/([a-z0-9-]+)$#', $uri, $m)) {
+    $subcatCitySlug = $m[1]; $subcatSlug = $m[2]; $subcatCategory = 'debit_cards';
+    require __DIR__ . '/pages/subcategory.php'; exit;
+}
+
 if (preg_match('#^/zajmy/([a-z0-9-]+)/type/([a-z0-9-]+)$#', $uri, $m)) {
     $citySlug = $m[1];
     $typeSlug = $m[2];

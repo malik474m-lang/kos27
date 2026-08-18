@@ -66,6 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('direct')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="direct">📣 Директ</button>
 <button onclick="sw('leadssu')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="leadssu">🔗 Leads.su</button>
 <button onclick="sw('emailfunnel')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="emailfunnel">📧 Email-воронка</button>
+<button onclick="sw('subcats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subcats">📑 Допзапросы</button>
 <button onclick="sw('aiproviders')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="aiproviders">🤖 AI провайдеры</button>
 </div></div></div>
 <div class="bg-gray-50 border-b"><div class="max-w-7xl mx-auto px-4 py-3 text-sm text-gray-500" id="admin-breadcrumb">Админка</div></div>
@@ -104,6 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-direct" class="tp hidden"></div>
 <div id="p-leadssu" class="tp hidden"></div>
 <div id="p-emailfunnel" class="tp hidden"></div>
+<div id="p-subcats" class="tp hidden"></div>
 <div id="p-aiproviders" class="tp hidden"></div>
 </div>
 <div id="M"></div>
@@ -115,8 +117,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(e){throw new Error((t||('HTTP '+r.status)).slice(0,500));}if(!r.ok){throw new Error((d&&d.error)||('HTTP '+r.status));}return d;});});}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={aiproviders:'AI провайдеры',direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',subcats:'Доп. запросы',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,subcats:lSubcats,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway,aiproviders:lAIP})[t]?.();}
+const TAB_LABELS={aiproviders:'AI провайдеры',direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',subcats:'Допзапросы',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',subcats:'Доп. запросы',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,subcats:lSubcats,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,subcats:lSubcats,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway,aiproviders:lAIP})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function resetOpcache(){fetch(A+'/opcache-reset',{method:'POST'}).then(r=>r.json()).then(d=>{alert((d.message||'Результат неизвестен') + (d.enabled===false ? '\n\nopcache_reset() недоступен на хостинге.' : ''));}).catch(()=>alert('Ошибка сброса OPcache'));}
@@ -5732,6 +5734,7 @@ function aiTest(provider,type){
 </script>
 <?php include __DIR__ . "/patch-email-funnel.php"; ?>
 <?php include __DIR__ . "/patch-leads-su.php"; ?>
+<?php include __DIR__ . "/patch-subcategories.php"; ?>
 <?php include __DIR__ . "/patch-article-inline-cta-stats.php"; ?>
 </body>
 </html>

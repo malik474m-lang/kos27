@@ -79,6 +79,9 @@ if (str_starts_with((string)($adminUri), "/cities")) { require __DIR__ . "/admin
 // Качество контента
 if ($adminUri === '/content-quality' && $method === 'POST') { require __DIR__ . '/admin/content-quality.php'; exit; }
 
+// Подкатегории (допзапросы)
+if (str_starts_with((string)($adminUri), "/subcategories")) { require __DIR__ . "/admin/subcategories.php"; exit; }
+
 // FAQ офферов
 if ($adminUri === '/faq' && $method === 'GET') { require __DIR__ . '/admin/faq-list.php'; exit; }
 if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/admin/faq-generate.php'; exit; }
