@@ -43,6 +43,7 @@ $articleTopicOffers = $articleOfferContext['offers'];
 $inlineArticleOffer = !empty($articleTopicOffers) ? $articleTopicOffers[0] : null;
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Статьи', '/articles'), breadcrumbItem($article['title'], '/articles/' . $article['slug'])];
 $articleContent = (string)($article['content'] ?? '');
+$articleContent = preg_replace('/\x{FFFD}+/u', '', $articleContent) ?? $articleContent;
 $articleHasHtml = (bool)preg_match('/<(p|h1|h2|h3|h4|h5|h6|ul|ol|li|strong|em|a|blockquote|table|img|figure|div|br)\b/i', $articleContent);
 $articleBodyHtml = $articleHasHtml
     ? autoLinkText($articleContent, 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory])

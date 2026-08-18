@@ -447,11 +447,24 @@ function saveAIImage(string $binary): string {
 
 // === Unified Generate Text ===
 
+function sanitizeAiGeneratedText(string $text): string {
+    $text = str_replace(["\r\n", "\r"], "\n", $text);
+    $text = preg_replace('/^\xEF\xBB\xBF/u', '', $text) ?? $text;
+    $text = preg_replace('/\x{FFFD}+/u', '', $text) ?? $text;
+    $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? $text;
+    $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
+    return trim($text);
+}
+
 function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forceProvider = null): array {
     $config = getAIProvidersConfig();
     
     if ($forceProvider) {
-        return aiGenerateTextWithProvider($prompt, $systemPrompt, $forceProvider, $config);
+        $result = aiGenerateTextWithProvider($prompt, $systemPrompt, $forceProvider, $config);
+        if (!empty($result['success']) && isset($result['text'])) {
+            $result['text'] = sanitizeAiGeneratedText((string)$result['text']);
+        }
+        return $result;
     }
     
     $priority = $config['text_provider_priority'] ?? ['yandex_gpt'];
@@ -463,6 +476,9 @@ function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forc
         
         $result = aiGenerateTextWithProvider($prompt, $systemPrompt, $provider, $config);
         if ($result['success']) {
+            if (isset($result['text'])) {
+                $result['text'] = sanitizeAiGeneratedText((string)$result['text']);
+            }
             return $result;
         }
         
