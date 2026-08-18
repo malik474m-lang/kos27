@@ -28,7 +28,7 @@ $citySeo = null;
 $citySlugForLinks = null;
 if (!empty($citySlug)) {
     require_once __DIR__ . '/../data/cities.php';
-    $cityData = findCity($citySlug);
+    $cityData = findCityBySlug($citySlug);
     if ($cityData) {
         $citySlugForLinks = $cityData['slug'];
         $citySeo = getSubcategoryCitySeo((int)$subcat['id'], $citySlug);
