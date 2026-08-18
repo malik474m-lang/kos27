@@ -279,13 +279,16 @@ h+='<p class="text-xs text-gray-500">Ключевые слова: '+d.target_key
 }
 h+='<p class="text-xs text-gray-400 mt-2">Источник: '+d.provider+'</p>';
 h+='<div class="mt-4 pt-3 border-t border-blue-200"><label class="block text-xs font-medium text-gray-700 mb-1">Тематика статьи</label><select id="cr-theme-cat" class="sel-f text-sm w-auto mb-3"><option value="займы">Займы</option><option value="кредиты">Кредиты</option><option value="карты">Карты</option><option value="банки">Банки</option><option value="мфо">МФО</option></select></div>';
-h+='<div class="flex gap-2 mt-3"><button onclick="crWriteArticle(''+e(d.title).replace(/'/g,"\\'")+'','+JSON.stringify(d.outline||[])+','+JSON.stringify(d.target_keywords||[])+')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">✍️ Написать статью</button><button onclick="loadContentRecs()" class="text-sm text-gray-500 hover:underline px-4 py-2">← Назад</button></div>';
+_crLastTitle=d.title;_crLastOutline=d.outline||[];_crLastKeywords=d.target_keywords||[];
+h+='<div class="flex gap-2 mt-3"><button onclick="crWriteArticle()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">✍️ Написать статью</button><button onclick="loadContentRecs()" class="text-sm text-gray-500 hover:underline px-4 py-2">← Назад</button></div>';
 h+='</div>';
 box.innerHTML=h;
 }).catch(function(err){alert('Ошибка: '+err.message);box.innerHTML=origHtml;});
 }
 
-function crWriteArticle(title, outline, keywords){
+var _crLastTitle='',_crLastOutline=[],_crLastKeywords=[];
+function crWriteArticle(){
+var title=_crLastTitle,outline=_crLastOutline,keywords=_crLastKeywords;
 var cat=document.getElementById('cr-theme-cat');
 var themeCategory=cat?cat.value:'займы';
 if(!confirm('Написать статью «'+title+'» (тематика: '+themeCategory+')?\n\nAI сгенерирует полный текст. Статья будет сохранена как черновик.')) return;
@@ -309,7 +312,7 @@ box.innerHTML='<div class="bg-green-50 border border-green-200 rounded-lg p-4">'
 '<p class="text-sm text-gray-500 mt-1">Объём: '+d.content_length+' символов • Источник: '+d.provider+'</p>'+
 '<p class="text-sm text-orange-600 mt-2">⚠️ Статья сохранена как <strong>черновик</strong>. Проверьте текст и опубликуйте вручную.</p>'+
 '<div class="flex gap-3 mt-4">'+
-'<button onclick="cm();sw('articles');lA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">📝 Перейти к статьям</button>'+
+'<button onclick="cm();sw(&quot;articles&quot;);lA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">📝 Перейти к статьям</button>'+
 '<button onclick="loadContentRecs()" class="text-sm text-gray-500 hover:underline px-4 py-2">← Ещё рекомендации</button>'+
 '</div></div>';
 }).catch(function(err){
