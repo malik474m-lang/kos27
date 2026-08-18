@@ -330,7 +330,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
         }
 
         $taskFailed = false;
-        for ($i = 0; $i < 15; $i++) {
+        for ($i = 0; $i < 24; $i++) {
             sleep(4);
             $ch = curl_init($statusUrl);
             curl_setopt_array($ch, [

@@ -249,7 +249,35 @@ function odiGetAvailableKeys(string $type = 'text'): array {
         ];
     }
 
-    // Оставляем по одному лучшему ключу на аккаунт для текущего типа.
+    if ($type === 'image') {
+        // Для картинок сохраняем несколько ключей на аккаунт:
+        // image -> all (text ключи не проходят ранний фильтр выше).
+        $groups = [];
+        foreach ($result as $item) {
+            $acc = $item['account'];
+            $item['_score'] = (($item['type'] ?? 'all') === 'image') ? 2 : 1;
+            $groups[$acc][] = $item;
+        }
+        foreach ($groups as &$items) {
+            usort($items, fn($a, $b) => ($b['_score'] <=> $a['_score']) ?: strcmp((string)$a['name'], (string)$b['name']));
+        }
+        unset($items);
+
+        $accounts = array_keys($groups);
+        $accounts = odiRotateAccounts(array_map(fn($a) => ['account' => $a], $accounts), $type);
+        $rotatedAccounts = array_map(fn($row) => $row['account'], $accounts);
+
+        $flat = [];
+        foreach ($rotatedAccounts as $acc) {
+            foreach ($groups[$acc] as $item) {
+                unset($item['_score']);
+                $flat[] = $item;
+            }
+        }
+        return $flat;
+    }
+
+    // Для текста оставляем один лучший ключ на аккаунт.
     $byAccount = [];
     foreach ($result as $item) {
         $acc = $item['account'];
