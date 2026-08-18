@@ -379,11 +379,14 @@ if ($content) {
 }
 
 if (!$content) {
-    $content = $isBank
-        ? "$selectedTopic — обзор банка\n\n$selectedTopic — один из банков России.\n\nНа сайте Космозайм сравните банковские продукты."
-        : ($isMFO
-        ? "$selectedTopic — обзор микрофинансовой организации\n\n$selectedTopic — МФО, предоставляющая займы онлайн.\n\nНа сайте Космозайм вы можете сравнить условия разных организаций."
-        : "$selectedTopic\n\nОбращайте внимание на ставку и ПСК.\n\nНа сайте Космозайм сравните условия и выберите лучшее предложение.");
+    echo json_encode([
+        'error' => 'AI не смог сгенерировать текст статьи. Черновик не создан.',
+        'topic' => $selectedTopic,
+        'category' => $selectedCategory,
+        'textError' => $aiResult['error'] ?? 'empty content',
+        'hasImage' => false,
+    ]);
+    exit;
 }
 
 // Генерация картинки через unified AI providers
