@@ -1,10 +1,11 @@
 <?php
 /**
  * Улучшенный Sitemap с lastmod для всех типов страниц
- * Включая city+tag комбинации
+ * Включая subcategories (допзапросы) и city+tag комбинации
  */
 require_once __DIR__ . '/../data/cities.php';
 require_once __DIR__ . '/../data/glossary.php';
+require_once __DIR__ . '/../includes/subcategories.php';
 
 $db = getDB();
 
@@ -14,6 +15,12 @@ $articlesData = $db->query("SELECT slug, updated_at FROM articles WHERE is_publi
 
 // Теги из БД
 $allTags = $db->query("SELECT slug, category, created_at FROM offer_tags WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+
+// Допзапросы (подкатегории) из БД
+$allSubcats = [];
+try {
+    $allSubcats = $db->query("SELECT slug, category, updated_at FROM subcategories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+} catch (Exception $e) {}
 
 // SEO-тексты городов (для lastmod)
 $citySeoData = [];
@@ -33,6 +40,15 @@ try {
     }
 } catch (Exception $e) {}
 
+// SEO-тексты город+допзапрос (для lastmod)
+$subcatCitySeoData = [];
+try {
+    $subcatCityRows = $db->query("SELECT subcategory_id, city_slug, created_at FROM subcategory_city_seo")->fetchAll();
+    foreach ($subcatCityRows as $row) {
+        $subcatCitySeoData[$row['subcategory_id'] . '_' . $row['city_slug']] = $row['created_at'];
+    }
+} catch (Exception $e) {}
+
 // Последняя дата обновления офферов (для основных страниц категорий)
 $lastOfferUpdate = !empty($offersData) ? $offersData[0]['updated_at'] : date('Y-m-d');
 $lastArticleUpdate = !empty($articlesData) ? $articlesData[0]['updated_at'] : date('Y-m-d');
@@ -45,6 +61,7 @@ $catUrls = [
 ];
 
 $today = date('Y-m-d');
+$cities = getCities();
 
 echo '<?xml version="1.0" encoding="UTF-8"?>';
 ?>
@@ -179,8 +196,38 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     </url>
 <?php endforeach; ?>
 
+    <!-- ========== ДОПЗАПРОСЫ (подкатегории) ========== -->
+    <!-- Допзапросы без города -->
+<?php foreach ($allSubcats as $sc):
+    $scCatUrl = $catUrls[$sc['category']] ?? '/zajmy';
+    $scLastmod = $sc['updated_at'] ?? $today;
+?>
+    <url>
+        <loc><?= SITE_URL ?><?= $scCatUrl ?>/q/<?= e($sc['slug']) ?></loc>
+        <lastmod><?= date('Y-m-d', strtotime($scLastmod)) ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+<?php endforeach; ?>
+
+    <!-- Допзапросы + города (гео-страницы) -->
+<?php foreach ($allSubcats as $sc): 
+    $scCatUrl = $catUrls[$sc['category']] ?? '/zajmy';
+    foreach ($cities as $c):
+        // Проверяем есть ли кастомный SEO для этого города
+        $scCityKey = $sc['id'] . '_' . $c['slug'];
+        $scCityLastmod = $subcatCitySeoData[$scCityKey] ?? $sc['updated_at'] ?? $today;
+?>
+    <url>
+        <loc><?= SITE_URL ?><?= $scCatUrl ?>/<?= e($c['slug']) ?>/q/<?= e($sc['slug']) ?></loc>
+        <lastmod><?= date('Y-m-d', strtotime($scCityLastmod)) ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+<?php endforeach; endforeach; ?>
+
     <!-- Займы по городам -->
-<?php foreach (getCities() as $c):
+<?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_microloans'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -192,7 +239,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Кредиты по городам -->
-<?php foreach (getCities() as $c):
+<?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credits'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -204,7 +251,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Кредитные карты по городам -->
-<?php foreach (getCities() as $c):
+<?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -216,7 +263,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Дебетовые карты по городам -->
-<?php foreach (getCities() as $c):
+<?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_debit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -228,7 +275,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- Карты по городам (общие) -->
-<?php foreach (getCities() as $c):
+<?php foreach ($cities as $c):
     $cityLastmod = $citySeoData[$c['slug'] . '_credit_cards'] ?? $lastOfferUpdate;
 ?>
     <url>
@@ -240,7 +287,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <?php endforeach; ?>
 
     <!-- City + Tag страницы с lastmod -->
-<?php foreach (getCities() as $c): foreach ($allTags as $tag):
+<?php foreach ($cities as $c): foreach ($allTags as $tag):
     $tagCatUrl = $catUrls[$tag['category']] ?? '/zajmy';
     $cityTagUrl = $tagCatUrl . '/' . $c['slug'] . '/type/' . $tag['slug'];
     
