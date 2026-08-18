@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . "/../../includes/ai-compat.php";
+require_once __DIR__ . "/../../includes/ai-providers.php";
 /**
- * Генерация справочной информации оффера через AI.
+ * Генерация справочной информации оффера через активный AI-провайдер.
  */
 
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -48,13 +48,19 @@ PROMPT;
 
 $systemPrompt = 'Ты возвращаешь краткую справочную информацию о российских финансовых брендах. Старайся вернуть JSON. Если поле неизвестно — null. Не используй markdown.';
 
-$text = kosmozaimAIComplete($systemPrompt, $prompt);
-
-if (!$text) {
-    echo json_encode(['error' => 'Не удалось получить ответ от AI. Проверьте настройки провайдеров.']);
+$aiResult = aiGenerateText($prompt, $systemPrompt);
+if (empty($aiResult['success']) || empty($aiResult['text'])) {
+    $status = function_exists('getAIProvidersStatus') ? getAIProvidersStatus() : ['active' => ['text' => null]];
+    $active = $status['active']['text'] ?? null;
+    $providerLabel = $active ? (($status['text'][$active]['name'] ?? $active) . (!empty($status['text'][$active]['model']) ? ' (' . $status['text'][$active]['model'] . ')' : '')) : 'AI';
+    echo json_encode([
+        'error' => 'Нет ответа от провайдера: ' . $providerLabel,
+        'detail' => (string)($aiResult['error'] ?? 'unknown error'),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
+$text = (string)$aiResult['text'];
 $text = preg_replace('/^```(?:json)?\s*/iu', '', $text);
 $text = preg_replace('/\s*```$/u', '', $text);
 $text = trim($text);
