@@ -152,9 +152,13 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 
     $errors = [];
     $blockedAccounts = [];
+    $accountsTried = 0;
+    $maxAccountsPerCall = 3;
     foreach ($keys as $activeKey) {
         $keyAccount = $activeKey['account'] ?? '';
         if ($keyAccount && isset($blockedAccounts[$keyAccount])) continue;
+        if ($accountsTried >= $maxAccountsPerCall) break;
+        $accountsTried++;
         $apiKey = $activeKey['key'];
         foreach ($fallbackModels as $tryModel) {
             $payload = [
@@ -168,8 +172,8 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_CONNECTTIMEOUT => 8,
+                CURLOPT_TIMEOUT => 18,
+                CURLOPT_CONNECTTIMEOUT => 5,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_HTTPHEADER => [

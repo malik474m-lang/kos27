@@ -11,6 +11,7 @@
 define('ODIROUTER_DAILY_LIMIT', 50);
 define('ODIROUTER_KEYS_FILE', __DIR__ . '/../data/odirouter-keys.json');
 define('ODIROUTER_USAGE_FILE', __DIR__ . '/../data/odirouter-usage.json');
+define('ODIROUTER_CURSOR_FILE', __DIR__ . '/../data/odirouter-cursor.json');
 
 
 function odiNormalizeAccountId(?string $account, string $fallbackId): string {
@@ -46,6 +47,32 @@ function odiLoadUsage(): array {
 
 function odiSaveUsage(array $usage): void {
     @file_put_contents(ODIROUTER_USAGE_FILE, json_encode($usage));
+}
+
+
+function odiLoadCursor(): array {
+    if (!file_exists(ODIROUTER_CURSOR_FILE)) return ['text' => 0, 'image' => 0];
+    $data = json_decode(file_get_contents(ODIROUTER_CURSOR_FILE), true);
+    if (!is_array($data)) return ['text' => 0, 'image' => 0];
+    return [
+        'text' => (int)($data['text'] ?? 0),
+        'image' => (int)($data['image'] ?? 0),
+    ];
+}
+
+function odiSaveCursor(array $cursor): void {
+    @file_put_contents(ODIROUTER_CURSOR_FILE, json_encode($cursor));
+}
+
+function odiRotateAccounts(array $keys, string $type = 'text'): array {
+    if (count($keys) <= 1) return $keys;
+    $cursor = odiLoadCursor();
+    $idx = (int)($cursor[$type] ?? 0);
+    $idx = $idx % count($keys);
+    $rotated = array_merge(array_slice($keys, $idx), array_slice($keys, 0, $idx));
+    $cursor[$type] = ($idx + 1) % count($keys);
+    odiSaveCursor($cursor);
+    return $rotated;
 }
 
 /**
@@ -115,11 +142,9 @@ function odiGetAvailableKeys(string $type = 'text'): array {
         $keyId = $k['id'] ?? md5($k['key']);
         $account = odiNormalizeAccountId($k['account'] ?? '', $keyId);
         
-        // Лимит считаем по аккаунту
         $accountUsed = (int)($usage['accounts'][$account] ?? 0);
         $accountRemaining = ODIROUTER_DAILY_LIMIT - $accountUsed;
-        
-        if ($accountRemaining <= 0) continue; // Аккаунт исчерпан
+        if ($accountRemaining <= 0) continue;
         
         $result[] = [
             'key' => $k['key'],
@@ -131,7 +156,28 @@ function odiGetAvailableKeys(string $type = 'text'): array {
             'type' => $k['type'] ?? 'all',
         ];
     }
-    return $result;
+
+    // Оставляем по одному лучшему ключу на аккаунт для текущего типа.
+    $byAccount = [];
+    foreach ($result as $item) {
+        $acc = $item['account'];
+        $score = (($item['type'] ?? 'all') === $type) ? 2 : 1;
+        if (!isset($byAccount[$acc])) {
+            $item['_score'] = $score;
+            $byAccount[$acc] = $item;
+            continue;
+        }
+        if ($score > ($byAccount[$acc]['_score'] ?? 0)) {
+            $item['_score'] = $score;
+            $byAccount[$acc] = $item;
+        }
+    }
+    $result = array_values($byAccount);
+    foreach ($result as &$row) unset($row['_score']);
+    unset($row);
+
+    // Round-robin по аккаунтам между последовательными вызовами.
+    return odiRotateAccounts($result, $type);
 }
 
 /**
