@@ -253,6 +253,21 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     return ['success' => false, 'error' => 'OdiRouter all keys failed. ' . implode('; ', array_slice($errors, 0, 8))];
 }
 
+function odiBuildOptimizedImagePrompt(string $prompt): array {
+    $raw = trim($prompt);
+    $topic = $raw;
+    $topic = preg_replace('/^нарисуй\s*16:9\s*/iu', '', $topic) ?? $topic;
+    $topic = preg_replace('/^создай\s*(обложку|иллюстрацию)\s*/iu', '', $topic) ?? $topic;
+    $topic = preg_replace('/["“”«»]+/u', '', $topic) ?? $topic;
+    $topic = preg_replace('/\s+/u', ' ', trim($topic)) ?? trim($topic);
+    if (mb_strlen($topic) > 80) $topic = mb_substr($topic, 0, 80);
+
+    return [
+        'primary' => 'minimal clean financial illustration, no text, no letters, no logo, wide 16:9 banner, topic: ' . $topic,
+        'fallback' => 'simple minimal financial illustration, no text, blue gradient, clean 16:9 banner',
+    ];
+}
+
 function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $preferredAccount = null): array {
     $config = getAIProvidersConfig();
     $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
@@ -261,6 +276,9 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
     if (!$keys) {
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит. Добавьте ещё ключи.'];
     }
+
+    $promptVariants = odiBuildOptimizedImagePrompt($prompt);
+    $promptsToTry = [$promptVariants['primary'], $promptVariants['fallback']];
 
     $errors = [];
     $blockedAccounts = []; // аккаунты получившие 429 — пропускаем все их ключи
@@ -271,15 +289,17 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
             continue;
         }
         $apiKey = $activeKey['key'];
-        odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
 
-        $payload = [
-            'prompt' => $prompt,
-            'aspect_ratio' => '16:9',
-            'resolution' => '1K',
-        ];
+        foreach ($promptsToTry as $promptVariantIdx => $promptToTry) {
+            odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
 
-        $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
+            $payload = [
+                'prompt' => $promptToTry,
+                'aspect_ratio' => '16:9',
+                'resolution' => '1K',
+            ];
+
+            $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_RETURNTRANSFER => true,
@@ -311,12 +331,12 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
                 $blockedAccounts[$keyAccount] = true; // блокируем все ключи этого аккаунта
                 odiSetAccountCooldown($keyAccount);
             }
-            $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code;
+            $errors[] = ($activeKey['name'] ?? 'key') . ($promptVariantIdx === 1 ? ' [simple]' : '') . ': HTTP ' . $code;
             continue;
         }
 
         if ($code < 200 || $code >= 300) {
-            $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code . ' ' . mb_substr((string)$response, 0, 200);
+            $errors[] = ($activeKey['name'] ?? 'key') . ($promptVariantIdx === 1 ? ' [simple]' : '') . ': HTTP ' . $code . ' ' . mb_substr((string)$response, 0, 200);
             continue;
         }
 
@@ -325,7 +345,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
         $statusUrl = $data['status_url'] ?? '';
         $responseUrl = $data['response_url'] ?? '';
         if (!$requestId || !$statusUrl || !$responseUrl) {
-            $errors[] = ($activeKey['name'] ?? 'key') . ': invalid queue response';
+            $errors[] = ($activeKey['name'] ?? 'key') . ($promptVariantIdx === 1 ? ' [simple]' : '') . ': invalid queue response';
             continue;
         }
 
@@ -442,9 +462,10 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
         }
 
         if (!$taskFailed) {
-            $errors[] = ($activeKey['name'] ?? 'key') . ': timeout waiting for image generation';
+            $errors[] = ($activeKey['name'] ?? 'key') . ($promptVariantIdx === 1 ? ' [simple]' : '') . ': timeout waiting for image generation';
             continue;
         }
+        } // endforeach promptsToTry
     }
 
     return ['success' => false, 'error' => 'OdiRouter image failed for all keys. ' . implode('; ', array_slice($errors, 0, 8))];
