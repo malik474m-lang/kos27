@@ -127,6 +127,89 @@ function leadsSuExtractDescription(array $offer): string {
     return mb_substr(trim(implode(' ', $chunks)), 0, 500);
 }
 
+
+function leadsSuDetectLogoExtension(string $url, string $contentType = '', string $body = ''): string {
+    $contentType = mb_strtolower(trim(explode(';', $contentType)[0] ?? ''));
+    if ($contentType === 'image/svg+xml' || str_contains((string)$body, '<svg')) return 'svg';
+    if ($contentType === 'image/png') return 'png';
+    if ($contentType === 'image/webp') return 'webp';
+    if ($contentType === 'image/gif') return 'gif';
+    if ($contentType === 'image/jpeg' || $contentType === 'image/jpg') return 'jpg';
+
+    $path = parse_url($url, PHP_URL_PATH) ?: '';
+    $ext = mb_strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    if (in_array($ext, ['svg','png','webp','gif','jpg','jpeg'], true)) {
+        return $ext === 'jpeg' ? 'jpg' : $ext;
+    }
+    return 'png';
+}
+
+function leadsSuDownloadLogo(string $url, string $offerTitle = ''): string {
+    $url = trim($url);
+    if ($url === '') return '';
+    if (!preg_match('#^https?://#i', $url)) return $url;
+
+    $dirFs = __DIR__ . '/../images/offer';
+    $dirWeb = '/images/offer';
+    if (!is_dir($dirFs)) @mkdir($dirFs, 0755, true);
+
+    $baseName = slugify($offerTitle !== '' ? $offerTitle : ('logo-' . substr(md5($url), 0, 8)));
+    if ($baseName === '') $baseName = 'offer-logo';
+
+    $body = '';
+    $contentType = '';
+    $httpCode = 0;
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_USERAGENT => 'Kosmozaim/1.0 Logo Importer',
+            CURLOPT_HTTPHEADER => ['Accept: image/*,*/*;q=0.8'],
+        ]);
+        $body = (string)curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+    } else {
+        $ctx = stream_context_create(['http' => ['timeout' => 20, 'header' => "User-Agent: Kosmozaim/1.0 Logo Importer
+Accept: image/*,*/*;q=0.8
+"]]);
+        $body = (string)@file_get_contents($url, false, $ctx);
+        $headers = $http_response_header ?? [];
+        foreach ($headers as $h) {
+            if (preg_match('#^HTTP/\S+\s+(\d+)#i', $h, $m)) $httpCode = (int)$m[1];
+            if (stripos($h, 'Content-Type:') === 0) $contentType = trim(substr($h, 13));
+        }
+    }
+
+    if ($httpCode < 200 || $httpCode >= 300 || $body === '') {
+        return $url;
+    }
+
+    if (strlen($body) > 3 * 1024 * 1024) {
+        return $url;
+    }
+
+    $ext = leadsSuDetectLogoExtension($url, $contentType, $body);
+    $fileName = $baseName . '-' . substr(md5($url), 0, 8) . '.' . $ext;
+    $fullPath = $dirFs . '/' . $fileName;
+
+    if (!file_exists($fullPath)) {
+        if (@file_put_contents($fullPath, $body) === false) {
+            return $url;
+        }
+    }
+
+    return $dirWeb . '/' . $fileName;
+}
+
 function leadsSuParseMoneyString(string $raw): ?int {
     $raw = preg_replace('/[^\d]/u', '', $raw);
     if ($raw === '') return null;
@@ -265,7 +348,7 @@ function leadsSuNormalizeOffer(array $apiOffer, int $platformId, string $categor
         'psk' => $psk,
         'rate_unit' => $rateUnit,
         'free_term_days' => $freeTermDays,
-        'logo_url' => leadsSuExtractLogo($apiOffer),
+        'logo_url' => leadsSuDownloadLogo(leadsSuExtractLogo($apiOffer), $name),
         'description' => leadsSuExtractDescription($apiOffer),
         'affiliate_url' => leadsSuGetOfferLink((int)($apiOffer['id'] ?? 0), $platformId),
         'borrower_category' => 'any',
