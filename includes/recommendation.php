@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ab-test.php';
 /**
  * Рекомендательный блок “Самый выгодный вариант”
  * Использует упрощённый smart score на основе кликов, approval, EPC, отзывов.
@@ -152,7 +153,8 @@ function renderBestOfferRecommendation(?array $offer, string $title = 'Самы�
 
         <div class="mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-3">
             <a href="/offer/<?= e($offer['slug']) ?>" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-white px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50 transition-colors">Подробнее</a>
-            <a href="/click/<?= (int)$offer['id'] ?>?src=best-choice" target="_blank" rel="noopener noreferrer nofollow sponsored" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-dark transition-colors">Оформить</a>
+            <?php $recCta = getCtaVariantData((string)($offer['category'] ?? '')); ?>
+            <a href="/click/<?= (int)$offer['id'] ?>?src=best-choice&ab=<?= (int)$recCta['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl px-5 py-3 font-semibold text-white transition-colors" style="background:<?= e($recCta['color']) ?>"><?= e($recCta['label']) ?></a>
         </div>
     </section>
     <?php

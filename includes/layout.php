@@ -4,6 +4,7 @@
 require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/giveaway-banner.php';
 require_once __DIR__ . '/pwa.php';
+require_once __DIR__ . '/ab-test.php';
 
 $pageTitle = $pageTitle ?? SITE_NAME;
 $metaDescription = $metaDescription ?? 'Сравните лучшие предложения по займам, кредитам, кредитным и дебетовым картам.';
@@ -241,7 +242,8 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
             </div>
             <div style="display:flex;gap:10px;margin-top:18px">
                 <a href="/offer/<?= e($bestOfferPopup['slug']) ?>" style="flex:1;text-align:center;border:1px solid #dbeafe;color:#1d4ed8;background:#eff6ff;padding:12px 14px;border-radius:12px;font-weight:600;text-decoration:none">Подробнее</a>
-                <a href="/click/<?= (int)$bestOfferPopup['id'] ?>?src=best-popup" target="_blank" rel="noopener noreferrer nofollow sponsored" style="flex:1;text-align:center;background:#059669;color:#fff;padding:12px 14px;border-radius:12px;font-weight:700;text-decoration:none">Оформить</a>
+                <?php $popupCta = getCtaVariantData((string)($bestOfferPopup['category'] ?? '')); ?>
+                <a href="/click/<?= (int)$bestOfferPopup['id'] ?>?src=best-popup&ab=<?= (int)$popupCta['id'] ?>" target="_blank" rel="noopener noreferrer nofollow sponsored" style="flex:1;text-align:center;background:<?= e($popupCta['color']) ?>;color:#fff;padding:12px 14px;border-radius:12px;font-weight:700;text-decoration:none"><?= e($popupCta['label']) ?></a>
             </div>
         </div>
     </div>

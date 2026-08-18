@@ -69,8 +69,11 @@ $metaDescription = (!empty($offer['meta_description'])) ? $offer['meta_descripti
 $rating = (float)$offer['rating'];
 $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
 require_once __DIR__ . '/../includes/ab-test.php';
-$offerCtaLabel = getDefaultCtaLabelByCategory($offer['category'] ?? '');
-$offerCtaSecondary = getDefaultCtaSecondaryLabelByCategory($offer['category'] ?? '');
+$offerCtaVariant = getCtaVariantData((string)($offer['category'] ?? ''));
+$offerCtaLabel = $offerCtaVariant['label'];
+$offerCtaSecondary = $offerCtaVariant['secondary'];
+$offerCtaColor = $offerCtaVariant['color'];
+$offerAbVariantId = (int)$offerCtaVariant['id'];
 
 $offerInterest = getOfferInterestStats((int)$offer['id'], '/offer/' . $offer['slug'], $offer);
 

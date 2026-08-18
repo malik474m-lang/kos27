@@ -111,3 +111,18 @@ function getAbVariantId(string $category = ''): ?int {
     $v = getAbVariant($category);
     return $v ? (int)$v['id'] : null;
 }
+
+
+function getCtaVariantData(string $category = ''): array {
+    $abVar = getAbVariant($category);
+    $label = normalizeCtaLabelByCategory($category, $abVar ? (string)($abVar['label'] ?? '') : getDefaultCtaLabelByCategory($category));
+    $secondary = getDefaultCtaSecondaryLabelByCategory($category);
+    $color = $abVar ? (string)($abVar['color'] ?? '#059669') : '#059669';
+    $id = $abVar ? (int)($abVar['id'] ?? 0) : 0;
+    return [
+        'label' => $label,
+        'secondary' => $secondary,
+        'color' => $color,
+        'id' => $id,
+    ];
+}
