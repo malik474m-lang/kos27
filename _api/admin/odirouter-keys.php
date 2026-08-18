@@ -162,33 +162,117 @@ if ($method === 'POST') {
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
             }
         } else {
-            // Тест картинки
+            // Полноценный тест картинки: submit -> poll -> response
             $config = getAIProvidersConfig();
             $model = $config['odirouter_image_model'] ?? 'free-nano-banana-2';
             $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 15,
+                CURLOPT_TIMEOUT => 20,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
                     'Authorization: Bearer ' . $targetKey,
                 ],
-                CURLOPT_POSTFIELDS => json_encode(['prompt' => 'test blue circle', 'aspect_ratio' => '1:1']),
+                CURLOPT_POSTFIELDS => json_encode([
+                    'prompt' => 'simple blue circle on white background, minimal illustration',
+                    'aspect_ratio' => '16:9',
+                    'resolution' => '1K',
+                ]),
             ]);
             $response = curl_exec($ch);
             $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
             curl_close($ch);
-            
-            if ($code >= 200 && $code < 300) {
-                $data = json_decode($response, true);
-                $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
-                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'key_name' => ($selected['name'] ?? ''), 'key_type' => ($selected['type'] ?? ''), 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
-            } else {
+
+            if ($err) {
+                echo json_encode(['error' => 'cURL ' . $err]);
+                exit;
+            }
+            if ($code < 200 || $code >= 300) {
                 if ($code === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
+                exit;
             }
+
+            $data = json_decode($response, true);
+            $statusUrl = $data['status_url'] ?? '';
+            $responseUrl = $data['response_url'] ?? '';
+            $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
+            if (!$statusUrl || !$responseUrl) {
+                echo json_encode(['error' => 'invalid queue response', 'response' => $response]);
+                exit;
+            }
+
+            $ok = false;
+            for ($i = 0; $i < 12; $i++) {
+                sleep(4);
+                $ch = curl_init($statusUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 15,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $targetKey],
+                ]);
+                $statusResp = curl_exec($ch);
+                $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $statusErr = curl_error($ch);
+                curl_close($ch);
+
+                if ($statusErr) {
+                    echo json_encode(['error' => 'status cURL ' . $statusErr]);
+                    exit;
+                }
+                if ($statusCode === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
+                if ($statusCode < 200 || $statusCode >= 300) {
+                    echo json_encode(['error' => 'status HTTP ' . $statusCode, 'response' => $statusResp]);
+                    exit;
+                }
+
+                $statusData = json_decode($statusResp, true);
+                $status = $statusData['status'] ?? '';
+                if ($status === 'COMPLETED') {
+                    if (!empty($statusData['error'])) {
+                        echo json_encode(['error' => $statusData['error']['message'] ?? 'task failed']);
+                        exit;
+                    }
+
+                    $ch = curl_init($responseUrl);
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_TIMEOUT => 30,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $targetKey],
+                    ]);
+                    $resultResp = curl_exec($ch);
+                    $resultCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    $resultErr = curl_error($ch);
+                    curl_close($ch);
+
+                    if ($resultErr) {
+                        echo json_encode(['error' => 'response cURL ' . $resultErr]);
+                        exit;
+                    }
+                    if ($resultCode === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
+                    if ($resultCode < 200 || $resultCode >= 300) {
+                        echo json_encode(['error' => 'response HTTP ' . $resultCode, 'response' => $resultResp]);
+                        exit;
+                    }
+
+                    $ok = true;
+                    echo json_encode([
+                        'success' => true,
+                        'account_label' => $accountLabel,
+                        'key_name' => ($selected['name'] ?? ''),
+                        'key_type' => ($selected['type'] ?? ''),
+                        'result' => "HTTP {$code}: изображение полностью сгенерировано (модель: {$model}, id: {$reqId})"
+                    ]);
+                    exit;
+                }
+            }
+
+            echo json_encode(['error' => 'timeout waiting for image generation', 'request_id' => $reqId]);
         }
         exit;
     }
