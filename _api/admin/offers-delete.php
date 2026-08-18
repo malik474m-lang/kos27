@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . "/../../includes/page-cache.php";
+register_shutdown_function("pageCacheClear");
 require_once __DIR__ . '/../../includes/audit-log.php';
 
 $db = getDB();

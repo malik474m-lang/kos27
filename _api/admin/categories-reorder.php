@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . "/../../includes/page-cache.php";
+register_shutdown_function("pageCacheClear");
 $data = json_decode(file_get_contents('php://input'), true);
 $db = getDB();
 $items = $data['items'] ?? [];

@@ -5,6 +5,8 @@
  * Пример: php cron/review-cron.php 3
  */
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/page-cache.php';
+register_shutdown_function('pageCacheClear');
 
 $count = (int)($argv[1] ?? $_ENV['REVIEW_COUNT'] ?? 2);
 

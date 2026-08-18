@@ -4,6 +4,8 @@
  * Запуск: php cron/article-cron.php
  */
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/page-cache.php';
+register_shutdown_function('pageCacheClear');
 require_once __DIR__ . '/../includes/article-image.php';
 
 $topics = [

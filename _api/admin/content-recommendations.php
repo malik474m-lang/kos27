@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . "/../../includes/page-cache.php";
+register_shutdown_function("pageCacheClear");
 /**
  * Рекомендации по контенту на основе поисковых запросов
  * Анализирует запросы из Яндекс.Вебмастер и Google Search Console
