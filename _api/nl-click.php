@@ -16,6 +16,6 @@ if ($nlId && $subId && $url) {
 
 // Редирект на целевой URL
 if (!$url || $url === '/') $url = SITE_URL;
-if (!str_starts_with($url, 'http')) $url = SITE_URL . $url;
+if (!str_starts_with((string)($url), 'http')) $url = SITE_URL . $url;
 header('Location: ' . $url, true, 302);
 exit;

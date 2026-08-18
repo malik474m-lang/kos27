@@ -143,7 +143,7 @@ function processFunnel(int $batchLimit = 50): array {
             // Отправляем!
             $unsubLink = SITE_URL . '/unsubscribe?token=' . $sub['unsubscribe_token'];
             $body = $step['body_html'];
-            if (str_contains($body, '{{offers}}')) {
+            if (str_contains((string)($body), '{{offers}}')) {
                 $body = str_replace('{{offers}}', $offersBlock, $body);
             }
 

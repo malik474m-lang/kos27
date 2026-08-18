@@ -31,7 +31,7 @@ function jsonLdWebsite(): string {
 
 function jsonLdOffer(array $offer, array $reviews = []): string {
     $logo = normalizeMediaUrl($offer['logo_url'] ?? '');
-    $image = $logo ? (str_starts_with($logo, 'http') ? $logo : SITE_URL . $logo) : SITE_URL . '/favicon.svg';
+    $image = $logo ? (str_starts_with((string)($logo), 'http') ? $logo : SITE_URL . $logo) : SITE_URL . '/favicon.svg';
     $offerUrl = SITE_URL . '/offer/' . $offer['slug'];
 
     $additionalType = match($offer['category'] ?? 'microloans') {
@@ -100,7 +100,7 @@ function jsonLdOffer(array $offer, array $reviews = []): string {
 
 function jsonLdArticle(array $article): string {
     $cover = normalizeMediaUrl($article['cover_image'] ?? '');
-    $image = $cover ? (str_starts_with($cover, 'http') ? $cover : SITE_URL . $cover) : SITE_URL . '/favicon.svg';
+    $image = $cover ? (str_starts_with((string)($cover), 'http') ? $cover : SITE_URL . $cover) : SITE_URL . '/favicon.svg';
     return json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Article',
@@ -138,7 +138,7 @@ function jsonLdBreadcrumb(array $items): string {
                 '@type' => 'ListItem',
                 'position' => $i + 1,
                 'name' => $item['name'],
-                'item' => str_starts_with($item['url'], 'http') ? $item['url'] : SITE_URL . $item['url'],
+                'item' => str_starts_with((string)($item['url']), 'http') ? $item['url'] : SITE_URL . $item['url'],
             ];
         }, $items, array_keys($items)),
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

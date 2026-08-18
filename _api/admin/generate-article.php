@@ -101,7 +101,7 @@ function isTopicDuplicate(string $theme, array $existingTitles): bool {
         if ($normExisting === $normTheme) return true;
         
         // Один содержит другой
-        if (str_contains($normExisting, $normTheme) || str_contains($normTheme, $normExisting)) return true;
+        if (str_contains((string)($normExisting), $normTheme) || str_contains((string)($normTheme), $normExisting)) return true;
         
         // Похожесть > 70% (ловит "Займы без отказа" vs "Займ без отказа на карту")
         $maxLen = max(mb_strlen($normExisting), mb_strlen($normTheme));

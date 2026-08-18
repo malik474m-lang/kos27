@@ -5,7 +5,7 @@ $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER
 $ip = trim(explode(',', $ip)[0]);
 if (apiCacheStart('public_geo', 3600, $ip)) exit;
 
-if (in_array($ip, ['127.0.0.1', '::1']) || str_starts_with($ip, '192.168') || str_starts_with($ip, '10.')) {
+if (in_array($ip, ['127.0.0.1', '::1']) || str_starts_with((string)($ip), '192.168') || str_starts_with((string)($ip), '10.')) {
     $city = findCityByName('Москва');
     apiCacheEnd([
         'city' => 'Москва',

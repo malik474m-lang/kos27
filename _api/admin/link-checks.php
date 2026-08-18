@@ -52,7 +52,7 @@ function checkAffiliateUrl(string $url): array {
         return ['http_code' => 0, 'final_url' => $url, 'redirect_count' => 0, 'is_ok' => 0, 'error_message' => 'cURL недоступен'];
     }
 
-    $isPartner = str_contains($url, 'leads.su') || str_contains($url, 'pxl.') || str_contains($url, '/click/') || str_contains($url, 'aff') || str_contains($url, 'utm_');
+    $isPartner = str_contains((string)($url), 'leads.su') || str_contains((string)($url), 'pxl.') || str_contains((string)($url), '/click/') || str_contains((string)($url), 'aff') || str_contains((string)($url), 'utm_');
 
     // 1) HEAD
     $head = checkAffiliateUrlOnce($url, true);

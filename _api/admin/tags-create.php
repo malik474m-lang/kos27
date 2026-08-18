@@ -11,7 +11,7 @@ function pickTagIcon(string $title, string $category): string {
         'рефинанс' => '♻️', 'наличными' => '💵', 'дебет' => '🪪', 'кредитн' => '💳',
         'ипотек' => '🏠', 'вклад' => '🏦', 'страхов' => '🛡️', 'авто' => '🚗'
     ];
-    foreach ($map as $needle => $emoji) { if (str_contains($t, $needle)) return $emoji; }
+    foreach ($map as $needle => $emoji) { if (str_contains((string)($t), $needle)) return $emoji; }
     return match($category) {
         'microloans' => '💵',
         'credits' => '🏦',

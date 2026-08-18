@@ -238,7 +238,7 @@ function findRelatedArticles(array $currentArticle, int $limit = 3): array {
 
             $titleLower = mb_strtolower((string)$candidate['title']);
             foreach ($keywords as $kw) {
-                if (mb_strlen($kw) >= 5 && str_contains($titleLower, $kw)) $score += 3;
+                if (mb_strlen($kw) >= 5 && str_contains((string)($titleLower), $kw)) $score += 3;
             }
 
             similar_text(
@@ -271,16 +271,16 @@ function detectArticleOfferCategory(array $article): string {
 
     // Жёсткий приоритет по заголовку/slug — это важнее текста статьи.
     $hardSource = $title . ' ' . $slug;
-    if (preg_match('/кредитн(ая|ые)\s+карт/u', $hardSource) || str_contains($hardSource, 'credit-card')) {
+    if (preg_match('/кредитн(ая|ые)\s+карт/u', $hardSource) || str_contains((string)($hardSource), 'credit-card')) {
         return 'credit_cards';
     }
-    if (preg_match('/дебетов(ая|ые)\s+карт/u', $hardSource) || str_contains($hardSource, 'debit-card')) {
+    if (preg_match('/дебетов(ая|ые)\s+карт/u', $hardSource) || str_contains((string)($hardSource), 'debit-card')) {
         return 'debit_cards';
     }
-    if (preg_match('/(микрозайм|микрозаймы|займ|займы|мфо)/u', $hardSource) || str_contains($hardSource, 'zajm')) {
+    if (preg_match('/(микрозайм|микрозаймы|займ|займы|мфо)/u', $hardSource) || str_contains((string)($hardSource), 'zajm')) {
         return 'microloans';
     }
-    if (preg_match('/(кредит|кредиты|рефинансирование)/u', $hardSource) || str_contains($hardSource, 'kredit')) {
+    if (preg_match('/(кредит|кредиты|рефинансирование)/u', $hardSource) || str_contains((string)($hardSource), 'kredit')) {
         return 'credits';
     }
 
@@ -318,7 +318,7 @@ function detectArticleOfferCategory(array $article): string {
 
     foreach ($rules as $category => $phrases) {
         foreach ($phrases as $phrase => $weight) {
-            if (str_contains($text, $phrase)) $scores[$category] += $weight;
+            if (str_contains((string)($text), $phrase)) $scores[$category] += $weight;
         }
     }
 
@@ -366,18 +366,18 @@ function findRelatedOffersForArticle(array $article, int $limit = 3): array {
             ));
 
             foreach ($keywords as $kw) {
-                if (mb_strlen($kw) >= 4 && str_contains($haystack, $kw)) {
+                if (mb_strlen($kw) >= 4 && str_contains((string)($haystack), $kw)) {
                     $score += 3;
                 }
             }
 
-            if ($category === 'microloans' && str_contains($sourceText, 'первый займ') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
+            if ($category === 'microloans' && str_contains((string)($sourceText), 'первый займ') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
                 $score += 5;
             }
-            if ($category === 'credit_cards' && str_contains($sourceText, 'льготн') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
+            if ($category === 'credit_cards' && str_contains((string)($sourceText), 'льготн') && ((int)($offer['free_term_days'] ?? 0) > 0)) {
                 $score += 4;
             }
-            if ($category === 'debit_cards' && str_contains($sourceText, 'кэшбек') && str_contains($haystack, 'кэшбек')) {
+            if ($category === 'debit_cards' && str_contains((string)($sourceText), 'кэшбек') && str_contains((string)($haystack), 'кэшбек')) {
                 $score += 4;
             }
 
@@ -514,7 +514,7 @@ function autoLinkText(string $html, int $maxLinks = 10, array $options = []): st
             $phraseLower = mb_strtolower($phrase);
             $skip = false;
             foreach ($usedPhrases as $used) {
-                if (str_contains($phraseLower, $used) || str_contains($used, $phraseLower)) {
+                if (str_contains((string)($phraseLower), $used) || str_contains((string)($used), $phraseLower)) {
                     $skip = true;
                     break;
                 }

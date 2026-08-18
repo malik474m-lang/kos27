@@ -44,7 +44,7 @@ case 'submit':
     $urls = $data['urls'] ?? [];
     if (!$urls || !is_array($urls)) { echo json_encode(['error' => 'No URLs']); exit; }
     $urls = array_slice($urls, 0, 20);
-    $fullUrls = array_map(fn($u) => str_starts_with($u, 'http') ? $u : SITE_URL . $u, $urls);
+    $fullUrls = array_map(fn($u) => str_starts_with((string)($u), 'http') ? $u : SITE_URL . $u, $urls);
     $result = yandexSubmitBatch($fullUrls);
     try {
         $db->query("SELECT 1 FROM indexing_log LIMIT 1");

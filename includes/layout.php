@@ -13,7 +13,7 @@ if (empty($canonicalUrl)) {
     $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
     $currentPath = rtrim($currentPath, '/') ?: '/';
     // Не ставим canonical для admin/api/click
-    if (!str_starts_with($currentPath, '/api/') && !str_starts_with($currentPath, '/admin') && !str_starts_with($currentPath, '/click/')) {
+    if (!str_starts_with((string)($currentPath), '/api/') && !str_starts_with((string)($currentPath), '/admin') && !str_starts_with((string)($currentPath), '/click/')) {
         $canonicalUrl = SITE_URL . $currentPath;
     }
 }
@@ -25,7 +25,7 @@ $pageHeadHtml = $pageHeadHtml ?? '';
 $bestOfferPopup = null;
 try {
     $popupUri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (!str_contains($popupUri, '/admin') && !str_contains($popupUri, '/api/') && !str_contains($popupUri, '/click/')) {
+    if (!str_contains((string)($popupUri), '/admin') && !str_contains((string)($popupUri), '/api/') && !str_contains((string)($popupUri), '/click/')) {
         $popupDb = getDB();
         $popupStmt = $popupDb->query("SELECT id, title, slug, rate, amount_max, free_term_days, logo_url, category FROM offers WHERE is_active = 1 ORDER BY rating DESC, review_count DESC, sort_order ASC LIMIT 1");
         $bestOfferPopup = $popupStmt->fetch();
@@ -53,7 +53,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ru_RU">
     <?php if ($ogImage): ?>
-    <meta property="og:image" content="<?= e(str_starts_with($ogImage, 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
+    <meta property="og:image" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
     <?php endif; ?>
     <?php if ($canonicalUrl): ?>
     <meta property="og:url" content="<?= e($canonicalUrl) ?>">
@@ -65,7 +65,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta name="twitter:title" content="<?= e($pageTitle) ?>">
     <meta name="twitter:description" content="<?= e($metaDescription) ?>">
     <?php if ($ogImage): ?>
-    <meta name="twitter:image" content="<?= e(str_starts_with($ogImage, 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
+    <meta name="twitter:image" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
     <?php endif; ?>
 
     <?php

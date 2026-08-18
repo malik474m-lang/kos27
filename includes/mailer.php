@@ -96,34 +96,34 @@ function sendSmtp(string $to, string $subject, string $body, bool $isHtml, ?stri
 
     try {
         $greeting = $resp();
-        if (!str_starts_with($greeting, '220')) throw new Exception("SMTP greeting failed: {$greeting}");
+        if (!str_starts_with((string)($greeting), '220')) throw new Exception("SMTP greeting failed: {$greeting}");
 
         $ehlo = $send('EHLO kosmozaim.ru');
 
         if ($secure === 'tls') {
             $starttls = $send('STARTTLS');
-            if (!str_starts_with($starttls, '220')) throw new Exception("STARTTLS failed: {$starttls}");
+            if (!str_starts_with((string)($starttls), '220')) throw new Exception("STARTTLS failed: {$starttls}");
             stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
             $send('EHLO kosmozaim.ru');
         }
 
         $auth = $send('AUTH LOGIN');
-        if (!str_starts_with($auth, '334')) throw new Exception("AUTH failed: {$auth}");
+        if (!str_starts_with((string)($auth), '334')) throw new Exception("AUTH failed: {$auth}");
 
         $r1 = $send(base64_encode($user));
-        if (!str_starts_with($r1, '334')) throw new Exception("User rejected: {$r1}");
+        if (!str_starts_with((string)($r1), '334')) throw new Exception("User rejected: {$r1}");
 
         $r2 = $send(base64_encode($pass));
-        if (!str_starts_with($r2, '235')) throw new Exception("Password rejected: {$r2}");
+        if (!str_starts_with((string)($r2), '235')) throw new Exception("Password rejected: {$r2}");
 
         $r3 = $send("MAIL FROM:<{$from}>");
-        if (!str_starts_with($r3, '250')) throw new Exception("MAIL FROM rejected: {$r3}");
+        if (!str_starts_with((string)($r3), '250')) throw new Exception("MAIL FROM rejected: {$r3}");
 
         $r4 = $send("RCPT TO:<{$to}>");
-        if (!str_starts_with($r4, '250')) throw new Exception("RCPT TO rejected: {$r4}");
+        if (!str_starts_with((string)($r4), '250')) throw new Exception("RCPT TO rejected: {$r4}");
 
         $r5 = $send('DATA');
-        if (!str_starts_with($r5, '354')) throw new Exception("DATA rejected: {$r5}");
+        if (!str_starts_with((string)($r5), '354')) throw new Exception("DATA rejected: {$r5}");
 
         $boundary = 'kosmo_' . md5(uniqid());
         $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
@@ -143,7 +143,7 @@ function sendSmtp(string $to, string $subject, string $body, bool $isHtml, ?stri
         $message .= "\r\n.";
 
         $r6 = $send($message);
-        if (!str_starts_with($r6, '250')) throw new Exception("Message rejected: {$r6}");
+        if (!str_starts_with((string)($r6), '250')) throw new Exception("Message rejected: {$r6}");
 
         $send('QUIT');
         fclose($fp);

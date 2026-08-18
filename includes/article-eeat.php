@@ -189,7 +189,7 @@ function renderArticleUpdatedBadge(array $article): string {
  */
 function jsonLdArticleEEAT(array $article): string {
     $cover = normalizeMediaUrl($article['cover_image'] ?? '');
-    $image = $cover ? (str_starts_with($cover, 'http') ? $cover : SITE_URL . $cover) : SITE_URL . '/favicon.svg';
+    $image = $cover ? (str_starts_with((string)($cover), 'http') ? $cover : SITE_URL . $cover) : SITE_URL . '/favicon.svg';
     
     $authorName = $article['author_name'] ?? 'Редакция Космозайм';
     $authorTitle = $article['author_title'] ?? 'Финансовый редактор';

@@ -21,7 +21,7 @@ function breadcrumbItem(string $name, ?string $url = null): array {
 }
 
 function breadcrumbAbsoluteUrl(string $url): string {
-    return str_starts_with($url, 'http') ? $url : SITE_URL . $url;
+    return str_starts_with((string)($url), 'http') ? $url : SITE_URL . $url;
 }
 
 function renderBreadcrumbs(?array $items, string $className = 'text-sm text-gray-500 mb-6'): string {

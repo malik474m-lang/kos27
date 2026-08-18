@@ -68,7 +68,7 @@ function kosmozaimErrorHandler(int $errno, string $errstr, string $errfile, int 
         'No such file or directory',
     ];
     foreach ($ignoredPatterns as $pattern) {
-        if (str_contains($errstr, $pattern)) {
+        if (str_contains((string)($errstr), $pattern)) {
             return true;
         }
     }

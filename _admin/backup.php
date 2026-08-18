@@ -246,7 +246,7 @@ echo json_encode(['error' => 'Unknown action']);
 function copyDir($src, $dst, array $excludeDirs = [], array $excludeFilePatterns = []) {
     $realSrc = realpath($src) ?: $src;
     foreach ($excludeDirs as $excluded) {
-        if ($excluded && str_starts_with($realSrc, $excluded)) return;
+        if ($excluded && str_starts_with((string)($realSrc), $excluded)) return;
     }
 
     if (!is_dir($dst)) @mkdir($dst, 0755, true);
@@ -258,7 +258,7 @@ function copyDir($src, $dst, array $excludeDirs = [], array $excludeFilePatterns
         $realPath = realpath($srcPath) ?: $srcPath;
 
         foreach ($excludeDirs as $excluded) {
-            if ($excluded && str_starts_with($realPath, $excluded)) continue 2;
+            if ($excluded && str_starts_with((string)($realPath), $excluded)) continue 2;
         }
 
         if (!is_dir($srcPath)) {

@@ -108,7 +108,7 @@ if ($method === 'POST') {
             $value = $data[$field];
             
             // Пропускаем замаскированные ключи
-            if (str_contains($field, '_api_key') || str_contains($field, '_image_api_key') || str_contains($field, '_auth_key')) {
+            if (str_contains((string)($field), '_api_key') || str_contains((string)($field), '_image_api_key') || str_contains((string)($field), '_auth_key')) {
                 if (empty($value) || str_contains((string)$value, '...')) {
                     continue;
                 }

@@ -19999,7 +19999,7 @@ function performInstallation(array $d): void {
     // 4. Database
     $pdo = new PDO("mysql:host={$d['db_host']};port={$d['db_port']};dbname={$d['db_name']};charset=utf8mb4", $d['db_user'], $d['db_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     foreach (array_filter(array_map('trim', explode(';', getEmbeddedSchema()))) as $s) {
-        if ($s && !str_starts_with($s, '--')) $pdo->exec($s);
+        if ($s && !str_starts_with((string)($s), '--')) $pdo->exec($s);
     }
 
     // 5. Admin

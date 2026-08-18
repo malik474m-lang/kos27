@@ -20,7 +20,7 @@ if ($apiUri === '/app-download-track') { require __DIR__ . '/app-download-track.
 if ($apiUri === '/download-apk') { require __DIR__ . '/download-apk.php'; exit; }
 if ($apiUri === '/article-inline-cta-track') { require __DIR__ . '/article-inline-cta-track.php'; exit; }
 // User API
-if (str_starts_with($apiUri, '/user/')) {
+if (str_starts_with((string)($apiUri), '/user/')) {
     $userAction = substr($apiUri, 6);
     $userFile = __DIR__ . '/user/' . basename($userAction) . '.php';
     if (file_exists($userFile)) { require $userFile; exit; }
@@ -41,7 +41,7 @@ if ($apiUri === '/geo') { require __DIR__ . '/geo.php'; exit; }
 if ($apiUri === '/geo-redirect') { require __DIR__ . '/geo-redirect.php'; exit; }
 
 // Админ API
-if (str_starts_with($apiUri, '/admin/')) {
+if (str_starts_with((string)($apiUri), '/admin/')) {
     require __DIR__ . '/admin-router.php';
     exit;
 }

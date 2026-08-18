@@ -56,8 +56,8 @@ function buildOffersBlock(PDO $db): string {
     $block = '<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0">';
     foreach ($offers as $o) {
         $logo = trim($o['logo_url'] ?? '');
-        if ($logo && !str_starts_with($logo, 'http')) {
-            if (str_starts_with($logo, '/public/')) $logo = substr($logo, 7);
+        if ($logo && !str_starts_with((string)($logo), 'http')) {
+            if (str_starts_with((string)($logo), '/public/')) $logo = substr($logo, 7);
             $logo = SITE_URL . $logo;
         }
         $free = $o['free_term_days'] > 0 ? '<span style="color:#059669;font-size:12px;font-weight:600"> • 0% на ' . $o['free_term_days'] . ' дней</span>' : '';
@@ -93,7 +93,7 @@ function buildEmailHtml(string $bodyHtml, string $offersBlock, string $unsubLink
     $body = $bodyHtml;
     
     // Блок офферов
-    if (str_contains($body, '{{offers}}')) {
+    if (str_contains((string)($body), '{{offers}}')) {
         $body = str_replace('{{offers}}', $offersBlock, $body);
     } else {
         $body .= $offersBlock;
@@ -111,7 +111,7 @@ function buildEmailHtml(string $bodyHtml, string $offersBlock, string $unsubLink
             '/<a\s([^>]*?)href=["\']( https?:\/\/[^"\'>]+)["\']([^>]*?)>/i',
             function($m) use ($nlId, $subId) {
                 $url = $m[2];
-                if (str_contains($url, 'unsubscribe')) return $m[0];
+                if (str_contains((string)($url), 'unsubscribe')) return $m[0];
                 $trackUrl = SITE_URL . '/api/nl-click?n=' . $nlId . '&s=' . $subId . '&url=' . urlencode($url);
                 return '<a ' . $m[1] . 'href="' . $trackUrl . '"' . $m[3] . '>';
             },

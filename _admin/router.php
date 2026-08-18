@@ -60,7 +60,7 @@ if ($adminPath === '/clear-cache') {
     exit;
 }
 
-if ($adminPath === '/backup' || str_starts_with($adminPath, '/backup/')) {
+if ($adminPath === '/backup' || str_starts_with((string)($adminPath), '/backup/')) {
     require __DIR__ . '/backup.php';
     exit;
 }

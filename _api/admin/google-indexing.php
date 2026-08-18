@@ -34,7 +34,7 @@ case 'submit':
 
     $urls = array_slice($urls, 0, 50);
     $fullUrls = array_map(function($u) {
-        return str_starts_with($u, 'http') ? $u : SITE_URL . $u;
+        return str_starts_with((string)($u), 'http') ? $u : SITE_URL . $u;
     }, $urls);
 
     $result = googleIndexBatch($fullUrls);
@@ -108,7 +108,7 @@ case 'submit-new':
 case 'check':
     $url = $_GET['url'] ?? '';
     if (!$url) { echo json_encode(['error' => 'url required']); exit; }
-    $fullUrl = str_starts_with($url, 'http') ? $url : SITE_URL . $url;
+    $fullUrl = str_starts_with((string)($url), 'http') ? $url : SITE_URL . $url;
     echo json_encode(googleGetIndexStatus($fullUrl));
     break;
 

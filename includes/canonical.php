@@ -21,7 +21,7 @@ function canonicalizeRequest(): void {
     $queryString = parse_url($uri, PHP_URL_QUERY) ?: '';
 
     // Не трогаем admin/api/click
-    if (str_starts_with($path, '/api/') || str_starts_with($path, '/admin') || str_starts_with($path, '/click/')) {
+    if (str_starts_with((string)($path), '/api/') || str_starts_with((string)($path), '/admin') || str_starts_with((string)($path), '/click/')) {
         return;
     }
 

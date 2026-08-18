@@ -13,8 +13,8 @@ $PAGE_CACHE_ENABLED = true;
 function pageCacheCanServe(): bool {
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') return false;
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (str_contains($uri, '/api/') || str_contains($uri, '/admin') || str_contains($uri, '/search') || str_contains($uri, '/click/')) return false;
-    if ($uri === '/app' || str_starts_with($uri, '/app?')) return false;
+    if (str_contains((string)($uri), '/api/') || str_contains((string)($uri), '/admin') || str_contains((string)($uri), '/search') || str_contains((string)($uri), '/click/')) return false;
+    if ($uri === '/app' || str_starts_with((string)($uri), '/app?')) return false;
     return true;
 }
 

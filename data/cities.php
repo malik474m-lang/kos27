@@ -48,7 +48,7 @@ function findCityByName(string $name): ?array {
         if (normalizeCityName($c['name']) === $normalized) return $c;
     }
     foreach ($cities as $c) {
-        if (str_contains($normalized, normalizeCityName($c['name'])) || str_contains(normalizeCityName($c['name']), $normalized)) {
+        if (str_contains((string)($normalized), normalizeCityName($c['name'])) || str_contains(normalizeCityName($c['name']), $normalized)) {
             return $c;
         }
     }

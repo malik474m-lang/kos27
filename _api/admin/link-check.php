@@ -85,7 +85,7 @@ function checkOfferUrl(string $url): array {
         $result['status'] = 'timeout';
         $result['error_message'] = 'Таймаут (' . $result['response_time_ms'] . ' мс)';
         // Партнёрские ссылки часто таймаутят из-за JS-редиректа — это не ошибка
-        if (str_contains($url, 'leads.su') || str_contains($url, 'pxl.') || str_contains($url, 'click')) {
+        if (str_contains((string)($url), 'leads.su') || str_contains((string)($url), 'pxl.') || str_contains((string)($url), 'click')) {
             $result['status'] = 'redirect';
             $result['error_message'] = 'JS-редирект (таймаут — это нормально для партнёрских ссылок)';
         }

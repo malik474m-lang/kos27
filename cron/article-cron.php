@@ -31,8 +31,8 @@ foreach ($topics as $t) {
         $normTopic = preg_replace('/\s+/', ' ', trim($normTopic));
         
         if ($normExisting === $normTopic 
-            || str_contains($normExisting, $normTopic) 
-            || str_contains($normTopic, $normExisting)
+            || str_contains((string)($normExisting), $normTopic) 
+            || str_contains((string)($normTopic), $normExisting)
             || similar_text($normExisting, $normTopic) / max(mb_strlen($normExisting), mb_strlen($normTopic), 1) > 0.7) {
             $isDupe = true;
             break;

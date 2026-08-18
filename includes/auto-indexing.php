@@ -168,18 +168,18 @@ function indexNowSubmitBatch(array $paths): array {
 // ==================== Утилиты ====================
 
 function detectUrlType(string $path): string {
-    if (str_starts_with($path, '/offer/')) return 'offer';
-    if (str_starts_with($path, '/articles/')) return 'article';
-    if (str_contains($path, '/type/')) return 'category';
+    if (str_starts_with((string)($path), '/offer/')) return 'offer';
+    if (str_starts_with((string)($path), '/articles/')) return 'article';
+    if (str_contains((string)($path), '/type/')) return 'category';
     if (preg_match('#^/(zajmy|kredity|karty)/[a-z]#', $path)) return 'city';
     return 'static';
 }
 
 function detectUrlPriority(string $path): float {
     if ($path === '/') return 1.0;
-    if (str_starts_with($path, '/offer/')) return 0.8;
-    if (str_starts_with($path, '/articles/')) return 0.6;
-    if (str_contains($path, '/type/')) return 0.7;
+    if (str_starts_with((string)($path), '/offer/')) return 0.8;
+    if (str_starts_with((string)($path), '/articles/')) return 0.6;
+    if (str_contains((string)($path), '/type/')) return 0.7;
     return 0.5;
 }
 

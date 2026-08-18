@@ -14,7 +14,7 @@ function pageMetaTitle(string $title, bool $appendSite = true, string $separator
 function pageCanonical(string $path = '/'): string {
     $path = trim($path);
     if ($path === '' || $path === SITE_URL) return SITE_URL . '/';
-    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+    if (str_starts_with((string)($path), 'http://') || str_starts_with((string)($path), 'https://')) return $path;
     if ($path[0] !== '/') $path = '/' . $path;
     return SITE_URL . $path;
 }

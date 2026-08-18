@@ -14,30 +14,30 @@ if ($adminUri === '/opcache-reset' && $method === 'POST') { require __DIR__ . '/
 // Всё остальное — только для авторизованных
 requireAdmin();
 // Лицензия
-if (str_starts_with($adminUri, "/license")) { require __DIR__ . "/admin/license.php"; exit; }
+if (str_starts_with((string)($adminUri), "/license")) { require __DIR__ . "/admin/license.php"; exit; }
 
 // Индексация
 
 // Розыгрыши
-if (str_starts_with($adminUri, "/giveaway")) { require __DIR__ . "/admin/giveaway.php"; exit; }
+if (str_starts_with((string)($adminUri), "/giveaway")) { require __DIR__ . "/admin/giveaway.php"; exit; }
 
 // Тест почты
 if ($adminUri === "/test-mail" && $method === "POST") { require __DIR__ . "/admin/test-mail.php"; exit; }
 
 // SEO-аудит
-if (str_starts_with($adminUri, "/seo-audit")) { require __DIR__ . "/admin/seo-audit.php"; exit; }
+if (str_starts_with((string)($adminUri), "/seo-audit")) { require __DIR__ . "/admin/seo-audit.php"; exit; }
 
 // Системный мониторинг
-if (str_starts_with($adminUri, "/system-monitor")) { require __DIR__ . "/admin/system-monitor.php"; exit; }
+if (str_starts_with((string)($adminUri), "/system-monitor")) { require __DIR__ . "/admin/system-monitor.php"; exit; }
 
 // Тест провайдеров картинок
 if ($adminUri === '/image-provider-test' && $method === 'POST') { require __DIR__ . '/admin/image-provider-test.php'; exit; }
 
 // Google Indexing
-if (str_starts_with($adminUri, "/google-indexing")) { require __DIR__ . "/admin/google-indexing.php"; exit; }
+if (str_starts_with((string)($adminUri), "/google-indexing")) { require __DIR__ . "/admin/google-indexing.php"; exit; }
 
 // Позиции
-if (str_starts_with($adminUri, "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
+if (str_starts_with((string)($adminUri), "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
 
 // Перегенерация картинки статьи
 if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }
@@ -53,25 +53,25 @@ if ($adminUri === "/offer-generate-desc" && $method === "POST") { require __DIR_
 // Генерация справочной информации оффера
 if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
 // leads.su API
-if (str_starts_with($adminUri, "/leads-su")) { require __DIR__ . "/admin/leads-su.php"; exit; }
+if (str_starts_with((string)($adminUri), "/leads-su")) { require __DIR__ . "/admin/leads-su.php"; exit; }
 // Email-воронка
-if (str_starts_with($adminUri, "/email-funnel")) { require __DIR__ . "/admin/email-funnel.php"; exit; }
+if (str_starts_with((string)($adminUri), "/email-funnel")) { require __DIR__ . "/admin/email-funnel.php"; exit; }
 // Статистика inline CTA статей
 if ($adminUri === "/article-inline-cta-stats") { require __DIR__ . "/admin/article-inline-cta-stats.php"; exit; }
 // Социальное доказательство
-if (str_starts_with($adminUri, "/social-proof")) { require __DIR__ . "/admin/social-proof.php"; exit; }
+if (str_starts_with((string)($adminUri), "/social-proof")) { require __DIR__ . "/admin/social-proof.php"; exit; }
 
 // Яндекс Директ
-if (str_starts_with($adminUri, "/yandex-direct")) { require __DIR__ . "/admin/yandex-direct.php"; exit; }
+if (str_starts_with((string)($adminUri), "/yandex-direct")) { require __DIR__ . "/admin/yandex-direct.php"; exit; }
 
 // Yandex Webmaster
-if (str_starts_with($adminUri, "/yandex-webmaster")) { require __DIR__ . "/admin/yandex-webmaster.php"; exit; }
+if (str_starts_with((string)($adminUri), "/yandex-webmaster")) { require __DIR__ . "/admin/yandex-webmaster.php"; exit; }
 
 // Проверка страниц
-if (str_starts_with($adminUri, "/page-checker")) { require __DIR__ . "/admin/page-checker.php"; exit; }
+if (str_starts_with((string)($adminUri), "/page-checker")) { require __DIR__ . "/admin/page-checker.php"; exit; }
 
 // Города
-if (str_starts_with($adminUri, "/cities")) { require __DIR__ . "/admin/cities.php"; exit; }
+if (str_starts_with((string)($adminUri), "/cities")) { require __DIR__ . "/admin/cities.php"; exit; }
 
 // Качество контента
 if ($adminUri === '/content-quality' && $method === 'POST') { require __DIR__ . '/admin/content-quality.php'; exit; }
@@ -82,7 +82,7 @@ if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/a
 if ($adminUri === '/faq/bulk-generate' && $method === 'POST') { require __DIR__ . '/admin/faq-bulk-generate.php'; exit; }
 if ($adminUri === '/faq/update' && $method === 'PUT') { require __DIR__ . '/admin/faq-update.php'; exit; }
 if ($adminUri === '/faq/delete' && $method === 'DELETE') { require __DIR__ . '/admin/faq-delete.php'; exit; }
-if (str_starts_with($adminUri, "/indexing")) { require __DIR__ . "/admin/indexing.php"; exit; }
+if (str_starts_with((string)($adminUri), "/indexing")) { require __DIR__ . "/admin/indexing.php"; exit; }
 
 // Офферы
 if ($adminUri === '/offers' && $method === 'GET') { require __DIR__ . '/admin/offers-list.php'; exit; }
@@ -162,7 +162,7 @@ if ($adminUri === '/reorder' && $method === 'POST') { require __DIR__ . '/admin/
 
 
 // Безопасность
-if (str_starts_with($adminUri, '/security')) { require __DIR__ . '/admin/security.php'; exit; }
+if (str_starts_with((string)($adminUri), '/security')) { require __DIR__ . '/admin/security.php'; exit; }
 
 
 // Рассылки
@@ -221,13 +221,13 @@ if (preg_match('#^/categories/(\d+)$#', $adminUri, $m)) {
 // Бонусы
 if ($adminUri === "/bonus-withdraw-alert") { require __DIR__ . "/admin/bonus-withdraw-alert.php"; exit; }
 if ($adminUri === "/bonus-send-confirmation" && $method === "POST") { require __DIR__ . "/admin/bonus-send-confirmation.php"; exit; }
-if (str_starts_with($adminUri, '/bonuses')) { require __DIR__ . '/admin/bonuses.php'; exit; }
+if (str_starts_with((string)($adminUri), '/bonuses')) { require __DIR__ . '/admin/bonuses.php'; exit; }
 
 // Пользователи
 if ($adminUri === '/users' && $method === 'GET') { require __DIR__ . '/admin/users-list.php'; exit; }
 
 // Postback профили
-if (str_starts_with($adminUri, '/postback-profiles')) { require __DIR__ . '/admin/postback-profiles.php'; exit; }
+if (str_starts_with((string)($adminUri), '/postback-profiles')) { require __DIR__ . '/admin/postback-profiles.php'; exit; }
 
 // Postback конверсии
 if ($adminUri === '/postback' && $method === 'GET') { require __DIR__ . '/admin/postback-list.php'; exit; }
@@ -245,7 +245,7 @@ if ($adminUri === '/health-check') { require __DIR__ . '/admin/health-check.php'
 if ($adminUri === '/funnel') { require __DIR__ . '/admin/funnel.php'; exit; }
 
 // Проверка партнёрских ссылок
-if (str_starts_with($adminUri, '/link-checks')) { require __DIR__ . '/admin/link-checks.php'; exit; }
+if (str_starts_with((string)($adminUri), '/link-checks')) { require __DIR__ . '/admin/link-checks.php'; exit; }
 
 // Умный рейтинг
 if ($adminUri === '/smart-rating' && ($method === 'GET' || $method === 'POST')) { require __DIR__ . '/admin/smart-rating.php'; exit; }
@@ -265,10 +265,10 @@ if ($adminUri === '/subscribers') { require __DIR__ . '/admin/subscribers.php'; 
 if ($adminUri === "/ai-debug") { require __DIR__ . "/admin/ai-debug.php"; exit; }
 
 // OdiRouter ключи
-if (str_starts_with($adminUri, "/odirouter-keys")) { require __DIR__ . "/admin/odirouter-keys.php"; exit; }
+if (str_starts_with((string)($adminUri), "/odirouter-keys")) { require __DIR__ . "/admin/odirouter-keys.php"; exit; }
 
 // AI провайдеры
-if (str_starts_with($adminUri, "/ai-providers")) { require __DIR__ . "/admin/ai-providers.php"; exit; }
+if (str_starts_with((string)($adminUri), "/ai-providers")) { require __DIR__ . "/admin/ai-providers.php"; exit; }
 
 // Настройки сайта
 if ($adminUri === '/settings') { require __DIR__ . '/admin/settings.php'; exit; }
@@ -277,7 +277,7 @@ if ($adminUri === '/settings') { require __DIR__ . '/admin/settings.php'; exit; 
 if ($adminUri === '/scheduler') { require __DIR__ . '/admin/scheduler.php'; exit; }
 
 // 2FA управление
-if (str_starts_with($adminUri, '/two-factor')) { require __DIR__ . '/admin/two-factor.php'; exit; }
+if (str_starts_with((string)($adminUri), '/two-factor')) { require __DIR__ . '/admin/two-factor.php'; exit; }
 // Смена пароля
 if ($adminUri === '/change-password' && $method === 'POST') { require __DIR__ . '/admin/change-password.php'; exit; }
 
@@ -288,7 +288,7 @@ if ($adminUri === "/article-regenerate-image" && $method === "POST") { require _
 if ($adminUri === '/generate-article') { require __DIR__ . '/admin/generate-article.php'; exit; }
 if ($adminUri === '/generate-review' && $method === 'POST') { require __DIR__ . '/admin/generate-review.php'; exit; }
 // Медиа (загрузка/просмотр картинок)
-if (str_starts_with($adminUri, '/media')) {
+if (str_starts_with((string)($adminUri), '/media')) {
     if ($method === 'GET' || $method === 'POST' || $method === 'DELETE') { require __DIR__ . '/admin/media.php'; exit; }
 }
 // Массовые действия

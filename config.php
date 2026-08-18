@@ -148,7 +148,7 @@ function normalizeMediaUrl(?string $url): string {
     if (!$url) return '';
     $url = trim($url);
     if (!$url) return '';
-    if (str_starts_with($url, '/public/')) {
+    if (str_starts_with((string)($url), '/public/')) {
         return substr($url, 7); // убираем /public
     }
     return $url;
@@ -183,7 +183,7 @@ function slugify(string $text): string {
 
 // Сессия для админки
 function startAdminSession(): void {
-    if (session_status() === PHP_SESSION_NONE) {
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
         session_set_cookie_params([
             'lifetime' => 86400,
             'path' => '/',
@@ -197,10 +197,10 @@ function startAdminSession(): void {
 function isTestHost(): bool {
     $host = strtolower(trim($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
     return $host !== '' && (
-        str_starts_with($host, 'test.') ||
-        str_contains($host, '.test.') ||
+        str_starts_with((string)($host), 'test.') ||
+        str_contains((string)($host), '.test.') ||
         $host === 'localhost' ||
-        str_starts_with($host, '127.0.0.1')
+        str_starts_with((string)($host), '127.0.0.1')
     );
 }
 

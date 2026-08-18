@@ -13,7 +13,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/';
 
 // Проверка лицензии (кроме API и страницы лицензии в админке)
-if (!str_starts_with($uri, '/api/')) {
+if (!str_starts_with((string)($uri), '/api/')) {
     requireLicense();
 }
 
@@ -46,13 +46,13 @@ require_once __DIR__ . '/includes/auto-scheduler.php';
 checkAutoScheduler();
 
 // API роуты
-if (str_starts_with($uri, '/api/')) {
+if (str_starts_with((string)($uri), '/api/')) {
     require __DIR__ . '/_api/router.php';
     exit;
 }
 
 // Админка
-if (str_starts_with($uri, '/admin')) {
+if (str_starts_with((string)($uri), '/admin')) {
     require __DIR__ . '/_admin/router.php';
     exit;
 }
@@ -110,7 +110,7 @@ if (preg_match('#^/click/(\d+)$#', $uri, $m)) {
         }
 
         $affUrl = $row['affiliate_url'];
-        $separator = str_contains($affUrl, '?') ? '&' : '?';
+        $separator = str_contains((string)($affUrl), '?') ? '&' : '?';
         $affUrl .= $separator . 'aff_sub=' . $lastClickId;
         header("X-Robots-Tag: noindex, nofollow");
         header("Location: {$affUrl}");
