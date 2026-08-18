@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ai-providers.php';
 /**
  * Генерация обложки статьи через выбранный провайдер:
  * - YandexART
@@ -297,53 +298,64 @@ function generateArticleCoverImageResult(string $title): array {
     $requested = $settings['provider'];
     $prompt = buildArticleImagePrompt($title);
 
-    $error = null;
-    if ($requested === 'stability') {
-        $res = generateArticleCoverImageStability($prompt, $settings);
-        if (!empty($res['path'])) {
-            logArticleImageEvent($requested, 'stability', $prompt, true, null);
-            return ['path' => $res['path'], 'provider' => 'stability', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
+    $providerMap = [
+        'yandex' => 'yandex_art',
+        'yandex_art' => 'yandex_art',
+        'stability' => 'stability',
+        'gigachat' => 'gigachat',
+        'odirouter' => 'odirouter',
+    ];
+    $forcedProvider = $providerMap[$requested] ?? null;
+
+    $result = $forcedProvider ? aiGenerateImage($prompt, $forcedProvider) : aiGenerateImage($prompt);
+    if (!$result['success'] && $forcedProvider) {
+        $fallbackResult = aiGenerateImage($prompt);
+        if (!empty($fallbackResult['success'])) {
+            logArticleImageEvent($requested, (string)($fallbackResult['provider'] ?? ''), $prompt, true, $result['error'] ?? null);
+            return [
+                'path' => $fallbackResult['path'] ?? '',
+                'provider' => $fallbackResult['provider'] ?? '',
+                'requested_provider' => $requested,
+                'fallback' => true,
+                'error' => $result['error'] ?? null,
+            ];
         }
-        $error = $res['error'] ?? 'unknown stability error';
     }
 
-    if ($requested === 'gigachat') {
-        $res = generateArticleCoverImageGigaChat($prompt, $settings);
-        if (!empty($res['path'])) {
-            logArticleImageEvent($requested, 'gigachat', $prompt, true, null);
-            return ['path' => $res['path'], 'provider' => 'gigachat', 'requested_provider' => $requested, 'fallback' => false, 'error' => null];
-        }
-        $error = $res['error'] ?? 'unknown gigachat error';
+    if (!empty($result['success']) && !empty($result['path'])) {
+        logArticleImageEvent($requested, (string)($result['provider'] ?? ''), $prompt, true, null);
+        return [
+            'path' => $result['path'] ?? '',
+            'provider' => $result['provider'] ?? '',
+            'requested_provider' => $requested,
+            'fallback' => ($forcedProvider && ($result['provider'] ?? '') !== $forcedProvider),
+            'error' => null,
+        ];
     }
 
-    $img = generateArticleCoverImageYandex($prompt);
-    if ($img) {
-        logArticleImageEvent($requested, 'yandex', $prompt, true, $requested !== 'yandex' ? $error : null);
-        return ['path' => $img, 'provider' => 'yandex', 'requested_provider' => $requested, 'fallback' => ($requested !== 'yandex'), 'error' => $error];
-    }
-
-    logArticleImageEvent($requested, '', $prompt, false, $error ?: 'all providers failed');
-    return ['path' => '', 'provider' => '', 'requested_provider' => $requested, 'fallback' => false, 'error' => $error ?: 'all providers failed'];
+    logArticleImageEvent($requested, '', $prompt, false, $result['error'] ?? 'all providers failed');
+    return ['path' => '', 'provider' => '', 'requested_provider' => $requested, 'fallback' => false, 'error' => $result['error'] ?? 'all providers failed'];
 }
 
 function testArticleImageProvider(string $provider, string $title = 'тест'): array {
     $title = trim($title) ?: 'тест';
-    $settings = getArticleImageSettings();
-    $settings['provider'] = $provider;
-    $prompt = str_replace('{title}', $title, $settings['prompt_template']);
-    if ($provider === 'stability') {
-        $res = generateArticleCoverImageStability($prompt, $settings);
-        if (!empty($res['path'])) { @unlink(__DIR__ . '/..' . $res['path']); return ['success' => true, 'provider' => 'Stability AI', 'error' => null]; }
-        return ['success' => false, 'provider' => 'Stability AI', 'error' => $res['error'] ?? 'unknown'];
+    $providerMap = [
+        'yandex' => 'yandex_art',
+        'yandex_art' => 'yandex_art',
+        'stability' => 'stability',
+        'gigachat' => 'gigachat',
+        'odirouter' => 'odirouter',
+    ];
+    $forcedProvider = $providerMap[$provider] ?? null;
+    if (!$forcedProvider) {
+        return ['success' => false, 'provider' => $provider, 'error' => 'unknown provider'];
     }
-    if ($provider === 'gigachat') {
-        $res = generateArticleCoverImageGigaChat($prompt, $settings);
-        if (!empty($res['path'])) { @unlink(__DIR__ . '/..' . $res['path']); return ['success' => true, 'provider' => 'GigaChat / Kandinsky', 'error' => null]; }
-        return ['success' => false, 'provider' => 'GigaChat / Kandinsky', 'error' => $res['error'] ?? 'unknown'];
+    $result = aiGenerateImage(buildArticleImagePrompt($title), $forcedProvider);
+    if (!empty($result['success']) && !empty($result['path'])) {
+        @unlink(__DIR__ . '/..' . $result['path']);
+        return ['success' => true, 'provider' => (string)($result['provider'] ?? $forcedProvider), 'error' => null];
     }
-    $img = generateArticleCoverImageYandex($prompt);
-    if ($img) { @unlink(__DIR__ . '/..' . $img); return ['success' => true, 'provider' => 'YandexART', 'error' => null]; }
-    return ['success' => false, 'provider' => 'YandexART', 'error' => 'generation failed'];
+    return ['success' => false, 'provider' => $forcedProvider, 'error' => $result['error'] ?? 'generation failed'];
 }
 
 
