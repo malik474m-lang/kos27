@@ -95,7 +95,7 @@ $headerCats = getHeaderCategories();
 
 <div id="geo-switch-prompt" class="hidden fixed left-1/2 z-[9996] w-[min(92vw,560px)] -translate-x-1/2 rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_20px_50px_rgba(15,23,42,0.18)]" style="top:88px;max-width:calc(100vw - 16px);">
     <div class="flex items-start gap-3"><div class="mt-0.5 text-2xl">📍</div><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900">Похоже, вы из города <span id="geo-switch-city-name"></span>?</p><p class="mt-1 text-sm text-gray-500">Показать актуальную страницу для вашего региона.</p></div><button type="button" onclick="hideGeoSwitchPrompt(true)" class="text-xl leading-none text-gray-300 hover:text-gray-500 flex-shrink-0">×</button></div>
-    <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2"><a id="geo-switch-link" href="#" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Да, показать мой город</a><button type="button" onclick="hideGeoSwitchPrompt(true)" class="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Нет, остаться здесь</button></div>
+    <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2"><a id="geo-switch-link" href="#" onclick="confirmGeoCity()" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Да, показать мой город</a><button type="button" onclick="hideGeoSwitchPrompt(true)" class="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Нет, остаться здесь</button></div>
 </div>
 
 <script>
@@ -176,14 +176,27 @@ $headerCats = getHeaderCategories();
 
     window.hideGeoSwitchPrompt=function(persist){
         if(promptEl)promptEl.classList.add('hidden');
-        if(persist&&promptLink)try{localStorage.setItem(dismissKeyPrefix+promptLink.getAttribute('href'),String(Date.now()+86400000));}catch(e){}
+        if(persist&&promptLink)try{localStorage.setItem(dismissKeyPrefix+promptLink.getAttribute('href'),String(Date.now()+2592000000));}catch(e){}
     };
+
+    window.confirmGeoCity=function(){
+        var link=document.getElementById('geo-switch-link');
+        if(!link)return;
+        var href=link.getAttribute('href');
+        try{localStorage.setItem('geo_city_confirmed','1');localStorage.setItem(dismissKeyPrefix+(href||''),'9999999999999');}catch(e){}
+        if(promptEl)promptEl.classList.add('hidden');
+        if(href)location.href=href;
+    };
+
+    function isGeoConfirmed(){
+        try{return localStorage.getItem('geo_city_confirmed')==='1';}catch(e){return false;}
+    }
 
     fetch('/api/geo').then(function(r){return r.json();}).then(function(d){
         if(d.city)cityLabel.textContent='📍 '+d.city;
         if(!d.slug)return;
         var target=buildGeoTarget(d.slug);
-        if(!target||target===path||isDismissed(target)||!promptEl||!promptLink||!promptCityName)return;
+        if(!target||target===path||isDismissed(target)||isGeoConfirmed()||!promptEl||!promptLink||!promptCityName)return;
         promptCityName.textContent=d.city;
         promptLink.setAttribute('href',target);
         promptEl.classList.remove('hidden');
