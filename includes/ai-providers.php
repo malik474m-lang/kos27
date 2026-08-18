@@ -499,6 +499,20 @@ function sanitizeAiGeneratedText(string $text): string {
     $text = preg_replace('/\x{FFFD}+/u', '', $text) ?? $text;
     $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? $text;
     $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
+    // Убираем полную HTML-обёртку если AI вернул целый документ
+    $text = preg_replace('/^```\s*html?\s*/i', '', $text) ?? $text;
+    $text = preg_replace('/\s*```$/i', '', $text) ?? $text;
+    if (preg_match('/<!DOCTYPE|<html/i', $text)) {
+        if (preg_match('/<body[^>]*>(.*)<\/body>/is', $text, $m)) {
+            $text = trim($m[1]);
+        } else {
+            $text = preg_replace('/<!DOCTYPE[^>]*>/i', '', $text) ?? $text;
+            $text = preg_replace('/<\/?html[^>]*>/i', '', $text) ?? $text;
+            $text = preg_replace('/<head[^>]*>.*?<\/head>/is', '', $text) ?? $text;
+            $text = preg_replace('/<\/?body[^>]*>/i', '', $text) ?? $text;
+            $text = trim($text);
+        }
+    }
     return trim($text);
 }
 

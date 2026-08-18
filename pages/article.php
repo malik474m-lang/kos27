@@ -44,6 +44,18 @@ $inlineArticleOffer = !empty($articleTopicOffers) ? $articleTopicOffers[0] : nul
 $breadcrumbs = [breadcrumbItem('Главная', '/'), breadcrumbItem('Статьи', '/articles'), breadcrumbItem($article['title'], '/articles/' . $article['slug'])];
 $articleContent = (string)($article['content'] ?? '');
 $articleContent = preg_replace('/\x{FFFD}+/u', '', $articleContent) ?? $articleContent;
+// Убираем HTML-обёртку если AI сохранил целый документ
+if (preg_match('/<!DOCTYPE|<html/i', $articleContent)) {
+    if (preg_match('/<body[^>]*>(.*)<\/body>/is', $articleContent, $_bm)) {
+        $articleContent = trim($_bm[1]);
+    } else {
+        $articleContent = preg_replace('/<!DOCTYPE[^>]*>/i', '', $articleContent) ?? $articleContent;
+        $articleContent = preg_replace('/<\/?html[^>]*>/i', '', $articleContent) ?? $articleContent;
+        $articleContent = preg_replace('/<head[^>]*>.*?<\/head>/is', '', $articleContent) ?? $articleContent;
+        $articleContent = preg_replace('/<\/?body[^>]*>/i', '', $articleContent) ?? $articleContent;
+        $articleContent = trim($articleContent);
+    }
+}
 $articleHasHtml = (bool)preg_match('/<(p|h1|h2|h3|h4|h5|h6|ul|ol|li|strong|em|a|blockquote|table|img|figure|div|br)\b/i', $articleContent);
 $articleBodyHtml = $articleHasHtml
     ? autoLinkText($articleContent, 10, ['current_url' => '/articles/' . $article['slug'], 'current_article_slug' => $article['slug'], 'preferred_offer_category' => $articleOfferCategory])
