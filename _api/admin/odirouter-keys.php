@@ -46,6 +46,19 @@ if ($method === 'POST') {
     
     if ($action === 'remove') {
         $id = $data['id'] ?? '';
+        
+        // Если удаляют ключ из настроек — очищаем настройку
+        if ($id === 'settings_main' || $id === 'settings_image') {
+            $settingsFile = __DIR__ . '/../../data/site-settings.json';
+            if (file_exists($settingsFile)) {
+                $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+                if ($id === 'settings_main') $settings['odirouter_api_key'] = '';
+                if ($id === 'settings_image') $settings['odirouter_image_api_key'] = '';
+                file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+        }
+        
+        // Удаляем из пула
         $keys = odiLoadKeys();
         $keys = array_values(array_filter($keys, function($k) use ($id) {
             return ($k['id'] ?? '') !== $id;
