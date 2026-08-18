@@ -5679,9 +5679,7 @@ function lAIP(){
 '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.chat_enabled?'border-emerald-500':'border-gray-300')+'">'+ 
         '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">\U0001f4ac</span><div><h3 class="font-bold text-lg">AI-чат для посетителей</h3><p class="text-sm text-gray-500">Виджет чата на сайте</p></div></div><label class="flex items-center gap-2"><input type="checkbox" id="ai_chat_en" '+(cfg.chat_enabled?'checked':'')+' class="w-5 h-5"><span class="font-medium">'+(cfg.chat_enabled?'Вкл':'Выкл')+'</span></label></div>'+
         '<div class="grid md:grid-cols-2 gap-4">'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель чата</label><select id="ai_chat_model" class="sel-f">'+optSel(tModels.odirouter||{},cfg.chat_model||'free-gemini-2.5-flash')+'</select></div>'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Лимит запросов/час</label><input type="number" id="ai_chat_limit" value="'+(cfg.chat_rate_limit||30)+'" min="1" max="200" class="input-f"></div>'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Заголовок чата</label><input type="text" id="ai_chat_title" value="'+((cfg.chat_title||'').replace(/"/g,'&quot;'))+'" placeholder="Помощник" class="input-f"></div>'+
+                '<div><label class="block text-sm font-medium text-gray-700 mb-1">Заголовок чата</label><input type="text" id="ai_chat_title" value="'+((cfg.chat_title||'').replace(/"/g,'&quot;'))+'" placeholder="Помощник" class="input-f"></div>'+
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Приветствие</label><input type="text" id="ai_chat_greeting" value="'+((cfg.chat_greeting||'').replace(/"/g,'&quot;'))+'" placeholder="Здравствуйте!" class="input-f"></div>'+
         '<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Системный промпт</label><textarea id="ai_chat_prompt" rows="3" class="input-f" placeholder="Оставьте пустым для промпта по умолчанию">'+((cfg.chat_system_prompt||'').replace(/</g,'&lt;'))+'</textarea></div>'+
         '</div></div>'+
@@ -5713,8 +5711,6 @@ function aiSaveAll(){
         stability_enabled:document.getElementById('ai_st_en')?.checked||false,
         stability_api_key:document.getElementById('ai_st_key')?.value||'',
         chat_enabled:document.getElementById('ai_chat_en')?.checked||false,
-        chat_model:document.getElementById('ai_chat_model')?.value||'',
-        chat_rate_limit:parseInt(document.getElementById('ai_chat_limit')?.value||'30'),
         chat_title:document.getElementById('ai_chat_title')?.value||'',
         chat_greeting:document.getElementById('ai_chat_greeting')?.value||'',
         chat_system_prompt:document.getElementById('ai_chat_prompt')?.value||'',
