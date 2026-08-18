@@ -152,6 +152,10 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     }
     $fallbackModels = array_values(array_unique($fallbackModels));
 
+    $isLongFormRequest = (mb_strlen($prompt) + mb_strlen($systemPrompt)) > 1200 || stripos($prompt, 'Минимум 1500 слов') !== false || stripos($prompt, 'развёрнутую статью') !== false;
+    $textTimeout = $isLongFormRequest ? 28 : 15;
+    $connectTimeout = $isLongFormRequest ? 6 : 4;
+
     $messages = [];
     if ($systemPrompt) {
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];
@@ -183,8 +187,8 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 15,
-                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_TIMEOUT => $textTimeout,
+                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_HTTPHEADER => [
@@ -213,6 +217,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
                 }
                 if ($code === 429 && $keyAccount) {
                     $blockedAccounts[$keyAccount] = true;
+                    odiSetAccountCooldown($keyAccount);
                 }
                 if (in_array($code, [503,504], true)) {
                     $blockedModels[$tryModel] = true; // модель временно недоступна — не повторяем на других аккаунтах
@@ -304,6 +309,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
             }
             if ($code === 429 && $keyAccount) {
                 $blockedAccounts[$keyAccount] = true; // блокируем все ключи этого аккаунта
+                odiSetAccountCooldown($keyAccount);
             }
             $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code;
             continue;
@@ -342,7 +348,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
             if ($statusErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status cURL ' . $statusErr; break; }
             if (in_array($statusCode, [401,402,403,408,429,500,502,503,504], true)) {
                 if (in_array($statusCode, [402,403], true)) odiMarkKeyExhausted($activeKey['id']);
-                if ($statusCode === 429 && $keyAccount) $blockedAccounts[$keyAccount] = true;
+                if ($statusCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiSetAccountCooldown($keyAccount); }
                 $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status HTTP ' . $statusCode; break;
             }
             if ($statusCode < 200 || $statusCode >= 300) continue;
@@ -372,7 +378,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
                 if ($resultErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response cURL ' . $resultErr; break; }
                 if (in_array($resultCode, [401,402,403,408,429,500,502,503,504], true)) {
                     if (in_array($resultCode, [402,403], true)) odiMarkKeyExhausted($activeKey['id']);
-                    if ($resultCode === 429 && $keyAccount) $blockedAccounts[$keyAccount] = true;
+                    if ($resultCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiSetAccountCooldown($keyAccount); }
                     $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break;
                 }
                 if ($resultCode < 200 || $resultCode >= 300) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break; }
@@ -537,6 +543,10 @@ function yandexGptGenerateText(string $prompt, string $systemPrompt, array $conf
         return ['success' => false, 'error' => 'YandexGPT credentials not set'];
     }
     
+    $isLongFormRequest = (mb_strlen($prompt) + mb_strlen($systemPrompt)) > 1200 || stripos($prompt, 'Минимум 1500 слов') !== false || stripos($prompt, 'развёрнутую статью') !== false;
+    $textTimeout = $isLongFormRequest ? 28 : 15;
+    $connectTimeout = $isLongFormRequest ? 6 : 4;
+
     $messages = [];
     if ($systemPrompt) {
         $messages[] = ['role' => 'system', 'text' => $systemPrompt];
@@ -644,6 +654,10 @@ function gigaChatGenerateText(string $prompt, string $systemPrompt, array $confi
         return ['success' => false, 'error' => $tokenInfo['error']];
     }
     
+    $isLongFormRequest = (mb_strlen($prompt) + mb_strlen($systemPrompt)) > 1200 || stripos($prompt, 'Минимум 1500 слов') !== false || stripos($prompt, 'развёрнутую статью') !== false;
+    $textTimeout = $isLongFormRequest ? 28 : 15;
+    $connectTimeout = $isLongFormRequest ? 6 : 4;
+
     $messages = [];
     if ($systemPrompt) {
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];

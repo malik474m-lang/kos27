@@ -12,6 +12,8 @@ define('ODIROUTER_DAILY_LIMIT', 50);
 define('ODIROUTER_KEYS_FILE', __DIR__ . '/../data/odirouter-keys.json');
 define('ODIROUTER_USAGE_FILE', __DIR__ . '/../data/odirouter-usage.json');
 define('ODIROUTER_CURSOR_FILE', __DIR__ . '/../data/odirouter-cursor.json');
+define('ODIROUTER_COOLDOWN_FILE', __DIR__ . '/../data/odirouter-cooldowns.json');
+define('ODIROUTER_ACCOUNT_COOLDOWN_SECONDS', 600);
 define('ODIROUTER_DISABLED_ACCOUNTS_FILE', __DIR__ . '/../data/odirouter-disabled-accounts.json');
 
 
@@ -60,6 +62,38 @@ function odiGetDisabledAccounts(): array {
 
 function odiSetDisabledAccounts(array $list): void {
     @file_put_contents(ODIROUTER_DISABLED_ACCOUNTS_FILE, json_encode(array_values(array_unique($list))));
+}
+
+function odiLoadCooldowns(): array {
+    if (!file_exists(ODIROUTER_COOLDOWN_FILE)) return [];
+    $data = json_decode(file_get_contents(ODIROUTER_COOLDOWN_FILE), true);
+    if (!is_array($data)) return [];
+    $now = time();
+    $clean = [];
+    foreach ($data as $account => $until) {
+        $until = (int)$until;
+        if ($until > $now) $clean[$account] = $until;
+    }
+    if ($clean !== $data) @file_put_contents(ODIROUTER_COOLDOWN_FILE, json_encode($clean));
+    return $clean;
+}
+
+function odiSetAccountCooldown(string $account, int $seconds = ODIROUTER_ACCOUNT_COOLDOWN_SECONDS): void {
+    $account = trim($account);
+    if ($account === '') return;
+    $cooldowns = odiLoadCooldowns();
+    $cooldowns[$account] = time() + max(30, $seconds);
+    @file_put_contents(ODIROUTER_COOLDOWN_FILE, json_encode($cooldowns));
+}
+
+function odiGetAccountCooldownRemaining(string $account): int {
+    $cooldowns = odiLoadCooldowns();
+    $until = (int)($cooldowns[$account] ?? 0);
+    return max(0, $until - time());
+}
+
+function odiIsAccountCoolingDown(string $account): bool {
+    return odiGetAccountCooldownRemaining($account) > 0;
 }
 
 function odiIsAccountDisabled(string $account): bool {
@@ -162,6 +196,7 @@ function odiGetAvailableKeys(string $type = 'text'): array {
         $accountRemaining = ODIROUTER_DAILY_LIMIT - $accountUsed;
         if ($accountRemaining <= 0) continue;
         if (odiIsAccountDisabled($account)) continue; // аккаунт выключен вручную
+        if (odiIsAccountCoolingDown($account)) continue; // аккаунт на паузе после 429
         
         $result[] = [
             'key' => $k['key'],
@@ -265,6 +300,7 @@ function odiGetKeysStats(): array {
             'account_used' => $accountUsed,    // использовано всем аккаунтом
             'account_remaining' => $accountRemaining,
             'account_disabled' => odiIsAccountDisabled($account),
+            'account_cooldown' => odiGetAccountCooldownRemaining($account),
             'limit' => ODIROUTER_DAILY_LIMIT,
             'masked' => substr($k['key'] ?? '', 0, 8) . '...' . substr($k['key'] ?? '', -4),
         ];

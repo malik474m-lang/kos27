@@ -136,7 +136,8 @@ if ($method === 'POST') {
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 30,
+                CURLOPT_TIMEOUT => 18,
+                CURLOPT_CONNECTTIMEOUT => 5,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
@@ -144,8 +145,8 @@ if ($method === 'POST') {
                 ],
                 CURLOPT_POSTFIELDS => json_encode([
                     'model' => $model,
-                    'messages' => [['role' => 'user', 'content' => 'Скажи "тест ок" одним словом']],
-                    'max_tokens' => 20,
+                    'messages' => [['role' => 'user', 'content' => 'Напиши 2 коротких предложения о том, как выбрать займ без ошибок.']],
+                    'max_tokens' => 120,
                 ]),
             ]);
             $response = curl_exec($ch);
@@ -157,6 +158,7 @@ if ($method === 'POST') {
                 $text = $data['choices'][0]['message']['content'] ?? 'OK';
                 echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
             } else {
+                if ($code === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
             }
         } else {
@@ -184,6 +186,7 @@ if ($method === 'POST') {
                 $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
                 echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
             } else {
+                if ($code === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
             }
         }
