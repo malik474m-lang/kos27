@@ -24,6 +24,7 @@ try {
             $platformId = (int)($data['platform_id'] ?? 0);
             $activate = (bool)($data['activate'] ?? false);
             $categoryOverride = trim((string)($data['category'] ?? ''));
+            $updateExisting = (bool)($data['update_existing'] ?? false);
 
             if (!$offersToImport || !$platformId) {
                 echo json_encode(['error' => 'offers и platform_id обязательны']);
@@ -31,13 +32,14 @@ try {
             }
 
             $imported = 0;
+            $updated = 0;
             $skipped = 0;
             $errors = [];
 
             foreach ($offersToImport as $apiOffer) {
-                $result = leadsSuImportOffer($apiOffer, $platformId, $activate, $categoryOverride);
+                $result = leadsSuImportOffer($apiOffer, $platformId, $activate, $categoryOverride, $updateExisting);
                 if ($result['ok']) {
-                    $imported++;
+                    if (!empty($result['updated'])) $updated++; else $imported++;
                 } elseif (!empty($result['skipped'])) {
                     $skipped++;
                 } else {
@@ -45,7 +47,13 @@ try {
                 }
             }
 
-            echo json_encode(['success' => true, 'imported' => $imported, 'skipped' => $skipped, 'errors' => array_slice($errors, 0, 10)]);
+            echo json_encode(['success' => true, 'imported' => $imported, 'updated' => $updated, 'skipped' => $skipped, 'errors' => array_slice($errors, 0, 10)]);
+            break;
+
+        case 'refresh-logos':
+            $data = json_decode(file_get_contents('php://input'), true) ?: [];
+            $offerIds = is_array($data['offer_ids'] ?? null) ? $data['offer_ids'] : null;
+            echo json_encode(leadsSuRefreshExistingLogos($offerIds));
             break;
 
         case 'test':

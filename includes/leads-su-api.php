@@ -355,16 +355,42 @@ function leadsSuNormalizeOffer(array $apiOffer, int $platformId, string $categor
     ];
 }
 
-function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = false, string $categoryOverride = ''): array {
+function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = false, string $categoryOverride = '', bool $updateExisting = false): array {
     $db = getDB();
     $prepared = leadsSuNormalizeOffer($apiOffer, $platformId, $categoryOverride);
     $name = $prepared['title'];
 
-    $existing = $db->prepare("SELECT id FROM offers WHERE title = ? LIMIT 1");
+    $existing = $db->prepare("SELECT id, slug, is_active, logo_url FROM offers WHERE title = ? LIMIT 1");
     $existing->execute([$name]);
-    if ($existing->fetch()) return ['ok' => false, 'error' => 'Уже существует: ' . $name, 'skipped' => true];
+    $row = $existing->fetch();
+
+    if ($row && !$updateExisting) {
+        return ['ok' => false, 'error' => 'Уже существует: ' . $name, 'skipped' => true];
+    }
 
     try {
+        if ($row) {
+            $db->prepare("UPDATE offers SET category=?, amount_min=?, amount_max=?, term_min_days=?, term_max_days=?, psk=?, rate=?, rate_unit=?, free_term_days=?, logo_url=?, affiliate_url=?, borrower_category=?, description=?, is_active=? WHERE id = ?")
+            ->execute([
+                $prepared['category'],
+                $prepared['amount_min'],
+                $prepared['amount_max'],
+                $prepared['term_min_days'],
+                $prepared['term_max_days'],
+                $prepared['psk'],
+                $prepared['rate'],
+                $prepared['rate_unit'],
+                $prepared['free_term_days'],
+                $prepared['logo_url'] ?: ($row['logo_url'] ?? ''),
+                $prepared['affiliate_url'],
+                $prepared['borrower_category'],
+                mb_substr($prepared['description'], 0, 500),
+                $activate ? 1 : (int)($row['is_active'] ?? 0),
+                (int)$row['id'],
+            ]);
+            return ['ok' => true, 'id' => (int)$row['id'], 'title' => $name, 'category' => $prepared['category'], 'updated' => true];
+        }
+
         $db->prepare("INSERT INTO offers (title, slug, category, amount_min, amount_max, term_min_days, term_max_days, psk, rate, rate_unit, free_term_days, logo_url, affiliate_url, borrower_category, description, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
         ->execute([
             $prepared['title'],
@@ -385,8 +411,47 @@ function leadsSuImportOffer(array $apiOffer, int $platformId, bool $activate = f
             $activate ? 1 : 0,
             999
         ]);
-        return ['ok' => true, 'id' => $db->lastInsertId(), 'title' => $name, 'category' => $prepared['category']];
+        return ['ok' => true, 'id' => $db->lastInsertId(), 'title' => $name, 'category' => $prepared['category'], 'updated' => false];
     } catch (Exception $e) {
         return ['ok' => false, 'error' => $e->getMessage()];
     }
+}
+
+function leadsSuRefreshExistingLogos(?array $offerIds = null): array {
+    $db = getDB();
+    $sql = "SELECT id, title, logo_url FROM offers WHERE logo_url IS NOT NULL AND TRIM(logo_url) <> ''";
+    $params = [];
+    if ($offerIds) {
+        $offerIds = array_values(array_filter(array_map('intval', $offerIds), fn($v) => $v > 0));
+        if (!$offerIds) return ['ok' => true, 'updated' => 0, 'skipped' => 0, 'errors' => []];
+        $placeholders = implode(',', array_fill(0, count($offerIds), '?'));
+        $sql .= " AND id IN ($placeholders)";
+        $params = $offerIds;
+    }
+    $rows = $params ? $db->prepare($sql) : null;
+    if ($rows) {
+        $rows->execute($params);
+        $offers = $rows->fetchAll();
+    } else {
+        $offers = $db->query($sql)->fetchAll();
+    }
+
+    $updated = 0;
+    $skipped = 0;
+    $errors = [];
+    foreach ($offers as $offer) {
+        $current = trim((string)($offer['logo_url'] ?? ''));
+        if ($current === '' || !preg_match('#^https?://#i', $current)) {
+            $skipped++;
+            continue;
+        }
+        $local = leadsSuDownloadLogo($current, (string)($offer['title'] ?? 'offer-' . $offer['id']));
+        if ($local === '' || preg_match('#^https?://#i', $local)) {
+            $errors[] = ($offer['title'] ?? ('ID ' . $offer['id'])) . ': не удалось скачать';
+            continue;
+        }
+        $db->prepare("UPDATE offers SET logo_url = ? WHERE id = ?")->execute([$local, (int)$offer['id']]);
+        $updated++;
+    }
+    return ['ok' => true, 'updated' => $updated, 'skipped' => $skipped, 'errors' => array_slice($errors, 0, 20)];
 }

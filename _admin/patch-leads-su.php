@@ -25,7 +25,9 @@ h+='</ul></div>';
 h+='<div class="flex flex-wrap gap-4 items-end">';
 h+='<div><label class="block text-xs font-medium mb-1">Площадка</label><select id="ls-platform" class="sel-f"><option value="0">Загрузка...</option></select></div>';
 h+='<div><label class="block text-xs font-medium mb-1">Категория для импорта</label><select id="ls-category" class="sel-f"><option value="">Автоопределение</option><option value="microloans">💵 Займы</option><option value="credits">🏦 Кредиты</option><option value="credit_cards">💳 Кредитные карты</option><option value="debit_cards">🪪 Дебетовые карты</option></select></div>';
-h+='<button onclick="lsLoadOffers()" class="btn-p">📥 Загрузить офферы</button>';
+h+='<label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" id="ls-update-existing" class="w-4 h-4"><span>Обновлять дубли при импорте</span></label>' +
+     '<button onclick="lsLoadOffers()" class="btn-p">📥 Загрузить офферы</button>' +
+     '<button onclick="lsRefreshExistingLogos()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🖼 Скачать логотипы офферов</button>';
 h+='</div>';
 h+='<div id="ls-offers-list"></div>';
 h+='</div>';
@@ -107,17 +109,31 @@ var cbs=document.querySelectorAll('.ls-offer-cb:checked');
 if(!cbs.length){alert('Выберите офферы для импорта');return;}
 var platformId=parseInt(document.getElementById('ls-platform').value)||0;
 var category=document.getElementById('ls-category').value;
+var updateExisting=!!document.getElementById('ls-update-existing')?.checked;
 if(!platformId){alert('Выберите площадку! Она определяет вашу партнёрскую ссылку.');return;}
 var offers=[];
 cbs.forEach(function(cb){var idx=parseInt(cb.dataset.idx);if(window._lsOffers[idx])offers.push(window._lsOffers[idx]);});
 var activate=confirm('Сразу активировать импортированные офферы?\n\nОК = Активировать\nОтмена = Сохранить как черновик');
 var catLabel=category?({'microloans':'Займы','credits':'Кредиты','credit_cards':'Кредитные карты','debit_cards':'Дебетовые карты'}[category]||category):'Авто';
 if(!confirm('Импортировать '+offers.length+' офферов?\n\nПлощадка: ID '+platformId+'\nКатегория: '+catLabel+'\nИсточник: source=kosmozaim\nСсылка: pxl.leads.su/aff_c?...&source=kosmozaim'))return;
-ap('/leads-su?action=import',{method:'POST',body:JSON.stringify({offers:offers,platform_id:platformId,activate:activate,category:category})}).then(function(r){
-var msg='Импорт завершён!\n\nИмпортировано: '+(r.imported||0)+'\nПропущено (дубли): '+(r.skipped||0);
+ap('/leads-su?action=import',{method:'POST',body:JSON.stringify({offers:offers,platform_id:platformId,activate:activate,category:category,update_existing:updateExisting})}).then(function(r){
+var msg='Импорт завершён!\n\nИмпортировано: '+(r.imported||0)+'\nОбновлено: '+(r.updated||0)+'\nПропущено: '+(r.skipped||0);
 if(r.errors&&r.errors.length)msg+='\n\nОшибки:\n'+r.errors.join('\n');
 alert(msg);
 lO();
 }).catch(function(err){alert('Ошибка: '+(err.message||err));});
 }
 </script>
+
+
+function lsRefreshExistingLogos(){
+if(!confirm('Скачать локально логотипы у уже импортированных офферов?
+
+Будут обработаны офферы, у которых logo_url ещё внешний (http/https).'))return;
+ap('/leads-su?action=refresh-logos',{method:'POST',body:JSON.stringify({})}).then(function(r){
+var msg='Готово!\n\nОбновлено логотипов: '+(r.updated||0)+'\nПропущено: '+(r.skipped||0);
+if(r.errors&&r.errors.length)msg+='\n\nОшибки:\n'+r.errors.join('\n');
+alert(msg);
+lO();
+}).catch(function(err){alert('Ошибка: '+(err.message||err));});
+}
