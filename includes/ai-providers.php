@@ -96,7 +96,10 @@ function isTextProviderAvailable(string $provider, ?array $config = null): bool 
     
     switch ($provider) {
         case 'odirouter':
-            return !empty($config['odirouter_enabled']) && (!empty($config['odirouter_api_key']) || !empty($config['odirouter_image_api_key']));
+            if (empty($config['odirouter_enabled'])) return false;
+            if (!empty($config['odirouter_api_key'])) return true;
+            require_once __DIR__ . '/odirouter-keys.php';
+            return !empty(odiGetAvailableKeys('text'));
         case 'yandex_gpt':
             return !empty($config['yandex_gpt_enabled']) && !empty($config['yandex_gpt_api_key']) && !empty($config['yandex_folder_id']);
         case 'gigachat':
@@ -111,7 +114,10 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
     
     switch ($provider) {
         case 'odirouter':
-            return !empty($config["odirouter_enabled"]) && (!empty($config["odirouter_api_key"]) || !empty($config["odirouter_image_api_key"]));
+            if (empty($config['odirouter_enabled'])) return false;
+            if (!empty($config['odirouter_api_key']) || !empty($config['odirouter_image_api_key'])) return true;
+            require_once __DIR__ . '/odirouter-keys.php';
+            return !empty(odiGetAvailableKeys('image'));
         case 'yandex_art':
             return !empty($config['yandex_art_enabled']) && !empty($config['yandex_gpt_api_key']) && !empty($config['yandex_folder_id']);
         case 'stability':
