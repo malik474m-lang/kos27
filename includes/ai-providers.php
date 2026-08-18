@@ -141,7 +141,12 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     }
 
     $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash', 'free-qwen3.7-plus', 'free-gpt-5.4-mini'];
-    array_unshift($fallbackModels, $model);
+    $slowFirstModels = ['free-gpt-5.6-luna'];
+    if (in_array($model, $slowFirstModels, true)) {
+        $fallbackModels[] = $model; // медленные/нестабильные модели — только после быстрых fallback
+    } else {
+        array_unshift($fallbackModels, $model);
+    }
     $fallbackModels = array_values(array_unique($fallbackModels));
 
     $messages = [];
@@ -152,6 +157,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 
     $errors = [];
     $blockedAccounts = [];
+    $blockedModels = [];
     $accountsTried = 0;
     $maxAccountsPerCall = 3;
     foreach ($keys as $activeKey) {
@@ -161,6 +167,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         $accountsTried++;
         $apiKey = $activeKey['key'];
         foreach ($fallbackModels as $tryModel) {
+            if (isset($blockedModels[$tryModel])) continue;
             $payload = [
                 'model' => $tryModel,
                 'messages' => $messages,
@@ -189,6 +196,9 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             curl_close($ch);
 
             if ($err) {
+                if (stripos($err, 'timed out') !== false) {
+                    $blockedModels[$tryModel] = true; // модель тормозит — не повторяем на других аккаунтах в этом вызове
+                }
                 $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': cURL ' . $err;
                 continue; // пробуем следующую модель на том же ключе
             }
@@ -199,6 +209,9 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
                 }
                 if ($code === 429 && $keyAccount) {
                     $blockedAccounts[$keyAccount] = true;
+                }
+                if (in_array($code, [503,504], true)) {
+                    $blockedModels[$tryModel] = true; // модель временно недоступна — не повторяем на других аккаунтах
                 }
                 $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code;
                 continue 2; // следующий ключ
