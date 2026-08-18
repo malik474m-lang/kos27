@@ -201,6 +201,7 @@ if (preg_match('#^/subscribers/(\d+)$#', $adminUri, $m)) {
 // A/B тесты
 if ($adminUri === '/ab-tests' && $method === 'GET') { require __DIR__ . '/admin/ab-list.php'; exit; }
 if ($adminUri === '/ab-tests' && $method === 'POST') { require __DIR__ . '/admin/ab-create.php'; exit; }
+if ($adminUri === '/ab-tests/autofix' && $method === 'POST') { require __DIR__ . '/admin/ab-autofix.php'; exit; }
 if (preg_match('#^/ab-tests/(\d+)$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     if ($method === 'PUT') { require __DIR__ . '/admin/ab-toggle.php'; exit; }

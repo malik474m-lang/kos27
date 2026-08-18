@@ -1615,7 +1615,7 @@ cats.forEach(function(cat){
 h+='</div>';
 return h;
 }
-function lAB(){ap('/ab-tests').then(tests=>{
+function lAB(){ap('/ab-tests/autofix',{method:'POST'}).catch(function(){}).then(function(){return ap('/ab-tests');}).then(tests=>{
 var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧪 A/B тесты кнопок</h2><div class="flex gap-2"><button onclick="abCreatePerCategory()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🚀 Создать для каждой категории</button><button onclick="abForm()" class="btn-p text-sm">+ Новый тест</button></div></div>';
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> Для каждой категории (займы, кредиты, кредитные карты, дебетовые карты) подбирается свой активный тест. Если теста для категории нет — используется общий тест scope=all. Ниже показаны все кнопки и статистика по кликам для всех категорий.</div>';
 h+=abCategorySummaryHtml(tests||[]);
