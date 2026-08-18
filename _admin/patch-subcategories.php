@@ -179,7 +179,12 @@ var typeColor=r.content_type==='article'?'blue':'purple';
 h+='<div class="bg-gray-50 rounded-lg p-3 flex items-start gap-3 hover:bg-gray-100">';
 h+='<div class="flex-1 min-w-0">';
 h+='<div class="flex items-center gap-2 flex-wrap">';
+if(r.is_cleaned && r.original_query){
 h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+h+='<span class="text-xs text-orange-500 ml-2" title="Исходный запрос: '+e(r.original_query)+'">🔄 из «'+e(r.original_query).substring(0,25)+(r.original_query.length>25?'...':'')+'»</span>';
+}else{
+h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+}
 if(r.is_rephrased){h+='<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1" title="Исходный: '+e(r.original_query||'')+'">🔄 перефраз.</span>';}
 h+='<span class="text-xs bg-'+typeColor+'-100 text-'+typeColor+'-700 px-1.5 py-0.5 rounded">'+r.action+'</span>';
 h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';
@@ -214,7 +219,12 @@ var catLabel={microloans:'Займы',credits:'Кредиты',credit_cards:'К�
 h+='<div class="bg-yellow-50 rounded-lg p-3 flex items-start gap-3 hover:bg-yellow-100 border border-yellow-200">';
 h+='<div class="flex-1 min-w-0">';
 h+='<div class="flex items-center gap-2 flex-wrap">';
+if(r.is_cleaned && r.original_query){
 h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+h+='<span class="text-xs text-orange-500 ml-2" title="Исходный запрос: '+e(r.original_query)+'">🔄 из «'+e(r.original_query).substring(0,25)+(r.original_query.length>25?'...':'')+'»</span>';
+}else{
+h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+}
 if(r.is_rephrased){h+='<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1" title="Исходный: '+e(r.original_query||'')+'">🔄 перефраз.</span>';}
 h+='<span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">из '+r.merged_count+' запросов</span>';
 h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';

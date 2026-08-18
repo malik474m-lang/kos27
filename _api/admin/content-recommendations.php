@@ -855,3 +855,97 @@ function improveRephrasedQuery(string $query): string {
     
     return $query;
 }
+
+/**
+ * Очищает запрос от брендов конкурентов, извлекая реальный интент
+ * "подобрать кредит sravni" → "подобрать кредит"
+ * "займ на карту веббанкир" → "займ на карту"
+ * 
+ * @return array ['original' => ..., 'cleaned' => ..., 'brand_removed' => ...]
+ */
+function cleanQueryFromBrands(string $query): array {
+    $original = $query;
+    $brandRemoved = null;
+    
+    // Бренды для удаления (конкуренты + МФО)
+    $brandsToRemove = [
+        // Агрегаторы
+        'sravni', 'сравни', 'sravni.ru', 'sravni ru',
+        'banki', 'банки ру', 'banki.ru', 'banki ru', 'банки.ру',
+        'выберу', 'vyberu', 'vyberu.ru', 'vyberu ru', 'выберу ру',
+        'финуслуги', 'finuslugi',
+        'brobank', 'бробанк',
+        'bankiros', 'банкирос',
+        'mainfin', 'мейнфин',
+        
+        // МФО бренды
+        'займер', 'zaymer',
+        'веббанкир', 'webbankir', 'web bankir',
+        'монеза', 'moneza',
+        'вивус', 'vivus',
+        'смсфинанс', 'smsfinance', 'sms finance',
+        'екапуста', 'ekapusta', 'е капуста',
+        'турбозайм', 'turbozaim', 'turbo zaim',
+        'кредито24', 'credito24', 'credito 24',
+        'платиза', 'platiza',
+        'манимен', 'moneyman', 'money man',
+        'лайм', 'lime zaim', 'lime',
+        'квику', 'kviku',
+        'займи|займи', // | означает отдельное слово
+    ];
+    
+    $queryLower = mb_strtolower(trim($query));
+    
+    foreach ($brandsToRemove as $brand) {
+        $pattern = '/\b' . preg_quote(mb_strtolower($brand), '/') . '\b/iu';
+        if (preg_match($pattern, $queryLower)) {
+            $brandRemoved = $brand;
+            $queryLower = preg_replace($pattern, '', $queryLower);
+            break; // Удаляем только первый найденный бренд
+        }
+    }
+    
+    // Очищаем от лишних пробелов
+    $cleaned = trim(preg_replace('/\s+/', ' ', $queryLower));
+    
+    // Если после очистки осталось что-то осмысленное (минимум 3 символа)
+    if (mb_strlen($cleaned) < 3) {
+        return ['original' => $original, 'cleaned' => null, 'brand_removed' => $brandRemoved];
+    }
+    
+    // Если очищенный = оригинальный (бренда не было)
+    if ($cleaned === mb_strtolower(trim($original))) {
+        return ['original' => $original, 'cleaned' => null, 'brand_removed' => null];
+    }
+    
+    return [
+        'original' => $original,
+        'cleaned' => $cleaned,
+        'brand_removed' => $brandRemoved,
+    ];
+}
+
+/**
+ * Проверяет, стоит ли рекомендовать очищенный запрос
+ * (есть ли уже контент под него)
+ */
+function shouldRecommendCleanedQuery(string $cleanedQuery, array $existingContent): bool {
+    $allTitles = array_merge(
+        $existingContent['subcategories'] ?? [],
+        $existingContent['articles'] ?? [],
+        $existingContent['tags'] ?? []
+    );
+    
+    foreach ($allTitles as $title) {
+        // Точное или близкое совпадение — уже есть контент
+        if (mb_stripos($title, $cleanedQuery) !== false || mb_stripos($cleanedQuery, $title) !== false) {
+            return false;
+        }
+        similar_text(mb_strtolower($cleanedQuery), $title, $percent);
+        if ($percent > 75) {
+            return false;
+        }
+    }
+    
+    return true;
+}
