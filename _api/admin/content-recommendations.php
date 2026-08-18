@@ -50,6 +50,92 @@ case 'analyze':
     ]);
     break;
 
+case 'analyze-smart':
+    // Умный анализ: очищает запросы от брендов и группирует похожие
+    $days = max(7, min(90, (int)($_GET['days'] ?? 30)));
+    $minShows = max(1, (int)($_GET['min_shows'] ?? 5));
+    $limit = max(50, min(500, (int)($_GET['limit'] ?? 300)));
+    
+    // Собираем запросы
+    $allQueries = collectSearchQueries($days, $limit);
+    
+    if (empty($allQueries)) {
+        echo json_encode(['error' => 'Нет данных из Яндекс.Вебмастер или Google Search Console.']);
+        exit;
+    }
+    
+    // Фильтруем по минимальному количеству показов
+    $allQueries = array_filter($allQueries, fn($q) => $q['shows'] >= $minShows);
+    
+    // Разделяем: чистые запросы и брендовые
+    $cleanQueries = [];
+    $brandQueries = [];
+    
+    foreach ($allQueries as $q) {
+        $result = cleanQueryFromBrands($q['query']);
+        if ($result['brand']) {
+            // Запрос содержит бренд
+            $brandQueries[] = array_merge($q, ['cleaned' => $result['cleaned'], 'brand' => $result['brand'], 'has_meaning' => $result['has_meaning']]);
+        } else {
+            $cleanQueries[] = $q;
+        }
+    }
+    
+    // Группируем брендовые запросы по очищенной версии
+    $groupedBrand = groupCleanedQueries($brandQueries);
+    
+    // Фильтруем группы: оставляем только те, где после очистки есть смысл
+    $groupedBrand = array_filter($groupedBrand, fn($g) => mb_strlen($g['query']) >= 5);
+    
+    // Сортируем по суммарным показам
+    usort($groupedBrand, fn($a, $b) => $b['shows'] <=> $a['shows']);
+    
+    // Получаем существующий контент
+    $existingContent = getExistingContent();
+    
+    // Анализируем чистые запросы обычным способом
+    $cleanRecommendations = analyzeQueries($cleanQueries, $existingContent);
+    usort($cleanRecommendations, fn($a, $b) => $b['score'] <=> $a['score']);
+    
+    // Для групп тоже проверяем, нет ли уже контента
+    $allTitles = array_merge(
+        $existingContent['subcategories'],
+        $existingContent['articles'],
+        $existingContent['tags']
+    );
+    
+    $brandRecommendations = [];
+    foreach ($groupedBrand as $group) {
+        $hasContent = false;
+        foreach ($allTitles as $title) {
+            similar_text(mb_strtolower($group['query']), $title, $percent);
+            if ($percent > 70 || mb_stripos($title, $group['query']) !== false) {
+                $hasContent = true;
+                break;
+            }
+        }
+        if (!$hasContent) {
+            $group['content_type'] = detectContentType($group['query']);
+            $group['category'] = detectCategory($group['query']);
+            $group['action'] = getActionLabel($group['content_type']);
+            $group['score'] = $group['shows'] * 2 + $group['clicks'] * 10;
+            $group['is_from_brand'] = true;
+            $brandRecommendations[] = $group;
+        }
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'days' => $days,
+        'total_queries' => count($allQueries),
+        'clean_queries' => count($cleanQueries),
+        'brand_queries' => count($brandQueries),
+        'recommendations' => array_slice($cleanRecommendations, 0, 30),
+        'brand_recommendations' => array_slice($brandRecommendations, 0, 20),
+    ]);
+    break;
+
+
 case 'generate-subcat':
     // Быстрое создание допзапроса на основе рекомендации
     $data = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -509,4 +595,131 @@ function isCompetitorOrBrandQuery(string $query): bool {
     }
     
     return false;
+}
+
+/**
+ * Очищает запрос от брендов конкурентов, сохраняя смысловую часть
+ * "подобрать кредит sravni" → "подобрать кредит"
+ * "займ онлайн banki.ru" → "займ онлайн"
+ * 
+ * @return array ['cleaned' => очищенный запрос, 'brand' => найденный бренд, 'has_meaning' => есть ли смысл в очищенном]
+ */
+function cleanQueryFromBrands(string $query): array {
+    $brands = [
+        // Агрегаторы
+        'sravni\.ru', 'sravni', 'сравни\.ру', 'сравни ру', 'сравни',
+        'banki\.ru', 'banki ru', 'banki', 'банки\.ру', 'банки ру', 'банки ru',
+        'vyberu\.ru', 'vyberu', 'выберу\.ру', 'выберу ру', 'выберу',
+        'brobank', 'бробанк',
+        'bankiros', 'банкирос',
+        'mainfin', 'мейнфин',
+        'finuslugi', 'финуслуги',
+        
+        // МФО бренды
+        'zaymer', 'займер',
+        'webbankir', 'веббанкир',
+        'moneza', 'монеза',
+        'vivus', 'вивус',
+        'turbozaim', 'турбозайм',
+        'ekapusta', 'екапуста',
+        'moneyman', 'манимен',
+        'kviku', 'квику',
+        
+        // Банки
+        'сбербанк', 'sberbank', 'сбер',
+        'тинькофф', 'tinkoff', 'т-банк',
+        'альфа-банк', 'альфабанк', 'alfabank',
+        'втб', 'vtb',
+        'газпромбанк',
+        'райффайзен', 'raiffeisen',
+        'россельхозбанк',
+        'открытие',
+        'совкомбанк',
+        'почта банк',
+        'хоум кредит', 'home credit',
+        'ренессанс', 'renaissance',
+        'мтс банк',
+        'озон банк', 'ozon',
+        
+        // Прочее
+        'официальный сайт', 'офиц\.? сайт', 'оф\.? сайт',
+        'личный кабинет', 'лк\b',
+        '\.ru\b', '\.com\b', '\.рф\b',
+    ];
+    
+    $queryLower = mb_strtolower(trim($query));
+    $foundBrand = null;
+    $cleaned = $queryLower;
+    
+    foreach ($brands as $brand) {
+        $pattern = '/\b' . $brand . '\b/iu';
+        if (preg_match($pattern, $cleaned, $matches)) {
+            $foundBrand = $matches[0];
+            $cleaned = preg_replace($pattern, '', $cleaned);
+        }
+    }
+    
+    // Убираем лишние пробелы и предлоги в конце
+    $cleaned = preg_replace('/\s+/', ' ', $cleaned);
+    $cleaned = preg_replace('/\s+(на|в|с|от|для|по|через|и|или)\s*$/iu', '', $cleaned);
+    $cleaned = trim($cleaned);
+    
+    // Проверяем, осталось ли что-то осмысленное (минимум 3 символа)
+    $hasMeaning = mb_strlen($cleaned) >= 3 && !preg_match('/^(на|в|с|от|для|по)$/iu', $cleaned);
+    
+    return [
+        'original' => $query,
+        'cleaned' => $cleaned,
+        'brand' => $foundBrand,
+        'has_meaning' => $hasMeaning,
+    ];
+}
+
+/**
+ * Группирует похожие запросы после очистки от брендов
+ * ["подобрать кредит sravni", "подобрать кредит banki.ru"] → "подобрать кредит" (2 запроса)
+ */
+function groupCleanedQueries(array $queries): array {
+    $groups = [];
+    
+    foreach ($queries as $q) {
+        $result = cleanQueryFromBrands($q['query']);
+        
+        if (!$result['has_meaning']) continue;
+        
+        $key = $result['cleaned'];
+        
+        if (!isset($groups[$key])) {
+            $groups[$key] = [
+                'query' => $result['cleaned'],
+                'original_queries' => [],
+                'brands_found' => [],
+                'shows' => 0,
+                'clicks' => 0,
+                'positions' => [],
+                'sources' => [],
+            ];
+        }
+        
+        $groups[$key]['original_queries'][] = $q['query'];
+        if ($result['brand']) {
+            $groups[$key]['brands_found'][] = $result['brand'];
+        }
+        $groups[$key]['shows'] += $q['shows'];
+        $groups[$key]['clicks'] += $q['clicks'];
+        $groups[$key]['positions'][] = $q['position'];
+        $groups[$key]['sources'] = array_unique(array_merge($groups[$key]['sources'], $q['sources'] ?? []));
+    }
+    
+    // Вычисляем среднюю позицию и убираем дубли брендов
+    foreach ($groups as $key => &$group) {
+        $group['position'] = count($group['positions']) > 0 
+            ? round(array_sum($group['positions']) / count($group['positions']), 1) 
+            : 0;
+        $group['brands_found'] = array_unique($group['brands_found']);
+        $group['merged_count'] = count($group['original_queries']);
+        unset($group['positions']);
+    }
+    
+    return array_values($groups);
 }

@@ -163,13 +163,14 @@ loadContentRecs();
 }
 
 function loadContentRecs(){
-var days=30, minShows=10;
-ap('/content-recommendations?action=analyze&days='+days+'&min_shows='+minShows).then(function(d){
+var days=30, minShows=5;
+ap('/content-recommendations?action=analyze-smart&days='+days+'&min_shows='+minShows).then(function(d){
 var box=document.getElementById('cr-content');
 if(d.error){box.innerHTML='<p class="text-red-500">'+e(d.error)+'</p>';return;}
-if(!d.recommendations_count){box.innerHTML='<p class="text-gray-500 text-center py-8">Нет новых рекомендаций. Весь контент уже создан! 🎉</p>';return;}
+var totalRecs = (d.recommendations||[]).length + (d.brand_recommendations||[]).length;
+if(!totalRecs){box.innerHTML='<p class="text-gray-500 text-center py-8">Нет новых рекомендаций. Весь контент уже создан! 🎉</p>';return;}
 
-var h='<div class="flex items-center justify-between mb-4"><div class="text-sm text-gray-500">Проанализировано <strong>'+d.total_queries+'</strong> запросов за '+d.days+' дней</div><div class="text-sm"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">'+d.recommendations_count+' рекомендаций</span></div></div>';
+var h='<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="text-sm text-gray-500">Проанализировано <strong>'+d.total_queries+'</strong> запросов ('+d.clean_queries+' чистых, '+d.brand_queries+' с брендами)</div><div class="text-sm"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">'+totalRecs+' рекомендаций</span></div></div>';
 h+='<div class="space-y-2 max-h-96 overflow-y-auto">';
 
 d.recommendations.forEach(function(r,i){
@@ -201,7 +202,34 @@ h+='</div>';
 });
 
 h+='</div>';
-h+='<div class="mt-4 pt-4 border-t text-xs text-gray-400">💡 Рекомендации основаны на запросах, по которым ещё нет контента. Чем выше score — тем больше потенциал.</div>';
+
+// Рекомендации из брендовых запросов
+if(d.brand_recommendations && d.brand_recommendations.length){
+h+='<div class="mt-6 pt-4 border-t"><h4 class="font-bold text-gray-900 mb-3">🔄 Очищенные от брендов конкурентов</h4>';
+h+='<p class="text-xs text-gray-500 mb-3">Эти запросы содержали названия конкурентов (sravni, banki.ru и др.), но после очистки показывают реальный спрос</p>';
+h+='<div class="space-y-2 max-h-64 overflow-y-auto">';
+d.brand_recommendations.forEach(function(r){
+var catLabel={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредит.карты',debit_cards:'Дебет.карты'}[r.category]||'';
+h+='<div class="bg-yellow-50 rounded-lg p-3 flex items-start gap-3 hover:bg-yellow-100 border border-yellow-200">';
+h+='<div class="flex-1 min-w-0">';
+h+='<div class="flex items-center gap-2 flex-wrap">';
+h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+h+='<span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">из '+r.merged_count+' запросов</span>';
+h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';
+h+='</div>';
+h+='<div class="flex gap-3 mt-1 text-xs text-gray-500">';
+h+='<span>👁 '+r.shows+' показов</span>';
+h+='<span>👆 '+r.clicks+' кликов</span>';
+h+='</div>';
+h+='<div class="text-xs text-gray-400 mt-1">Бренды: '+r.brands_found.slice(0,3).join(', ')+(r.brands_found.length>3?' и ещё '+(r.brands_found.length-3):'')+'</div>';
+h+='</div>';
+h+='<button onclick="crCreateSubcat(\''+e(r.query).replace(/'/g,"\\'")+'\'.\''+r.category+'\')" class="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded">+ Создать</button>';
+h+='</div>';
+});
+h+='</div></div>';
+}
+
+h+='<div class="mt-4 pt-4 border-t text-xs text-gray-400">💡 Рекомендации основаны на запросах из Яндекс/Google. Брендовые запросы очищены и сгруппированы.</div>';
 box.innerHTML=h;
 }).catch(function(err){
 document.getElementById('cr-content').innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>';
