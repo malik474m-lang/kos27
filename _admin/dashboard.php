@@ -1612,7 +1612,7 @@ if(scope==='credits') return [{label:'Оформить кредит',color:'#1a5
 if(scope==='credit_cards') return [{label:'Оформить карту',color:'#1a56db'},{label:'Получить карту',color:'#059669'},{label:'Оформить кредитку',color:'#7c3aed'}];
 if(scope==='debit_cards') return [{label:'Заказать карту',color:'#1a56db'},{label:'Оформить карту',color:'#059669'},{label:'Выбрать карту',color:'#7c3aed'}];
 if(scope==='microloans') return [{label:'Получить займ',color:'#059669'},{label:'Оформить займ',color:'#1a56db'},{label:'Оформить заявку',color:'#7c3aed'}];
-return [{label:'Оформить',color:'#059669'},{label:'Получить деньги',color:'#1a56db'},{label:'Подать заявку',color:'#7c3aed'}];
+return [{label:'Оформить',color:'#059669'},{label:'Подать заявку',color:'#1a56db'},{label:'Перейти к оформлению',color:'#7c3aed'}];
 }
 function abRenderVars(scope){
 var vars=abDefaultVariants(scope);
