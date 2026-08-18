@@ -206,6 +206,10 @@ if (preg_match('#^/ab-tests/(\d+)$#', $adminUri, $m)) {
     if ($method === 'PUT') { require __DIR__ . '/admin/ab-toggle.php'; exit; }
     if ($method === 'DELETE') { require __DIR__ . '/admin/ab-delete.php'; exit; }
 }
+if (preg_match('#^/ab-tests/(\d+)/edit$#', $adminUri, $m)) {
+    $itemId = (int)$m[1];
+    if ($method === 'POST') { require __DIR__ . '/admin/ab-update.php'; exit; }
+}
 if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     require __DIR__ . '/admin/ab-reset.php'; exit;
