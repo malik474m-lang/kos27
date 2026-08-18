@@ -140,7 +140,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
 
-    $fallbackModels = ['free-gemini-2.5-flash', 'free-gpt-5.4-mini', 'free-qwen3.7-plus', 'free-gemini-3.5-flash'];
+    $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash', 'free-qwen3.7-plus', 'free-gpt-5.4-mini'];
     array_unshift($fallbackModels, $model);
     $fallbackModels = array_values(array_unique($fallbackModels));
 
@@ -168,8 +168,8 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 45,
-                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_CONNECTTIMEOUT => 8,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_HTTPHEADER => [
@@ -186,7 +186,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
 
             if ($err) {
                 $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': cURL ' . $err;
-                continue 2; // следующий ключ
+                continue; // пробуем следующую модель на том же ключе
             }
 
             if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
