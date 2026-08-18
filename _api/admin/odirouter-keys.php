@@ -29,10 +29,12 @@ if ($method === 'POST') {
         
         $keys = odiLoadKeys();
         $id = 'pool_' . substr(md5($key . time()), 0, 8);
+        $account = trim((string)($data['account'] ?? ''));
         $keys[] = [
             'id' => $id,
             'key' => $key,
             'name' => $name ?: ('Ключ #' . (count($keys) + 1)),
+            'account' => $account,
             'type' => $type,
             'enabled' => true,
             'added' => date('Y-m-d H:i:s'),
@@ -59,6 +61,23 @@ if ($method === 'POST') {
         foreach ($keys as &$k) {
             if (($k['id'] ?? '') === $id) {
                 $k['enabled'] = !$k['enabled'];
+                break;
+            }
+        }
+        unset($k);
+        odiSaveKeys($keys);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    if ($action === 'update') {
+        $id = $data['id'] ?? '';
+        $keys = odiLoadKeys();
+        foreach ($keys as &$k) {
+            if (($k['id'] ?? '') === $id) {
+                if (isset($data['name'])) $k['name'] = trim((string)$data['name']);
+                if (isset($data['account'])) $k['account'] = trim((string)$data['account']);
+                if (isset($data['type'])) $k['type'] = in_array($data['type'], ['all','text','image']) ? $data['type'] : 'all';
                 break;
             }
         }

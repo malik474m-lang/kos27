@@ -141,6 +141,7 @@ function odiGetKeysStats(): array {
         $stats[] = [
             'id' => $keyId,
             'name' => $k['name'] ?? '',
+            'account' => $k['account'] ?? '',
             'type' => $k['type'] ?? 'all',
             'enabled' => !empty($k['enabled']),
             'used' => $used,

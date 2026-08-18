@@ -5518,10 +5518,16 @@ function odiLoadKeys(){
         if(!keys.length){c.innerHTML='<p class="text-gray-400 py-2">Нет ключей в пуле. Ключи из настроек будут использоваться автоматически.</p>';return;}
         var h='<div class="mb-2 text-xs text-gray-500">Всего запросов сегодня: <b>'+(d.total_remaining||0)+'</b> осталось из '+(keys.length*50)+'</div>';
         h+='<div class="space-y-2">';
-        keys.forEach(function(k){
+        // Группируем по аккаунтам
+        var groups={};keys.forEach(function(k){var acc=k.account||'Без аккаунта';if(!groups[acc])groups[acc]=[];groups[acc].push(k);});
+        Object.keys(groups).sort().forEach(function(acc){
+            var gKeys=groups[acc];
+            var gUsed=0,gTotal=0;gKeys.forEach(function(k){gUsed+=k.used;gTotal+=k.limit;});
+            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей, '+gUsed+'/'+gTotal+' использовано)</span></div>';
+            gKeys.forEach(function(k){
             var pct=Math.round(k.used/k.limit*100);
             var color=pct>=100?'bg-red-500':(pct>=80?'bg-yellow-500':'bg-green-500');
-            h+='<div class="flex items-center gap-3 p-2 rounded-lg '+(k.enabled?'bg-gray-50':'bg-gray-100 opacity-60')+'">'+
+            h+='<div class="flex items-center gap-3 p-2 rounded-lg ml-4 '+(k.enabled?'bg-gray-50':'bg-gray-100 opacity-60')+'">'+
                 '<div class="flex-1 min-w-0">'+
                 '<div class="font-medium text-sm truncate">'+(k.name||'Без имени')+' <span class="text-xs text-gray-400">'+(k.masked||'')+'</span></div>'+
                 '<div class="flex items-center gap-2 mt-1"><div class="flex-1 bg-gray-200 rounded-full h-2" style="max-width:120px"><div class="'+color+' h-2 rounded-full" style="width:'+pct+'%"></div></div>'+
@@ -5530,6 +5536,8 @@ function odiLoadKeys(){
                 '<button onclick="odiToggleKey(\''+k.id+'\',this)" class="text-xs px-2 py-1 rounded '+(k.enabled?'bg-green-100 text-green-700':'bg-gray-200 text-gray-500')+'">'+(k.enabled?'Вкл':'Выкл')+'</button>'+
                 '<button onclick="odiRemoveKey(\''+k.id+'\',this)" class="text-xs text-red-500 hover:text-red-700">✕</button>'+
                 '</div>';
+            });
+            h+='</div>';
         });
         h+='</div>';
         h+='<div class="mt-2 flex gap-2"><button onclick="odiResetCounters()" class="text-xs text-blue-600 hover:underline">🔄 Сбросить счётчики</button></div>';
@@ -5540,8 +5548,9 @@ function odiAddKey(){
     var key=document.getElementById('odi-new-key').value.trim();
     var name=document.getElementById('odi-new-name').value.trim();
     if(!key){alert('Введите API ключ');return;}
-    fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',key:key,name:name})}).then(function(r){return r.json();}).then(function(d){
-        if(d.success){document.getElementById('odi-new-key').value='';document.getElementById('odi-new-name').value='';odiLoadKeys();alert('Ключ добавлен!');}
+    var account=document.getElementById('odi-new-account').value.trim();
+    fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',key:key,name:name,account:account})}).then(function(r){return r.json();}).then(function(d){
+        if(d.success){document.getElementById('odi-new-key').value='';document.getElementById('odi-new-name').value='';document.getElementById('odi-new-account').value='';odiLoadKeys();alert('Ключ добавлен!');}
         else alert(d.error||'Ошибка');
     });
 }
