@@ -142,3 +142,61 @@ function renderSubcategoryLinks(string $category, ?string $citySlug = null, ?str
     $html .= '</div></div></section>';
     return $html;
 }
+
+/**
+ * Адаптирует SEO-текст допзапроса для конкретного города.
+ * Если в subcategory_city_seo нет кастомного текста — берёт базовый и
+ * вставляет упоминания города, чтобы контент был уникальным.
+ *
+ * @param string $baseSeoText  Базовый seo_text без города
+ * @param string $baseDesc     Базовое описание без города
+ * @param array  $cityData     Массив города (name, prep, slug)
+ * @param array  $subcat       Данные подкатегории (title, category, ...)
+ * @return array ['seo_text' => ..., 'description' => ..., 'h1' => ...]
+ */
+function adaptSubcatTextForCity(string $baseSeoText, string $baseDesc, array $cityData, array $subcat): array {
+    $cityName = $cityData['name'] ?? '';
+    $cityPrep = $cityData['prep'] ?? $cityName;
+    $catLabels = ['microloans'=>'займы','credits'=>'кредиты','credit_cards'=>'кредитные карты','debit_cards'=>'дебетовые карты'];
+    $catLabel = $catLabels[$subcat['category'] ?? ''] ?? 'финансовые продукты';
+    $title = $subcat['title'] ?? '';
+
+    // H1
+    $h1 = ($subcat['h1'] ?: $title) . ' в ' . $cityPrep;
+
+    // Описание — формируем уникальное с городом
+    $desc = "Подборка предложений «{$title}» в {$cityPrep}. Сравните {$catLabel} от проверенных организаций и выберите лучшие условия онлайн.";
+
+    // SEO-текст: адаптируем базовый
+    $seoText = $baseSeoText;
+    if ($seoText) {
+        // Добавляем вводный абзац про город перед основным текстом
+        $cityIntro = "<h3>{$title} в {$cityPrep}</h3>\n";
+        $cityIntro .= "<p>Жители {$cityPrep} могут оформить {$catLabel} по запросу «{$title}» онлайн. ";
+        $cityIntro .= "Ниже представлены актуальные предложения, доступные в {$cityPrep}. ";
+        $cityIntro .= "Сравните условия, процентные ставки и сроки, чтобы выбрать подходящий вариант.</p>\n\n";
+
+        // Добавляем заключительный абзац про город после основного текста
+        $cityOutro = "\n<h3>Как оформить в {$cityPrep}</h3>\n";
+        $cityOutro .= "<p>Для оформления заявки в {$cityPrep} достаточно выбрать подходящее предложение из списка выше, ";
+        $cityOutro .= "перейти на сайт организации и заполнить онлайн-анкету. ";
+        $cityOutro .= "Решение по заявке обычно принимается в течение нескольких минут.</p>";
+
+        $seoText = $cityIntro . $seoText . $cityOutro;
+    } else {
+        // Если базового текста нет вообще — генерируем шаблонный
+        $seoText = "<h3>{$title} в {$cityPrep}</h3>\n";
+        $seoText .= "<p>В {$cityPrep} доступны {$catLabel} по запросу «{$title}». ";
+        $seoText .= "На этой странице собраны актуальные предложения от проверенных организаций. ";
+        $seoText .= "Сравните процентные ставки, суммы и сроки, чтобы подобрать оптимальный вариант.</p>\n";
+        $seoText .= "<p>Для оформления заявки выберите предложение и перейдите на сайт организации. ";
+        $seoText .= "Заполните онлайн-анкету — решение обычно принимается за несколько минут. ";
+        $seoText .= "Обращайте внимание на полную стоимость кредита (ПСК) и внимательно изучайте договор перед подписанием.</p>";
+    }
+
+    return [
+        'h1' => $h1,
+        'description' => $desc,
+        'seo_text' => $seoText,
+    ];
+}

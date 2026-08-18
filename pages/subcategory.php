@@ -43,43 +43,31 @@ $allOffers = $allOffers->fetchAll();
 $rules = !empty($subcat['filter_rules']) ? json_decode($subcat['filter_rules'], true) : [];
 $offers = is_array($rules) && $rules ? filterOffersBySubcategoryRules($allOffers, $rules) : $allOffers;
 
-// SEO-данные
+// === SEO-данные ===
 $h1 = $subcat['h1'] ?: $subcat['title'];
-$shortDesc = $subcat['description'] ?? '';  // короткое описание под H1
-$seoText = $subcat['seo_text'] ?? '';       // развёрнутый SEO-текст внизу
+$shortDesc = $subcat['description'] ?? '';
+$seoText = $subcat['seo_text'] ?? '';
 
 if ($cityData) {
-    $cityPrep = $cityData['prep'] ?? $cityData['name'];
-    $h1 .= ' в ' . $cityPrep;
-    if ($citySeo) {
-        $h1 = $citySeo['seo_h1'] ?: $h1;
-        $seoText = $citySeo['seo_text'] ?: $seoText;
+    // Есть город — нужен уникальный контент
+    if ($citySeo && !empty($citySeo['seo_text'])) {
+        // Кастомный SEO-текст для этого города из БД
+        $h1 = $citySeo['seo_h1'] ?: ($h1 . ' в ' . ($cityData['prep'] ?? $cityData['name']));
+        $seoText = $citySeo['seo_text'];
         $shortDesc = $citySeo['meta_description'] ?: $shortDesc;
+    } else {
+        // Нет кастомного — автоматически адаптируем базовый текст под город
+        $adapted = adaptSubcatTextForCity($seoText, $shortDesc, $cityData, $subcat);
+        $h1 = $adapted['h1'];
+        $shortDesc = $adapted['description'];
+        $seoText = $adapted['seo_text'];
     }
 }
 
-// Если короткого описания нет — формируем автоматически
-if (!$shortDesc) {
-    $shortDesc = 'Сравните лучшие предложения по запросу «' . ($subcat['title']) . '»' 
-        . ($cityData ? ' в ' . ($cityData['prep'] ?? $cityData['name']) : '') 
-        . '. Актуальные условия от проверенных организаций.';
-}
-
-// Убираем дубль: если seo_text содержится в shortDesc или наоборот — не показываем shortDesc
-$shortDescStripped = trim(strip_tags($shortDesc));
-$seoTextStripped = trim(strip_tags($seoText));
-$showShortDesc = true;
-if ($seoText && $shortDescStripped) {
-    // Если SEO-текст начинается с того же текста или они совпадают — не показываем shortDesc
-    if (mb_strpos($seoTextStripped, $shortDescStripped) !== false || $shortDescStripped === $seoTextStripped) {
-        $showShortDesc = false;
-    }
-}
-
-$pageTitle = ($cityData && $citySeo && $citySeo['meta_title'])
+$pageTitle = ($cityData && $citySeo && !empty($citySeo['meta_title']))
     ? $citySeo['meta_title']
-    : (($subcat['meta_title'] ?: $h1) . ' | ' . SITE_NAME);
-$metaDescription = $subcat['meta_description'] ?? ($shortDescStripped ?: ($h1 . '. Сравните лучшие предложения онлайн.'));
+    : ($h1 . ' | ' . SITE_NAME);
+$metaDescription = $shortDesc ?: ($h1 . '. Сравните лучшие предложения онлайн.');
 
 $breadcrumbs = [
     breadcrumbItem('Главная', '/'),
@@ -96,8 +84,8 @@ ob_start();
     <?= renderBreadcrumbs($breadcrumbs) ?>
 
     <h1 class="text-3xl font-bold text-gray-900 mb-4"><?= e($h1) ?></h1>
-    <?php if ($showShortDesc && $shortDescStripped): ?>
-    <p class="text-gray-600 mb-8"><?= e($shortDescStripped) ?></p>
+    <?php if ($shortDesc): ?>
+    <p class="text-gray-600 mb-8"><?= e(strip_tags($shortDesc)) ?></p>
     <?php endif; ?>
 
     <p class="text-gray-500 mb-4"><?= count($offers) ?> предложений</p>
@@ -123,8 +111,8 @@ ob_start();
 <?php
 // Блок с другими допзапросами (исключая текущий)
 echo renderSubcategoryLinks(
-    $subcat['category'], 
-    $citySlugForLinks, 
+    $subcat['category'],
+    $citySlugForLinks,
     $subcat['slug'],
     $catLabel . ' — другие запросы'
 );
