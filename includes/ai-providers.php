@@ -140,8 +140,8 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
 
-    $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash', 'free-qwen3.7-plus', 'free-gpt-5.4-mini'];
-    $slowFirstModels = ['free-gpt-5.6-luna'];
+    $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash'];
+    $slowFirstModels = ['free-gpt-5.6-luna', 'free-qwen3.7-plus', 'free-gpt-5.4-mini'];
     if (in_array($model, $slowFirstModels, true)) {
         $fallbackModels[] = $model; // медленные/нестабильные модели — только после быстрых fallback
     } else {
@@ -159,7 +159,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     $blockedAccounts = [];
     $blockedModels = [];
     $accountsTried = 0;
-    $maxAccountsPerCall = 3;
+    $maxAccountsPerCall = 2;
     foreach ($keys as $activeKey) {
         $keyAccount = $activeKey['account'] ?? '';
         if ($keyAccount && isset($blockedAccounts[$keyAccount])) continue;
