@@ -141,9 +141,12 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     }
 
     $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash'];
-    $slowFirstModels = ['free-gpt-5.6-luna', 'free-qwen3.7-plus', 'free-gpt-5.4-mini'];
-    if (in_array($model, $slowFirstModels, true)) {
-        $fallbackModels[] = $model; // медленные/нестабильные модели — только после быстрых fallback
+    $disabledSlowModels = ['free-gpt-5.6-luna'];
+    $deprioritizedModels = ['free-qwen3.7-plus', 'free-gpt-5.4-mini'];
+    if (in_array($model, $disabledSlowModels, true)) {
+        // полностью пропускаем слишком медленные модели в синхронных admin-вызовах
+    } elseif (in_array($model, $deprioritizedModels, true)) {
+        $fallbackModels[] = $model;
     } else {
         array_unshift($fallbackModels, $model);
     }
@@ -179,8 +182,8 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 18,
-                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT => 15,
+                CURLOPT_CONNECTTIMEOUT => 4,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_HTTPHEADER => [

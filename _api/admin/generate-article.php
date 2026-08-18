@@ -389,10 +389,11 @@ if (!$content) {
 // Генерация картинки через unified AI providers
 $imageResult = ['success' => false, 'error' => 'skipped'];
 $elapsedBeforeImage = microtime(true) - $requestStartedAt;
-if ($elapsedBeforeImage < 120) {
+$shouldSkipImage = (!$aiResult['success']) || ($elapsedBeforeImage >= 45);
+if (!$shouldSkipImage) {
     $imageResult = aiGenerateImage(buildArticleImagePrompt($selectedTopic));
 } else {
-    $imageResult = ['success' => false, 'error' => 'skipped to avoid request timeout'];
+    $imageResult = ['success' => false, 'error' => (!$aiResult['success']) ? 'skipped because text AI failed' : 'skipped to avoid request timeout'];
 }
 $coverImage = $imageResult['path'] ?? '';
 $imageProvider = ($imageResult['provider'] ?? '') . (isset($imageResult['model']) ? ' (' . $imageResult['model'] . ')' : '');
