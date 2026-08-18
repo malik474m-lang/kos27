@@ -151,7 +151,10 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     $messages[] = ['role' => 'user', 'content' => $prompt];
 
     $errors = [];
+    $blockedAccounts = [];
     foreach ($keys as $activeKey) {
+        $keyAccount = $activeKey['account'] ?? '';
+        if ($keyAccount && isset($blockedAccounts[$keyAccount])) continue;
         $apiKey = $activeKey['key'];
         foreach ($fallbackModels as $tryModel) {
             $payload = [
@@ -189,6 +192,9 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
                 if ($code === 402) {
                     odiMarkKeyExhausted($activeKey['id']);
+                }
+                if ($code === 429 && $keyAccount) {
+                    $blockedAccounts[$keyAccount] = true;
                 }
                 $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code;
                 continue 2; // следующий ключ
@@ -232,7 +238,13 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     }
 
     $errors = [];
+    $blockedAccounts = []; // аккаунты получившие 429 — пропускаем все их ключи
     foreach ($keys as $activeKey) {
+        $keyAccount = $activeKey['account'] ?? '';
+        // Пропускаем ключи аккаунта, который уже получил 429
+        if ($keyAccount && isset($blockedAccounts[$keyAccount])) {
+            continue;
+        }
         $apiKey = $activeKey['key'];
 
         $payload = [
@@ -268,6 +280,9 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
         if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
             if ($code === 402) {
                 odiMarkKeyExhausted($activeKey['id']);
+            }
+            if ($code === 429 && $keyAccount) {
+                $blockedAccounts[$keyAccount] = true; // блокируем все ключи этого аккаунта
             }
             $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code;
             continue;
