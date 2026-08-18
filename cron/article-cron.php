@@ -53,20 +53,20 @@ $provider = 'template';
 echo "[START] Генерация статьи: $topic\n";
 require_once __DIR__ . '/../includes/ai-compat.php';
 
-$systemPrompt = 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском языке. Подзаголовки на отдельной строке. ВАЖНО: пиши ТОЛЬКО чистый текст без форматирования. Без markdown, без тройных кавычек, без блоков кода, без звёздочек, без решёток.';
+$systemPrompt = 'Ты финансовый журналист для сайта Космозайм. Пиши развёрнутые статьи минимум 1500 слов на русском языке. Формат: HTML (используй h2, h3, p, ul, li, strong). Без markdown, без тройных кавычек, без блоков кода, без звёздочек, без решёток. Только HTML-теги.';
 $userPrompt = "Напиши развёрнутую статью на тему \"$topic\". Минимум 1500 слов.";
 $aiText = kosmozaimAIComplete($systemPrompt, $userPrompt);
 
 if ($aiText) {
-    $content = preg_replace('/^```\s*\w*\s*\n?/i', '', $aiText);
-    $content = preg_replace('/\n?```\s*$/', '', $content);
-    $content = preg_replace('/```/', '', $content);
-    $content = preg_replace('/\*\*(.+?)\*\*/', '$1', $content);
-    $content = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '$1', $content);
-    $content = preg_replace('/^#{1,6}\s+/m', '', $content);
-    $content = preg_replace('/__(.+?)__/s', '$1', $content);
-    $content = preg_replace('/~~(.+?)~~/s', '$1', $content);
-    $content = preg_replace('/^>\s?/m', '', $content);
+    $content = preg_replace('/^```\s*html?\s*/i', '', $aiText);
+    $content = preg_replace('/\s*```$/i', '', $content);
+    $content = preg_replace('/^#{1,2}\s+(.+)$/m', '<h2>$1</h2>', $content);
+    $content = preg_replace('/^###\s+(.+)$/m', '<h3>$1</h3>', $content);
+    $content = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $content);
+    if (!preg_match('/<(p|h[1-6]|ul|ol|li|div)\b/i', $content)) {
+        $paragraphs = array_filter(array_map('trim', explode("\n\n", $content)));
+        $content = '<p>' . implode('</p><p>', $paragraphs) . '</p>';
+    }
     $content = trim($content);
     $provider = 'AI';
 }
