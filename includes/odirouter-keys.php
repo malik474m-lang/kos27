@@ -12,6 +12,12 @@ define('ODIROUTER_DAILY_LIMIT', 50);
 define('ODIROUTER_KEYS_FILE', __DIR__ . '/../data/odirouter-keys.json');
 define('ODIROUTER_USAGE_FILE', __DIR__ . '/../data/odirouter-usage.json');
 
+
+function odiNormalizeAccountId(?string $account, string $fallbackId): string {
+    $account = trim((string)$account);
+    return $account !== '' ? $account : ('_no_account_' . $fallbackId);
+}
+
 function odiLoadKeys(): array {
     if (!file_exists(ODIROUTER_KEYS_FILE)) return [];
     $data = json_decode(file_get_contents(ODIROUTER_KEYS_FILE), true);
@@ -50,7 +56,7 @@ function odiGetAccountForKey(string $keyId): string {
     foreach ($keys as $k) {
         $id = $k['id'] ?? md5($k['key'] ?? '');
         if ($id === $keyId) {
-            return $k['account'] ?? '_no_account_' . $keyId;
+            return odiNormalizeAccountId($k['account'] ?? '', $keyId);
         }
     }
     return '_no_account_' . $keyId;
@@ -98,16 +104,16 @@ function odiGetAvailableKeys(string $type = 'text'): array {
 
     $poolKeyValues = array_column($allKeys, 'key');
     if ($mainKey && !in_array($mainKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'account' => '', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'enabled' => true, 'type' => 'all'];
     }
     if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'account' => '', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'enabled' => true, 'type' => 'all'];
     }
 
     $result = [];
     foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key']);
-        $account = $k['account'] ?? '_no_account_' . $keyId;
+        $account = odiNormalizeAccountId($k['account'] ?? '', $keyId);
         
         // Лимит считаем по аккаунту
         $accountUsed = (int)($usage['accounts'][$account] ?? 0);
@@ -161,17 +167,17 @@ function odiGetKeysStats(): array {
     $imageKey = $settings['odirouter_image_api_key'] ?? '';
     
     if ($mainKey && !in_array($mainKey, $poolKeyValues)) {
-        $allKeys[] = ['id' => 'settings_main', 'key' => $mainKey, 'name' => 'Основной (настройки)', 'account' => '', 'type' => 'all', 'enabled' => true];
+        $allKeys[] = ['id' => 'settings_main', 'key' => $mainKey, 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'type' => 'all', 'enabled' => true];
     }
     if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues)) {
-        $allKeys[] = ['id' => 'settings_image', 'key' => $imageKey, 'name' => 'Картинки (настройки)', 'account' => '', 'type' => 'all', 'enabled' => true];
+        $allKeys[] = ['id' => 'settings_image', 'key' => $imageKey, 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'type' => 'all', 'enabled' => true];
     }
     
     // Считаем использование по аккаунтам
     $accountUsageMap = [];
     foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key'] ?? '');
-        $account = $k['account'] ?? '_no_account_' . $keyId;
+        $account = odiNormalizeAccountId($k['account'] ?? '', $keyId);
         if (!isset($accountUsageMap[$account])) {
             $accountUsageMap[$account] = (int)($usage['accounts'][$account] ?? 0);
         }
@@ -181,7 +187,7 @@ function odiGetKeysStats(): array {
     
     foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key'] ?? '');
-        $account = $k['account'] ?? '_no_account_' . $keyId;
+        $account = odiNormalizeAccountId($k['account'] ?? '', $keyId);
         $accountUsed = $accountUsageMap[$account] ?? 0;
         $keyUsed = (int)($usage['keys'][$keyId] ?? 0);
         $accountRemaining = max(0, ODIROUTER_DAILY_LIMIT - $accountUsed);
