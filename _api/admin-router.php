@@ -82,6 +82,9 @@ if ($adminUri === '/content-quality' && $method === 'POST') { require __DIR__ . 
 // Подкатегории (допзапросы)
 if (str_starts_with((string)($adminUri), "/subcategories")) { require __DIR__ . "/admin/subcategories.php"; exit; }
 
+// Помощник генерации правил фильтрации (не требует сохранения в БД)
+if ($adminUri === "/filter-rules-helper" && $method === "POST") { require __DIR__ . "/admin/filter-rules-helper.php"; exit; }
+
 // FAQ офферов
 if ($adminUri === '/faq' && $method === 'GET') { require __DIR__ . '/admin/faq-list.php'; exit; }
 if ($adminUri === '/faq/generate' && $method === 'POST') { require __DIR__ . '/admin/faq-generate.php'; exit; }
@@ -221,6 +224,9 @@ if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
 
 // Подкатегории (доп. запросы)
 if (str_starts_with((string)($adminUri), "/subcategories")) { require __DIR__ . "/admin/subcategories.php"; exit; }
+
+// Помощник генерации правил фильтрации (не требует сохранения в БД)
+if ($adminUri === "/filter-rules-helper" && $method === "POST") { require __DIR__ . "/admin/filter-rules-helper.php"; exit; }
 
 // Категории
 if ($adminUri === '/categories' && $method === 'GET') { require __DIR__ . '/admin/categories-list.php'; exit; }
