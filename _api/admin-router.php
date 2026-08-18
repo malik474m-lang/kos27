@@ -50,6 +50,9 @@ if ($adminUri === "/article-regenerate-image" && $method === "POST") { require _
 // Генерация описания оффера
 if ($adminUri === "/offer-generate-desc" && $method === "POST") { require __DIR__ . "/admin/offer-generate-desc.php"; exit; }
 
+// Скачивание логотипа оффера по внешнему URL
+if ($adminUri === "/offer-logo-import" && $method === "POST") { require __DIR__ . "/admin/offer-logo-import.php"; exit; }
+
 // Генерация справочной информации оффера
 if ($adminUri === "/offer-contacts-generate" && $method === "POST") { require __DIR__ . "/admin/offer-contacts-generate.php"; exit; }
 // leads.su API

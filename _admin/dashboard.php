@@ -230,7 +230,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(i
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Ставка %</label><div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_140px] gap-2"><input id="of-r" type="number" step="0.01" class="input-f w-full min-w-0" value="'+f.rate+'"><select id="of-ru" class="sel-f w-full sm:w-[140px]"><option value="day"'+((f.rate_unit||'day')==='day'?' selected':'')+'>в день</option><option value="year"'+((f.rate_unit||'day')==='year'?' selected':'')+'>в год</option></select></div></div>'+
 '<div><label class="block text-xs font-medium mb-1">Без % (дн)</label><input id="of-fr" type="number" class="input-f" value="'+f.free_term_days+'"></div>'+
 '<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="of-so" type="number" class="input-f" value="'+f.sort_order+'"></div>'+
-'<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><div class="flex gap-2"><input id="of-lo" class="input-f flex-1" value="'+e(f.logo_url||'')+'"><button type="button" onclick="mediaPicker(\'of-lo\',\'offer\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button></div><div id="of-lo-preview" class="mt-2">'+(f.logo_url?'<img src="'+e(f.logo_url)+'" class="w-16 h-16 object-contain rounded border bg-white">':'')+'</div></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">URL логотипа</label><div class="flex gap-2"><input id="of-lo" class="input-f flex-1" value="'+e(f.logo_url||'')+'"><button type="button" onclick="mediaPicker(\'of-lo\',\'offer\')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">📁 Выбрать</button><button type="button" id="of-logo-import-btn" onclick="importOfferLogoUrl()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">⬇ Скачать</button></div><p class="text-[11px] text-gray-500 mt-1">Вставьте внешнюю ссылку на логотип и нажмите «Скачать» — файл сохранится локально.</p><div id="of-lo-preview" class="mt-2">'+(f.logo_url?'<img src="'+e(f.logo_url)+'" class="w-16 h-16 object-contain rounded border bg-white">':'')+'</div></div>'+
 '<div class="col-span-2"><label class="block text-xs font-medium mb-1">Партнёрская ссылка *</label><input id="of-af" class="input-f" value="'+e(f.affiliate_url||'')+'" required></div>'+
 '<div class="col-span-2 border-t pt-3 mt-2"><div class="flex items-center justify-between mb-2"><span class="text-xs font-bold text-gray-700">📋 Справочная информация</span><div class="flex items-center gap-3"><button type="button" onclick="genOfferInfo(this)" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs">🤖 ИИ</button><a href="https://cbr.ru/microfinance/registry/" target="_blank" class="text-blue-600 hover:underline text-xs">Реестр ЦБ ↗</a></div></div><div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium mb-1">Телефон</label><input id="of-phone" class="input-f" value="'+e(f.phone||'')+'" placeholder="8-800-..."></div><div><label class="block text-xs font-medium mb-1">Лицензия ЦБ</label><input id="of-license" class="input-f" value="'+e(f.license||'')+'" placeholder="№..."></div><div><label class="block text-xs font-medium mb-1">Торговая марка</label><input id="of-trademark" class="input-f" value="'+e(f.trademark||'')+'" placeholder="ООО..."></div><div><label class="block text-xs font-medium mb-1">Адрес</label><input id="of-address" class="input-f" value="'+e(f.address||'')+'" placeholder="г. Москва..."></div></div></div>'+
 '<div class="col-span-2 border-t pt-3 mt-2"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-bold text-amber-700">🎁 КосмоБонус</span></div><div class="grid grid-cols-3 gap-2"><div><label class="flex items-center gap-2"><input type="checkbox" id="of-kb-enabled" '+(f.kosmobonus_enabled?'checked':'')+' class="w-4 h-4"><span class="text-xs">Участвует в акции</span></label></div><div><label class="block text-xs font-medium mb-1">Бонус (₽)</label><input id="of-kb-amount" type="number" class="input-f" value="'+(f.kosmobonus_amount||0)+'" min="0"></div><div><label class="block text-xs font-medium mb-1">Условия</label><input id="of-kb-conditions" class="input-f" value="'+e(f.kosmobonus_conditions||'')+'" placeholder="Условия акции..."></div></div></div>'+
@@ -5286,6 +5286,46 @@ function saveSocialProof() {
 
 
 // === AI Providers (lAIP) ===
+
+function importOfferLogoUrl(){
+    var input=document.getElementById('of-lo');
+    if(!input){alert('Поле логотипа не найдено');return;}
+    var url=(input.value||'').trim();
+    if(!url){
+        var entered=prompt('Вставьте внешнюю ссылку на логотип (http/https):','');
+        if(entered===null)return;
+        url=(entered||'').trim();
+        if(url) input.value=url;
+    }
+    if(!url){alert('Укажите URL логотипа');return;}
+    if(!/^https?:\/\//i.test(url)){
+        alert('Нужна внешняя ссылка http/https');
+        return;
+    }
+    var btn=document.getElementById('of-logo-import-btn');
+    var title=(document.getElementById('of-t')?.value||'').trim();
+    if(btn){btn.disabled=true;btn.textContent='⏳ Скачивание...';}
+    fetch(A+'/offer-logo-import',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url:url,title:title})
+    }).then(function(r){return r.json();}).then(function(d){
+        if(btn){btn.disabled=false;btn.textContent='⬇ Скачать';}
+        if(d.success&&d.logoUrl){
+            input.value=d.logoUrl;
+            var prev=document.getElementById('of-lo-preview');
+            if(prev) prev.innerHTML='<img src="'+d.logoUrl+'" class="w-16 h-16 object-contain rounded border bg-white">';
+            alert('✅ Логотип скачан и сохранён локально');
+        } else {
+            alert('Ошибка: '+(d.error||'Не удалось скачать логотип'));
+        }
+    }).catch(function(err){
+        if(btn){btn.disabled=false;btn.textContent='⬇ Скачать';}
+        alert('Ошибка: '+(err.message||err));
+    });
+}
+
+
 // === Генерация описания оффера через AI ===
 function aiGenOfferDesc(){
     var title=document.getElementById('of-t')?.value||'';
