@@ -84,6 +84,10 @@ if ($_ilItems) {
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 $canonicalUrl = pageCanonical('/kredity');
+require_once __DIR__ . '/../includes/subcategories.php';
+echo renderSubcategoryLinks('credits');
+?>
+<?php
 $content = ob_get_clean();
 $content .= renderStickyCta([
     'id' => 'list-sticky-cta',

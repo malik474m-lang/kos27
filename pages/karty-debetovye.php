@@ -105,6 +105,10 @@ if ($_ilItems) {
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 $canonicalUrl = SITE_URL . '/karty/debetovye';
+require_once __DIR__ . '/../includes/subcategories.php';
+echo renderSubcategoryLinks('debit_cards');
+?>
+<?php
 $content = ob_get_clean();
 $content .= renderStickyCta([
     'id' => 'list-sticky-cta',

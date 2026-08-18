@@ -216,6 +216,9 @@ if (preg_match('#^/ab-tests/(\d+)/reset$#', $adminUri, $m)) {
     require __DIR__ . '/admin/ab-reset.php'; exit;
 }
 
+// Подкатегории (доп. запросы)
+if (str_starts_with((string)($adminUri), "/subcategories")) { require __DIR__ . "/admin/subcategories.php"; exit; }
+
 // Категории
 if ($adminUri === '/categories' && $method === 'GET') { require __DIR__ . '/admin/categories-list.php'; exit; }
 if ($adminUri === '/categories' && $method === 'POST') { require __DIR__ . '/admin/categories-save.php'; exit; }

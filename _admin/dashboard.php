@@ -39,6 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('articles')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="articles">📰 Статьи</button>
 <button onclick="sw('reviews')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="reviews">⭐ Отзывы</button>
 <button onclick="sw('tags')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="tags">🏷️ Теги</button>
+<button onclick="sw('subcats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subcats">🔖 Доп. запросы</button>
 <button onclick="sw('geo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="geo">🌍 Гео-редиректы</button>
 <button onclick="sw('cities')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cities">🏘️ Города</button>
 <button onclick="sw('cityseo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cityseo">🏙️ SEO городов</button>
@@ -76,6 +77,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-articles" class="tp hidden"></div>
 <div id="p-reviews" class="tp hidden"></div>
 <div id="p-tags" class="tp hidden"></div>
+<div id="p-subcats" class="tp hidden"></div>
 <div id="p-geo" class="tp hidden"></div>
 <div id="p-cities" class="tp hidden"></div>
 <div id="p-cityseo" class="tp hidden"></div>
@@ -113,8 +115,8 @@ var SITE_URL='<?= e(SITE_URL) ?>';
 var adminCities=<?= json_encode(array_values(getCities()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 function ap(u,o){return fetch(A+u,{headers:{'Content-Type':'application/json'},...o}).then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(e){throw new Error((t||('HTTP '+r.status)).slice(0,500));}if(!r.ok){throw new Error((d&&d.error)||('HTTP '+r.status));}return d;});});}
 function e(s){if(!s)return'';let d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const TAB_LABELS={aiproviders:'AI провайдеры',direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
-function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway,aiproviders:lAIP})[t]?.();}
+const TAB_LABELS={aiproviders:'AI провайдеры',direct:'Яндекс Директ',leadssu:'Leads.su',emailfunnel:'Email-воронка',giveaway:'Розыгрыши',positions:'Позиции',indexing:'Индексация',cities:'Города',settings:'Настройки',offers:'Предложения',articles:'Статьи',reviews:'Отзывы',tags:'Теги',subcats:'Доп. запросы',geo:'Гео-редиректы',cityseo:'SEO городов',stats:'Статистика',funnel:'Воронка',smart:'Умный рейтинг',links:'Партнёрские ссылки',conversions:'Конверсии',ab:'A/B тесты',subs:'Подписчики и рассылки',scheduler:'Планировщик',batch:'Пакетная генерация',history:'История изменений',analytics:'Финансовая аналитика',backup:'Бэкап',users:'Пользователи',cats:'Категории',security:'Безопасность',monitor:'Мониторинг',health:'Здоровье сайта',pwa:'PWA Статистика',mobileapp:'Приложение'};
+function sw(t){document.querySelectorAll('.tp').forEach(x=>x.classList.add('hidden'));document.getElementById('p-'+t).classList.remove('hidden');document.querySelectorAll('.tb').forEach(b=>{let a=b.dataset.t===t;b.classList.toggle('border-blue-600',a);b.classList.toggle('text-blue-600',a);b.classList.toggle('border-transparent',!a);b.classList.toggle('text-gray-500',!a);});var bc=document.getElementById('admin-breadcrumb');if(bc)bc.innerHTML='<a href="/admin" class="hover:text-blue-600">Админка</a> → <span class="text-gray-700">'+(TAB_LABELS[t]||t)+'</span>';({settings:lSet,offers:lO,cats:lCats,articles:lA,reviews:lR,tags:lT,subcats:lSubcats,geo:lG,cityseo:lCS,stats:lS,funnel:lFunnel,smart:lSmart,links:lLinks,conversions:lConv,ab:lAB,subs:lSu,scheduler:lSch,batch:lBatch,history:lHistory,analytics:lAnalytics,backup:lB,users:lUsers,security:lSec,direct:lYD,leadssu:lLS,emailfunnel:lEF,health:lHealth,monitor:lMonitor,indexing:lIndexing,cities:lCities,positions:lPositions,giveaway:lGiveaway,aiproviders:lAIP})[t]?.();}
 function clearCache(){fetch('/admin/clear-cache').then(r=>r.json()).then(d=>{if(d.success)alert('✓ Кэш очищен');else alert('Ошибка');}).catch(()=>alert('Ошибка'));}
 function clearApiCache(){fetch(A+'/clear-api-cache',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)alert('✓ API-кэш очищен: '+d.cleared);else alert(d.error||'Ошибка');}).catch(()=>alert('Ошибка'));}
 function resetOpcache(){fetch(A+'/opcache-reset',{method:'POST'}).then(r=>r.json()).then(d=>{alert((d.message||'Результат неизвестен') + (d.enabled===false ? '\n\nopcache_reset() недоступен на хостинге.' : ''));}).catch(()=>alert('Ошибка сброса OPcache'));}
@@ -2317,7 +2319,7 @@ bulkMode[entity]=false;
 var bar=document.getElementById('bulk-bar');if(bar)bar.remove();
 var btn=document.getElementById('bulk-'+entity+'-toggle');
 if(btn){btn.textContent='☑ Выбрать';btn.className='bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold';}
-var reload={offers:lO,tags:lT,articles:lA};
+var reload={offers:lO,tags:lT,subcats:lSubcats,articles:lA};
 if(reload[entity])reload[entity]();
 }
 
@@ -5481,6 +5483,74 @@ function aiRegenImage(articleId){
         alert('Ошибка: '+err.message);
     });
 }
+
+// === Подкатегории (доп. запросы) ===
+function lSubcats(){
+var el=document.getElementById('p-subcats');
+el.innerHTML='<p class="text-gray-500">Загрузка...</p>';
+ap('/subcategories').then(function(list){
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🔖 Дополнительные запросы (подкатегории)</h2><button onclick="subcatForm()" class="btn-p text-sm">+ Добавить</button></div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> Каждый запрос — это отдельная страница с отфильтрованными офферами. URL: /zajmy/q/slug или /zajmy/moskva/q/slug. SEO-текст можно сгенерировать AI.</div>';
+if(!list.length){h+='<p class="text-gray-500 text-center py-8">Нет запросов. Создайте первый!</p>';}
+var cats={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
+var grouped={};list.forEach(function(s){var c=s.category||'other';if(!grouped[c])grouped[c]=[];grouped[c].push(s);});
+Object.keys(cats).forEach(function(cat){
+var items=grouped[cat]||[];
+h+='<div class="bg-white rounded-xl border shadow-sm p-4 mb-4"><h3 class="font-bold text-gray-900 mb-3">'+cats[cat]+' ('+items.length+')</h3>';
+if(!items.length){h+='<p class="text-xs text-gray-400">Нет запросов для этой категории</p>';}
+else{h+='<div class="space-y-2">';items.forEach(function(s){
+var rules='';try{var r=JSON.parse(s.filter_rules||'{}');rules=Object.entries(r).map(function(e){return e[0]+'='+e[1];}).join(', ');}catch(e){}
+h+='<div class="flex items-center justify-between bg-gray-50 rounded-lg p-3"><div class="min-w-0"><span class="font-medium text-gray-900">'+(s.icon||'')+' '+e(s.title)+'</span><span class="text-xs text-gray-400 ml-2">/q/'+e(s.slug)+'</span>'+(rules?'<span class="text-xs text-gray-500 ml-2">['+e(rules)+']</span>':'')+'</div><div class="flex gap-2"><span class="text-xs px-2 py-0.5 rounded '+(s.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(s.is_active?'Вкл':'Выкл')+'</span><button onclick="subcatForm('+s.id+')" class="text-sm text-blue-600 hover:underline">Ред.</button><button onclick="subcatDel('+s.id+')" class="text-sm text-red-500 hover:underline">✕</button></div></div>';
+});h+='</div>';}
+h+='</div>';
+});
+el.innerHTML=h;
+});
+}
+function subcatForm(editId){
+var isEdit=!!editId;
+var f={title:'',slug:'',category:'microloans',filter_rules:'{}',seo_h1:'',meta_title:'',meta_description:'',seo_text:'',icon:'📋',sort_order:0,is_active:true};
+if(isEdit){
+ap('/subcategories').then(function(list){
+var item=list.find(function(s){return s.id==editId;});
+if(item){f=item;f.filter_rules=f.filter_rules||'{}';showSubcatModal(f,isEdit);}
+});
+}else{showSubcatModal(f,false);}
+}
+function showSubcatModal(f,isEdit){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">'+(isEdit?'Редактировать':'Новый запрос')+'</h3><button onclick="cm()" class="text-gray-400 text-xl">✕</button></div>'+
+'<form onsubmit="return subcatSave(event,'+(f.id||0)+')"><div class="grid grid-cols-2 gap-3">'+
+'<div><label class="block text-xs font-medium mb-1">Название *</label><input id="sc-title" class="input-f" value="'+e(f.title)+'" required></div>'+
+'<div><label class="block text-xs font-medium mb-1">Slug</label><input id="sc-slug" class="input-f" value="'+e(f.slug)+'" placeholder="авто из названия"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Категория</label><select id="sc-cat" class="sel-f"><option value="microloans"'+(f.category==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(f.category==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(f.category==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(f.category==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select></div>'+
+'<div><label class="block text-xs font-medium mb-1">Иконка</label><input id="sc-icon" class="input-f" value="'+e(f.icon||'📋')+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">Правила фильтрации (JSON)</label><textarea id="sc-rules" class="input-f font-mono text-xs" rows="3" placeholder=\'{"term_max_days":20}\'>'+e(typeof f.filter_rules==='string'?f.filter_rules:JSON.stringify(f.filter_rules))+'</textarea><p class="text-[10px] text-gray-400 mt-1">term_max_days, amount_max_min, amount_max_max, free_term_days_min, rate_max, borrower_category</p></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO H1</label><input id="sc-h1" class="input-f" value="'+e(f.seo_h1||'')+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Meta Title</label><input id="sc-mt" class="input-f" value="'+e(f.meta_title||'')+'"></div>'+
+'<div><label class="block text-xs font-medium mb-1">Meta Description</label><input id="sc-md" class="input-f" value="'+e(f.meta_description||'')+'"></div>'+
+'<div class="col-span-2"><label class="block text-xs font-medium mb-1">SEO текст</label><div class="flex gap-2 mb-1"><button type="button" onclick="subcatGenSeo()" class="bg-purple-600 text-white px-3 py-1 rounded text-xs font-semibold">🤖 Сгенерировать AI</button></div><textarea id="sc-seo" class="input-f" rows="5">'+e(f.seo_text||'')+'</textarea></div>'+
+'<div><label class="block text-xs font-medium mb-1">Сортировка</label><input id="sc-sort" type="number" class="input-f" value="'+(f.sort_order||0)+'"></div>'+
+'<div><label class="flex items-center gap-2 mt-4"><input type="checkbox" id="sc-active" '+(f.is_active?'checked':'')+' class="w-4 h-4"><span class="text-sm">Активен</span></label></div>'+
+'</div><div class="flex justify-end gap-3 mt-4"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить</button></div></form>', false);
+}
+function subcatSave(ev,id){ev.preventDefault();
+var rules='{}';try{rules=document.getElementById('sc-rules').value;JSON.parse(rules);}catch(e){alert('Неверный JSON в правилах фильтрации');return false;}
+var data={id:id||undefined,title:document.getElementById('sc-title').value,slug:document.getElementById('sc-slug').value,category:document.getElementById('sc-cat').value,filter_rules:rules,seo_h1:document.getElementById('sc-h1').value,meta_title:document.getElementById('sc-mt').value,meta_description:document.getElementById('sc-md').value,seo_text:document.getElementById('sc-seo').value,icon:document.getElementById('sc-icon').value,sort_order:parseInt(document.getElementById('sc-sort').value)||0,is_active:document.getElementById('sc-active').checked};
+ap('/subcategories'+(id?'?id='+id:''),{method:id?'PUT':'POST',body:JSON.stringify(data)}).then(function(r){if(r.error){alert(r.error);return;}cm();lSubcats();});return false;}
+function subcatDel(id){if(!confirm('Удалить запрос?'))return;ap('/subcategories?id='+id,{method:'DELETE'}).then(function(){lSubcats();});}
+function subcatGenSeo(){
+var title=document.getElementById('sc-title')?.value||'';
+var cat=document.getElementById('sc-cat')?.value||'microloans';
+if(!title){alert('Введите название');return;}
+ap('/subcategories?action=generate-seo',{method:'POST',body:JSON.stringify({title:title,category:cat})}).then(function(d){
+if(d.seo_text){document.getElementById('sc-seo').value=d.seo_text;}
+if(d.seo_h1){document.getElementById('sc-h1').value=d.seo_h1;}
+if(d.meta_title){document.getElementById('sc-mt').value=d.meta_title;}
+if(d.meta_description){document.getElementById('sc-md').value=d.meta_description;}
+alert('SEO сгенерировано ('+(d.provider||'AI')+')');
+}).catch(function(err){alert('Ошибка: '+(err.message||err));});
+}
+
 
 // === OdiRouter Key Pool ===
 function odiLoadKeys(){
