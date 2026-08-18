@@ -101,26 +101,33 @@ if ($method === 'POST') {
     }
     
     if ($action === 'test') {
-        // Тест конкретного ключа (текст или картинка)
+        // Тест конкретного аккаунта (или авто-первого доступного)
         require_once __DIR__ . '/../../includes/ai-providers.php';
-        $keyId = $data['key_id'] ?? '';
+        $account = trim((string)($data['account'] ?? ''));
         $testType = $data['type'] ?? 'text';
-        
-        // Находим ключ
-        $allKeys = odiLoadKeys();
-        $settings = file_exists(__DIR__ . '/../../data/site-settings.json') 
-            ? json_decode(file_get_contents(__DIR__ . '/../../data/site-settings.json'), true) : [];
-        $targetKey = null;
-        foreach ($allKeys as $k) {
-            if (($k['id'] ?? '') === $keyId) { $targetKey = $k['key']; break; }
-        }
-        if (!$targetKey && $keyId === 'settings_main') $targetKey = $settings['odirouter_api_key'] ?? '';
-        if (!$targetKey && $keyId === 'settings_image') $targetKey = $settings['odirouter_image_api_key'] ?? '';
-        
-        if (!$targetKey) {
-            echo json_encode(['error' => 'Ключ не найден']);
+
+        $available = odiGetAvailableKeys($testType);
+        if (!$available) {
+            echo json_encode(['error' => 'Нет доступных ключей для теста']);
             exit;
         }
+
+        $selected = null;
+        if ($account !== '') {
+            foreach ($available as $k) {
+                $label = ($k['account'] ?? '') !== '' ? ($k['account'] ?? '') : 'Без аккаунта';
+                if ($label === $account) { $selected = $k; break; }
+            }
+            if (!$selected) {
+                echo json_encode(['error' => 'Для выбранного аккаунта нет доступного ключа этого типа']);
+                exit;
+            }
+        } else {
+            $selected = $available[0];
+        }
+
+        $targetKey = $selected['key'];
+        $accountLabel = ($selected['account'] ?? '') !== '' ? $selected['account'] : 'Без аккаунта';
         
         if ($testType === 'text') {
             $config = getAIProvidersConfig();
@@ -148,7 +155,7 @@ if ($method === 'POST') {
             if ($code >= 200 && $code < 300) {
                 $data = json_decode($response, true);
                 $text = $data['choices'][0]['message']['content'] ?? 'OK';
-                echo json_encode(['success' => true, 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
+                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
             } else {
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
             }
@@ -175,7 +182,7 @@ if ($method === 'POST') {
             if ($code >= 200 && $code < 300) {
                 $data = json_decode($response, true);
                 $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
-                echo json_encode(['success' => true, 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
+                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
             } else {
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
             }

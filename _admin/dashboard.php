@@ -5526,7 +5526,7 @@ function odiLoadKeys(){
             var accColor=accPct>=100?'text-red-600':(accPct>=80?'text-yellow-600':'text-green-600');
             var firstKey=gKeys.find(function(k){return k.enabled;});
             h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1 flex-wrap"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span>';
-            if(firstKey){h+='<button onclick="odiTestAccount(\''+firstKey.id+'\',\'text\')" class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100 ml-auto">🧪 текст</button><button onclick="odiTestAccount(\''+firstKey.id+'\',\'image\')" class="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100">🖼 картинка</button>';}
+            if(firstKey){h+='<button onclick="odiRunAccountTest(this)" data-account="'+((gKeys[0].account||'')||'Без аккаунта').replace(/"/g,'&quot;')+'" data-type="text" class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100 ml-auto">🧪 текст</button><button onclick="odiRunAccountTest(this)" data-account="'+((gKeys[0].account||'')||'Без аккаунта').replace(/"/g,'&quot;')+'" data-type="image" class="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100">🖼 картинка</button>';}
             h+='</div>';
             gKeys.forEach(function(k){
             var pct=Math.round((k.account_used||0)/50*100);
@@ -5547,6 +5547,15 @@ function odiLoadKeys(){
         h+='</div>';
         h+='<div class="mt-2 flex gap-2"><button onclick="odiResetCounters()" class="text-xs text-blue-600 hover:underline">🔄 Сбросить счётчики</button></div>';
         c.innerHTML=h;
+        var sel=document.getElementById('odi-test-account');
+        if(sel){
+            var current=sel.value;
+            var seen={};
+            var options=['<option value="">Авто: первый доступный аккаунт</option>'];
+            keys.forEach(function(k){var acc=(k.account||''); if(seen[acc]) return; seen[acc]=true; var label=acc||'Без аккаунта'; options.push('<option value="'+label.replace(/"/g,'&quot;')+'">'+e(label)+'</option>');});
+            sel.innerHTML=options.join('');
+            if(current!==undefined){ sel.value=current; }
+        }
     }).catch(function(e){c.innerHTML='Ошибка: '+e.message;});
 }
 function odiAddKey(){
@@ -5561,13 +5570,22 @@ function odiAddKey(){
 }
 function odiRemoveKey(id){if(!confirm('Удалить ключ?'))return;fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'remove',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
 function odiToggleKey(id){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'toggle',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
-function odiTestAccount(keyId,type){
-var btn=event.target;var origText=btn.textContent;btn.textContent='⏳...';btn.disabled=true;
-fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test',key_id:keyId,type:type})}).then(function(r){return r.json();}).then(function(d){
-btn.disabled=false;
-if(d.success){btn.textContent='✅';setTimeout(function(){btn.textContent=origText;},2000);alert('✅ '+(type==='text'?'Текст':'Картинка')+' — OK!\n\n'+(d.result||''));}
-else{btn.textContent='❌';setTimeout(function(){btn.textContent=origText;},2000);alert('❌ Ошибка: '+(d.error||'неизвестная'));}
-}).catch(function(err){btn.disabled=false;btn.textContent=origText;alert('Ошибка: '+err.message);});
+function odiRunTest(account,type,btn){
+var targetBtn=btn||null; var origText=targetBtn?targetBtn.textContent:'';
+if(targetBtn){targetBtn.textContent='⏳...';targetBtn.disabled=true;}
+fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test',account:account,type:type})}).then(function(r){return r.json();}).then(function(d){
+if(targetBtn){targetBtn.disabled=false;}
+if(d.success){ if(targetBtn){targetBtn.textContent='✅';setTimeout(function(){targetBtn.textContent=origText;},2000);} alert('✅ '+(type==='text'?'Текст':'Картинка')+' — OK!\n\nАккаунт: '+(d.account_label||'авто')+'\n'+(d.result||'')); }
+else{ if(targetBtn){targetBtn.textContent='❌';setTimeout(function(){targetBtn.textContent=origText;},2000);} alert('❌ Ошибка: '+(d.error||'неизвестная')); }
+}).catch(function(err){ if(targetBtn){targetBtn.disabled=false;targetBtn.textContent=origText;} alert('Ошибка: '+err.message);});
+}
+function odiRunSelectedTest(type,btn){
+var sel=document.getElementById('odi-test-account');
+var account=sel?sel.value:'';
+odiRunTest(account,type,btn||null);
+}
+function odiRunAccountTest(btn){
+odiRunTest(btn.dataset.account||'', btn.dataset.type||'text', btn);
 }
 function odiResetCounters(){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset'})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'Готово');odiLoadKeys();});}
 function odiEditKey(btn){
@@ -5644,7 +5662,11 @@ function lAIP(){
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label><select id="ai_odi_tm" class="sel-f">'+optSel(tModels.odirouter,cfg.odirouter_text_model)+'</select></div>'+
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label><select id="ai_odi_im" class="sel-f">'+optSel(iModels.odirouter,cfg.odirouter_image_model)+'</select></div>'+
         '</div>'+
-        '<div class="flex gap-2 mb-4"><button onclick="aiTest(\'odirouter\',\'text\')" class="btn-p text-xs py-2">🧪 Тест текста</button><button onclick="aiTest(\'odirouter\',\'image\')" class="btn-p text-xs py-2" style="background:#7c3aed">🖼 Тест картинки</button><button onclick="odiLoadKeys()" class="text-xs text-blue-600 hover:underline ml-auto">🔄 Обновить</button></div>'+
+        '<div class="flex flex-wrap gap-2 mb-4 items-end">'+
+        '<div><label class="block text-xs font-medium text-gray-700 mb-1">Аккаунт для теста</label><select id="odi-test-account" class="sel-f text-sm" style="min-width:240px"><option value="">Авто: первый доступный аккаунт</option></select></div>'+
+        '<button onclick="odiRunSelectedTest(\'text\',this)" class="btn-p text-xs py-2">🧪 Тест текста</button>'+
+        '<button onclick="odiRunSelectedTest(\'image\',this)" class="btn-p text-xs py-2" style="background:#7c3aed">🖼 Тест картинки</button>'+
+        '<button onclick="odiLoadKeys()" class="text-xs text-blue-600 hover:underline ml-auto">🔄 Обновить</button></div>'+
         '<div id="odi-keys-list" class="text-sm text-gray-500">Загрузка...</div>'+
         '<div class="mt-4">'+
         '<div class="flex flex-wrap gap-2">'+
