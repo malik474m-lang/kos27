@@ -5524,7 +5524,10 @@ function odiLoadKeys(){
             var gKeys=groups[acc];
             var accUsed=gKeys[0].account_used||0;var accRem=gKeys[0].account_remaining||0;var accPct=Math.round(accUsed/50*100);
             var accColor=accPct>=100?'text-red-600':(accPct>=80?'text-yellow-600':'text-green-600');
-            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span></div>';
+            var firstKey=gKeys.find(function(k){return k.enabled;});
+            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1 flex-wrap"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span>';
+            if(firstKey){h+='<button onclick="odiTestAccount(\''+firstKey.id+'\',\'text\')" class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100 ml-auto">🧪 текст</button><button onclick="odiTestAccount(\''+firstKey.id+'\',\'image\')" class="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100">🖼 картинка</button>';}
+            h+='</div>';
             gKeys.forEach(function(k){
             var pct=Math.round((k.account_used||0)/50*100);
             var color=pct>=100?'bg-red-500':(pct>=80?'bg-yellow-500':'bg-green-500');
@@ -5558,6 +5561,14 @@ function odiAddKey(){
 }
 function odiRemoveKey(id){if(!confirm('Удалить ключ?'))return;fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'remove',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
 function odiToggleKey(id){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'toggle',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
+function odiTestAccount(keyId,type){
+var btn=event.target;var origText=btn.textContent;btn.textContent='⏳...';btn.disabled=true;
+fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test',key_id:keyId,type:type})}).then(function(r){return r.json();}).then(function(d){
+btn.disabled=false;
+if(d.success){btn.textContent='✅';setTimeout(function(){btn.textContent=origText;},2000);alert('✅ '+(type==='text'?'Текст':'Картинка')+' — OK!\n\n'+(d.result||''));}
+else{btn.textContent='❌';setTimeout(function(){btn.textContent=origText;},2000);alert('❌ Ошибка: '+(d.error||'неизвестная'));}
+}).catch(function(err){btn.disabled=false;btn.textContent=origText;alert('Ошибка: '+err.message);});
+}
 function odiResetCounters(){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset'})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'Готово');odiLoadKeys();});}
 function odiEditKey(btn){
 var id=btn.dataset.id,name=btn.dataset.name||'',account=btn.dataset.account||'',type=btn.dataset.type||'all';
@@ -5592,16 +5603,7 @@ function lAIP(){
         c.innerHTML='<div class="space-y-6">'+
         '<div class="flex items-center justify-between flex-wrap gap-4"><h2 class="text-xl font-bold">🤖 Управление AI провайдерами</h2><div class="flex gap-4 text-sm"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full">Текст: <b>'+actT+'</b></span><span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Изображение: <b>'+actI+'</b></span></div></div>'+
 
-        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.odirouter_enabled?'border-green-500':'border-gray-300')+'">'+
-        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🌐</span><div><h3 class="font-bold text-lg">OdiRouter</h3><p class="text-sm text-gray-500">200+ AI моделей (GPT, Gemini, Claude) + генерация изображений</p></div></div>'+
-        '<label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="ai_odi_en" '+(cfg.odirouter_enabled?'checked':'')+' class="sr-only peer"><div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div></label></div>'+
-        '<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">API ключ (LLM)</label><input type="password" id="ai_odi_key" value="'+(cfg.odirouter_api_key_masked||'')+'" placeholder="Ключ для текста" class="input-f"></div>'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">API ключ (картинки)</label><input type="password" id="ai_odi_img_key" value="'+(cfg.odirouter_image_api_key_masked||'')+'" placeholder="Отдельный ключ" class="input-f"></div>'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label><select id="ai_odi_tm" class="sel-f">'+optSel(tModels.odirouter,cfg.odirouter_text_model)+'</select></div>'+
-        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label><select id="ai_odi_im" class="sel-f">'+optSel(iModels.odirouter,cfg.odirouter_image_model)+'</select></div>'+
-        '<div class="flex items-end gap-2"><button onclick="aiTest(\'odirouter\',\'text\')" class="btn-p text-xs py-2">🧪 Тест текста</button><button onclick="aiTest(\'odirouter\',\'image\')" class="btn-p text-xs py-2" style="background:#7c3aed">🖼 Тест картинки</button></div>'+
-        '</div></div>'+
+        
 
         '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.yandex_gpt_enabled?'border-yellow-500':'border-gray-300')+'">'+
         '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🟡</span><div><h3 class="font-bold text-lg">Yandex Cloud</h3><p class="text-sm text-gray-500">YandexGPT (текст) + YandexART (изображения)</p></div></div>'+
@@ -5635,10 +5637,16 @@ function lAIP(){
         '<div><h4 class="font-medium mb-2">🖼️ Изображения</h4><div id="ai-ip" class="space-y-2">'+priItems(iPri,ip)+'</div></div>'+
         '</div></div>'+
 
-        '<div class="bg-white rounded-xl shadow p-6 border-l-4 border-orange-400">'+
-        '<div class="flex items-center justify-between mb-4"><div class="flex items-center gap-3"><span class="text-3xl">🔑</span><div><h3 class="font-bold text-lg">Пул API ключей OdiRouter</h3><p class="text-sm text-gray-500">Автоматическая ротация при исчерпании лимита (50/день)</p></div></div><button onclick="odiLoadKeys()" class="text-sm text-blue-600 hover:underline">🔄 Обновить</button></div>'+
+        '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.odirouter_enabled?'border-green-500':'border-gray-300')+'">'+
+        '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">🌐</span><div><h3 class="font-bold text-lg">OdiRouter — Пул API ключей</h3><p class="text-sm text-gray-500">Ротация по аккаунтам (50 запросов/день на аккаунт)</p></div></div>'+
+        '<label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="ai_odi_en" '+(cfg.odirouter_enabled?'checked':'')+' class="sr-only peer" onchange="aiSaveAll()"><div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div></label></div>'+
+        '<div class="grid md:grid-cols-2 gap-3 mb-4">'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label><select id="ai_odi_tm" class="sel-f">'+optSel(tModels.odirouter,cfg.odirouter_text_model)+'</select></div>'+
+        '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label><select id="ai_odi_im" class="sel-f">'+optSel(iModels.odirouter,cfg.odirouter_image_model)+'</select></div>'+
+        '</div>'+
+        '<div class="flex gap-2 mb-4"><button onclick="aiTest(\'odirouter\',\'text\')" class="btn-p text-xs py-2">🧪 Тест текста</button><button onclick="aiTest(\'odirouter\',\'image\')" class="btn-p text-xs py-2" style="background:#7c3aed">🖼 Тест картинки</button><button onclick="odiLoadKeys()" class="text-xs text-blue-600 hover:underline ml-auto">🔄 Обновить</button></div>'+
         '<div id="odi-keys-list" class="text-sm text-gray-500">Загрузка...</div>'+
-        '<div class="mt-4 space-y-2">'+
+        '<div class="mt-4">'+
         '<div class="flex flex-wrap gap-2">'+
         '<input type="text" id="odi-new-key" placeholder="API ключ" class="input-f flex-1" style="min-width:200px">'+
         '<input type="text" id="odi-new-name" placeholder="Название ключа" class="input-f" style="width:160px">'+
@@ -5670,8 +5678,7 @@ function lAIP(){
 function aiSaveAll(){
     var data={
         odirouter_enabled:document.getElementById('ai_odi_en')?.checked||false,
-        odirouter_api_key:document.getElementById('ai_odi_key')?.value||'',
-        odirouter_image_api_key:document.getElementById('ai_odi_img_key')?.value||'',
+        
         odirouter_text_model:document.getElementById('ai_odi_tm')?.value||'',
         odirouter_image_model:document.getElementById('ai_odi_im')?.value||'',
         yandex_gpt_enabled:document.getElementById('ai_ygpt_en')?.checked||false,

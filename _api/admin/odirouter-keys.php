@@ -100,6 +100,89 @@ if ($method === 'POST') {
         exit;
     }
     
+    if ($action === 'test') {
+        // Тест конкретного ключа (текст или картинка)
+        require_once __DIR__ . '/../../includes/ai-providers.php';
+        $keyId = $data['key_id'] ?? '';
+        $testType = $data['type'] ?? 'text';
+        
+        // Находим ключ
+        $allKeys = odiLoadKeys();
+        $settings = file_exists(__DIR__ . '/../../data/site-settings.json') 
+            ? json_decode(file_get_contents(__DIR__ . '/../../data/site-settings.json'), true) : [];
+        $targetKey = null;
+        foreach ($allKeys as $k) {
+            if (($k['id'] ?? '') === $keyId) { $targetKey = $k['key']; break; }
+        }
+        if (!$targetKey && $keyId === 'settings_main') $targetKey = $settings['odirouter_api_key'] ?? '';
+        if (!$targetKey && $keyId === 'settings_image') $targetKey = $settings['odirouter_image_api_key'] ?? '';
+        
+        if (!$targetKey) {
+            echo json_encode(['error' => 'Ключ не найден']);
+            exit;
+        }
+        
+        if ($testType === 'text') {
+            $config = getAIProvidersConfig();
+            $model = $config['odirouter_text_model'] ?? 'free-gemini-2.5-flash';
+            $ch = curl_init("https://api.odirouter.ai/v1/chat/completions");
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $targetKey,
+                ],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'model' => $model,
+                    'messages' => [['role' => 'user', 'content' => 'Скажи "тест ок" одним словом']],
+                    'max_tokens' => 20,
+                ]),
+            ]);
+            $response = curl_exec($ch);
+            $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($code >= 200 && $code < 300) {
+                $data = json_decode($response, true);
+                $text = $data['choices'][0]['message']['content'] ?? 'OK';
+                echo json_encode(['success' => true, 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
+            } else {
+                echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
+            }
+        } else {
+            // Тест картинки
+            $config = getAIProvidersConfig();
+            $model = $config['odirouter_image_model'] ?? 'free-nano-banana-2';
+            $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 15,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $targetKey,
+                ],
+                CURLOPT_POSTFIELDS => json_encode(['prompt' => 'test blue circle', 'aspect_ratio' => '1:1']),
+            ]);
+            $response = curl_exec($ch);
+            $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($code >= 200 && $code < 300) {
+                $data = json_decode($response, true);
+                $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
+                echo json_encode(['success' => true, 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
+            } else {
+                echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
+            }
+        }
+        exit;
+    }
+    
     if ($action === 'reset') {
         @unlink(ODIROUTER_USAGE_FILE);
         echo json_encode(['success' => true, 'message' => 'Счётчики сброшены']);
