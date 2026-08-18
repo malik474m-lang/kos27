@@ -1616,7 +1616,7 @@ h+='</div>';
 return h;
 }
 function lAB(){ap('/ab-tests').then(tests=>{
-var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧪 A/B тесты кнопок</h2><button onclick="abForm()" class="btn-p text-sm">+ Новый тест</button></div>';
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧪 A/B тесты кнопок</h2><div class="flex gap-2"><button onclick="abCreatePerCategory()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🚀 Создать для каждой категории</button><button onclick="abForm()" class="btn-p text-sm">+ Новый тест</button></div></div>';
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> Для каждой категории (займы, кредиты, кредитные карты, дебетовые карты) подбирается свой активный тест. Если теста для категории нет — используется общий тест scope=all. Ниже показаны все кнопки и статистика по кликам для всех категорий.</div>';
 h+=abCategorySummaryHtml(tests||[]);
 if(!tests.length){h+='<p class="text-gray-500 text-center py-8">Нет тестов. Создайте первый!</p>';}
@@ -1662,6 +1662,18 @@ h+='</div>';
 });
 document.getElementById('p-ab').innerHTML=h;});}
 
+function abCreatePerCategory(){
+if(!confirm('Создать отдельный A/B тест для каждой категории с правильными кнопками?'))return;
+var cats=['microloans','credits','credit_cards','debit_cards'];
+var names={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредитные карты',debit_cards:'Дебетовые карты'};
+var done=0;
+cats.forEach(function(cat){
+var vars=abDefaultVariants(cat);
+ap('/ab-tests',{method:'POST',body:JSON.stringify({name:'Тест — '+names[cat],categoryScope:cat,isActive:true,variants:vars})}).then(function(){
+done++;if(done>=cats.length){alert('Создано 4 теста с правильными кнопками для каждой категории!');lAB();}
+});
+});
+}
 function abDefaultVariants(scope){
 if(scope==='credits') return [{label:'Оформить кредит',color:'#1a56db'},{label:'Получить кредит',color:'#059669'},{label:'Подать заявку',color:'#7c3aed'}];
 if(scope==='credit_cards') return [{label:'Оформить карту',color:'#1a56db'},{label:'Получить карту',color:'#059669'},{label:'Оформить кредитку',color:'#7c3aed'}];
