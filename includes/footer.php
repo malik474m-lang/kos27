@@ -72,10 +72,28 @@ $topCities = [
         </div>
 
         <div class="border-t border-gray-800 mt-8 pt-6">
-            <p class="text-sm text-gray-400 mb-3">Займы по городам:</p>
+            <?php
+            $footerUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+            $footerCatLabel = 'Займы';
+            $footerCatBase = '/zajmy';
+            if (str_starts_with((string)$footerUri, '/kredity')) {
+                $footerCatLabel = 'Кредиты';
+                $footerCatBase = '/kredity';
+            } elseif (str_starts_with((string)$footerUri, '/karty/kreditnye')) {
+                $footerCatLabel = 'Кредитные карты';
+                $footerCatBase = '/karty/kreditnye';
+            } elseif (str_starts_with((string)$footerUri, '/karty/debetovye')) {
+                $footerCatLabel = 'Дебетовые карты';
+                $footerCatBase = '/karty/debetovye';
+            } elseif (str_starts_with((string)$footerUri, '/karty')) {
+                $footerCatLabel = 'Карты';
+                $footerCatBase = '/karty/kreditnye';
+            }
+            ?>
+            <p class="text-sm text-gray-400 mb-3"><?= e($footerCatLabel) ?> по городам:</p>
             <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                 <?php foreach ($topCities as $city): ?>
-                <a href="/zajmy/<?= $city['slug'] ?>" class="text-gray-500 hover:text-white transition-colors">в <?= $city['prep'] ?></a>
+                <a href="<?= $footerCatBase ?>/<?= $city['slug'] ?>" class="text-gray-500 hover:text-white transition-colors">в <?= $city['prep'] ?></a>
                 <?php endforeach; ?>
             </div>
         </div>
