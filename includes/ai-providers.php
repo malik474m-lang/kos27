@@ -128,42 +128,118 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
     $config = getAIProvidersConfig();
     $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gemini-2.5-flash');
-    
-    // Получаем ключ из пула ротации
-    $activeKey = odiGetActiveKey('text');
-    if (!$activeKey) {
+
+    $keys = odiGetAvailableKeys('text');
+    if (!$keys) {
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
-    $apiKey = $activeKey['key'];
-    
-    // Список моделей для retry при таймауте
+
     $fallbackModels = ['free-gemini-2.5-flash', 'free-gpt-5.4-mini', 'free-qwen3.7-plus', 'free-gemini-3.5-flash'];
-    // Ставим выбранную модель первой
     array_unshift($fallbackModels, $model);
-    $fallbackModels = array_unique($fallbackModels);
-    
+    $fallbackModels = array_values(array_unique($fallbackModels));
+
     $messages = [];
     if ($systemPrompt) {
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];
     }
     $messages[] = ['role' => 'user', 'content' => $prompt];
-    
-    $lastError = '';
-    
-    foreach ($fallbackModels as $tryModel) {
+
+    $errors = [];
+    foreach ($keys as $activeKey) {
+        $apiKey = $activeKey['key'];
+        foreach ($fallbackModels as $tryModel) {
+            $payload = [
+                'model' => $tryModel,
+                'messages' => $messages,
+                'temperature' => 0.7,
+                'max_tokens' => 2800,
+            ];
+
+            $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $apiKey,
+                ],
+                CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            ]);
+
+            $response = curl_exec($ch);
+            $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+            curl_close($ch);
+
+            if ($err) {
+                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': cURL ' . $err;
+                continue 2; // следующий ключ
+            }
+
+            if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
+                if (in_array($code, [402, 429], true)) {
+                    odiMarkKeyExhausted($activeKey['id']);
+                }
+                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code;
+                continue 2; // следующий ключ
+            }
+
+            if ($code < 200 || $code >= 300) {
+                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code . ' ' . mb_substr(strip_tags((string)$response), 0, 200);
+                continue; // пробуем следующую модель на том же ключе
+            }
+
+            $data = json_decode((string)$response, true);
+            $text = $data['choices'][0]['message']['content'] ?? '';
+            if (!$text) {
+                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': empty response';
+                continue 2; // следующий ключ
+            }
+
+            odiTrackUsage($activeKey['id']);
+            return [
+                'success' => true,
+                'text' => $text,
+                'provider' => 'odirouter',
+                'model' => $tryModel,
+                'usage' => $data['usage'] ?? null,
+                'key_name' => $activeKey['name'] ?? '',
+                'key_remaining' => ($activeKey['remaining'] ?? 0) - 1,
+            ];
+        }
+    }
+
+    return ['success' => false, 'error' => 'OdiRouter all keys failed. ' . implode('; ', array_slice($errors, 0, 8))];
+}
+
+function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
+    $config = getAIProvidersConfig();
+    $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
+
+    $keys = odiGetAvailableKeys('image');
+    if (!$keys) {
+        return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит. Добавьте ещё ключи.'];
+    }
+
+    $errors = [];
+    foreach ($keys as $activeKey) {
+        $apiKey = $activeKey['key'];
+
         $payload = [
-            'model' => $tryModel,
-            'messages' => $messages,
-            'temperature' => 0.7,
-            'max_tokens' => 2800,
+            'prompt' => $prompt,
+            'aspect_ratio' => '16:9',
+            'resolution' => '1K',
         ];
-        
-        $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
+
+        $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 45,
-            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_HTTPHEADER => [
@@ -172,239 +248,158 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             ],
             CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
         ]);
-        
+
         $response = curl_exec($ch);
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = curl_error($ch);
         curl_close($ch);
-        
-        if ($err) {
-            $lastError = "cURL [{$tryModel}]: " . $err;
-            error_log("OdiRouter model {$tryModel} cURL error: " . $err);
-            continue;
-        }
-        
-        // Таймаут или серверная ошибка — пробуем следующую модель
-        if ($code >= 500 || $code === 408) {
-            $lastError = "HTTP {$code} [{$tryModel}]";
-            error_log("OdiRouter model {$tryModel} error: HTTP {$code}");
-            continue;
-        }
-        
-        if ($code < 200 || $code >= 300) {
-            return ['success' => false, 'error' => "HTTP {$code} [{$tryModel}]: " . mb_substr(strip_tags($response), 0, 300)];
-        }
-        
-        $data = json_decode($response, true);
-        $text = $data['choices'][0]['message']['content'] ?? '';
-        
-        if (!$text) {
-            $lastError = "Empty response [{$tryModel}]";
-            continue;
-        }
-        
-        // Записываем использование ключа
-            odiTrackUsage($activeKey['id']);
-            return [
-            'success' => true,
-            'text' => $text,
-            'provider' => 'odirouter',
-            'model' => $tryModel,
-            'usage' => $data['usage'] ?? null,
-            'key_name' => $activeKey['name'] ?? '',
-            'key_remaining' => ($activeKey['remaining'] ?? 0) - 1,
-        ];
-    }
-    
-    return ['success' => false, 'error' => 'OdiRouter all models failed. Last: ' . $lastError];
-}
 
-function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
-    $config = getAIProvidersConfig();
-    $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
-    
-    // Получаем ключ из пула ротации
-    $activeKey = odiGetActiveKey('image');
-    if (!$activeKey) {
-        return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит. Добавьте ещё ключи.'];
-    }
-    $apiKey = $activeKey['key'];
-    
-    // Шаг 1: Запуск задачи
-    $payload = [
-        'prompt' => $prompt,
-        'aspect_ratio' => '16:9',
-        'resolution' => '1K',
-    ];
-    
-    $ch = curl_init("https://api.odirouter.ai/model/v1/queue/{$model}");
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey,
-        ],
-        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-    ]);
-    
-    $response = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err = curl_error($ch);
-    curl_close($ch);
-    
-    if ($err) {
-        return ['success' => false, 'error' => 'cURL error: ' . $err];
-    }
-    
-    if ($code < 200 || $code >= 300) {
-        return ['success' => false, 'error' => 'HTTP ' . $code . ': ' . mb_substr($response, 0, 500)];
-    }
-    
-    $data = json_decode($response, true);
-    $requestId = $data['request_id'] ?? '';
-    $statusUrl = $data['status_url'] ?? '';
-    $responseUrl = $data['response_url'] ?? '';
-    
-    if (!$requestId || !$statusUrl || !$responseUrl) {
-        return ['success' => false, 'error' => 'Invalid queue response: ' . mb_substr($response, 0, 300)];
-    }
-    
-    // Шаг 2: Polling статуса (до 3 минут)
-    for ($i = 0; $i < 8; $i++) {
-        sleep(4);
-        
-        $ch = curl_init($statusUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_HTTPHEADER => [
-                'Authorization: Bearer ' . $apiKey,
-            ],
-        ]);
-        
-        $statusResp = curl_exec($ch);
-        $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($statusCode < 200 || $statusCode >= 300) {
-            continue; // Retry
+        if ($err) {
+            $errors[] = ($activeKey['name'] ?? 'key') . ': cURL ' . $err;
+            continue;
         }
-        
-        $statusData = json_decode($statusResp, true);
-        $status = $statusData['status'] ?? '';
-        
-        if ($status === 'COMPLETED') {
-            // Проверяем ошибку
-            if (!empty($statusData['error'])) {
-                $errMsg = $statusData['error']['message'] ?? $statusData['error']['error_type'] ?? 'Task failed';
-                return ['success' => false, 'error' => $errMsg];
+
+        if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
+            if (in_array($code, [402, 429], true)) {
+                odiMarkKeyExhausted($activeKey['id']);
             }
-            
-            // Шаг 3: Получаем результат
-            $ch = curl_init($responseUrl);
+            $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code;
+            continue;
+        }
+
+        if ($code < 200 || $code >= 300) {
+            $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code . ' ' . mb_substr((string)$response, 0, 200);
+            continue;
+        }
+
+        $data = json_decode((string)$response, true);
+        $requestId = $data['request_id'] ?? '';
+        $statusUrl = $data['status_url'] ?? '';
+        $responseUrl = $data['response_url'] ?? '';
+        if (!$requestId || !$statusUrl || !$responseUrl) {
+            $errors[] = ($activeKey['name'] ?? 'key') . ': invalid queue response';
+            continue;
+        }
+
+        $taskFailed = false;
+        for ($i = 0; $i < 8; $i++) {
+            sleep(4);
+            $ch = curl_init($statusUrl);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 60,
+                CURLOPT_TIMEOUT => 15,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => 0,
-                CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $apiKey,
-                ],
+                CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $apiKey],
             ]);
-            
-            $resultResp = curl_exec($ch);
-            $resultCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $statusResp = curl_exec($ch);
+            $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $statusErr = curl_error($ch);
             curl_close($ch);
-            
-            if ($resultCode < 200 || $resultCode >= 300) {
-                return ['success' => false, 'error' => 'Failed to get result: HTTP ' . $resultCode];
+
+            if ($statusErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status cURL ' . $statusErr; break; }
+            if (in_array($statusCode, [401,402,403,408,429,500,502,503,504], true)) {
+                if (in_array($statusCode, [402,429], true)) odiMarkKeyExhausted($activeKey['id']);
+                $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status HTTP ' . $statusCode; break;
             }
-            
-            $resultData = json_decode($resultResp, true);
-            
-            // Ищем изображение — реальный формат: output[0].content[0].url
-            $imageUrl = null;
-            
-            // Формат OdiRouter: output[].content[].url
-            if (isset($resultData['output']) && is_array($resultData['output'])) {
-                foreach ($resultData['output'] as $outputItem) {
-                    if (isset($outputItem['content']) && is_array($outputItem['content'])) {
-                        foreach ($outputItem['content'] as $contentItem) {
-                            if (($contentItem['type'] ?? '') === 'image' && !empty($contentItem['url'])) {
-                                $imageUrl = $contentItem['url'];
-                                break 2;
+            if ($statusCode < 200 || $statusCode >= 300) continue;
+
+            $statusData = json_decode((string)$statusResp, true);
+            $status = $statusData['status'] ?? '';
+            if ($status === 'COMPLETED') {
+                if (!empty($statusData['error'])) {
+                    $taskFailed = true;
+                    $errors[] = ($activeKey['name'] ?? 'key') . ': ' . (($statusData['error']['message'] ?? $statusData['error']['error_type'] ?? 'task failed'));
+                    break;
+                }
+
+                $ch = curl_init($responseUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 60,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $apiKey],
+                ]);
+                $resultResp = curl_exec($ch);
+                $resultCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $resultErr = curl_error($ch);
+                curl_close($ch);
+
+                if ($resultErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response cURL ' . $resultErr; break; }
+                if (in_array($resultCode, [401,402,403,408,429,500,502,503,504], true)) {
+                    if (in_array($resultCode, [402,429], true)) odiMarkKeyExhausted($activeKey['id']);
+                    $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break;
+                }
+                if ($resultCode < 200 || $resultCode >= 300) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break; }
+
+                $resultData = json_decode((string)$resultResp, true);
+                $imageUrl = null;
+                if (isset($resultData['output']) && is_array($resultData['output'])) {
+                    foreach ($resultData['output'] as $outputItem) {
+                        if (isset($outputItem['content']) && is_array($outputItem['content'])) {
+                            foreach ($outputItem['content'] as $contentItem) {
+                                if (($contentItem['type'] ?? '') === 'image' && !empty($contentItem['url'])) {
+                                    $imageUrl = $contentItem['url'];
+                                    break 2;
+                                }
                             }
                         }
+                        if (!empty($outputItem['url'])) { $imageUrl = $outputItem['url']; break; }
                     }
-                    // Прямой url в output
-                    if (!empty($outputItem['url'])) {
-                        $imageUrl = $outputItem['url'];
-                        break;
+                    if (!$imageUrl) {
+                        $imageUrl = $resultData['output']['image_url'] ?? $resultData['output']['url'] ?? null;
                     }
                 }
-                // Fallback: output.image_url / output.url
                 if (!$imageUrl) {
-                    $imageUrl = $resultData['output']['image_url'] ?? $resultData['output']['url'] ?? null;
+                    $imageUrl = $resultData['images'][0]['url'] ?? $resultData['result']['url'] ?? $resultData['url'] ?? $resultData['image_url'] ?? null;
                 }
-            }
-            
-            // Другие возможные форматы
-            if (!$imageUrl) {
-                $imageUrl = $resultData['images'][0]['url'] 
-                    ?? $resultData['result']['url']
-                    ?? $resultData['url']
-                    ?? $resultData['image_url']
+                $imageBase64 = $resultData['output'][0]['content'][0]['base64']
+                    ?? $resultData['output']['image']
+                    ?? $resultData['output']['base64']
+                    ?? $resultData['images'][0]['base64']
+                    ?? $resultData['base64']
+                    ?? $resultData['image']
                     ?? null;
-            }
-            
-            $imageBase64 = $resultData['output'][0]['content'][0]['base64']
-                ?? $resultData['output']['image'] 
-                ?? $resultData['output']['base64']
-                ?? $resultData['images'][0]['base64']
-                ?? $resultData['base64']
-                ?? $resultData['image']
-                ?? null;
-            
-            if ($imageUrl) {
-                $ctx = stream_context_create(['http' => ['timeout' => 30], 'ssl' => ['verify_peer' => false]]);
-                $imageData = @file_get_contents($imageUrl, false, $ctx);
-                if ($imageData && strlen($imageData) > 1000) {
-                    $path = saveAIImage($imageData);
-                    if ($path) {
-                        odiTrackUsage($activeKey['id']);
-                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
+
+                if ($imageUrl) {
+                    $ctx = stream_context_create(['http' => ['timeout' => 30], 'ssl' => ['verify_peer' => false]]);
+                    $imageData = @file_get_contents($imageUrl, false, $ctx);
+                    if ($imageData && strlen($imageData) > 1000) {
+                        $path = saveAIImage($imageData);
+                        if ($path) {
+                            odiTrackUsage($activeKey['id']);
+                            return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
+                        }
                     }
+                    $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': failed to download image'; break;
                 }
-                return ['success' => false, 'error' => 'Failed to download image from URL'];
-            }
-            
-            if ($imageBase64) {
-                $imageData = base64_decode($imageBase64);
-                if ($imageData && strlen($imageData) > 1000) {
-                    $path = saveAIImage($imageData);
-                    if ($path) {
-                        return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model];
+                if ($imageBase64) {
+                    $imageData = base64_decode($imageBase64);
+                    if ($imageData && strlen($imageData) > 1000) {
+                        $path = saveAIImage($imageData);
+                        if ($path) {
+                            odiTrackUsage($activeKey['id']);
+                            return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
+                        }
                     }
+                    $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': failed to decode base64 image'; break;
                 }
-                return ['success' => false, 'error' => 'Failed to decode base64 image'];
+
+                $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': no image in response'; break;
             }
-            
-            return ['success' => false, 'error' => 'No image in response: ' . mb_substr($resultResp, 0, 500)];
+            if (!in_array($status, ['IN_QUEUE', 'IN_PROGRESS', 'PENDING', ''], true)) {
+                $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': task status ' . $status; break;
+            }
         }
-        
-        // Если ошибка на этапе статуса
-        if (!in_array($status, ['IN_QUEUE', 'IN_PROGRESS', 'PENDING', ''])) {
-            return ['success' => false, 'error' => 'Task status: ' . $status];
+
+        if (!$taskFailed) {
+            $errors[] = ($activeKey['name'] ?? 'key') . ': timeout waiting for image generation';
+            continue;
         }
     }
-    
-    return ['success' => false, 'error' => 'Timeout waiting for image generation (32 sec)'];
+
+    return ['success' => false, 'error' => 'OdiRouter image failed for all keys. ' . implode('; ', array_slice($errors, 0, 8))];
 }
 
 function saveAIImage(string $binary): string {
