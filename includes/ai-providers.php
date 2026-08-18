@@ -493,14 +493,13 @@ function aiGenerateLongFormText(string $prompt, string $systemPrompt = '', ?stri
         return $result;
     }
 
+    // Для длинных текстов OdiRouter исключаем: слишком нестабилен по timeout/503/429.
     $priority = $config['text_provider_priority'] ?? ['yandex_gpt'];
-    $preferred = [];
-    $fallback = [];
+    $ordered = [];
     foreach ($priority as $provider) {
-        if ($provider === 'odirouter') $fallback[] = $provider;
-        else $preferred[] = $provider;
+        if ($provider === 'odirouter') continue;
+        $ordered[] = $provider;
     }
-    $ordered = array_merge($preferred, $fallback);
 
     $tried = [];
     foreach ($ordered as $provider) {
@@ -516,7 +515,11 @@ function aiGenerateLongFormText(string $prompt, string $systemPrompt = '', ?stri
         error_log("AI Long Text Provider '{$provider}' failed: " . ($result['error'] ?? 'unknown'));
     }
 
-    return ['success' => false, 'error' => $tried ? ('All providers failed: ' . implode('; ', $tried)) : 'No AI text providers enabled/configured'];
+    if (!$ordered) {
+        return ['success' => false, 'error' => 'Для длинных текстов OdiRouter отключён. Включите Yandex GPT или GigaChat.'];
+    }
+
+    return ['success' => false, 'error' => $tried ? ('All stable long-form providers failed: ' . implode('; ', $tried)) : 'Нет доступных стабильных провайдеров для длинных текстов (включите Yandex GPT или GigaChat).'];
 }
 
 function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forceProvider = null): array {
