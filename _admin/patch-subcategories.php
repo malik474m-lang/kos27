@@ -76,9 +76,10 @@ h+='<div class="bg-gray-50 rounded-lg p-3 flex items-start gap-3">';
 h+='<span class="text-xl">'+(r.icon||'📋')+'</span>';
 h+='<div class="flex-1 min-w-0">';
 h+='<div class="font-medium text-gray-900">'+e(r.query)+'</div>';
-h+='<code class="text-xs '+(isEmpty?'text-gray-400':'text-green-700 bg-green-50')+' px-2 py-1 rounded mt-1 inline-block break-all">'+e(rulesStr)+'</code>';
+h+='<code class="text-xs '+(isEmpty?'text-orange-600 bg-orange-50':'text-green-700 bg-green-50')+' px-2 py-1 rounded mt-1 inline-block break-all">'+e(rulesStr)+'</code>';
+if(r.hint){h+='<div class="text-xs text-gray-400 mt-1">💡 '+e(r.hint)+'</div>';}
 h+='</div>';
-h+='<button onclick="scUseRule('+i+')" class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap" title="Использовать">📋 Копировать</button>';
+h+='<button onclick="scUseRule('+i+')" class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap" title="Копировать JSON">📋</button>';
 h+='</div>';
 });
 listEl.innerHTML=h;
@@ -112,7 +113,7 @@ function scDownloadRules(){
 if(!_rhResults.length){alert('Нет результатов');return;}
 var lines = ['# Правила фильтрации для дополнительных запросов','# Формат: Название | Иконка | JSON правила','# Сгенерировано: '+new Date().toLocaleString('ru-RU'),''];
 _rhResults.forEach(function(r){
-lines.push(r.query + '\t' + (r.icon||'📋') + '\t' + JSON.stringify(r.rules||{}));
+lines.push(r.query + '\t' + (r.icon||'📋') + '\t' + JSON.stringify(r.rules||{}) + '\t' + (r.hint||''));
 });
 var blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
 var a = document.createElement('a');
