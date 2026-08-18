@@ -20,7 +20,7 @@ if ($method === 'POST') {
     if ($action === 'add') {
         $key = trim((string)($data['key'] ?? ''));
         $name = trim((string)($data['name'] ?? ''));
-        $type = in_array($data['type'] ?? 'all', ['all','text','image']) ? $data['type'] : 'all';
+        $type = odiDetectKeyType($data['name'] ?? '', $data['type'] ?? null);
         
         if (!$key) {
             echo json_encode(['error' => 'Ключ обязателен']);
@@ -90,7 +90,7 @@ if ($method === 'POST') {
             if (($k['id'] ?? '') === $id) {
                 if (isset($data['name'])) $k['name'] = trim((string)$data['name']);
                 if (isset($data['account'])) $k['account'] = trim((string)$data['account']);
-                if (isset($data['type'])) $k['type'] = in_array($data['type'], ['all','text','image']) ? $data['type'] : 'all';
+                $k['type'] = odiDetectKeyType($data['name'] ?? ($k['name'] ?? ''), $data['type'] ?? ($k['type'] ?? null));
                 break;
             }
         }

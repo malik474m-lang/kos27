@@ -22,10 +22,50 @@ function odiNormalizeAccountId(?string $account, string $fallbackId): string {
     return $account !== '' ? $account : ('_no_account_' . $fallbackId);
 }
 
+
+function odiDetectKeyType(?string $name, ?string $type = null): string {
+    $type = trim((string)$type);
+    if (in_array($type, ['text', 'image', 'all'], true)) return $type;
+
+    $name = mb_strtolower(trim((string)$name));
+    if ($name === '') return 'all';
+
+    if (preg_match('/картин|изобр|image|img|photo|art/u', $name)) return 'image';
+    if (preg_match('/текст|text|gpt|llm|chat/u', $name)) return 'text';
+
+    return 'all';
+}
+
+function odiNormalizeSavedKeys(): void {
+    $keys = odiLoadKeys();
+    $changed = false;
+    foreach ($keys as &$k) {
+        $detected = odiDetectKeyType($k['name'] ?? '', $k['type'] ?? null);
+        if (($k['type'] ?? '') !== $detected) {
+            $k['type'] = $detected;
+            $changed = true;
+        }
+    }
+    unset($k);
+    if ($changed) odiSaveKeys($keys);
+}
+
 function odiLoadKeys(): array {
     if (!file_exists(ODIROUTER_KEYS_FILE)) return [];
     $data = json_decode(file_get_contents(ODIROUTER_KEYS_FILE), true);
-    return is_array($data) ? $data : [];
+    $keys = is_array($data) ? $data : [];
+    // авто-миграция типов ключей по их названиям
+    $changed = false;
+    foreach ($keys as &$k) {
+        $detected = odiDetectKeyType($k['name'] ?? '', $k['type'] ?? null);
+        if (($k['type'] ?? '') !== $detected) {
+            $k['type'] = $detected;
+            $changed = true;
+        }
+    }
+    unset($k);
+    if ($changed) @file_put_contents(ODIROUTER_KEYS_FILE, json_encode($keys, JSON_PRETTY_PRINT));
+    return $keys;
 }
 
 function odiSaveKeys(array $keys): bool {

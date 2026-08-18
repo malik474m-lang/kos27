@@ -5536,7 +5536,7 @@ function odiLoadKeys(){
             var color=pct>=100?'bg-red-500':(pct>=80?'bg-yellow-500':'bg-green-500');
             h+='<div class="flex items-center gap-3 p-2 rounded-lg ml-4 '+(k.enabled?'bg-gray-50':'bg-gray-100 opacity-60')+'">'+
                 '<div class="flex-1 min-w-0">'+
-                '<div class="font-medium text-sm truncate">'+(k.name||'Без имени')+' <span class="text-xs text-gray-400">'+(k.masked||'')+'</span></div>'+
+                '<div class="font-medium text-sm truncate">'+(k.name||'Без имени')+' <span class="text-xs text-gray-400">'+(k.masked||'')+'</span> <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">'+(k.type==='image'?'image':(k.type==='text'?'text':'all'))+'</span></div>'+
                 '<div class="flex items-center gap-2 mt-1"><div class="flex-1 bg-gray-200 rounded-full h-2" style="max-width:120px"><div class="'+color+' h-2 rounded-full" style="width:'+pct+'%"></div></div>'+
                 '<span class="text-xs text-gray-500">'+(k.key_used||0)+' запр.</span></div>'+
                 '</div>'+
@@ -5566,8 +5566,9 @@ function odiAddKey(){
     var name=document.getElementById('odi-new-name').value.trim();
     if(!key){alert('Введите API ключ');return;}
     var account=document.getElementById('odi-new-account').value.trim();
-    fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',key:key,name:name,account:account})}).then(function(r){return r.json();}).then(function(d){
-        if(d.success){document.getElementById('odi-new-key').value='';document.getElementById('odi-new-name').value='';document.getElementById('odi-new-account').value='';odiLoadKeys();alert('Ключ добавлен!');}
+    var type=document.getElementById('odi-new-type').value;
+    fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',key:key,name:name,account:account,type:type})}).then(function(r){return r.json();}).then(function(d){
+        if(d.success){document.getElementById('odi-new-key').value='';document.getElementById('odi-new-name').value='';document.getElementById('odi-new-account').value='';document.getElementById('odi-new-type').value='';odiLoadKeys();alert('Ключ добавлен!');}
         else alert(d.error||'Ошибка');
     });
 }
@@ -5683,6 +5684,7 @@ function lAIP(){
         '<input type="text" id="odi-new-key" placeholder="API ключ" class="input-f flex-1" style="min-width:200px">'+
         '<input type="text" id="odi-new-name" placeholder="Название ключа" class="input-f" style="width:160px">'+
         '<input type="text" id="odi-new-account" placeholder="👤 Аккаунт (email)" class="input-f" style="width:180px">'+
+        '<select id="odi-new-type" class="sel-f text-sm" style="width:120px"><option value="">Авто-тип</option><option value="text">Текст</option><option value="image">Картинка</option><option value="all">Универсальный</option></select>'+
         '<button onclick="odiAddKey()" class="btn-p text-sm">+ Добавить</button>'+
         '</div></div></div>'+
 
