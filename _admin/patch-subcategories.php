@@ -278,9 +278,42 @@ if(d.target_keywords&&d.target_keywords.length){
 h+='<p class="text-xs text-gray-500">Ключевые слова: '+d.target_keywords.map(function(k){return e(k);}).join(', ')+'</p>';
 }
 h+='<p class="text-xs text-gray-400 mt-2">Источник: '+d.provider+'</p>';
-h+='<div class="flex gap-2 mt-3"><button onclick="loadContentRecs()" class="text-sm text-blue-600 hover:underline">← Назад к рекомендациям</button></div>';
+h+='<div class="mt-4 pt-3 border-t border-blue-200"><label class="block text-xs font-medium text-gray-700 mb-1">Тематика статьи</label><select id="cr-theme-cat" class="sel-f text-sm w-auto mb-3"><option value="займы">Займы</option><option value="кредиты">Кредиты</option><option value="карты">Карты</option><option value="банки">Банки</option><option value="мфо">МФО</option></select></div>';
+h+='<div class="flex gap-2 mt-3"><button onclick="crWriteArticle(''+e(d.title).replace(/'/g,"\\'")+'','+JSON.stringify(d.outline||[])+','+JSON.stringify(d.target_keywords||[])+')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">✍️ Написать статью</button><button onclick="loadContentRecs()" class="text-sm text-gray-500 hover:underline px-4 py-2">← Назад</button></div>';
 h+='</div>';
 box.innerHTML=h;
 }).catch(function(err){alert('Ошибка: '+err.message);box.innerHTML=origHtml;});
+}
+
+function crWriteArticle(title, outline, keywords){
+var cat=document.getElementById('cr-theme-cat');
+var themeCategory=cat?cat.value:'займы';
+if(!confirm('Написать статью «'+title+'» (тематика: '+themeCategory+')?\n\nAI сгенерирует полный текст. Статья будет сохранена как черновик.')) return;
+
+var box=document.getElementById('cr-content');
+box.innerHTML='<div class="text-center py-12"><p class="text-gray-500 text-lg">✍️ AI пишет статью...</p><p class="text-sm text-gray-400 mt-2">Это может занять 30-60 секунд</p><div class="mt-4"><div class="w-48 h-2 bg-gray-200 rounded-full mx-auto overflow-hidden"><div class="h-full bg-blue-600 rounded-full animate-pulse" style="width:80%"></div></div></div></div>';
+
+ap('/content-recommendations?action=write-article',{method:'POST',body:JSON.stringify({
+title:title,
+outline:outline,
+keywords:keywords,
+theme_category:themeCategory
+})}).then(function(d){
+if(d.error){
+box.innerHTML='<div class="bg-red-50 border border-red-200 rounded-lg p-4"><p class="text-red-700 font-medium">Ошибка</p><p class="text-red-600 text-sm mt-1">'+e(d.error)+'</p><button onclick="loadContentRecs()" class="mt-3 text-sm text-blue-600 hover:underline">← Назад</button></div>';
+return;
+}
+box.innerHTML='<div class="bg-green-50 border border-green-200 rounded-lg p-4">'+
+'<p class="text-green-700 font-bold text-lg mb-2">✅ Статья создана!</p>'+
+'<p class="text-gray-700"><strong>'+e(d.title)+'</strong></p>'+
+'<p class="text-sm text-gray-500 mt-1">Объём: '+d.content_length+' символов • Источник: '+d.provider+'</p>'+
+'<p class="text-sm text-orange-600 mt-2">⚠️ Статья сохранена как <strong>черновик</strong>. Проверьте текст и опубликуйте вручную.</p>'+
+'<div class="flex gap-3 mt-4">'+
+'<button onclick="cm();sw('articles');lA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">📝 Перейти к статьям</button>'+
+'<button onclick="loadContentRecs()" class="text-sm text-gray-500 hover:underline px-4 py-2">← Ещё рекомендации</button>'+
+'</div></div>';
+}).catch(function(err){
+box.innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p><button onclick="loadContentRecs()" class="mt-3 text-sm text-blue-600 hover:underline">← Назад</button>';
+});
 }
 </script>

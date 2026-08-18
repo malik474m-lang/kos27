@@ -234,6 +234,111 @@ case 'generate-article-idea':
     echo json_encode($parsed);
     break;
 
+case 'write-article':
+    // Генерация полной статьи по плану из рекомендации
+    $data = json_decode(file_get_contents('php://input'), true) ?: [];
+    $title = trim($data['title'] ?? '');
+    $outline = $data['outline'] ?? [];
+    $keywords = $data['keywords'] ?? [];
+    $themeCategory = trim($data['theme_category'] ?? 'займы');
+    
+    if (!$title) {
+        echo json_encode(['error' => 'Укажите заголовок статьи']);
+        exit;
+    }
+    
+    // Формируем промпт для AI
+    $outlineText = '';
+    if ($outline) {
+        $outlineText = "\nПлан статьи:\n";
+        foreach ($outline as $i => $point) {
+            $outlineText .= ($i + 1) . ". " . $point . "\n";
+        }
+    }
+    
+    $keywordsText = $keywords ? "\nКлючевые слова для SEO: " . implode(', ', $keywords) . "\n" : '';
+    
+    $categoryContext = [
+        'займы' => 'микрозаймов, МФО и быстрых денег на карту',
+        'кредиты' => 'банковских кредитов, ипотеки и рефинансирования',
+        'карты' => 'кредитных и дебетовых карт, кэшбека и льготных периодов',
+        'банки' => 'банковских услуг и выбора банка',
+        'мфо' => 'микрофинансовых организаций',
+    ];
+    $context = $categoryContext[$themeCategory] ?? 'финансовых продуктов';
+    
+    $prompt = <<<PROMPT
+Напиши подробную статью для финансового сайта.
+
+Заголовок: {$title}
+Тематика: {$context}
+{$outlineText}{$keywordsText}
+
+Требования:
+- Объём: 3000-5000 символов
+- Формат: HTML (используй <h2>, <h3>, <p>, <ul>, <li>, <strong>)
+- Стиль: экспертный, понятный, с практическими советами
+- Добавь вводный абзац и заключение
+- Упоминай, что на сайте Космозайм можно сравнить предложения
+- Не используй markdown, только HTML-теги
+- Пиши на русском языке
+PROMPT;
+
+    $sysPrompt = "Ты SEO-копирайтер финансового сайта Космозайм. Пишешь экспертные статьи на русском языке. Возвращаешь только HTML-текст без markdown.";
+    
+    $result = aiGenerateText($prompt, $sysPrompt);
+    
+    if (empty($result['success']) || empty($result['text'])) {
+        echo json_encode(['error' => 'AI не смог сгенерировать статью. Попробуйте позже.', 'ai_error' => $result['error'] ?? '']);
+        exit;
+    }
+    
+    $articleContent = trim($result['text']);
+    // Убираем markdown обёртку если есть
+    $articleContent = preg_replace('/^```\s*html?\s*/i', '', $articleContent);
+    $articleContent = preg_replace('/\s*```$/i', '', $articleContent);
+    
+    // Генерируем excerpt
+    $plainText = strip_tags($articleContent);
+    $excerpt = mb_substr($plainText, 0, 250) . '...';
+    
+    // Генерируем meta
+    $metaTitle = mb_substr($title . ' | ' . SITE_NAME, 0, 70);
+    $metaDesc = mb_substr($excerpt, 0, 160);
+    
+    // Создаём slug
+    $slug = slugify($title) . '-' . time();
+    
+    // Сохраняем в БД
+    $db = getDB();
+    
+    // Проверяем поля (миграции могут быть не применены)
+    $hasStatusFields = dbTableHasColumn('articles', 'content_status');
+    $hasEeatFields = dbTableHasColumn('articles', 'author_name');
+    
+    if ($hasStatusFields && $hasEeatFields) {
+        $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published, content_status, quality_score, author_name, author_title) VALUES (?,?,?,?,?,?,0,'draft',0,'Редакция Космозайм','Финансовый редактор')")
+           ->execute([$title, $slug, $excerpt, $articleContent, $metaTitle, $metaDesc]);
+    } elseif ($hasStatusFields) {
+        $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published, content_status, quality_score) VALUES (?,?,?,?,?,?,0,'draft',0)")
+           ->execute([$title, $slug, $excerpt, $articleContent, $metaTitle, $metaDesc]);
+    } else {
+        $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, is_published) VALUES (?,?,?,?,?,?,0)")
+           ->execute([$title, $slug, $excerpt, $articleContent, $metaTitle, $metaDesc]);
+    }
+    
+    $articleId = (int)$db->lastInsertId();
+    
+    echo json_encode([
+        'success' => true,
+        'article_id' => $articleId,
+        'slug' => $slug,
+        'title' => $title,
+        'content_length' => mb_strlen($articleContent),
+        'provider' => $result['provider'] ?? 'ai',
+    ]);
+    break;
+
 default:
     echo json_encode(['error' => 'Unknown action']);
 }
