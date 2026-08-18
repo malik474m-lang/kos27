@@ -79,7 +79,7 @@ function renderOfferCard(array $offer): string {
     require_once __DIR__ . '/ab-test.php';
     require_once __DIR__ . '/kosmobonus.php';
     $abVar = getAbVariant($offer['category'] ?? '');
-    $btnLabel = $abVar ? $abVar['label'] : getDefaultCtaLabelByCategory($offer['category'] ?? '');
+    $btnLabel = normalizeCtaLabelByCategory((string)($offer['category'] ?? ''), $abVar ? (string)$abVar['label'] : getDefaultCtaLabelByCategory($offer['category'] ?? ''));
     $btnColor = $abVar ? $abVar['color'] : '#059669';
     $abVid = $abVar ? (int)$abVar['id'] : 0;
 

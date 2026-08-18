@@ -23,6 +23,41 @@ function getDefaultCtaSecondaryLabelByCategory(string $category): string {
     };
 }
 
+
+function normalizeCtaLabelByCategory(string $category, string $label): string {
+    $label = trim($label);
+    if ($label === '') {
+        return getDefaultCtaLabelByCategory($category);
+    }
+
+    if ($category === 'debit_cards') {
+        if (preg_match('/получ(ить|ите)\s+деньг/u', $label)
+            || preg_match('/получ(ить|ите)\s+займ/u', $label)
+            || preg_match('/займ/u', $label)
+            || preg_match('/деньг/u', $label)
+            || preg_match('/кредит/u', $label)) {
+            return 'Заказать карту';
+        }
+        return $label;
+    }
+
+    if ($category === 'credit_cards') {
+        if (preg_match('/получ(ить|ите)\s+деньг/u', $label) || preg_match('/займ/u', $label)) {
+            return 'Оформить карту';
+        }
+        return $label;
+    }
+
+    if ($category === 'credits') {
+        if (preg_match('/получ(ить|ите)\s+деньг/u', $label) || preg_match('/займ/u', $label)) {
+            return 'Оформить кредит';
+        }
+        return $label;
+    }
+
+    return $label;
+}
+
 function getAbVariant(string $category = ''): ?array {
     static $variantsCache = [];
     $cacheKey = $category ?: 'all';
