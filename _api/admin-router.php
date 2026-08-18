@@ -38,6 +38,7 @@ if (str_starts_with((string)($adminUri), "/google-indexing")) { require __DIR__ 
 
 // Позиции
 if (str_starts_with((string)($adminUri), "/positions")) { require __DIR__ . "/admin/positions.php"; exit; }
+if (str_starts_with((string)($adminUri), "/content-recommendations")) { require __DIR__ . "/admin/content-recommendations.php"; exit; }
 
 // Перегенерация картинки статьи
 if ($adminUri === "/article-regenerate-image" && $method === "POST") { require __DIR__ . "/admin/article-regenerate-image.php"; exit; }

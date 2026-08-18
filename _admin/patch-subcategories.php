@@ -6,7 +6,7 @@ el.innerHTML='<p class="text-gray-500">Загрузка...</p>';
 ap('/subcategories?category='+_scCat).then(function(list){
 
 // Верхняя панель с кнопками
-var h='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">📑 Дополнительные запросы</h2><p class="text-sm text-gray-500">Подкатегории с фильтрацией офферов, SEO-текстами и гео-страницами</p></div><div class="flex flex-wrap gap-2"><select id="sc-cat" onchange="_scCat=this.value;lSubcats()" class="sel-f text-sm w-auto"><option value="microloans"'+(_scCat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(_scCat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(_scCat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(_scCat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select><button onclick="scRulesHelper()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium">🤖 Генератор правил</button><button onclick="scForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
+var h='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><h2 class="text-xl font-bold">📑 Дополнительные запросы</h2><p class="text-sm text-gray-500">Подкатегории с фильтрацией офферов, SEO-текстами и гео-страницами</p></div><div class="flex flex-wrap gap-2"><select id="sc-cat" onchange="_scCat=this.value;lSubcats()" class="sel-f text-sm w-auto"><option value="microloans"'+(_scCat==='microloans'?' selected':'')+'>Займы</option><option value="credits"'+(_scCat==='credits'?' selected':'')+'>Кредиты</option><option value="credit_cards"'+(_scCat==='credit_cards'?' selected':'')+'>Кредитные карты</option><option value="debit_cards"'+(_scCat==='debit_cards'?' selected':'')+'>Дебетовые карты</option></select><button onclick="scContentRecs()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium">📊 Рекомендации</button><button onclick="scRulesHelper()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium">🤖 Генератор правил</button><button onclick="scForm()" class="btn-p text-sm">+ Добавить</button></div></div>';
 
 var catBase={microloans:'/zajmy',credits:'/kredity',credit_cards:'/karty/kreditnye',debit_cards:'/karty/debetovye'};
 if(!list.length){h+='<p class="text-gray-400 text-center py-8">Нет допзапросов для этой категории</p>';}
@@ -156,3 +156,92 @@ lSubcats();
 function scToggle(id,v){ap('/subcategories',{method:'PUT',body:JSON.stringify({id:id,is_active:!!v})}).then(function(){lSubcats();});}
 function scDel(id){if(!confirm('Удалить этот допзапрос?'))return;ap('/subcategories',{method:'DELETE',body:JSON.stringify({id:id})}).then(function(){lSubcats();});}
 </script>
+
+// === РЕКОМЕНДАЦИИ ПО КОНТЕНТУ ИЗ ПОИСКОВЫХ ЗАПРОСОВ ===
+function scContentRecs(){
+modal('<div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold">📊 Рекомендации по контенту</h3><p class="text-sm text-gray-500 mt-1">Анализ поисковых запросов из Яндекс и Google</p></div><button onclick="cm()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>'+
+'<div id="cr-content"><p class="text-gray-500 text-center py-8">⏳ Загрузка данных из Яндекс.Вебмастер и Google Search Console...</p></div>', false, 'max-w-4xl');
+loadContentRecs();
+}
+
+function loadContentRecs(){
+var days=30, minShows=10;
+ap('/content-recommendations?action=analyze&days='+days+'&min_shows='+minShows).then(function(d){
+var box=document.getElementById('cr-content');
+if(d.error){box.innerHTML='<p class="text-red-500">'+e(d.error)+'</p>';return;}
+if(!d.recommendations_count){box.innerHTML='<p class="text-gray-500 text-center py-8">Нет новых рекомендаций. Весь контент уже создан! 🎉</p>';return;}
+
+var h='<div class="flex items-center justify-between mb-4"><div class="text-sm text-gray-500">Проанализировано <strong>'+d.total_queries+'</strong> запросов за '+d.days+' дней</div><div class="text-sm"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">'+d.recommendations_count+' рекомендаций</span></div></div>';
+h+='<div class="space-y-2 max-h-96 overflow-y-auto">';
+
+d.recommendations.forEach(function(r,i){
+var catLabel={microloans:'Займы',credits:'Кредиты',credit_cards:'Кредит.карты',debit_cards:'Дебет.карты'}[r.category]||'';
+var typeColor=r.content_type==='article'?'blue':'purple';
+h+='<div class="bg-gray-50 rounded-lg p-3 flex items-start gap-3 hover:bg-gray-100">';
+h+='<div class="flex-1 min-w-0">';
+h+='<div class="flex items-center gap-2 flex-wrap">';
+h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
+h+='<span class="text-xs bg-'+typeColor+'-100 text-'+typeColor+'-700 px-1.5 py-0.5 rounded">'+r.action+'</span>';
+h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';
+h+='</div>';
+h+='<div class="flex gap-4 mt-1 text-xs text-gray-500">';
+h+='<span>👁 '+r.shows+' показов</span>';
+h+='<span>👆 '+r.clicks+' кликов</span>';
+h+='<span>📍 позиция '+r.position+'</span>';
+h+='<span>⭐ score '+r.score+'</span>';
+h+='</div>';
+h+='</div>';
+h+='<div class="flex gap-1">';
+if(r.content_type==='subcategory'){
+h+='<button onclick="crCreateSubcat(\''+e(r.query).replace(/'/g,"\\'")+'\',\''+r.category+'\')" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded">+ Допзапрос</button>';
+}
+if(r.content_type==='article'){
+h+='<button onclick="crArticleIdea(\''+e(r.query).replace(/'/g,"\\'")+'\','+i+')" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">💡 Идея статьи</button>';
+}
+h+='</div>';
+h+='</div>';
+});
+
+h+='</div>';
+h+='<div class="mt-4 pt-4 border-t text-xs text-gray-400">💡 Рекомендации основаны на запросах, по которым ещё нет контента. Чем выше score — тем больше потенциал.</div>';
+box.innerHTML=h;
+}).catch(function(err){
+document.getElementById('cr-content').innerHTML='<p class="text-red-500">Ошибка: '+err.message+'</p>';
+});
+}
+
+function crCreateSubcat(query, category){
+if(!confirm('Создать допзапрос "'+query+'" для категории '+category+'?')) return;
+ap('/content-recommendations?action=generate-subcat',{method:'POST',body:JSON.stringify({query:query,category:category})})
+.then(function(d){
+if(d.error){alert('Ошибка: '+d.error);return;}
+alert('✅ Допзапрос создан!\n\nSlug: '+d.slug+'\nПравила: '+JSON.stringify(d.rules)+'\n\n'+d.message);
+cm();
+_scCat=category;
+lSubcats();
+}).catch(function(err){alert('Ошибка: '+err.message);});
+}
+
+function crArticleIdea(query, idx){
+var box=document.getElementById('cr-content');
+var origHtml=box.innerHTML;
+box.innerHTML='<p class="text-gray-500 text-center py-8">⏳ Генерация идеи статьи...</p>';
+
+ap('/content-recommendations?action=generate-article-idea',{method:'POST',body:JSON.stringify({query:query})})
+.then(function(d){
+if(d.error){alert('Ошибка: '+d.error);box.innerHTML=origHtml;return;}
+var h='<div class="bg-blue-50 rounded-lg p-4 border border-blue-200">';
+h+='<h4 class="font-bold text-blue-900 mb-2">💡 Идея статьи по запросу "'+e(query)+'"</h4>';
+h+='<p class="font-medium text-gray-900 mb-3">📝 '+e(d.title)+'</p>';
+h+='<p class="text-sm text-gray-700 mb-2">План:</p><ul class="list-disc list-inside text-sm text-gray-600 mb-3">';
+(d.outline||[]).forEach(function(p){h+='<li>'+e(p)+'</li>';});
+h+='</ul>';
+if(d.target_keywords&&d.target_keywords.length){
+h+='<p class="text-xs text-gray-500">Ключевые слова: '+d.target_keywords.map(function(k){return e(k);}).join(', ')+'</p>';
+}
+h+='<p class="text-xs text-gray-400 mt-2">Источник: '+d.provider+'</p>';
+h+='<div class="flex gap-2 mt-3"><button onclick="loadContentRecs()" class="text-sm text-blue-600 hover:underline">← Назад к рекомендациям</button></div>';
+h+='</div>';
+box.innerHTML=h;
+}).catch(function(err){alert('Ошибка: '+err.message);box.innerHTML=origHtml;});
+}
