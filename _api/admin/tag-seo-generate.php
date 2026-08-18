@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../../includes/ai-compat.php";
+require_once __DIR__ . '/../../includes/ai-providers.php';
 require_once __DIR__ . '/../../includes/content-quality.php';
 header('Content-Type: application/json; charset=UTF-8');
 requireAdmin();
@@ -72,38 +72,39 @@ function tag_fallback_seo(string $title, string $categoryLabel, string $siteName
 
 $fallback = tag_fallback_seo($title, $categoryLabel, $siteName);
 
-if (YANDEX_GPT_API_KEY && YANDEX_FOLDER_ID) {
-    $prompt = "Сгенерируй SEO-комплект для страницы тега финансового сайта. "
-        . "Тема тега: {$title}. Категория: {$categoryLabel}. "
-        . "Верни строго JSON без markdown и без пояснений. "
-        . "Формат: {\"h1\":\"...\",\"description\":\"...\",\"metaTitle\":\"...\",\"metaDescription\":\"...\",\"content\":\"...\",\"searchQueries\":[\"...\",\"...\"]}. "
-        . "Требования: h1 до 120 символов, краткое описание до 220 символов, metaTitle до 70 символов, metaDescription до 160 символов. "
-        . "content — полезный SEO-текст 2-4 абзаца в HTML, с 2-3 подзаголовками и одним списком. Без markdown. searchQueries — 5-8 естественных поисковых запросов.";
+$prompt = "Сгенерируй SEO-комплект для страницы тега финансового сайта. "
+    . "Тема тега: {$title}. Категория: {$categoryLabel}. "
+    . "Верни строго JSON без markdown и без пояснений. "
+    . "Формат: {\"h1\":\"...\",\"description\":\"...\",\"metaTitle\":\"...\",\"metaDescription\":\"...\",\"content\":\"...\",\"searchQueries\":[\"...\",\"...\"]}. "
+    . "Требования: h1 до 120 символов, краткое описание до 220 символов, metaTitle до 70 символов, metaDescription до 160 символов. "
+    . "content — полезный SEO-текст 2-4 абзаца в HTML, с 2-3 подзаголовками и одним списком. Без markdown. searchQueries — 5-8 естественных поисковых запросов.";
 
-    $response = kosmozaimAIComplete('Ты SEO-редактор финансового сайта. Возвращаешь только валидный JSON без markdown и пояснений.', $prompt);
-if ($response) {
-    $text = trim((string)$response);
-        $text = tag_clean_json_block($text);
-        $parsed = json_decode($text, true);
-        if (is_array($parsed)) {
-            $queries = $parsed['searchQueries'] ?? [];
-            if (is_string($queries)) {
-                $queries = preg_split('/\r\n|\r|\n|,/', $queries);
-            }
-            if (!is_array($queries)) $queries = [];
-            $queries = array_values(array_unique(array_filter(array_map(fn($q) => trim((string)$q), $queries))));
-            echo json_encode([
-                'success' => true,
-                'h1' => tag_mb_limit((string)($parsed['h1'] ?? $fallback['h1']), 120),
-                'description' => tag_mb_limit((string)($parsed['description'] ?? $fallback['description']), 220),
-                'metaTitle' => tag_mb_limit((string)($parsed['metaTitle'] ?? $fallback['metaTitle']), 70),
-                'metaDescription' => tag_mb_limit((string)($parsed['metaDescription'] ?? $fallback['metaDescription']), 160),
-                'content' => cq_strip_markdown((string)($parsed['content'] ?? $fallback['content'])),
-                'searchQueries' => implode("\n", $queries ?: explode("\n", $fallback['searchQueries'])),
-                'provider' => 'YandexGPT',
-            ]);
-            exit;
+$systemPrompt = 'Ты SEO-редактор финансового сайта. Возвращаешь только валидный JSON без markdown и пояснений.';
+$aiResult = aiGenerateText($prompt, $systemPrompt);
+
+if (!empty($aiResult['success']) && !empty($aiResult['text'])) {
+    $text = trim((string)$aiResult['text']);
+    $text = tag_clean_json_block($text);
+    $parsed = json_decode($text, true);
+    if (is_array($parsed)) {
+        $queries = $parsed['searchQueries'] ?? [];
+        if (is_string($queries)) {
+            $queries = preg_split('/\r\n|\r|\n|,/', $queries);
         }
+        if (!is_array($queries)) $queries = [];
+        $queries = array_values(array_unique(array_filter(array_map(fn($q) => trim((string)$q), $queries))));
+        $providerName = trim((string)(($aiResult['provider'] ?? 'AI') . (!empty($aiResult['model']) ? ' (' . $aiResult['model'] . ')' : ''))));
+        echo json_encode([
+            'success' => true,
+            'h1' => tag_mb_limit((string)($parsed['h1'] ?? $fallback['h1']), 120),
+            'description' => tag_mb_limit((string)($parsed['description'] ?? $fallback['description']), 220),
+            'metaTitle' => tag_mb_limit((string)($parsed['metaTitle'] ?? $fallback['metaTitle']), 70),
+            'metaDescription' => tag_mb_limit((string)($parsed['metaDescription'] ?? $fallback['metaDescription']), 160),
+            'content' => cq_strip_markdown((string)($parsed['content'] ?? $fallback['content'])),
+            'searchQueries' => implode("\n", $queries ?: explode("\n", $fallback['searchQueries'])),
+            'provider' => $providerName !== '' ? $providerName : 'AI',
+        ]);
+        exit;
     }
 }
 
