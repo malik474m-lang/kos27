@@ -282,7 +282,8 @@ function analyzeQueries(array $queries, array $existingContent): array {
         
         // Пропускаем слишком короткие или брендовые запросы
         if (mb_strlen($query) < 5) continue;
-        if (preg_match('/космозайм|kosmozaim/iu', $query)) continue;
+        // Пропускаем брендовые и конкурентные запросы
+        if (isCompetitorOrBrandQuery($query)) continue;
         
         // Проверяем, есть ли уже контент под этот запрос
         $hasContent = false;
@@ -433,3 +434,79 @@ function getActionLabel(string $type): string {
 
 if (!function_exists("mb_ucfirst")) { function mb_ucfirst(string $str): string {
     return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1); } }
+
+/**
+ * Проверяет, является ли запрос брендовым или конкурентным
+ * Такие запросы не имеет смысла использовать для создания контента
+ */
+function isCompetitorOrBrandQuery(string $query): bool {
+    // Свой бренд
+    if (preg_match('/космозайм|kosmozaim/iu', $query)) {
+        return true;
+    }
+    
+    // Конкуренты и агрегаторы
+    $competitors = [
+        // Агрегаторы финансовых продуктов
+        'sravni', 'сравни', 'sravni.ru',
+        'banki', 'банки.ру', 'banki.ru',
+        'выберу', 'vyberu', 'vyberu.ru',
+        'sravniki', 'сравники',
+        'finuslugi', 'финуслуги',
+        'brobank', 'бробанк',
+        'kredity-tut', 'кредиты тут',
+        'creditkarma', 'кредит карма',
+        'bankiros', 'банкирос',
+        'mainfin', 'мейнфин',
+        'vsezaimyonline', 'все займы онлайн',
+        'creditzzz', 'кредитззз',
+        'zaim', 'zaymi', 'займы',
+        
+        // Крупные МФО (бренды)
+        'займер', 'zaymer',
+        'веббанкир', 'webbankir',
+        'монеза', 'moneza',
+        'микрозайм', 'vivus', 'вивус',
+        'смсфинанс', 'smsfinance',
+        'екапуста', 'ekapusta',
+        'турбозайм', 'turbozaim',
+        'займи|займи', // точное совпадение
+        'кредито24', 'credito24',
+        'platiza', 'платиза',
+        'moneyman', 'манимен',
+        'lime', 'лайм',
+        'kviku', 'квику',
+        
+        // Банки (если не относятся к вашим офферам)
+        // Раскомментируйте если нужно исключать
+        // 'сбербанк', 'sberbank',
+        // 'тинькофф', 'tinkoff',
+        // 'альфа', 'alfa',
+        // 'втб', 'vtb',
+        
+        // Общие стоп-слова
+        'официальный сайт', 'офиц сайт', 'оф сайт',
+        'личный кабинет', 'лк ',
+        'вход в', 'войти',
+        'регистрация на',
+        'телефон горячей', 'горячая линия',
+        'отзывы о ', 'отзывы про ',
+        'жалоба на',
+        'скачать приложение',
+    ];
+    
+    $queryLower = mb_strtolower($query);
+    
+    foreach ($competitors as $competitor) {
+        if (mb_strpos($queryLower, mb_strtolower($competitor)) !== false) {
+            return true;
+        }
+    }
+    
+    // URL-паттерны (пользователь ищет конкретный сайт)
+    if (preg_match('/\.(ru|com|net|org|рф)\b/iu', $query)) {
+        return true;
+    }
+    
+    return false;
+}
