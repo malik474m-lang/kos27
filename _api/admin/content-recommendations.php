@@ -368,8 +368,21 @@ function analyzeQueries(array $queries, array $existingContent): array {
         
         // Пропускаем слишком короткие или брендовые запросы
         if (mb_strlen($query) < 5) continue;
-        // Пропускаем брендовые и конкурентные запросы
-        if (isCompetitorOrBrandQuery($query)) continue;
+        // Обработка брендовых и конкурентных запросов
+        if (isCompetitorOrBrandQuery($query)) {
+            // Пробуем перефразировать
+            $rephrased = rephraseCompetitorQuery($query);
+            if ($rephrased) {
+                // Запрос можно перефразировать — добавляем с пометкой
+                $query = $rephrased['rephrased'];
+                $q['original_query'] = $rephrased['original'];
+                $q['competitor_removed'] = $rephrased['competitor'];
+                $q['is_rephrased'] = true;
+            } else {
+                // Чисто навигационный — пропускаем
+                continue;
+            }
+        }
         
         // Проверяем, есть ли уже контент под этот запрос
         $hasContent = false;
@@ -415,6 +428,9 @@ function analyzeQueries(array $queries, array $existingContent): array {
             'content_type' => $contentType,
             'category' => $category,
             'action' => getActionLabel($contentType),
+            'is_rephrased' => $q['is_rephrased'] ?? false,
+            'original_query' => $q['original_query'] ?? null,
+            'competitor_removed' => $q['competitor_removed'] ?? null,
         ];
     }
     
@@ -722,4 +738,120 @@ function groupCleanedQueries(array $queries): array {
     }
     
     return array_values($groups);
+}
+
+/**
+ * Пытается перефразировать запрос с конкурентом в чистый поисковый интент
+ * Возвращает null если запрос чисто навигационный (нет смысла перефразировать)
+ */
+function rephraseCompetitorQuery(string $query): ?array {
+    $queryLower = mb_strtolower(trim($query));
+    
+    // Навигационные паттерны — нет смысла перефразировать
+    $navigationalPatterns = [
+        '/личный кабинет/iu',
+        '/вход|войти|авторизац|логин/iu',
+        '/регистрац|зарегистр/iu',
+        '/официальный сайт|офиц\.?\s*сайт/iu',
+        '/скачать|установить|приложение/iu',
+        '/телефон|горячая линия|позвонить|контакт/iu',
+        '/отзыв|жалоб|обман|мошенник|развод/iu',
+        '/адрес|офис|отделение/iu',
+        '/реквизит|инн|огрн/iu',
+    ];
+    
+    foreach ($navigationalPatterns as $pattern) {
+        if (preg_match($pattern, $queryLower)) {
+            return null; // Чисто навигационный — пропускаем
+        }
+    }
+    
+    // Список конкурентов для удаления из запроса
+    $competitorsToRemove = [
+        // Агрегаторы
+        'sravni.ru', 'sravni ru', 'sravni', 'сравни.ру', 'сравни ру', 'сравни',
+        'banki.ru', 'banki ru', 'banki', 'банки.ру', 'банки ру',
+        'vyberu.ru', 'vyberu ru', 'vyberu', 'выберу.ру', 'выберу ру', 'выберу',
+        'brobank', 'бробанк',
+        'finuslugi', 'финуслуги',
+        'bankiros', 'банкирос',
+        'mainfin', 'мейнфин',
+        
+        // МФО бренды
+        'zaymer', 'займер',
+        'webbankir', 'веббанкир',
+        'moneza', 'монеза',
+        'vivus', 'вивус',
+        'moneyman', 'манимен',
+        'turbozaim', 'турбозайм',
+        'ekapusta', 'екапуста',
+        'kviku', 'квику',
+        'platiza', 'платиза',
+        'lime', 'лайм займ',
+        'credito24', 'кредито24',
+        'smsfinance', 'смсфинанс',
+    ];
+    
+    // Удаляем конкурента из запроса
+    $cleanQuery = $queryLower;
+    $foundCompetitor = null;
+    
+    foreach ($competitorsToRemove as $comp) {
+        if (mb_strpos($cleanQuery, mb_strtolower($comp)) !== false) {
+            $foundCompetitor = $comp;
+            $cleanQuery = str_ireplace($comp, '', $cleanQuery);
+            break;
+        }
+    }
+    
+    if (!$foundCompetitor) {
+        return null; // Конкурент не найден
+    }
+    
+    // Чистим результат
+    $cleanQuery = preg_replace('/\s+/', ' ', $cleanQuery); // Множественные пробелы
+    $cleanQuery = preg_replace('/^[\s\-\—\–]+|[\s\-\—\–]+$/u', '', $cleanQuery); // Trim с дефисами
+    $cleanQuery = trim($cleanQuery);
+    
+    // Если осталось слишком мало — запрос был только о конкуренте
+    if (mb_strlen($cleanQuery) < 5) {
+        return null;
+    }
+    
+    // Улучшаем перефразированный запрос
+    $rephrased = improveRephrasedQuery($cleanQuery);
+    
+    return [
+        'original' => $query,
+        'competitor' => $foundCompetitor,
+        'rephrased' => $rephrased,
+        'clean' => $cleanQuery,
+    ];
+}
+
+/**
+ * Улучшает перефразированный запрос, добавляя полезные слова
+ */
+function improveRephrasedQuery(string $query): string {
+    $query = mb_strtolower(trim($query));
+    
+    // Если начинается с "подобрать" — добавляем "сравнить и"
+    if (preg_match('/^подобрать\s/iu', $query)) {
+        $query = 'сравнить и ' . $query;
+    }
+    
+    // Если есть "кредит" но нет "онлайн" — добавляем
+    if (preg_match('/кредит/iu', $query) && !preg_match('/онлайн/iu', $query)) {
+        $query .= ' онлайн';
+    }
+    
+    // Если есть "займ/займы" но нет способа получения
+    if (preg_match('/займ|займы/iu', $query) && !preg_match('/на карту|онлайн|быстр/iu', $query)) {
+        $query .= ' на карту';
+    }
+    
+    // Капитализируем первую букву
+    $query = mb_strtoupper(mb_substr($query, 0, 1)) . mb_substr($query, 1);
+    
+    return $query;
 }
