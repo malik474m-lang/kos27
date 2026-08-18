@@ -155,8 +155,6 @@ lSubcats();
 }
 function scToggle(id,v){ap('/subcategories',{method:'PUT',body:JSON.stringify({id:id,is_active:!!v})}).then(function(){lSubcats();});}
 function scDel(id){if(!confirm('Удалить этот допзапрос?'))return;ap('/subcategories',{method:'DELETE',body:JSON.stringify({id:id})}).then(function(){lSubcats();});}
-</script>
-
 // === РЕКОМЕНДАЦИИ ПО КОНТЕНТУ ИЗ ПОИСКОВЫХ ЗАПРОСОВ ===
 function scContentRecs(){
 modal('<div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold">📊 Рекомендации по контенту</h3><p class="text-sm text-gray-500 mt-1">Анализ поисковых запросов из Яндекс и Google</p></div><button onclick="cm()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>'+
@@ -245,3 +243,4 @@ h+='</div>';
 box.innerHTML=h;
 }).catch(function(err){alert('Ошибка: '+err.message);box.innerHTML=origHtml;});
 }
+</script>
