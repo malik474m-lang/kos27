@@ -1,6 +1,7 @@
 <?php
 /**
  * Проверка пропавших страниц — сверяет sitemap с реальными роутами
+ * Оптимизировано: пакетная проверка с лимитом, чтобы не вызывать таймаут
  */
 requireAdmin();
 
@@ -8,6 +9,7 @@ $db = getDB();
 $action = $_GET['action'] ?? 'check';
 
 require_once __DIR__ . '/../../data/cities.php';
+require_once __DIR__ . '/../../includes/subcategories.php';
 
 $catUrls = [
     'microloans' => '/zajmy',
@@ -19,45 +21,49 @@ $catUrls = [
 switch ($action) {
 
 case 'check':
-    $results = ['ok' => [], 'broken' => [], 'total' => 0];
-    $checkUrl = $_GET['url'] ?? '';
+    // Пакетная проверка: offset + limit (по умолчанию 30 URL за раз)
+    $offset = max(0, (int)($_GET['offset'] ?? 0));
+    $limit = min(50, max(1, (int)($_GET['limit'] ?? 30)));
     
-    // Если передан конкретный URL — проверяем его
-    if ($checkUrl) {
-        $status = checkUrlInternal($checkUrl);
-        echo json_encode(['url' => $checkUrl, 'status' => $status]);
-        exit;
-    }
+    $allUrls = getAllSitemapUrls();
+    $total = count($allUrls);
+    $batch = array_slice($allUrls, $offset, $limit);
     
-    // Полная проверка всех URL из sitemap
-    $urls = getAllSitemapUrls();
-    $results['total'] = count($urls);
+    $ok = 0;
+    $broken = [];
     
-    foreach ($urls as $url) {
+    foreach ($batch as $url) {
         $status = checkUrlInternal($url);
-        if ($status === 200) {
-            $results['ok'][] = $url;
+        if ($status >= 200 && $status < 400) {
+            $ok++;
         } else {
-            $results['broken'][] = ['url' => $url, 'status' => $status];
+            $broken[] = ['url' => $url, 'status' => $status];
         }
     }
     
+    $hasMore = ($offset + $limit) < $total;
+    
     echo json_encode([
-        'total' => $results['total'],
-        'ok' => count($results['ok']),
-        'broken_count' => count($results['broken']),
-        'broken' => $results['broken']
+        'total' => $total,
+        'offset' => $offset,
+        'limit' => $limit,
+        'checked' => count($batch),
+        'ok' => $ok,
+        'broken_count' => count($broken),
+        'broken' => $broken,
+        'has_more' => $hasMore,
+        'next_offset' => $hasMore ? $offset + $limit : null,
     ]);
     break;
 
 case 'check-sample':
-    // Быстрая проверка выборки URL (не все, а ключевые)
+    // Быстрая проверка выборки ключевых URL
     $urls = getSampleUrls();
     $broken = [];
     
     foreach ($urls as $url) {
         $status = checkUrlInternal($url);
-        if ($status !== 200) {
+        if ($status < 200 || $status >= 400) {
             $broken[] = ['url' => $url, 'status' => $status];
         }
     }
@@ -98,6 +104,11 @@ case 'check-url':
     ]);
     break;
 
+case 'count':
+    // Быстро вернуть количество URL без проверки
+    echo json_encode(['total' => count(getAllSitemapUrls())]);
+    break;
+
 default:
     echo json_encode(['error' => 'Unknown action']);
 }
@@ -112,6 +123,7 @@ function checkUrlInternal(string $path): int {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_NOBODY => true,
         CURLOPT_TIMEOUT => 5,
+        CURLOPT_CONNECTTIMEOUT => 3,
         CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_USERAGENT => 'KosmoEngine PageChecker/1.0'
     ]);
@@ -143,14 +155,23 @@ function getAllSitemapUrls(): array {
     foreach ($articles as $s) { $urls[] = "/articles/{$s}"; }
     
     // Теги
-    $tags = $db->query("SELECT slug, category FROM offer_tags WHERE is_active = 1")->fetchAll();
     $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+    $tags = $db->query("SELECT slug, category FROM offer_tags WHERE is_active = 1")->fetchAll();
     foreach ($tags as $t) {
         $base = $catUrls[$t['category']] ?? '/zajmy';
         $urls[] = "{$base}/type/{$t['slug']}";
     }
     
-    // Города
+    // Допзапросы (подкатегории)
+    try {
+        $subcats = $db->query("SELECT slug, category FROM subcategories WHERE is_active = 1")->fetchAll();
+        foreach ($subcats as $sc) {
+            $base = $catUrls[$sc['category']] ?? '/zajmy';
+            $urls[] = "{$base}/q/{$sc['slug']}";
+        }
+    } catch (Exception $e) {}
+    
+    // Города (только основные категории, без перемножения на теги/допзапросы)
     foreach ($cities as $c) {
         $urls[] = "/zajmy/{$c['slug']}";
         $urls[] = "/kredity/{$c['slug']}";
@@ -173,14 +194,22 @@ function getSampleUrls(): array {
     $offers = $db->query("SELECT slug FROM offers WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 3")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($offers as $s) { $urls[] = "/offer/{$s}"; }
     
-    // Первые 3 города по каждой категории
-    $cities = array_slice(getCities(), 0, 3);
+    // Первые 2 города
+    $cities = array_slice(getCities(), 0, 2);
     foreach ($cities as $c) {
         $urls[] = "/zajmy/{$c['slug']}";
         $urls[] = "/kredity/{$c['slug']}";
-        $urls[] = "/karty/kreditnye/{$c['slug']}";
-        $urls[] = "/karty/debetovye/{$c['slug']}";
     }
+    
+    // Первый допзапрос (если есть)
+    try {
+        $sc = $db->query("SELECT slug, category FROM subcategories WHERE is_active = 1 LIMIT 1")->fetch();
+        if ($sc) {
+            $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
+            $base = $catUrls[$sc['category']] ?? '/zajmy';
+            $urls[] = "{$base}/q/{$sc['slug']}";
+        }
+    } catch (Exception $e) {}
     
     return $urls;
 }

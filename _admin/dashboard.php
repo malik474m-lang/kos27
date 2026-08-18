@@ -4003,12 +4003,35 @@ renderPageCheckResult(box, d);
 }
 
 function pageCheckFull(){
-if(!confirm('Полная проверка может занять 1-2 минуты. Продолжить?')) return;
+if(!confirm('Полная проверка — пакетами по 30 URL. Продолжить?')) return;
 var box=document.getElementById('page-check-result');
-box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Полная проверка всех страниц из sitemap... Это может занять время.</p>';
-ap('/page-checker?action=check').then(function(d){
-renderPageCheckResult(box, d);
+box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Считаем количество страниц...</p>';
+_pcAllBroken=[];_pcOkCount=0;_pcTotal=0;
+ap('/page-checker?action=count').then(function(d){
+_pcTotal=d.total;
+box.innerHTML='<p class="text-gray-500 text-sm mt-2">⏳ Проверяем '+_pcTotal+' страниц пакетами по 30...</p><div id="pc-progress" class="w-full bg-gray-200 rounded-full h-2 mt-2"><div class="bg-blue-600 h-2 rounded-full transition-all" style="width:0%" id="pc-bar"></div></div><p id="pc-status" class="text-xs text-gray-400 mt-1">0 / '+_pcTotal+'</p>';
+pageCheckBatch(0);
 }).catch(function(err){ box.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+err.message+'</p>'; });
+}
+var _pcAllBroken=[],_pcOkCount=0,_pcTotal=0;
+function pageCheckBatch(offset){
+ap('/page-checker?action=check&offset='+offset+'&limit=30').then(function(d){
+_pcOkCount+=d.ok;
+if(d.broken&&d.broken.length) _pcAllBroken=_pcAllBroken.concat(d.broken);
+var checked=offset+d.checked;
+var pct=Math.round(checked/_pcTotal*100);
+var bar=document.getElementById('pc-bar');if(bar)bar.style.width=pct+'%';
+var st=document.getElementById('pc-status');if(st)st.textContent=checked+' / '+_pcTotal+(d.broken_count>0?' (найдено ошибок: '+_pcAllBroken.length+')':'');
+if(d.has_more){
+pageCheckBatch(d.next_offset);
+}else{
+var box=document.getElementById('page-check-result');
+renderPageCheckResult(box,{total:_pcTotal,ok:_pcOkCount,broken_count:_pcAllBroken.length,broken:_pcAllBroken});
+}
+}).catch(function(err){
+var box=document.getElementById('page-check-result');
+box.innerHTML='<p class="text-red-500 text-sm">Ошибка на offset '+offset+': '+err.message+'</p>';
+});
 }
 
 function pageCheckOne(){
