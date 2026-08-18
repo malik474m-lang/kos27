@@ -94,24 +94,51 @@ function getSubcategoryBaseUrl(string $category): string {
     };
 }
 
-function renderSubcategoryLinks(string $category): string {
+/**
+ * Рендер блока с допзапросами
+ * 
+ * @param string $category Категория (microloans, credits, credit_cards, debit_cards)
+ * @param string|null $citySlug Slug города для формирования URL с гео (опционально)
+ * @param string|null $excludeSlug Slug допзапроса который нужно исключить (текущая страница)
+ * @param string|null $blockTitle Заголовок блока (по умолчанию "Категория — популярные запросы")
+ */
+function renderSubcategoryLinks(string $category, ?string $citySlug = null, ?string $excludeSlug = null, ?string $blockTitle = null): string {
     $subcats = getSubcategoriesByCategory($category);
     if (!$subcats) return '';
+    
+    // Исключаем текущий допзапрос если указан
+    if ($excludeSlug) {
+        $subcats = array_filter($subcats, fn($sc) => $sc['slug'] !== $excludeSlug);
+    }
+    
+    // Если после фильтрации ничего не осталось
+    if (empty($subcats)) return '';
+    
     $base = getSubcategoryBaseUrl($category);
     $catLabels = ['microloans'=>'Займы','credits'=>'Кредиты','credit_cards'=>'Кредитные карты','debit_cards'=>'Дебетовые карты'];
     $label = $catLabels[$category] ?? 'Предложения';
     
+    // Заголовок блока
+    $title = $blockTitle ?? ($label . ' — популярные запросы');
+    
     $html = '<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-8">';
     $html .= '<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">';
-    $html .= '<h2 class="text-xl font-bold text-gray-900 mb-4">' . e($label) . ' — популярные запросы</h2>';
+    $html .= '<h2 class="text-xl font-bold text-gray-900 mb-4">' . e($title) . '</h2>';
     $html .= '<div class="flex flex-wrap gap-2">';
+    
     foreach ($subcats as $sc) {
-        $url = $base . '/q/' . $sc['slug'];
+        // Формируем URL: с городом или без
+        if ($citySlug) {
+            $url = $base . '/' . $citySlug . '/q/' . $sc['slug'];
+        } else {
+            $url = $base . '/q/' . $sc['slug'];
+        }
         $icon = $sc['icon'] ?? '📋';
         $html .= '<a href="' . e($url) . '" class="inline-flex items-center gap-1.5 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm transition-colors">';
         $html .= '<span>' . $icon . '</span> ' . e($sc['title']);
         $html .= '</a>';
     }
+    
     $html .= '</div></div></section>';
     return $html;
 }

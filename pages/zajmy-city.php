@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../data/cities.php';
 require_once __DIR__ . '/../includes/city-seo.php';
+require_once __DIR__ . '/../includes/subcategories.php';
 
 $city = findCityBySlug($citySlug);
 if (!$city) { http_response_code(404); $pageTitle='Город не найден — займы'; $metaDescription='Страница займов для выбранного города не найдена.'; $pageHeadHtml = '<meta name="robots" content="noindex,follow">'; ob_start(); echo '<div class="max-w-7xl mx-auto px-4 py-24 text-center"><h1 class="text-2xl font-bold">Город не найден</h1></div>'; $content=ob_get_clean(); require __DIR__.'/../includes/layout.php'; return; }
@@ -102,6 +103,12 @@ ob_start();
         </div>
     </div>
 </div>
+
+<?php
+// Допзапросы для займов с учётом города
+echo renderSubcategoryLinks('microloans', $city['slug'], null, "Займы в {$city['prep']} — популярные запросы");
+?>
+
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/subcategories.php';
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 
@@ -99,6 +100,11 @@ ob_start();
     </div>
     <?php endif; ?>
 </section>
+<?php
+// Допзапросы для той же категории
+$_subcatCategory = $type['category'] ?? 'microloans';
+echo renderSubcategoryLinks($_subcatCategory, null, null, $catLabel . ' — популярные запросы');
+?>
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb([['name'=>'Главная','url'=>'/'],['name'=>$catLabel,'url'=>$catUrl],['name'=>$type['title'],'url'=>$catUrl.'/type/'.$type['slug']]]),

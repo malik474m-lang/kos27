@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/subcategories.php';
 require_once __DIR__ . '/../includes/offer-card.php';
 require_once __DIR__ . '/../includes/autolinks.php';
 require_once __DIR__ . '/../data/cities.php';
@@ -130,6 +131,10 @@ ob_start();
         </div>
     </div>
 </section>
+<?php
+// Допзапросы для категории с учётом города
+echo renderSubcategoryLinks($cityTypeCategory, $citySlug, null, $catLabel . ' в ' . $city['prep'] . ' — популярные запросы');
+?>
 <?php
 $jsonLdSchemas = [
     jsonLdBreadcrumb($breadcrumbs),

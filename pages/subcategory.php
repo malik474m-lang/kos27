@@ -25,11 +25,13 @@ $catLabel = $catLabels[$subcat['category']] ?? 'Предложения';
 // Город (опциональный)
 $cityData = null;
 $citySeo = null;
-if (!empty($subcatCitySlug)) {
+$citySlugForLinks = null;
+if (!empty($citySlug)) {
     require_once __DIR__ . '/../data/cities.php';
-    $cityData = findCity($subcatCitySlug);
+    $cityData = findCity($citySlug);
     if ($cityData) {
-        $citySeo = getSubcategoryCitySeo((int)$subcat['id'], $subcatCitySlug);
+        $citySlugForLinks = $cityData['slug'];
+        $citySeo = getSubcategoryCitySeo((int)$subcat['id'], $citySlug);
     }
 }
 
@@ -70,9 +72,6 @@ if ($cityData) {
 }
 $breadcrumbs[] = breadcrumbItem($subcat['title'] . ($cityData ? ' в ' . ($cityData['prep'] ?? '') : ''), '');
 
-// Другие подкатегории
-$otherSubcats = getSubcategoriesByCategory($subcat['category']);
-
 ob_start();
 ?>
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -101,23 +100,18 @@ ob_start();
         <div class="prose prose-sm max-w-none text-gray-600"><?= $seoText ?></div>
     </div>
     <?php endif; ?>
-
-    <?php if ($otherSubcats): ?>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-8">
-        <h2 class="text-lg font-bold text-gray-900 mb-4"><?= e($catLabel) ?> — другие запросы</h2>
-        <div class="flex flex-wrap gap-2">
-            <?php foreach ($otherSubcats as $sc):
-                $scUrl = $catUrl . '/q/' . $sc['slug'];
-                if ($cityData) $scUrl = $catUrl . '/' . $cityData['slug'] . '/q/' . $sc['slug'];
-            ?>
-            <a href="<?= e($scUrl) ?>" class="inline-flex items-center gap-1.5 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm transition-colors <?= ($sc['slug'] === $subcat['slug']) ? 'bg-blue-50 border-blue-300 text-blue-700 font-semibold' : '' ?>">
-                <span><?= $sc['icon'] ?? '📋' ?></span> <?= e($sc['title']) ?>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
 </section>
+
+<?php
+// Блок с другими допзапросами (исключая текущий)
+echo renderSubcategoryLinks(
+    $subcat['category'], 
+    $citySlugForLinks, 
+    $subcat['slug'], // исключаем текущий
+    $catLabel . ' — другие запросы'
+);
+?>
+
 <?php
 $canonicalUrl = pageCanonical($catUrl . '/q/' . $subcat['slug']);
 $content = ob_get_clean();
