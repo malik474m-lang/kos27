@@ -71,11 +71,19 @@ function getAbVariant(string $category = ''): ?array {
     try {
         $db = getDB();
 
+        // Ищем тест: сначала точный по категории, потом fallback на 'all'
+        $test = null;
         if ($category) {
-            $testStmt = $db->prepare("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 AND category_scope IN (?, 'all') ORDER BY (category_scope = ?) DESC, id DESC LIMIT 1");
-            $testStmt->execute([$category, $category]);
+            // Точное совпадение по категории
+            $testStmt = $db->prepare("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 AND category_scope = ? ORDER BY id DESC LIMIT 1");
+            $testStmt->execute([$category]);
             $test = $testStmt->fetch();
-        } else {
+        }
+        if (!$test) {
+            // Fallback на 'all'
+            $test = $db->query("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 AND category_scope = 'all' ORDER BY id DESC LIMIT 1")->fetch();
+        }
+        if (!$test && !$category) {
             $test = $db->query("SELECT id, category_scope FROM ab_tests WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetch();
         }
 
@@ -86,7 +94,8 @@ function getAbVariant(string $category = ''): ?array {
         $all = $variants->fetchAll();
         if (!$all) { $variantsCache[$cacheKey] = false; return null; }
 
-        $cookieKey = 'ab_v_' . $test['id'];
+        // Кука привязана к тесту + категории чтобы для разных категорий были разные варианты
+        $cookieKey = 'ab_v_' . $test['id'] . ($category ? '_' . $category : '');
         if (isset($_COOKIE[$cookieKey])) {
             $vid = (int)$_COOKIE[$cookieKey];
             foreach ($all as $v) {
@@ -98,7 +107,9 @@ function getAbVariant(string $category = ''): ?array {
         }
 
         $chosen = $all[array_rand($all)];
-        setcookie($cookieKey, $chosen['id'], time() + 86400 * 30, '/');
+        if (!headers_sent()) {
+            setcookie($cookieKey, $chosen['id'], time() + 86400 * 30, '/');
+        }
         $_COOKIE[$cookieKey] = $chosen['id'];
         $db->prepare("UPDATE ab_variants SET impressions = impressions + 1 WHERE id = ?")->execute([$chosen['id']]);
 
