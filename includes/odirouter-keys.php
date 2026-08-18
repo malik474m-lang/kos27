@@ -2,8 +2,9 @@
 /**
  * OdiRouter Key Rotation — автоматическое переключение API ключей
  * 
- * Хранит пул ключей и счётчик использования.
- * При достижении лимита (50/день) переключается на следующий.
+ * ВАЖНО: Лимит 50 запросов/день считается НА АККАУНТ, а не на ключ.
+ * Один аккаунт может иметь несколько API ключей, но общий лимит — 50.
+ * Счётчики использования ведутся по аккаунту.
  * Счётчики сбрасываются в 00:00 UTC.
  */
 
@@ -11,61 +12,73 @@ define('ODIROUTER_DAILY_LIMIT', 50);
 define('ODIROUTER_KEYS_FILE', __DIR__ . '/../data/odirouter-keys.json');
 define('ODIROUTER_USAGE_FILE', __DIR__ . '/../data/odirouter-usage.json');
 
-/**
- * Загрузить пул ключей
- */
 function odiLoadKeys(): array {
     if (!file_exists(ODIROUTER_KEYS_FILE)) return [];
     $data = json_decode(file_get_contents(ODIROUTER_KEYS_FILE), true);
     return is_array($data) ? $data : [];
 }
 
-/**
- * Сохранить пул ключей
- */
 function odiSaveKeys(array $keys): bool {
     $dir = dirname(ODIROUTER_KEYS_FILE);
     if (!is_dir($dir)) @mkdir($dir, 0755, true);
     return file_put_contents(ODIROUTER_KEYS_FILE, json_encode($keys, JSON_PRETTY_PRINT)) !== false;
 }
 
-/**
- * Загрузить счётчики использования
- */
 function odiLoadUsage(): array {
-    if (!file_exists(ODIROUTER_USAGE_FILE)) return ['date' => '', 'keys' => []];
+    if (!file_exists(ODIROUTER_USAGE_FILE)) return ['date' => '', 'accounts' => [], 'keys' => []];
     $data = json_decode(file_get_contents(ODIROUTER_USAGE_FILE), true);
-    if (!is_array($data)) return ['date' => '', 'keys' => []];
+    if (!is_array($data)) return ['date' => '', 'accounts' => [], 'keys' => []];
     
-    // Сброс счётчиков при новом дне (UTC)
     $today = gmdate('Y-m-d');
     if (($data['date'] ?? '') !== $today) {
-        return ['date' => $today, 'keys' => []];
+        return ['date' => $today, 'accounts' => [], 'keys' => []];
     }
+    // Миграция: если нет accounts — создаём
+    if (!isset($data['accounts'])) $data['accounts'] = [];
     return $data;
 }
 
-/**
- * Сохранить счётчики
- */
 function odiSaveUsage(array $usage): void {
     @file_put_contents(ODIROUTER_USAGE_FILE, json_encode($usage));
 }
 
 /**
- * Записать использование ключа (+1)
+ * Определить аккаунт ключа (по id ключа)
+ */
+function odiGetAccountForKey(string $keyId): string {
+    $keys = odiLoadKeys();
+    foreach ($keys as $k) {
+        $id = $k['id'] ?? md5($k['key'] ?? '');
+        if ($id === $keyId) {
+            return $k['account'] ?? '_no_account_' . $keyId;
+        }
+    }
+    return '_no_account_' . $keyId;
+}
+
+/**
+ * Записать использование: +1 к аккаунту ключа
  */
 function odiTrackUsage(string $keyId): void {
+    $account = odiGetAccountForKey($keyId);
     $usage = odiLoadUsage();
+    $usage['accounts'][$account] = ($usage['accounts'][$account] ?? 0) + 1;
+    // Для совместимости храним и по ключу
     $usage['keys'][$keyId] = ($usage['keys'][$keyId] ?? 0) + 1;
     odiSaveUsage($usage);
 }
 
 /**
- * Получить рабочий ключ (с оставшимся лимитом)
- * Возвращает ['key' => string, 'id' => string, 'name' => string, 'remaining' => int] или null
+ * Получить использование аккаунта
  */
+function odiGetAccountUsage(string $account): int {
+    $usage = odiLoadUsage();
+    return (int)($usage['accounts'][$account] ?? 0);
+}
 
+/**
+ * Получить доступные ключи (с учётом лимита на аккаунт)
+ */
 function odiGetAvailableKeys(string $type = 'text'): array {
     $keys = odiLoadKeys();
     $usage = odiLoadUsage();
@@ -85,33 +98,43 @@ function odiGetAvailableKeys(string $type = 'text'): array {
 
     $poolKeyValues = array_column($allKeys, 'key');
     if ($mainKey && !in_array($mainKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'account' => '', 'enabled' => true, 'type' => 'all'];
     }
     if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'account' => '', 'enabled' => true, 'type' => 'all'];
     }
 
     $result = [];
     foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key']);
-        $used = (int)($usage['keys'][$keyId] ?? 0);
-        $remaining = ODIROUTER_DAILY_LIMIT - $used;
-        if ($remaining <= 0) continue;
+        $account = $k['account'] ?? '_no_account_' . $keyId;
+        
+        // Лимит считаем по аккаунту
+        $accountUsed = (int)($usage['accounts'][$account] ?? 0);
+        $accountRemaining = ODIROUTER_DAILY_LIMIT - $accountUsed;
+        
+        if ($accountRemaining <= 0) continue; // Аккаунт исчерпан
+        
         $result[] = [
             'key' => $k['key'],
             'id' => $keyId,
             'name' => $k['name'] ?? ('Ключ ' . substr($k['key'], 0, 8) . '...'),
-            'remaining' => $remaining,
-            'used' => $used,
+            'account' => $account,
+            'remaining' => $accountRemaining,
+            'used' => $accountUsed,
             'type' => $k['type'] ?? 'all',
         ];
     }
     return $result;
 }
 
+/**
+ * Пометить аккаунт ключа как исчерпанный
+ */
 function odiMarkKeyExhausted(string $keyId): void {
+    $account = odiGetAccountForKey($keyId);
     $usage = odiLoadUsage();
-    $usage['keys'][$keyId] = ODIROUTER_DAILY_LIMIT;
+    $usage['accounts'][$account] = ODIROUTER_DAILY_LIMIT;
     odiSaveUsage($usage);
 }
 
@@ -121,7 +144,7 @@ function odiGetActiveKey(string $type = 'text'): ?array {
 }
 
 /**
- * Получить статистику по всем ключам
+ * Статистика по всем ключам — группировка по аккаунтам
  */
 function odiGetKeysStats(): array {
     $keys = odiLoadKeys();
@@ -130,47 +153,60 @@ function odiGetKeysStats(): array {
         ? json_decode(file_get_contents(__DIR__ . '/../data/site-settings.json'), true) : [];
     
     $stats = [];
+    
+    // Собираем все ключи (пул + настройки)
+    $allKeys = $keys;
+    $poolKeyValues = array_column($keys, 'key');
+    $mainKey = $settings['odirouter_api_key'] ?? '';
+    $imageKey = $settings['odirouter_image_api_key'] ?? '';
+    
+    if ($mainKey && !in_array($mainKey, $poolKeyValues)) {
+        $allKeys[] = ['id' => 'settings_main', 'key' => $mainKey, 'name' => 'Основной (настройки)', 'account' => '', 'type' => 'all', 'enabled' => true];
+    }
+    if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues)) {
+        $allKeys[] = ['id' => 'settings_image', 'key' => $imageKey, 'name' => 'Картинки (настройки)', 'account' => '', 'type' => 'all', 'enabled' => true];
+    }
+    
+    // Считаем использование по аккаунтам
+    $accountUsageMap = [];
+    foreach ($allKeys as $k) {
+        $keyId = $k['id'] ?? md5($k['key'] ?? '');
+        $account = $k['account'] ?? '_no_account_' . $keyId;
+        if (!isset($accountUsageMap[$account])) {
+            $accountUsageMap[$account] = (int)($usage['accounts'][$account] ?? 0);
+        }
+    }
+    
     $totalRemaining = 0;
     
-    // Пул
-    foreach ($keys as $k) {
+    foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key'] ?? '');
-        $used = $usage['keys'][$keyId] ?? 0;
-        $remaining = max(0, ODIROUTER_DAILY_LIMIT - $used);
-        $totalRemaining += $remaining;
+        $account = $k['account'] ?? '_no_account_' . $keyId;
+        $accountUsed = $accountUsageMap[$account] ?? 0;
+        $keyUsed = (int)($usage['keys'][$keyId] ?? 0);
+        $accountRemaining = max(0, ODIROUTER_DAILY_LIMIT - $accountUsed);
+        
         $stats[] = [
             'id' => $keyId,
             'name' => $k['name'] ?? '',
-            'account' => $k['account'] ?? '',
+            'account' => $account,
             'type' => $k['type'] ?? 'all',
             'enabled' => !empty($k['enabled']),
-            'used' => $used,
-            'remaining' => $remaining,
+            'key_used' => $keyUsed,           // использовано этим ключом
+            'account_used' => $accountUsed,    // использовано всем аккаунтом
+            'account_remaining' => $accountRemaining,
             'limit' => ODIROUTER_DAILY_LIMIT,
             'masked' => substr($k['key'] ?? '', 0, 8) . '...' . substr($k['key'] ?? '', -4),
         ];
     }
     
-    // Из настроек
-    $mainKey = $settings['odirouter_api_key'] ?? '';
-    $imageKey = $settings['odirouter_image_api_key'] ?? '';
-    $poolKeyValues = array_column($keys, 'key');
-    
-    foreach ([['key'=>$mainKey,'name'=>'Основной','id'=>'settings_main'],['key'=>$imageKey,'name'=>'Картинки','id'=>'settings_image']] as $sk) {
-        if ($sk['key'] && !in_array($sk['key'], $poolKeyValues)) {
-            $used = $usage['keys'][$sk['id']] ?? 0;
-            $remaining = max(0, ODIROUTER_DAILY_LIMIT - $used);
-            $totalRemaining += $remaining;
-            $stats[] = [
-                'id' => $sk['id'],
-                'name' => $sk['name'] . ' (настройки)',
-                'type' => 'all',
-                'enabled' => true,
-                'used' => $used,
-                'remaining' => $remaining,
-                'limit' => ODIROUTER_DAILY_LIMIT,
-                'masked' => substr($sk['key'], 0, 8) . '...' . substr($sk['key'], -4),
-            ];
+    // Считаем уникальные аккаунты для total_remaining
+    $uniqueAccounts = [];
+    foreach ($stats as $s) {
+        $acc = $s['account'];
+        if (!isset($uniqueAccounts[$acc])) {
+            $uniqueAccounts[$acc] = $s['account_remaining'];
+            $totalRemaining += $s['account_remaining'];
         }
     }
     
@@ -178,6 +214,7 @@ function odiGetKeysStats(): array {
         'keys' => $stats,
         'total_remaining' => $totalRemaining,
         'total_keys' => count($stats),
+        'total_accounts' => count($uniqueAccounts),
         'date' => $usage['date'] ?? gmdate('Y-m-d'),
     ];
 }

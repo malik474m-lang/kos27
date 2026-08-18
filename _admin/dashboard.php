@@ -5516,22 +5516,23 @@ function odiLoadKeys(){
     fetch(A+'/odirouter-keys').then(function(r){return r.json();}).then(function(d){
         var keys=d.keys||[];
         if(!keys.length){c.innerHTML='<p class="text-gray-400 py-2">Нет ключей в пуле. Ключи из настроек будут использоваться автоматически.</p>';return;}
-        var h='<div class="mb-2 text-xs text-gray-500">Всего запросов сегодня: <b>'+(d.total_remaining||0)+'</b> осталось из '+(keys.length*50)+'</div>';
+        var h='<div class="mb-2 text-xs text-gray-500">Аккаунтов: <b>'+(d.total_accounts||0)+'</b> · Осталось запросов: <b>'+(d.total_remaining||0)+'</b> из '+(d.total_accounts||0)*50+'</div>';
         h+='<div class="space-y-2">';
         // Группируем по аккаунтам
         var groups={};keys.forEach(function(k){var acc=k.account||'Без аккаунта';if(!groups[acc])groups[acc]=[];groups[acc].push(k);});
         Object.keys(groups).sort().forEach(function(acc){
             var gKeys=groups[acc];
-            var gUsed=0,gTotal=0;gKeys.forEach(function(k){gUsed+=k.used;gTotal+=k.limit;});
-            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей, '+gUsed+'/'+gTotal+' использовано)</span></div>';
+            var accUsed=gKeys[0].account_used||0;var accRem=gKeys[0].account_remaining||0;var accPct=Math.round(accUsed/50*100);
+            var accColor=accPct>=100?'text-red-600':(accPct>=80?'text-yellow-600':'text-green-600');
+            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span></div>';
             gKeys.forEach(function(k){
-            var pct=Math.round(k.used/k.limit*100);
+            var pct=Math.round((k.account_used||0)/50*100);
             var color=pct>=100?'bg-red-500':(pct>=80?'bg-yellow-500':'bg-green-500');
             h+='<div class="flex items-center gap-3 p-2 rounded-lg ml-4 '+(k.enabled?'bg-gray-50':'bg-gray-100 opacity-60')+'">'+
                 '<div class="flex-1 min-w-0">'+
                 '<div class="font-medium text-sm truncate">'+(k.name||'Без имени')+' <span class="text-xs text-gray-400">'+(k.masked||'')+'</span></div>'+
                 '<div class="flex items-center gap-2 mt-1"><div class="flex-1 bg-gray-200 rounded-full h-2" style="max-width:120px"><div class="'+color+' h-2 rounded-full" style="width:'+pct+'%"></div></div>'+
-                '<span class="text-xs text-gray-500">'+k.used+'/'+k.limit+'</span></div>'+
+                '<span class="text-xs text-gray-500">'+(k.key_used||0)+' запр.</span></div>'+
                 '</div>'+
                 '<button onclick="odiEditKey(\''+k.id+'\',\''+e(k.name||'').replace(/'/g,'')+'\',\''+e(k.account||'').replace(/'/g,'')+'\',\''+e(k.type||'all')+'\')" class="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100" title="Редактировать">✏️</button>'+
                 '<button onclick="odiToggleKey(\''+k.id+'\')" class="text-xs px-2 py-1 rounded '+(k.enabled?'bg-green-100 text-green-700':'bg-gray-200 text-gray-500')+'">'+(k.enabled?'Вкл':'Выкл')+'</button>'+
