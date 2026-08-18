@@ -5533,8 +5533,9 @@ function odiLoadKeys(){
                 '<div class="flex items-center gap-2 mt-1"><div class="flex-1 bg-gray-200 rounded-full h-2" style="max-width:120px"><div class="'+color+' h-2 rounded-full" style="width:'+pct+'%"></div></div>'+
                 '<span class="text-xs text-gray-500">'+k.used+'/'+k.limit+'</span></div>'+
                 '</div>'+
-                '<button onclick="odiToggleKey(\''+k.id+'\',this)" class="text-xs px-2 py-1 rounded '+(k.enabled?'bg-green-100 text-green-700':'bg-gray-200 text-gray-500')+'">'+(k.enabled?'Вкл':'Выкл')+'</button>'+
-                '<button onclick="odiRemoveKey(\''+k.id+'\',this)" class="text-xs text-red-500 hover:text-red-700">✕</button>'+
+                '<button onclick="odiEditKey(\''+k.id+'\',\''+e(k.name||'').replace(/'/g,'')+'\',\''+e(k.account||'').replace(/'/g,'')+'\',\''+e(k.type||'all')+'\')" class="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100" title="Редактировать">✏️</button>'+
+                '<button onclick="odiToggleKey(\''+k.id+'\')" class="text-xs px-2 py-1 rounded '+(k.enabled?'bg-green-100 text-green-700':'bg-gray-200 text-gray-500')+'">'+(k.enabled?'Вкл':'Выкл')+'</button>'+
+                '<button onclick="odiRemoveKey(\''+k.id+'\')" class="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100" title="Удалить">🗑</button>'+
                 '</div>';
             });
             h+='</div>';
@@ -5557,6 +5558,23 @@ function odiAddKey(){
 function odiRemoveKey(id){if(!confirm('Удалить ключ?'))return;fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'remove',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
 function odiToggleKey(id){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'toggle',id:id})}).then(function(r){return r.json();}).then(function(){odiLoadKeys();});}
 function odiResetCounters(){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset'})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'Готово');odiLoadKeys();});}
+function odiEditKey(id,name,account,type){
+modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">✏️ Редактировать ключ</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
+'<div class="space-y-3">'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">Название</label><input id="odi-edit-name" class="input-f" value="'+e(name)+'"></div>'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">👤 Аккаунт (email или имя)</label><input id="odi-edit-account" class="input-f" value="'+e(account)+'" placeholder="user@mail.ru"></div>'+
+'<div><label class="block text-sm font-medium text-gray-700 mb-1">Тип</label><select id="odi-edit-type" class="sel-f"><option value="all"'+(type==='all'?' selected':'')+'>Все (текст+картинки)</option><option value="text"'+(type==='text'?' selected':'')+'>Только текст</option><option value="image"'+(type==='image'?' selected':'')+'>Только картинки</option></select></div>'+
+'</div>'+
+'<div class="flex justify-end gap-3 mt-4"><button onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button onclick="odiSaveEdit(\''+id+'\')" class="btn-p">Сохранить</button></div>',false);
+}
+function odiSaveEdit(id){
+var name=document.getElementById('odi-edit-name').value.trim();
+var account=document.getElementById('odi-edit-account').value.trim();
+var type=document.getElementById('odi-edit-type').value;
+fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update',id:id,name:name,account:account,type:type})}).then(function(r){return r.json();}).then(function(d){
+if(d.success){cm();odiLoadKeys();}else{alert(d.error||'Ошибка');}
+});
+}
 
 function lAIP(){
     var c=document.getElementById('p-aiproviders');
@@ -5618,11 +5636,13 @@ function lAIP(){
         '<div class="bg-white rounded-xl shadow p-6 border-l-4 border-orange-400">'+
         '<div class="flex items-center justify-between mb-4"><div class="flex items-center gap-3"><span class="text-3xl">🔑</span><div><h3 class="font-bold text-lg">Пул API ключей OdiRouter</h3><p class="text-sm text-gray-500">Автоматическая ротация при исчерпании лимита (50/день)</p></div></div><button onclick="odiLoadKeys()" class="text-sm text-blue-600 hover:underline">🔄 Обновить</button></div>'+
         '<div id="odi-keys-list" class="text-sm text-gray-500">Загрузка...</div>'+
-        '<div class="mt-4 flex flex-wrap gap-2">'+
+        '<div class="mt-4 space-y-2">'+
+        '<div class="flex flex-wrap gap-2">'+
         '<input type="text" id="odi-new-key" placeholder="API ключ" class="input-f flex-1" style="min-width:200px">'+
-        '<input type="text" id="odi-new-name" placeholder="Название (необязательно)" class="input-f" style="width:200px">'+
-        '<button onclick="odiAddKey()" class="btn-p text-sm">+ Добавить ключ</button>'+
-        '</div></div>'+
+        '<input type="text" id="odi-new-name" placeholder="Название ключа" class="input-f" style="width:160px">'+
+        '<input type="text" id="odi-new-account" placeholder="👤 Аккаунт (email)" class="input-f" style="width:180px">'+
+        '<button onclick="odiAddKey()" class="btn-p text-sm">+ Добавить</button>'+
+        '</div></div></div>'+
 
 '<div class="bg-white rounded-xl shadow p-6 border-l-4 '+(cfg.chat_enabled?'border-emerald-500':'border-gray-300')+'">'+ 
         '<div class="flex items-center justify-between mb-4 flex-wrap gap-2"><div class="flex items-center gap-3"><span class="text-3xl">\U0001f4ac</span><div><h3 class="font-bold text-lg">AI-чат для посетителей</h3><p class="text-sm text-gray-500">Виджет чата на сайте</p></div></div><label class="flex items-center gap-2"><input type="checkbox" id="ai_chat_en" '+(cfg.chat_enabled?'checked':'')+' class="w-5 h-5"><span class="font-medium">'+(cfg.chat_enabled?'Вкл':'Выкл')+'</span></label></div>'+
