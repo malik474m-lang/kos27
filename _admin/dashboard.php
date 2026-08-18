@@ -39,7 +39,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <button onclick="sw('articles')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="articles">📰 Статьи</button>
 <button onclick="sw('reviews')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="reviews">⭐ Отзывы</button>
 <button onclick="sw('tags')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="tags">🏷️ Теги</button>
-<button onclick="sw('subcats')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="subcats">🔖 Доп. запросы</button>
 <button onclick="sw('geo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="geo">🌍 Гео-редиректы</button>
 <button onclick="sw('cities')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cities">🏘️ Города</button>
 <button onclick="sw('cityseo')" class="tb py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap" data-t="cityseo">🏙️ SEO городов</button>
@@ -78,7 +77,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 <div id="p-articles" class="tp hidden"></div>
 <div id="p-reviews" class="tp hidden"></div>
 <div id="p-tags" class="tp hidden"></div>
-<div id="p-subcats" class="tp hidden"></div>
 <div id="p-geo" class="tp hidden"></div>
 <div id="p-cities" class="tp hidden"></div>
 <div id="p-cityseo" class="tp hidden"></div>
