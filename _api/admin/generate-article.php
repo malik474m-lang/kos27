@@ -122,6 +122,48 @@ function isTopicDuplicate(string $theme, array $existingTitles): bool {
     return false;
 }
 
+function fallbackTopicsByCategory(string $category): array {
+    $map = [
+        'займы' => [
+            'Как выбрать займ онлайн в 2026 году',
+            'На что обратить внимание перед оформлением микрозайма',
+            'Как снизить риски при выборе МФО',
+            'Первый займ под 0%: как это работает',
+            'Как сравнивать условия онлайн-займов',
+        ],
+        'кредиты' => [
+            'Как выбрать выгодный потребительский кредит',
+            'Что важно знать перед подачей заявки на кредит',
+            'Как сравнить условия банковских кредитов',
+            'Как снизить переплату по кредиту',
+            'На что смотреть при выборе банка для кредита',
+        ],
+        'карты' => [
+            'Как выбрать банковскую карту под свои задачи',
+            'Кэшбэк, бонусы и льготы: как сравнить карты',
+            'На что смотреть при выборе карты в 2026 году',
+            'Как подобрать карту для повседневных расходов',
+            'Как сравнить условия по банковским картам',
+        ],
+        'банки' => [
+            'Как выбрать банк для повседневных финансовых задач',
+            'На что обратить внимание при выборе банка',
+            'Как сравнить банки по основным услугам',
+            'Какие банковские продукты чаще всего выбирают клиенты',
+            'Как оценивать надёжность банка',
+        ],
+        'мфо' => [
+            'Как выбрать надёжную МФО',
+            'На что смотреть при сравнении микрофинансовых организаций',
+            'Как понять условия займа в МФО',
+            'Чем отличаются МФО между собой',
+            'Как выбрать МФО для первого займа',
+        ],
+    ];
+    return $map[$category] ?? ['Как выбрать финансовый продукт онлайн'];
+}
+
+
 $topicsList = [];
 foreach ($baseTopics as $group) {
     $available = [];
@@ -209,8 +251,10 @@ if ($requestedTopic) {
         }
     }
     if (!$catTopics) {
-        echo json_encode(['error' => 'Не удалось найти или сгенерировать тему. Введите свою тему вручную.']);
-        exit;
+        $catTopics = array_values(array_filter(fallbackTopicsByCategory($requestedCategory), fn($t) => !isTopicDuplicate($t, $existingTitles)));
+        if (!$catTopics) {
+            $catTopics = fallbackTopicsByCategory($requestedCategory);
+        }
     }
     $selectedTopic = $catTopics[array_rand($catTopics)];
     $selectedCategory = $requestedCategory;
@@ -225,8 +269,10 @@ if ($requestedTopic) {
             $selectedTopic = $newTopics[array_rand($newTopics)];
             $selectedCategory = $cat;
         } else {
-            echo json_encode(['error' => 'Все темы использованы. Введите свою тему.']);
-            exit;
+            $fallbackTopics = array_values(array_filter(fallbackTopicsByCategory($cat), fn($t) => !isTopicDuplicate($t, $existingTitles)));
+            if (!$fallbackTopics) $fallbackTopics = fallbackTopicsByCategory($cat);
+            $selectedTopic = $fallbackTopics[array_rand($fallbackTopics)];
+            $selectedCategory = $cat;
         }
     } else {
         $group = $availableGroups[array_rand($availableGroups)];
@@ -370,10 +416,14 @@ if (!trim($excerpt)) {
     $excerpt = mb_substr($metaDescription, 0, 200) . '...';
 }
 
-$db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published) VALUES (?,?,?,?,?,?,?,0)")
-   ->execute([$selectedTopic, $slug, $excerpt, $content, $metaTitle, $metaDescription, $coverImage]);
-
-$newArticle = $db->query("SELECT * FROM articles ORDER BY id DESC LIMIT 1")->fetch();
+try {
+    $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published) VALUES (?,?,?,?,?,?,?,0)")
+       ->execute([$selectedTopic, $slug, $excerpt, $content, $metaTitle, $metaDescription, $coverImage]);
+    $newArticle = $db->query("SELECT * FROM articles ORDER BY id DESC LIMIT 1")->fetch();
+} catch (Exception $e) {
+    echo json_encode(['error' => 'Не удалось сохранить статью: ' . $e->getMessage(), 'textError' => $aiResult['error'] ?? null, 'imageError' => $imageResult['error'] ?? null]);
+    exit;
+}
 
 // Диагностика AI провайдеров
 $aiDiag = getAIProvidersStatus();
@@ -414,7 +464,10 @@ function generateNewTopics(string $category, array $existingTitles): array {
     $userPrompt = "Придумай 10 новых уникальных тем для статей про $catDesc.\n\nЭти темы уже использованы, НЕ повторяй их:\n$existingList\n\nВыведи только список тем, по одной на строку, без нумерации, без пояснений.";
 
     $result = aiGenerateText($userPrompt, $systemPrompt);
-    if (!$result['success'] || empty($result['text'])) return [];
+    if (!$result['success'] || empty($result['text'])) {
+        $fallback = array_values(array_filter(fallbackTopicsByCategory($category), fn($t) => !isTopicDuplicate($t, $existingTitles)));
+        return array_slice($fallback, 0, 10);
+    }
 
     $text = $result['text'];
     $lines = array_filter(array_map('trim', explode("\n", $text)));
