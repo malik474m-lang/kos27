@@ -155,14 +155,14 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             'model' => $tryModel,
             'messages' => $messages,
             'temperature' => 0.7,
-            'max_tokens' => 4096,
+            'max_tokens' => 2800,
         ];
         
         $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 90,
+            CURLOPT_TIMEOUT => 45,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => 0,
@@ -274,8 +274,8 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
     }
     
     // Шаг 2: Polling статуса (до 3 минут)
-    for ($i = 0; $i < 36; $i++) {
-        sleep(5);
+    for ($i = 0; $i < 8; $i++) {
+        sleep(4);
         
         $ch = curl_init($statusUrl);
         curl_setopt_array($ch, [
@@ -404,7 +404,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
         }
     }
     
-    return ['success' => false, 'error' => 'Timeout waiting for image generation (3 min)'];
+    return ['success' => false, 'error' => 'Timeout waiting for image generation (32 sec)'];
 }
 
 function saveAIImage(string $binary): string {
