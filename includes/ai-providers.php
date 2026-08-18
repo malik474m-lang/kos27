@@ -181,7 +181,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             }
 
             if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
-                if (in_array($code, [402, 429], true)) {
+                if ($code === 402) {
                     odiMarkKeyExhausted($activeKey['id']);
                 }
                 $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code;
@@ -260,7 +260,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
         }
 
         if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
-            if (in_array($code, [402, 429], true)) {
+            if ($code === 402) {
                 odiMarkKeyExhausted($activeKey['id']);
             }
             $errors[] = ($activeKey['name'] ?? 'key') . ': HTTP ' . $code;
@@ -299,7 +299,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
 
             if ($statusErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status cURL ' . $statusErr; break; }
             if (in_array($statusCode, [401,402,403,408,429,500,502,503,504], true)) {
-                if (in_array($statusCode, [402,429], true)) odiMarkKeyExhausted($activeKey['id']);
+                if ($statusCode === 402) odiMarkKeyExhausted($activeKey['id']);
                 $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status HTTP ' . $statusCode; break;
             }
             if ($statusCode < 200 || $statusCode >= 300) continue;
@@ -328,7 +328,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
 
                 if ($resultErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response cURL ' . $resultErr; break; }
                 if (in_array($resultCode, [401,402,403,408,429,500,502,503,504], true)) {
-                    if (in_array($resultCode, [402,429], true)) odiMarkKeyExhausted($activeKey['id']);
+                    if ($resultCode === 402) odiMarkKeyExhausted($activeKey['id']);
                     $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break;
                 }
                 if ($resultCode < 200 || $resultCode >= 300) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break; }
