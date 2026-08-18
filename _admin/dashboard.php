@@ -5579,7 +5579,7 @@ var targetBtn=btn||null; var origText=targetBtn?targetBtn.textContent:'';
 if(targetBtn){targetBtn.textContent='⏳...';targetBtn.disabled=true;}
 fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test',account:account,type:type})}).then(function(r){return r.json();}).then(function(d){
 if(targetBtn){targetBtn.disabled=false;}
-if(d.success){ if(targetBtn){targetBtn.textContent='✅';setTimeout(function(){targetBtn.textContent=origText;},2000);} alert('✅ '+(type==='text'?'Текст':'Картинка')+' — OK!\n\nАккаунт: '+(d.account_label||'авто')+'\n'+(d.result||'')); }
+if(d.success){ if(targetBtn){targetBtn.textContent='✅';setTimeout(function(){targetBtn.textContent=origText;},2000);} alert('✅ '+(type==='text'?'Текст':'Картинка')+' — OK!\n\nАккаунт: '+(d.account_label||'авто')+'\nКлюч: '+(d.key_name||'')+' ['+(d.key_type||'')+']\n'+(d.result||'')); }
 else{ if(targetBtn){targetBtn.textContent='❌';setTimeout(function(){targetBtn.textContent=origText;},2000);} alert('❌ Ошибка: '+(d.error||'неизвестная')); }
 }).catch(function(err){ if(targetBtn){targetBtn.disabled=false;targetBtn.textContent=origText;} alert('Ошибка: '+err.message);});
 }

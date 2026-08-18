@@ -221,10 +221,10 @@ function odiGetAvailableKeys(string $type = 'text'): array {
 
     $poolKeyValues = array_column($allKeys, 'key');
     if ($mainKey && !in_array($mainKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $mainKey, 'id' => 'settings_main', 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'enabled' => true, 'type' => 'text'];
     }
     if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues, true)) {
-        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'enabled' => true, 'type' => 'all'];
+        $allKeys[] = ['key' => $imageKey, 'id' => 'settings_image', 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'enabled' => true, 'type' => 'image'];
     }
 
     $result = [];
@@ -249,47 +249,40 @@ function odiGetAvailableKeys(string $type = 'text'): array {
         ];
     }
 
-    if ($type === 'image') {
-        // Для картинок сохраняем несколько ключей на аккаунт:
-        // image -> all (text ключи не проходят ранний фильтр выше).
-        $groups = [];
-        foreach ($result as $item) {
-            $acc = $item['account'];
-            $item['_score'] = (($item['type'] ?? 'all') === 'image') ? 2 : 1;
-            $groups[$acc][] = $item;
-        }
-        foreach ($groups as &$items) {
-            usort($items, fn($a, $b) => ($b['_score'] <=> $a['_score']) ?: strcmp((string)$a['name'], (string)$b['name']));
-        }
-        unset($items);
-
-        $accounts = array_keys($groups);
-        $accounts = odiRotateAccounts(array_map(fn($a) => ['account' => $a], $accounts), $type);
-        $rotatedAccounts = array_map(fn($row) => $row['account'], $accounts);
-
-        $flat = [];
-        foreach ($rotatedAccounts as $acc) {
-            foreach ($groups[$acc] as $item) {
-                unset($item['_score']);
-                $flat[] = $item;
-            }
-        }
-        return $flat;
-    }
-
-    // Для текста оставляем один лучший ключ на аккаунт.
+    // На аккаунт выбираем один профильный ключ:
+    // text -> text (fallback all), image -> image (fallback all).
     $byAccount = [];
     foreach ($result as $item) {
         $acc = $item['account'];
-        $score = (($item['type'] ?? 'all') === $type) ? 2 : 1;
+        $itemType = (string)($item['type'] ?? 'all');
+        $score = 0;
+        if ($itemType === $type) $score = 3;
+        elseif ($itemType === 'all') $score = 2;
+        else $score = 1;
+
         if (!isset($byAccount[$acc])) {
             $item['_score'] = $score;
             $byAccount[$acc] = $item;
             continue;
         }
-        if ($score > ($byAccount[$acc]['_score'] ?? 0)) {
+
+        $currentScore = (int)($byAccount[$acc]['_score'] ?? 0);
+        if ($score > $currentScore) {
             $item['_score'] = $score;
             $byAccount[$acc] = $item;
+            continue;
+        }
+
+        if ($score === $currentScore) {
+            $currentName = mb_strtolower((string)($byAccount[$acc]['name'] ?? ''));
+            $newName = mb_strtolower((string)($item['name'] ?? ''));
+            if ($type === 'text' && str_contains($newName, 'текст') && !str_contains($currentName, 'текст')) {
+                $item['_score'] = $score;
+                $byAccount[$acc] = $item;
+            } elseif ($type === 'image' && (str_contains($newName, 'картин') || str_contains($newName, 'image')) && !(str_contains($currentName, 'картин') || str_contains($currentName, 'image'))) {
+                $item['_score'] = $score;
+                $byAccount[$acc] = $item;
+            }
         }
     }
     $result = array_values($byAccount);
@@ -333,10 +326,10 @@ function odiGetKeysStats(): array {
     $imageKey = $settings['odirouter_image_api_key'] ?? '';
     
     if ($mainKey && !in_array($mainKey, $poolKeyValues)) {
-        $allKeys[] = ['id' => 'settings_main', 'key' => $mainKey, 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'type' => 'all', 'enabled' => true];
+        $allKeys[] = ['id' => 'settings_main', 'key' => $mainKey, 'name' => 'Основной (настройки)', 'account' => '_settings_main', 'type' => 'text', 'enabled' => true];
     }
     if ($imageKey && $imageKey !== $mainKey && !in_array($imageKey, $poolKeyValues)) {
-        $allKeys[] = ['id' => 'settings_image', 'key' => $imageKey, 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'type' => 'all', 'enabled' => true];
+        $allKeys[] = ['id' => 'settings_image', 'key' => $imageKey, 'name' => 'Картинки (настройки)', 'account' => '_settings_image', 'type' => 'image', 'enabled' => true];
     }
     
     // Считаем использование по аккаунтам

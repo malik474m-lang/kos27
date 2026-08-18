@@ -156,7 +156,7 @@ if ($method === 'POST') {
             if ($code >= 200 && $code < 300) {
                 $data = json_decode($response, true);
                 $text = $data['choices'][0]['message']['content'] ?? 'OK';
-                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
+                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'key_name' => ($selected['name'] ?? ''), 'key_type' => ($selected['type'] ?? ''), 'result' => "HTTP {$code}: {$text} (модель: {$model})"]);
             } else {
                 if ($code === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
@@ -184,7 +184,7 @@ if ($method === 'POST') {
             if ($code >= 200 && $code < 300) {
                 $data = json_decode($response, true);
                 $reqId = $data['request_id'] ?? ($data['id'] ?? 'unknown');
-                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
+                echo json_encode(['success' => true, 'account_label' => $accountLabel, 'key_name' => ($selected['name'] ?? ''), 'key_type' => ($selected['type'] ?? ''), 'result' => "HTTP {$code}: задача создана (модель: {$model}, id: {$reqId})"]);
             } else {
                 if ($code === 429) { odiSetAccountCooldown($selected['account'] ?? $accountLabel); }
                 echo json_encode(['error' => "HTTP {$code}", 'response' => $response]);
