@@ -202,7 +202,7 @@ function odiGetAccountUsage(string $account): int {
 /**
  * Получить доступные ключи (с учётом лимита на аккаунт)
  */
-function odiGetAvailableKeys(string $type = 'text'): array {
+function odiGetAvailableKeys(string $type = 'text', ?string $preferredAccount = null): array {
     $keys = odiLoadKeys();
     $usage = odiLoadUsage();
 
@@ -231,6 +231,7 @@ function odiGetAvailableKeys(string $type = 'text'): array {
     foreach ($allKeys as $k) {
         $keyId = $k['id'] ?? md5($k['key']);
         $account = odiNormalizeAccountId($k['account'] ?? '', $keyId);
+        if ($preferredAccount !== null && $preferredAccount !== '' && $account !== $preferredAccount) continue;
         
         $accountUsed = (int)($usage['accounts'][$account] ?? 0);
         $accountRemaining = ODIROUTER_DAILY_LIMIT - $accountUsed;
@@ -303,8 +304,8 @@ function odiMarkKeyExhausted(string $keyId): void {
     odiSaveUsage($usage);
 }
 
-function odiGetActiveKey(string $type = 'text'): ?array {
-    $keys = odiGetAvailableKeys($type);
+function odiGetActiveKey(string $type = 'text', ?string $preferredAccount = null): ?array {
+    $keys = odiGetAvailableKeys($type, $preferredAccount);
     return $keys[0] ?? null;
 }
 

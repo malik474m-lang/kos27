@@ -131,11 +131,11 @@ function isImageProviderAvailable(string $provider, ?array $config = null): bool
 
 // === OdiRouter API ===
 
-function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null): array {
+function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?string $model = null, ?string $preferredAccount = null): array {
     $config = getAIProvidersConfig();
     $model = $model ?? ($config['odirouter_text_model'] ?? 'free-gemini-2.5-flash');
 
-    $keys = odiGetAvailableKeys('text');
+    $keys = odiGetAvailableKeys('text', $preferredAccount);
     if (!$keys) {
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
@@ -253,11 +253,11 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     return ['success' => false, 'error' => 'OdiRouter all keys failed. ' . implode('; ', array_slice($errors, 0, 8))];
 }
 
-function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
+function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $preferredAccount = null): array {
     $config = getAIProvidersConfig();
     $model = $model ?? ($config['odirouter_image_model'] ?? 'free-nano-banana-2');
 
-    $keys = odiGetAvailableKeys('image');
+    $keys = odiGetAvailableKeys('image', $preferredAccount);
     if (!$keys) {
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит. Добавьте ещё ключи.'];
     }
