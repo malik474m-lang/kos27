@@ -42,7 +42,10 @@ function normalizeCtaLabelByCategory(string $category, string $label): string {
     }
 
     if ($category === 'credit_cards') {
-        if (preg_match('/получ(ить|ите)\s+деньг/u', $label) || preg_match('/займ/u', $label)) {
+        if (preg_match('/получ(ить|ите)\s+деньг/u', $label)
+            || preg_match('/деньг/u', $label)
+            || preg_match('/займ/u', $label)
+            || preg_match('/кредит/u', $label)) {
             return 'Оформить карту';
         }
         return $label;
