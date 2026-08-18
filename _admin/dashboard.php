@@ -5525,7 +5525,8 @@ function odiLoadKeys(){
             var accUsed=gKeys[0].account_used||0;var accRem=gKeys[0].account_remaining||0;var accPct=Math.round(accUsed/50*100);
             var accColor=accPct>=100?'text-red-600':(accPct>=80?'text-yellow-600':'text-green-600');
             var firstKey=gKeys.find(function(k){return k.enabled;});
-            h+='<div class="mb-3"><div class="flex items-center gap-2 mb-1 flex-wrap"><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span>';
+            var accDisabled=gKeys[0].account_disabled||false;
+            h+='<div class="mb-3 '+(accDisabled?'opacity-50':'')+'"><div class="flex items-center gap-2 mb-1 flex-wrap"><button onclick="odiToggleAccount(this)" data-account="'+e(acc).replace(/"/g,'&quot;')+'" class="text-xs px-2 py-0.5 rounded '+(accDisabled?'bg-red-100 text-red-600':'bg-green-100 text-green-700')+'">'+(accDisabled?'⛔ Выкл':'✅ Вкл')+'</button><span class="text-xs font-bold text-gray-700">👤 '+e(acc)+'</span><span class="text-xs '+accColor+' font-medium">'+accUsed+'/50 запросов</span><span class="text-xs text-gray-400">('+gKeys.length+' ключей)</span>';
             if(firstKey){h+='<button onclick="odiRunAccountTest(this)" data-account="'+((gKeys[0].account||'')||'Без аккаунта').replace(/"/g,'&quot;')+'" data-type="text" class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100 ml-auto">🧪 текст</button><button onclick="odiRunAccountTest(this)" data-account="'+((gKeys[0].account||'')||'Без аккаунта').replace(/"/g,'&quot;')+'" data-type="image" class="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100">🖼 картинка</button>';}
             h+='</div>';
             gKeys.forEach(function(k){
@@ -5586,6 +5587,13 @@ odiRunTest(account,type,btn||null);
 }
 function odiRunAccountTest(btn){
 odiRunTest(btn.dataset.account||'', btn.dataset.type||'text', btn);
+}
+function odiToggleAccount(btn){
+var account=btn.dataset.account||'';
+if(!account){alert('Аккаунт не указан');return;}
+fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'toggle-account',account:account})}).then(function(r){return r.json();}).then(function(d){
+if(d.success){odiLoadKeys();}else{alert(d.error||'Ошибка');}
+});
 }
 function odiResetCounters(){fetch(A+'/odirouter-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset'})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'Готово');odiLoadKeys();});}
 function odiEditKey(btn){

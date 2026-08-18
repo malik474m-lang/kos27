@@ -12,6 +12,7 @@ define('ODIROUTER_DAILY_LIMIT', 50);
 define('ODIROUTER_KEYS_FILE', __DIR__ . '/../data/odirouter-keys.json');
 define('ODIROUTER_USAGE_FILE', __DIR__ . '/../data/odirouter-usage.json');
 define('ODIROUTER_CURSOR_FILE', __DIR__ . '/../data/odirouter-cursor.json');
+define('ODIROUTER_DISABLED_ACCOUNTS_FILE', __DIR__ . '/../data/odirouter-disabled-accounts.json');
 
 
 function odiNormalizeAccountId(?string $account, string $fallbackId): string {
@@ -49,6 +50,21 @@ function odiSaveUsage(array $usage): void {
     @file_put_contents(ODIROUTER_USAGE_FILE, json_encode($usage));
 }
 
+
+
+function odiGetDisabledAccounts(): array {
+    if (!file_exists(ODIROUTER_DISABLED_ACCOUNTS_FILE)) return [];
+    $data = json_decode(file_get_contents(ODIROUTER_DISABLED_ACCOUNTS_FILE), true);
+    return is_array($data) ? $data : [];
+}
+
+function odiSetDisabledAccounts(array $list): void {
+    @file_put_contents(ODIROUTER_DISABLED_ACCOUNTS_FILE, json_encode(array_values(array_unique($list))));
+}
+
+function odiIsAccountDisabled(string $account): bool {
+    return in_array($account, odiGetDisabledAccounts(), true);
+}
 
 function odiLoadCursor(): array {
     if (!file_exists(ODIROUTER_CURSOR_FILE)) return ['text' => 0, 'image' => 0];
@@ -145,6 +161,7 @@ function odiGetAvailableKeys(string $type = 'text'): array {
         $accountUsed = (int)($usage['accounts'][$account] ?? 0);
         $accountRemaining = ODIROUTER_DAILY_LIMIT - $accountUsed;
         if ($accountRemaining <= 0) continue;
+        if (odiIsAccountDisabled($account)) continue; // аккаунт выключен вручную
         
         $result[] = [
             'key' => $k['key'],
@@ -247,6 +264,7 @@ function odiGetKeysStats(): array {
             'key_used' => $keyUsed,           // использовано этим ключом
             'account_used' => $accountUsed,    // использовано всем аккаунтом
             'account_remaining' => $accountRemaining,
+            'account_disabled' => odiIsAccountDisabled($account),
             'limit' => ODIROUTER_DAILY_LIMIT,
             'masked' => substr($k['key'] ?? '', 0, 8) . '...' . substr($k['key'] ?? '', -4),
         ];

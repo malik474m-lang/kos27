@@ -190,6 +190,20 @@ if ($method === 'POST') {
         exit;
     }
     
+    if ($action === 'toggle-account') {
+        $account = trim((string)($data['account'] ?? ''));
+        if (!$account) { echo json_encode(['error' => 'account required']); exit; }
+        $disabled = odiGetDisabledAccounts();
+        if (in_array($account, $disabled, true)) {
+            $disabled = array_values(array_filter($disabled, fn($a) => $a !== $account));
+        } else {
+            $disabled[] = $account;
+        }
+        odiSetDisabledAccounts($disabled);
+        echo json_encode(['success' => true, 'disabled' => in_array($account, $disabled, true)]);
+        exit;
+    }
+    
     if ($action === 'reset') {
         @unlink(ODIROUTER_USAGE_FILE);
         echo json_encode(['success' => true, 'message' => 'Счётчики сброшены']);

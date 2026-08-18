@@ -169,6 +169,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         if ($accountsTried >= $maxAccountsPerCall) break;
         $accountsTried++;
         $apiKey = $activeKey['key'];
+        odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
         foreach ($fallbackModels as $tryModel) {
             if (isset($blockedModels[$tryModel])) continue;
             $payload = [
@@ -232,7 +233,6 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
                 continue 2; // следующий ключ
             }
 
-            odiTrackUsage($activeKey['id']);
             return [
                 'success' => true,
                 'text' => $text,
@@ -266,6 +266,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
             continue;
         }
         $apiKey = $activeKey['key'];
+        odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
 
         $payload = [
             'prompt' => $prompt,
@@ -411,8 +412,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
                     if ($imageData && strlen($imageData) > 1000) {
                         $path = saveAIImage($imageData);
                         if ($path) {
-                            odiTrackUsage($activeKey['id']);
-                            return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
+                                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
                         }
                     }
                     $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': failed to download image'; break;
@@ -422,8 +422,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null): array {
                     if ($imageData && strlen($imageData) > 1000) {
                         $path = saveAIImage($imageData);
                         if ($path) {
-                            odiTrackUsage($activeKey['id']);
-                            return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
+                                return ['success' => true, 'path' => $path, 'provider' => 'odirouter', 'model' => $model, 'key_name' => $activeKey['name'] ?? ''];
                         }
                     }
                     $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': failed to decode base64 image'; break;
