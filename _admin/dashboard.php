@@ -1558,36 +1558,90 @@ h+='</tbody></table></div></div>';
 document.getElementById('p-conversions').innerHTML=h;});}
 
 /* ============ A/B TESTS ============ */
+function abNormalizeLabel(scope,label){
+label=(label||'').trim();
+if(!label)return 'Оформить';
+if(scope==='debit_cards'){
+  if(/деньг|займ|кредит/i.test(label)) return 'Заказать карту';
+  return label;
+}
+if(scope==='credit_cards'){
+  if(/деньг|займ|кредит/i.test(label)) return 'Оформить карту';
+  return label;
+}
+if(scope==='credits'){
+  if(/деньг|займ/i.test(label)) return 'Оформить кредит';
+  return label;
+}
+return label;
+}
+function abPickActiveTestForCategory(tests,cat){
+var exact=(tests||[]).find(function(t){return t.is_active && t.category_scope===cat;});
+if(exact) return {test:exact, source:'exact'};
+var all=(tests||[]).find(function(t){return t.is_active && t.category_scope==='all';});
+if(all) return {test:all, source:'all'};
+return null;
+}
+function abCategorySummaryHtml(tests){
+var cats=['microloans','credits','credit_cards','debit_cards'];
+var h='<div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">';
+cats.forEach(function(cat){
+  var picked=abPickActiveTestForCategory(tests,cat);
+  var title=(CL[cat]||cat);
+  h+='<div class="bg-white rounded-xl border shadow-sm p-4">';
+  h+='<div class="flex items-start justify-between gap-2 mb-3"><div><h3 class="font-bold text-gray-900">'+e(title)+'</h3>';
+  if(picked){
+    h+='<p class="text-xs text-gray-400">Тест: '+e(picked.test.name)+' '+(picked.source==='all'?'(общий)':'')+'</p>';
+  } else {
+    h+='<p class="text-xs text-gray-400">Нет активного теста</p>';
+  }
+  h+='</div></div>';
+  if(picked && picked.test.variants && picked.test.variants.length){
+    h+='<div class="space-y-2">';
+    picked.test.variants.forEach(function(v){
+      var label=abNormalizeLabel(cat,v.label||'');
+      var catClicks=(v.category_clicks&&v.category_clicks[cat])?Number(v.category_clicks[cat]):0;
+      h+='<div class="rounded-lg border p-2">';
+      h+='<div style="background:'+(v.color||'#059669')+'" class="text-white px-3 py-2 rounded text-xs font-semibold text-center">'+e(label)+' →</div>';
+      h+='<div class="mt-2 flex items-center justify-between text-[11px] text-gray-500"><span>Общие показы: '+Number(v.impressions||0)+'</span><span>Клики в '+e(title)+': '+catClicks+'</span></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  } else {
+    h+='<div class="text-xs text-gray-500">Будут использоваться стандартные кнопки категории.</div>';
+  }
+  h+='</div>';
+});
+h+='</div>';
+return h;
+}
 function lAB(){ap('/ab-tests').then(tests=>{
-var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧪 A/B тесты кнопки «Оформить»</h2><button onclick="abForm()" class="btn-p text-sm">+ Новый тест</button></div>';
-
-h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> Каждому посетителю случайно назначается вариант кнопки (цвет + текст). Вариант сохраняется в куке на 30 дней. Считаются показы и клики. Активным может быть только один тест.</div>';
-
+var h='<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">🧪 A/B тесты кнопок</h2><button onclick="abForm()" class="btn-p text-sm">+ Новый тест</button></div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> Для каждой категории (займы, кредиты, кредитные карты, дебетовые карты) подбирается свой активный тест. Если теста для категории нет — используется общий тест scope=all. Ниже показаны все кнопки и статистика по кликам для всех категорий.</div>';
+h+=abCategorySummaryHtml(tests||[]);
 if(!tests.length){h+='<p class="text-gray-500 text-center py-8">Нет тестов. Создайте первый!</p>';}
-
-tests.forEach(t=>{
+(tests||[]).forEach(t=>{
 var active=t.is_active;
 h+='<div class="bg-white rounded-xl border shadow-sm p-6 mb-6">';
 h+='<div class="flex items-center justify-between mb-4"><div><h3 class="font-bold text-gray-900">'+e(t.name)+'</h3><p class="text-xs text-gray-400">Создан: '+new Date(t.created_at).toLocaleDateString('ru-RU')+' • Scope: '+(t.category_scope==='all'?'Все категории':(CL[t.category_scope]||t.category_scope))+'</p></div>';
 h+='<div class="flex items-center gap-2"><span class="px-2 py-1 rounded text-xs font-semibold '+(active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500')+'">'+(active?'Активен':'Выключен')+'</span>';
-h+='<button onclick="abEdit('+JSON.stringify(t).replace(/"/g,'&quot;').replace(/'/g,'&#39;')+')" class="text-sm text-indigo-600 hover:underline">Ред.</button>';
+h+='<button onclick="abEdit('+JSON.stringify(t).replace(/\"/g,'&quot;').replace(/'/g,'&#39;')+')" class="text-sm text-indigo-600 hover:underline">Ред.</button>';
 h+='<button onclick="abToggle('+t.id+','+(active?0:1)+')" class="text-sm text-blue-600 hover:underline">'+(active?'Выключить':'Включить')+'</button>';
 h+='<button onclick="abReset('+t.id+')" class="text-sm text-yellow-600 hover:underline">Сбросить</button>';
 h+='<button onclick="abDel('+t.id+')" class="text-sm text-red-500 hover:underline">Удалить</button></div></div>';
-
 if(t.variants&&t.variants.length){
-var totalImp=t.variants.reduce(function(s,v){return s+Number(v.impressions);},0);
-var totalClk=t.variants.reduce(function(s,v){return s+Number(v.clicks);},0);
-var maxRate=Math.max.apply(null,t.variants.map(function(v){return v.impressions>0?v.clicks/v.impressions:0;}));
-
+var totalImp=t.variants.reduce(function(s,v){return s+Number(v.impressions||0);},0);
+var totalClk=t.variants.reduce(function(s,v){return s+Number(v.clicks||0);},0);
+var maxRate=Math.max.apply(null,t.variants.map(function(v){return Number(v.impressions||0)>0?Number(v.clicks||0)/Number(v.impressions||0):0;}));
 h+='<div class="grid gap-3">';
 t.variants.forEach(function(v){
-var imp=Number(v.impressions),clk=Number(v.clicks);
-var rate=imp>0?((clk/imp)*100).toFixed(1):0;
+var imp=Number(v.impressions||0),clk=Number(v.clicks||0);
+var rate=imp>0?((clk/imp)*100).toFixed(1):'0.0';
 var isWinner=imp>20&&maxRate>0&&(clk/Math.max(imp,1))>=maxRate*0.99;
-
-h+='<div class="flex items-center gap-4 bg-gray-50 rounded-lg p-4 border'+(isWinner&&imp>20?' border-green-300 bg-green-50':'')+'">';
-h+='<div style="background:'+v.color+'" class="text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap min-w-[130px] text-center">'+e(v.label)+' →</div>';
+var catClicks=v.category_clicks||{};
+var byCat=Object.keys(CL).map(function(k){return '<span class="text-[11px] text-gray-500">'+CL[k]+': '+Number(catClicks[k]||0)+'</span>';}).join(' • ');
+h+='<div class="flex flex-col gap-3 bg-gray-50 rounded-lg p-4 border'+(isWinner&&imp>20?' border-green-300 bg-green-50':'')+'">';
+h+='<div class="flex items-center gap-4"><div style="background:'+(v.color||'#059669')+'" class="text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap min-w-[150px] text-center">'+e(v.label)+' →</div>';
 h+='<div class="flex-1 grid grid-cols-3 gap-4 text-center">';
 h+='<div><p class="text-lg font-bold text-gray-700">'+imp+'</p><p class="text-xs text-gray-400">Показов</p></div>';
 h+='<div><p class="text-lg font-bold text-blue-600">'+clk+'</p><p class="text-xs text-gray-400">Кликов</p></div>';
@@ -1595,17 +1649,17 @@ h+='<div><p class="text-lg font-bold '+(parseFloat(rate)>=5?'text-green-600':'te
 h+='</div>';
 if(isWinner&&imp>20)h+='<span class="text-green-600 text-xs font-semibold whitespace-nowrap">🏆 Лидер</span>';
 h+='</div>';
+h+='<div class="text-xs text-gray-500 border-t pt-2">По категориям кликов: '+byCat+'</div>';
+h+='</div>';
 });
 h+='</div>';
-
 h+='<div class="mt-4 pt-4 border-t flex items-center justify-between text-sm text-gray-500"><span>Всего: '+totalImp+' показов, '+totalClk+' кликов</span>';
-if(totalImp>50){var best=t.variants.reduce(function(a,b){var ra=a.impressions>0?a.clicks/a.impressions:0;var rb=b.impressions>0?b.clicks/b.impressions:0;return ra>=rb?a:b;});
-h+='<span class="text-green-700 font-semibold">🏆 Лучший вариант: <span style="background:'+best.color+';padding:2px 8px;border-radius:6px;color:#fff;font-size:12px">'+e(best.label)+'</span> ('+((best.impressions>0?best.clicks/best.impressions*100:0).toFixed(1))+'%)</span>';}
+if(totalImp>50){var best=t.variants.reduce(function(a,b){var ra=Number(a.impressions||0)>0?Number(a.clicks||0)/Number(a.impressions||0):0;var rb=Number(b.impressions||0)>0?Number(b.clicks||0)/Number(b.impressions||0):0;return ra>=rb?a:b;});
+h+='<span class="text-green-700 font-semibold">🏆 Лучший вариант: <span style="background:'+(best.color||'#059669')+';padding:2px 8px;border-radius:6px;color:#fff;font-size:12px">'+e(best.label)+'</span> ('+((Number(best.impressions||0)>0?Number(best.clicks||0)/Number(best.impressions||0)*100:0).toFixed(1))+'%)</span>';}
 h+='</div>';
 }
 h+='</div>';
 });
-
 document.getElementById('p-ab').innerHTML=h;});}
 
 function abDefaultVariants(scope){
@@ -1621,6 +1675,11 @@ var box=document.getElementById('ab-vars');
 if(!box)return;
 box.innerHTML=vars.map(function(v){return '<div class="flex gap-2 mb-2"><input class="input-f flex-1 ab-label" value="'+e(v.label)+'" placeholder="Текст кнопки"><input type="color" class="ab-color w-12 h-9 rounded cursor-pointer" value="'+v.color+'"><button type="button" onclick="this.closest(\'.flex\').remove()" class="text-red-400 hover:text-red-600">&times;</button></div>';}).join('');
 }
+function abRenderVarsFromList(vars){
+var box=document.getElementById('ab-vars');
+if(!box)return;
+box.innerHTML=(vars||[]).map(function(v){return '<div class="flex gap-2 mb-2"><input class="input-f flex-1 ab-label" value="'+e(v.label||'')+'" placeholder="Текст кнопки"><input type="color" class="ab-color w-12 h-9 rounded cursor-pointer" value="'+(v.color||'#059669')+'"><button type="button" onclick="this.closest(\'.flex\').remove()" class="text-red-400 hover:text-red-600">&times;</button></div>';}).join('');
+}
 function abForm(){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Новый A/B тест</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
 '<form onsubmit="return abSave(event)">'+
@@ -1629,12 +1688,6 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Но
 '<div class="mb-4"><label class="block text-xs font-medium mb-2">Варианты кнопки</label><div id="ab-vars"></div><button type="button" onclick="abAddVar()" class="text-sm text-blue-600 hover:underline mb-4">+ Добавить вариант</button></div>'+
 '<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Создать и активировать</button></div></form>');
 abRenderVars('all');
-}
-
-function abRenderVarsFromList(vars){
-var box=document.getElementById('ab-vars');
-if(!box)return;
-box.innerHTML=(vars||[]).map(function(v){return '<div class="flex gap-2 mb-2"><input class="input-f flex-1 ab-label" value="'+e(v.label||'')+'" placeholder="Текст кнопки"><input type="color" class="ab-color w-12 h-9 rounded cursor-pointer" value="'+(v.color||'#059669')+'"><button type="button" onclick="this.closest(\'.flex\').remove()" class="text-red-400 hover:text-red-600">&times;</button></div>';}).join('');
 }
 function abEdit(t){
 modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Редактировать A/B тест</h3><button onclick="cm()" class="text-gray-400 text-xl">&times;</button></div>'+
@@ -1645,16 +1698,7 @@ modal('<div class="flex justify-between mb-4"><h3 class="text-lg font-bold">Ре
 '<div class="flex justify-end gap-3"><button type="button" onclick="cm()" class="px-4 py-2 text-gray-600">Отмена</button><button type="submit" class="btn-p">Сохранить изменения</button></div></form>');
 setTimeout(function(){abRenderVarsFromList(t.variants||abDefaultVariants(t.category_scope||'all'));},0);
 }
-function abUpdate(ev,id){ev.preventDefault();
-var vars=[];document.querySelectorAll('#ab-vars .flex').forEach(function(row){
-var label=row.querySelector('.ab-label').value.trim();
-var color=row.querySelector('.ab-color').value;
-if(label)vars.push({label:label,color:color});});
-if(vars.length<2){alert('Нужно минимум 2 варианта');return false;}
-ap('/ab-tests/'+id+'/edit',{method:'POST',body:JSON.stringify({name:document.getElementById('ab-name').value,categoryScope:document.getElementById('ab-scope').value,variants:vars})}).then(function(d){if(d.error){alert(d.error);return;}cm();lAB();alert('Тест обновлён');});return false;}
-
-function abAddVar(){
-document.getElementById('ab-vars').insertAdjacentHTML('beforeend','<div class="flex gap-2 mb-2"><input class="input-f flex-1 ab-label" placeholder="Текст кнопки"><input type="color" class="ab-color w-12 h-9 rounded cursor-pointer" value="#059669"><button type="button" onclick="this.closest(\'.flex\').remove()" class="text-red-400 hover:text-red-600">&times;</button></div>');}
+function abAddVar(){document.getElementById('ab-vars').insertAdjacentHTML('beforeend','<div class="flex gap-2 mb-2"><input class="input-f flex-1 ab-label" placeholder="Текст кнопки"><input type="color" class="ab-color w-12 h-9 rounded cursor-pointer" value="#059669"><button type="button" onclick="this.closest(\'.flex\').remove()" class="text-red-400 hover:text-red-600">&times;</button></div>');}
 function abSave(ev){ev.preventDefault();
 var vars=[];document.querySelectorAll('#ab-vars .flex').forEach(function(row){
 var label=row.querySelector('.ab-label').value.trim();
@@ -1662,6 +1706,13 @@ var color=row.querySelector('.ab-color').value;
 if(label)vars.push({label:label,color:color});});
 if(vars.length<2){alert('Нужно минимум 2 варианта');return false;}
 ap('/ab-tests',{method:'POST',body:JSON.stringify({name:document.getElementById('ab-name').value,categoryScope:document.getElementById('ab-scope').value,isActive:true,variants:vars})}).then(function(){cm();lAB();});return false;}
+function abUpdate(ev,id){ev.preventDefault();
+var vars=[];document.querySelectorAll('#ab-vars .flex').forEach(function(row){
+var label=row.querySelector('.ab-label').value.trim();
+var color=row.querySelector('.ab-color').value;
+if(label)vars.push({label:label,color:color});});
+if(vars.length<2){alert('Нужно минимум 2 варианта');return false;}
+ap('/ab-tests/'+id+'/edit',{method:'POST',body:JSON.stringify({name:document.getElementById('ab-name').value,categoryScope:document.getElementById('ab-scope').value,variants:vars})}).then(function(d){if(d.error){alert(d.error);return;}cm();lAB();alert('Тест обновлён');});return false;}
 function abToggle(id,v){ap('/ab-tests/'+id,{method:'PUT',body:JSON.stringify({isActive:!!v})}).then(function(){lAB();});}
 function abReset(id){if(confirm('Сбросить счётчики?'))ap('/ab-tests/'+id+'/reset',{method:'POST'}).then(function(){lAB();});}
 function abDel(id){if(confirm('Удалить тест?'))ap('/ab-tests/'+id,{method:'DELETE'}).then(function(){lAB();});}
