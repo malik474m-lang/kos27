@@ -1,4 +1,3 @@
-<?php ?>
 <script>
 function lLS(){
 var el=document.getElementById('p-leadssu');if(!el)return;
@@ -25,9 +24,9 @@ h+='</ul></div>';
 h+='<div class="flex flex-wrap gap-4 items-end">';
 h+='<div><label class="block text-xs font-medium mb-1">Площадка</label><select id="ls-platform" class="sel-f"><option value="0">Загрузка...</option></select></div>';
 h+='<div><label class="block text-xs font-medium mb-1">Категория для импорта</label><select id="ls-category" class="sel-f"><option value="">Автоопределение</option><option value="microloans">💵 Займы</option><option value="credits">🏦 Кредиты</option><option value="credit_cards">💳 Кредитные карты</option><option value="debit_cards">🪪 Дебетовые карты</option></select></div>';
-h+='<label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" id="ls-update-existing" class="w-4 h-4"><span>Обновлять дубли при импорте</span></label>' +
-     '<button onclick="lsLoadOffers()" class="btn-p">📥 Загрузить офферы</button>' +
-     '<button onclick="lsRefreshExistingLogos()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🖼 Скачать логотипы офферов</button>';
+h+='<label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" id="ls-update-existing" class="w-4 h-4"><span>Обновлять дубли при импорте</span></label>';
+h+='<button onclick="lsLoadOffers()" class="btn-p">📥 Загрузить офферы</button>';
+h+='<button onclick="lsRefreshExistingLogos()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">🖼 Скачать логотипы офферов</button>';
 h+='</div>';
 h+='<div id="ls-offers-list"></div>';
 h+='</div>';
@@ -50,7 +49,7 @@ sel.innerHTML+='<option value="'+p.id+'"'+(isKosmo?' selected':'')+'>'+e(p.name)
 function lsCleanOfferName(name){name=(name||'').trim();if(!name)return 'Без названия';name=name.replace(/\s*\[[^\]]*\]/g,'');name=name.replace(/\s*[-–—|:,;]+\s*$/g,'');name=name.replace(/\s{2,}/g,' ').trim();return name||'Без названия';}
 
 function lsGuessCategory(o){
-var txt=((lsCleanOfferName(o.name)||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
+var txt=((o.name||'')+' '+(o.category||'')+' '+(o.vertical||'')).toLowerCase();
 if(/кредитн(ая|ые)\s+карт/.test(txt))return 'credit_cards';
 if(/дебетов(ая|ые)\s+карт/.test(txt))return 'debit_cards';
 if(/\b(кредит|кредиты|потребительский)\b/.test(txt))return 'credits';
@@ -123,13 +122,9 @@ alert(msg);
 lO();
 }).catch(function(err){alert('Ошибка: '+(err.message||err));});
 }
-</script>
-
 
 function lsRefreshExistingLogos(){
-if(!confirm('Скачать локально логотипы у уже импортированных офферов?
-
-Будут обработаны офферы, у которых logo_url ещё внешний (http/https).'))return;
+if(!confirm('Скачать локально логотипы у уже импортированных офферов?\n\nБудут обработаны офферы, у которых logo_url ещё внешний (http/https).'))return;
 ap('/leads-su?action=refresh-logos',{method:'POST',body:JSON.stringify({})}).then(function(r){
 var msg='Готово!\n\nОбновлено логотипов: '+(r.updated||0)+'\nПропущено: '+(r.skipped||0);
 if(r.errors&&r.errors.length)msg+='\n\nОшибки:\n'+r.errors.join('\n');
@@ -137,3 +132,4 @@ alert(msg);
 lO();
 }).catch(function(err){alert('Ошибка: '+(err.message||err));});
 }
+</script>
