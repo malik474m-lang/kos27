@@ -290,7 +290,7 @@ PROMPT;
 
     $sysPrompt = "Ты SEO-копирайтер финансового сайта Космозайм. Пишешь экспертные статьи на русском языке. Возвращаешь только HTML-текст без markdown. Если нужен год, используй только актуальный год из промпта пользователя.";
     
-    $result = aiGenerateText($prompt, $sysPrompt);
+    $result = aiGenerateLongFormText($prompt, $sysPrompt);
     
     if (empty($result['success']) || empty($result['text'])) {
         echo json_encode(['error' => 'AI не смог сгенерировать статью. Попробуйте позже.', 'ai_error' => $result['error'] ?? '']);

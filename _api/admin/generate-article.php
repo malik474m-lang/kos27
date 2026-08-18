@@ -355,7 +355,7 @@ if ($isBank) {
 }
 
 // Генерация текста через unified AI providers
-$aiResult = aiGenerateText($userPrompt, $systemPrompt);
+$aiResult = aiGenerateLongFormText($userPrompt, $systemPrompt);
 $aiProvider = 'fallback';
 if ($aiResult['success']) {
     $content = $aiResult['text'];
@@ -492,7 +492,7 @@ function generateNewTopics(string $category, array $existingTitles): array {
     $systemPrompt = "Ты генератор тем для финансового блога. Предлагай уникальные, интересные темы для статей.";
     $userPrompt = "Придумай 10 новых уникальных тем для статей про $catDesc.\n\nЭти темы уже использованы, НЕ повторяй их:\n$existingList\n\nВыведи только список тем, по одной на строку, без нумерации, без пояснений.";
 
-    $result = aiGenerateText($userPrompt, $systemPrompt);
+    $result = aiGenerateLongFormText($userPrompt, $systemPrompt);
     if (!$result['success'] || empty($result['text'])) {
         $fallback = array_values(array_filter(fallbackTopicsByCategory($category), fn($t) => !isTopicDuplicate($t, $existingTitles)));
         return array_slice($fallback, 0, 10);

@@ -145,8 +145,8 @@ if ($method === 'POST') {
                 ],
                 CURLOPT_POSTFIELDS => json_encode([
                     'model' => $model,
-                    'messages' => [['role' => 'user', 'content' => 'Напиши 2 коротких предложения о том, как выбрать займ без ошибок.']],
-                    'max_tokens' => 120,
+                    'messages' => [['role' => 'user', 'content' => 'Напиши 1 короткий абзац из 2-3 предложений о том, как выбрать займ без ошибок.']],
+                    'max_tokens' => 180,
                 ]),
             ]);
             $response = curl_exec($ch);

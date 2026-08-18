@@ -481,6 +481,44 @@ function sanitizeAiGeneratedText(string $text): string {
     return trim($text);
 }
 
+
+function aiGenerateLongFormText(string $prompt, string $systemPrompt = '', ?string $forceProvider = null): array {
+    $config = getAIProvidersConfig();
+
+    if ($forceProvider) {
+        $result = aiGenerateTextWithProvider($prompt, $systemPrompt, $forceProvider, $config);
+        if (!empty($result['success']) && isset($result['text'])) {
+            $result['text'] = sanitizeAiGeneratedText((string)$result['text']);
+        }
+        return $result;
+    }
+
+    $priority = $config['text_provider_priority'] ?? ['yandex_gpt'];
+    $preferred = [];
+    $fallback = [];
+    foreach ($priority as $provider) {
+        if ($provider === 'odirouter') $fallback[] = $provider;
+        else $preferred[] = $provider;
+    }
+    $ordered = array_merge($preferred, $fallback);
+
+    $tried = [];
+    foreach ($ordered as $provider) {
+        if (!isTextProviderAvailable($provider, $config)) continue;
+        $result = aiGenerateTextWithProvider($prompt, $systemPrompt, $provider, $config);
+        if (!empty($result['success'])) {
+            if (isset($result['text'])) {
+                $result['text'] = sanitizeAiGeneratedText((string)$result['text']);
+            }
+            return $result;
+        }
+        $tried[] = $provider . ': ' . ($result['error'] ?? 'unknown');
+        error_log("AI Long Text Provider '{$provider}' failed: " . ($result['error'] ?? 'unknown'));
+    }
+
+    return ['success' => false, 'error' => $tried ? ('All providers failed: ' . implode('; ', $tried)) : 'No AI text providers enabled/configured'];
+}
+
 function aiGenerateText(string $prompt, string $systemPrompt = '', ?string $forceProvider = null): array {
     $config = getAIProvidersConfig();
     
