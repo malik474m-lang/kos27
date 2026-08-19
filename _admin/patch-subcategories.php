@@ -186,8 +186,14 @@ h+='<span class="text-xs text-orange-500 ml-2" title="Исходный запр�
 h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
 }
 if(r.is_rephrased){h+='<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1" title="Исходный: '+e(r.original_query||'')+'">🔄 перефраз.</span>';}
+if(r.already_exists && r.existing_kind==='article'){
+h+='<span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">📝 Уже есть статья</span>';
+}else{
 h+='<span class="text-xs bg-'+typeColor+'-100 text-'+typeColor+'-700 px-1.5 py-0.5 rounded">'+r.action+'</span>';
+}
 h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';
+if(r.already_exists && r.existing_title){h+='<span class="text-xs text-emerald-700">'+e(r.existing_title)+'</span>';}
+
 h+='</div>';
 h+='<div class="flex gap-4 mt-1 text-xs text-gray-500">';
 h+='<span>👁 '+r.shows+' показов</span>';
@@ -197,11 +203,15 @@ h+='<span>⭐ score '+r.score+'</span>';
 h+='</div>';
 h+='</div>';
 h+='<div class="flex gap-1">';
+if(r.already_exists && r.existing_kind==='article' && r.existing_slug){
+h+='<a href="/articles/'+e(r.existing_slug)+'" target="_blank" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded">Открыть</a>';
+}else{
 if(r.content_type==='subcategory'){
 h+='<button onclick="crCreateSubcat(\''+e(r.query).replace(/'/g,"\\'")+'\',\''+r.category+'\')" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded">+ Допзапрос</button>';
 }
 if(r.content_type==='article'){
 h+='<button onclick="crArticleIdea(\''+e(r.query).replace(/'/g,"\\'")+'\','+i+')" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">💡 Идея статьи</button>';
+}
 }
 h+='</div>';
 h+='</div>';
@@ -228,6 +238,8 @@ h+='<span class="font-medium text-gray-900">'+e(r.query)+'</span>';
 if(r.is_rephrased){h+='<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1" title="Исходный: '+e(r.original_query||'')+'">🔄 перефраз.</span>';}
 h+='<span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">из '+r.merged_count+' запросов</span>';
 h+='<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">'+catLabel+'</span>';
+if(r.already_exists && r.existing_title){h+='<span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">📝 Уже есть</span><span class="text-xs text-emerald-700">'+e(r.existing_title)+'</span>';}
+
 h+='</div>';
 h+='<div class="flex gap-3 mt-1 text-xs text-gray-500">';
 h+='<span>👁 '+r.shows+' показов</span>';
@@ -235,7 +247,7 @@ h+='<span>👆 '+r.clicks+' кликов</span>';
 h+='</div>';
 h+='<div class="text-xs text-gray-400 mt-1">Бренды: '+r.brands_found.slice(0,3).join(', ')+(r.brands_found.length>3?' и ещё '+(r.brands_found.length-3):'')+'</div>';
 h+='</div>';
-h+='<button onclick="crCreateSubcat(\''+e(r.query).replace(/'/g,"\\'")+'\'.\''+r.category+'\')" class="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded">+ Создать</button>';
+if(r.already_exists && r.existing_kind==='article' && r.existing_slug){h+='<a href="/articles/'+e(r.existing_slug)+'" target="_blank" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded">Открыть</a>'; } else { h+='<button onclick="crCreateSubcat(\''+e(r.query).replace(/'/g,"\\'")+'\'.\''+r.category+'\')" class="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded">+ Создать</button>'; }
 h+='</div>';
 });
 h+='</div></div>';
@@ -303,7 +315,9 @@ keywords:keywords,
 theme_category:themeCategory
 })}).then(function(d){
 if(d.error){
-box.innerHTML='<div class="bg-red-50 border border-red-200 rounded-lg p-4"><p class="text-red-700 font-medium">Ошибка</p><p class="text-red-600 text-sm mt-1">'+e(d.error)+'</p><button onclick="loadContentRecs()" class="mt-3 text-sm text-blue-600 hover:underline">← Назад</button></div>';
+var extra='';
+if(d.existing_slug){extra='<div class="mt-3"><a href="/articles/'+e(d.existing_slug)+'" target="_blank" class="inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm">Открыть существующую статью</a></div>';}
+box.innerHTML='<div class="bg-red-50 border border-red-200 rounded-lg p-4"><p class="text-red-700 font-medium">Ошибка</p><p class="text-red-600 text-sm mt-1">'+e(d.error)+'</p>'+extra+'<button onclick="loadContentRecs()" class="mt-3 text-sm text-blue-600 hover:underline">← Назад</button></div>';
 return;
 }
 box.innerHTML='<div class="bg-green-50 border border-green-200 rounded-lg p-4">'+

@@ -249,6 +249,19 @@ case 'write-article':
         echo json_encode(['error' => 'Укажите заголовок статьи']);
         exit;
     }
+
+    $existingContent = getExistingContent();
+    $existingArticle = findExistingArticleMatch($title, $existingContent);
+    if ($existingArticle) {
+        echo json_encode([
+            'error' => 'Статья с похожим заголовком уже существует.',
+            'existing_id' => $existingArticle['id'],
+            'existing_slug' => $existingArticle['slug'],
+            'existing_title' => $existingArticle['title'],
+            'existing_published' => !empty($existingArticle['is_published']),
+        ]);
+        exit;
+    }
     
     // Формируем промпт для AI
     $outlineText = '';
@@ -419,6 +432,7 @@ function getExistingContent(): array {
     $content = [
         'subcategories' => [],
         'articles' => [],
+        'article_items' => [],
         'tags' => [],
         'offers' => [],
     ];
@@ -431,11 +445,18 @@ function getExistingContent(): array {
         }
     } catch (Exception $e) {}
     
-    // Статьи
+    // Статьи — берём ВСЕ, включая черновики
     try {
-        $rows = $db->query("SELECT title FROM articles WHERE is_published = 1")->fetchAll();
+        $rows = $db->query("SELECT id, title, slug, is_published FROM articles ORDER BY id DESC")->fetchAll();
         foreach ($rows as $r) {
             $content['articles'][] = mb_strtolower($r['title']);
+            $content['article_items'][] = [
+                'id' => (int)$r['id'],
+                'title' => (string)$r['title'],
+                'title_lc' => mb_strtolower((string)$r['title']),
+                'slug' => (string)($r['slug'] ?? ''),
+                'is_published' => !empty($r['is_published']),
+            ];
         }
     } catch (Exception $e) {}
     
@@ -458,13 +479,31 @@ function getExistingContent(): array {
     return $content;
 }
 
+function normalizeRecText(string $s): string {
+    $s = mb_strtolower(trim($s));
+    $s = preg_replace('/[^\p{L}\p{N}\s]/u', '', $s);
+    return preg_replace('/\s+/u', ' ', trim($s));
+}
+
+function findExistingArticleMatch(string $query, array $existingContent): ?array {
+    $queryNorm = normalizeRecText($query);
+    if ($queryNorm === '') return null;
+    foreach (($existingContent['article_items'] ?? []) as $article) {
+        $titleNorm = $article['title_lc'] ?? normalizeRecText((string)($article['title'] ?? ''));
+        if ($titleNorm === '' ) continue;
+        if ($titleNorm === $queryNorm) return $article;
+        if (mb_stripos($titleNorm, $queryNorm) !== false || mb_stripos($queryNorm, $titleNorm) !== false) return $article;
+        similar_text($queryNorm, $titleNorm, $percent);
+        if ($percent > 72) return $article;
+    }
+    return null;
+}
+
 function analyzeQueries(array $queries, array $existingContent): array {
     $recommendations = [];
     
-    // Все существующие заголовки в одном массиве для быстрого поиска
-    $allTitles = array_merge(
+    $otherTitles = array_merge(
         $existingContent['subcategories'],
-        $existingContent['articles'],
         $existingContent['tags'],
         $existingContent['offers']
     );
@@ -475,56 +514,64 @@ function analyzeQueries(array $queries, array $existingContent): array {
         $clicks = $q['clicks'];
         $position = $q['position'];
         
-        // Пропускаем слишком короткие или брендовые запросы
         if (mb_strlen($query) < 5) continue;
-        // Обработка брендовых и конкурентных запросов
         if (isCompetitorOrBrandQuery($query)) {
-            // Пробуем перефразировать
             $rephrased = rephraseCompetitorQuery($query);
             if ($rephrased) {
-                // Запрос можно перефразировать — добавляем с пометкой
                 $query = $rephrased['rephrased'];
                 $q['original_query'] = $rephrased['original'];
                 $q['competitor_removed'] = $rephrased['competitor'];
                 $q['is_rephrased'] = true;
             } else {
-                // Чисто навигационный — пропускаем
                 continue;
             }
         }
-        
-        // Проверяем, есть ли уже контент под этот запрос
-        $hasContent = false;
-        foreach ($allTitles as $title) {
+
+        $contentType = detectContentType($query);
+        $category = detectCategory($query);
+        $score = $shows * 2 + $clicks * 10;
+        if ($position > 10 && $position < 50) $score *= 1.5;
+        if ($position > 50) $score *= 0.7;
+
+        $existingArticle = ($contentType === 'article') ? findExistingArticleMatch($query, $existingContent) : null;
+        if ($existingArticle) {
+            $recommendations[] = [
+                'query' => $query,
+                'shows' => $shows,
+                'clicks' => $clicks,
+                'position' => $position,
+                'ctr' => $shows > 0 ? round($clicks / $shows * 100, 1) : 0,
+                'sources' => array_unique($q['sources']),
+                'score' => round($score),
+                'content_type' => $contentType,
+                'category' => $category,
+                'action' => '📝 Уже есть статья',
+                'already_exists' => true,
+                'existing_kind' => 'article',
+                'existing_title' => $existingArticle['title'],
+                'existing_slug' => $existingArticle['slug'],
+                'existing_id' => $existingArticle['id'],
+                'existing_published' => !empty($existingArticle['is_published']),
+                'is_rephrased' => $q['is_rephrased'] ?? false,
+                'original_query' => $q['original_query'] ?? null,
+                'competitor_removed' => $q['competitor_removed'] ?? null,
+            ];
+            continue;
+        }
+
+        $hasOtherContent = false;
+        foreach ($otherTitles as $title) {
             if (mb_stripos($title, $query) !== false || mb_stripos($query, $title) !== false) {
-                $hasContent = true;
+                $hasOtherContent = true;
                 break;
             }
-            // Проверка на похожесть (>70% совпадения слов)
             similar_text(mb_strtolower($query), $title, $percent);
             if ($percent > 70) {
-                $hasContent = true;
+                $hasOtherContent = true;
                 break;
             }
         }
-        
-        if ($hasContent) continue;
-        
-        // Определяем тип рекомендуемого контента
-        $contentType = detectContentType($query);
-        
-        // Определяем категорию
-        $category = detectCategory($query);
-        
-        // Рассчитываем opportunity score
-        // Высокий показ + низкая позиция = большая возможность
-        $score = $shows * 2 + $clicks * 10;
-        if ($position > 10 && $position < 50) {
-            $score *= 1.5; // Бонус за "почти в топе" — легко продвинуть
-        }
-        if ($position > 50) {
-            $score *= 0.7; // Штраф за слишком низкую позицию
-        }
+        if ($hasOtherContent) continue;
         
         $recommendations[] = [
             'query' => $query,
@@ -537,6 +584,7 @@ function analyzeQueries(array $queries, array $existingContent): array {
             'content_type' => $contentType,
             'category' => $category,
             'action' => getActionLabel($contentType),
+            'already_exists' => false,
             'is_rephrased' => $q['is_rephrased'] ?? false,
             'original_query' => $q['original_query'] ?? null,
             'competitor_removed' => $q['competitor_removed'] ?? null,
