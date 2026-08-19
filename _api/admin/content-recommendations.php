@@ -496,20 +496,54 @@ function getExistingContent(): array {
 
 function normalizeRecText(string $s): string {
     $s = mb_strtolower(trim($s));
-    $s = preg_replace('/[^\p{L}\p{N}\s]/u', '', $s);
+    $s = str_replace(['ё'], ['е'], $s);
+    $s = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $s);
+    $s = preg_replace('/\b20\d{2}\b/u', ' ', $s);
+    return preg_replace('/\s+/u', ' ', trim($s));
+}
+
+function simplifyRecTitle(string $s): string {
+    $s = normalizeRecText($s);
+    $patterns = [
+        '/\bв году\b/u',
+        '/\bполное руководство.*$/u',
+        '/\bруководство.*$/u',
+        '/\bдля заемщик.*$/u',
+        '/\bдля заёмщик.*$/u',
+        '/\bусловия и особенност.*$/u',
+        '/\bчто это такое.*$/u',
+    ];
+    foreach ($patterns as $pattern) {
+        $s = preg_replace($pattern, ' ', $s) ?? $s;
+    }
     return preg_replace('/\s+/u', ' ', trim($s));
 }
 
 function findExistingArticleMatch(string $query, array $existingContent): ?array {
     $queryNorm = normalizeRecText($query);
+    $querySimple = simplifyRecTitle($query);
     if ($queryNorm === '') return null;
     foreach (($existingContent['article_items'] ?? []) as $article) {
-        $titleNorm = $article['title_lc'] ?? normalizeRecText((string)($article['title'] ?? ''));
-        if ($titleNorm === '' ) continue;
-        if ($titleNorm === $queryNorm) return $article;
-        if (mb_stripos($titleNorm, $queryNorm) !== false || mb_stripos($queryNorm, $titleNorm) !== false) return $article;
-        similar_text($queryNorm, $titleNorm, $percent);
-        if ($percent > 72) return $article;
+        $rawTitle = (string)($article['title'] ?? '');
+        $titleNorm = normalizeRecText($rawTitle);
+        $titleSimple = simplifyRecTitle($rawTitle);
+        if ($titleNorm === '') continue;
+
+        if ($titleNorm === $queryNorm || $titleSimple === $queryNorm || $titleNorm === $querySimple || $titleSimple === $querySimple) return $article;
+        if (mb_stripos($titleNorm, $queryNorm) !== false || mb_stripos($titleNorm, $querySimple) !== false || mb_stripos($titleSimple, $queryNorm) !== false || mb_stripos($titleSimple, $querySimple) !== false) return $article;
+        if (mb_stripos($queryNorm, $titleSimple) !== false || mb_stripos($querySimple, $titleSimple) !== false) return $article;
+
+        similar_text($queryNorm, $titleNorm, $percent1);
+        similar_text($querySimple, $titleSimple, $percent2);
+        if ($percent1 > 72 || $percent2 > 68) return $article;
+
+        $qWords = array_values(array_filter(explode(' ', $querySimple), fn($w) => mb_strlen($w) > 2));
+        $tWords = array_values(array_filter(explode(' ', $titleSimple), fn($w) => mb_strlen($w) > 2));
+        if ($qWords && $tWords) {
+            $common = count(array_intersect($qWords, $tWords));
+            $ratio = $common / max(1, min(count($qWords), count($tWords)));
+            if ($ratio >= 0.75) return $article;
+        }
     }
     return null;
 }
