@@ -24,6 +24,9 @@ $data = json_decode(file_get_contents('php://input'), true);
 $db = getDB();
 $status = $data['contentStatus'] ?? cq_recommend_status((int)($data['qualityScore'] ?? 0));
 $qualityScore = (int)($data['qualityScore'] ?? 0);
+$cleanExcerpt = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['excerpt'] ?? ''))));
+$cleanMetaTitle = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['metaTitle'] ?? ''))));
+$cleanMetaDescription = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['metaDescription'] ?? ''))));
 
 // E-E-A-T поля
 $authorName = trim($data['authorName'] ?? '') ?: 'Редакция Космозайм';
@@ -35,8 +38,8 @@ $sources = !empty($data['sources']) ? json_encode($data['sources']) : null;
 
 $db->prepare("UPDATE articles SET title=?, excerpt=?, content=?, meta_title=?, meta_description=?, cover_image=?, is_published=?, content_status=?, quality_score=?, author_name=?, author_title=?, reviewer_name=?, reviewer_title=?, fact_checked_at=?, sources=? WHERE id=?")
 ->execute([
-    $data['title'] ?? '', $data['excerpt'] ?? '', $data['content'] ?? '',
-    $data['metaTitle'] ?? '', $data['metaDescription'] ?? '',
+    $data['title'] ?? '', $cleanExcerpt, $data['content'] ?? '',
+    $cleanMetaTitle, $cleanMetaDescription,
     $data['coverImage'] ?? '', $data['isPublished'] ?? false, $status, $qualityScore,
     $authorName, $authorTitle, $reviewerName, $reviewerTitle, $factCheckedAt, $sources,
     $itemId,

@@ -107,6 +107,7 @@ if (preg_match('#^/offers/(\d+)$#', $adminUri, $m)) {
 // Статьи
 if ($adminUri === '/articles' && $method === 'GET') { require __DIR__ . '/admin/articles-list.php'; exit; }
 if ($adminUri === '/articles' && $method === 'POST') { require __DIR__ . '/admin/articles-create.php'; exit; }
+if ($adminUri === '/articles/sanitize-meta' && $method === 'POST') { require __DIR__ . '/admin/articles-sanitize-meta.php'; exit; }
 if (preg_match('#^/articles/(\d+)$#', $adminUri, $m)) {
     $itemId = (int)$m[1];
     if ($method === 'PUT') { require __DIR__ . '/admin/articles-update.php'; exit; }
