@@ -101,30 +101,45 @@ case 'analyze-smart':
     usort($cleanRecommendations, fn($a, $b) => $b['score'] <=> $a['score']);
     
     // Для групп тоже проверяем, нет ли уже контента
-    $allTitles = array_merge(
+    $otherTitles = array_merge(
         $existingContent['subcategories'],
-        $existingContent['articles'],
         $existingContent['tags']
     );
     
     $brandRecommendations = [];
     foreach ($groupedBrand as $group) {
-        $hasContent = false;
-        foreach ($allTitles as $title) {
+        $group['content_type'] = detectContentType($group['query']);
+        $group['category'] = detectCategory($group['query']);
+        $group['action'] = getActionLabel($group['content_type']);
+        $group['score'] = $group['shows'] * 2 + $group['clicks'] * 10;
+        $group['is_from_brand'] = true;
+
+        $existingArticle = ($group['content_type'] === 'article') ? findExistingArticleMatch($group['query'], $existingContent) : null;
+        if ($existingArticle) {
+            $group['already_exists'] = true;
+            $group['existing_kind'] = 'article';
+            $group['existing_title'] = $existingArticle['title'];
+            $group['existing_slug'] = $existingArticle['slug'];
+            $group['existing_id'] = $existingArticle['id'];
+            $group['existing_published'] = !empty($existingArticle['is_published']);
+            $brandRecommendations[] = $group;
+            continue;
+        }
+
+        $hasOtherContent = false;
+        foreach ($otherTitles as $title) {
             similar_text(mb_strtolower($group['query']), $title, $percent);
             if ($percent > 70 || mb_stripos($title, $group['query']) !== false) {
-                $hasContent = true;
+                $hasOtherContent = true;
                 break;
             }
         }
-        if (!$hasContent) {
-            $group['content_type'] = detectContentType($group['query']);
-            $group['category'] = detectCategory($group['query']);
-            $group['action'] = getActionLabel($group['content_type']);
-            $group['score'] = $group['shows'] * 2 + $group['clicks'] * 10;
-            $group['is_from_brand'] = true;
-            $brandRecommendations[] = $group;
+        if ($hasOtherContent) {
+            continue;
         }
+
+        $group['already_exists'] = false;
+        $brandRecommendations[] = $group;
     }
     
     echo json_encode([
