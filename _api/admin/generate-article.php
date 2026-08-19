@@ -172,6 +172,14 @@ function fallbackTopicsByCategory(string $category): array {
 
 
 
+function aiPlainTextSnippet(string $html, int $maxLen = 200): string {
+    $text = trim((string)preg_replace('/\s+/u', ' ', strip_tags($html)));
+    if ($text === '') return '';
+    if (mb_strlen($text) <= $maxLen) return $text;
+    return rtrim(mb_substr($text, 0, $maxLen), " 	
+ ,.;:-") . '...';
+}
+
 $topicsList = [];
 foreach ($baseTopics as $group) {
     $available = [];
@@ -408,18 +416,17 @@ $imageError = $imageResult['error'] ?? null;
 $paragraphs = array_filter(explode("\n\n", $content));
 $paragraphsList = array_values($paragraphs);
 
-// Excerpt: первый содержательный абзац (не заголовок)
+// Excerpt: только plain text без HTML
 $excerpt = '';
 foreach ($paragraphsList as $p) {
-    $p = trim($p);
-    if (mb_strlen($p) > 50 && !preg_match('/^[А-ЯA-Z\s\d:—–-]+$/u', $p)) {
-        $excerpt = mb_substr($p, 0, 250);
-        if (mb_strlen($p) > 250) $excerpt .= '...';
+    $plainParagraph = trim((string)preg_replace('/\s+/u', ' ', strip_tags($p)));
+    if (mb_strlen($plainParagraph) > 50 && !preg_match('/^[А-ЯA-Z\s\d:—–-]+$/u', $plainParagraph)) {
+        $excerpt = aiPlainTextSnippet($plainParagraph, 250);
         break;
     }
 }
 if (!$excerpt) {
-    $excerpt = mb_substr(strip_tags($content), 0, 250) . '...';
+    $excerpt = aiPlainTextSnippet($content, 250);
 }
 
 $slug = slugify($selectedTopic) . '-' . time();
@@ -433,10 +440,10 @@ if ($isBank) {
     $metaDescription = 'Обзор ' . $selectedTopic . ': условия займов, лицензия ЦБ, контакты, преимущества и недостатки.';
 } else {
     $metaTitle = $selectedTopic . ' | ' . SITE_NAME;
-    // Meta description из содержания
-    $metaDescription = mb_substr(preg_replace('/\s+/', ' ', strip_tags($excerpt)), 0, 155);
+    // Meta description только из plain text
+    $metaDescription = aiPlainTextSnippet($excerpt, 155);
     if (mb_strlen($metaDescription) < 50) {
-        $metaDescription = $selectedTopic . '. ' . mb_substr(preg_replace('/\s+/', ' ', strip_tags($content)), 0, 140);
+        $metaDescription = aiPlainTextSnippet($selectedTopic . '. ' . aiPlainTextSnippet($content, 220), 155);
     }
 }
 

@@ -23,6 +23,9 @@ try { $db = getDB(); $db->query("SELECT author_name FROM articles LIMIT 1"); } c
 $data = json_decode(file_get_contents('php://input'), true);
 $db = getDB();
 $slug = slugify($data['title'] ?? 'article') . '-' . time();
+$cleanExcerpt = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['excerpt'] ?? ''))));
+$cleanMetaTitle = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['metaTitle'] ?? ''))));
+$cleanMetaDescription = trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)($data['metaDescription'] ?? ''))));
 $status = $data['contentStatus'] ?? cq_recommend_status((int)($data['qualityScore'] ?? 0));
 $qualityScore = (int)($data['qualityScore'] ?? 0);
 
@@ -36,9 +39,9 @@ $sources = !empty($data['sources']) ? json_encode($data['sources']) : null;
 
 $db->prepare("INSERT INTO articles (title, slug, excerpt, content, meta_title, meta_description, cover_image, is_published, content_status, quality_score, author_name, author_title, reviewer_name, reviewer_title, fact_checked_at, sources) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 ->execute([
-    $data['title'] ?? '', $slug, $data['excerpt'] ?? '',
-    $data['content'] ?? '', $data['metaTitle'] ?? '',
-    $data['metaDescription'] ?? '', $data['coverImage'] ?? '',
+    $data['title'] ?? '', $slug, $cleanExcerpt,
+    $data['content'] ?? '', $cleanMetaTitle,
+    $cleanMetaDescription, $data['coverImage'] ?? '',
     $data['isPublished'] ?? false, $status, $qualityScore,
     $authorName, $authorTitle, $reviewerName, $reviewerTitle, $factCheckedAt, $sources,
 ]);
