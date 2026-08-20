@@ -120,7 +120,7 @@ case 'analyze-smart':
             $group['existing_kind'] = 'article';
             $group['existing_title'] = $existingArticle['title'];
             $group['existing_slug'] = $existingArticle['slug'];
-            $group['existing_id'] = $existingArticle['id'];
+            $group['existing_id'] = $existingArticle['id'] ?? null;
             $group['existing_published'] = !empty($existingArticle['is_published']);
             $brandRecommendations[] = $group;
             continue;
@@ -270,7 +270,7 @@ case 'write-article':
     if ($existingArticle) {
         echo json_encode([
             'error' => 'Статья с похожим заголовком уже существует.',
-            'existing_id' => $existingArticle['id'],
+            'existing_id' => $existingArticle['id'] ?? null,
             'existing_slug' => $existingArticle['slug'],
             'existing_title' => $existingArticle['title'],
             'existing_published' => !empty($existingArticle['is_published']),
@@ -599,7 +599,7 @@ function analyzeQueries(array $queries, array $existingContent): array {
                 'existing_kind' => 'article',
                 'existing_title' => $existingArticle['title'],
                 'existing_slug' => $existingArticle['slug'],
-                'existing_id' => $existingArticle['id'],
+                'existing_id' => $existingArticle['id'] ?? null,
                 'existing_published' => !empty($existingArticle['is_published']),
                 'is_rephrased' => $q['is_rephrased'] ?? false,
                 'original_query' => $q['original_query'] ?? null,
