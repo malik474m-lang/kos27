@@ -422,6 +422,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
                 msg.style.color='#166534';
                 msg.textContent='✅ '+(d.message||'Подписка оформлена! Проверьте почту.');
                 try{localStorage.setItem('subscribed','1');}catch(e){}
+                if(typeof window.kzTrackGoal==='function')window.kzTrackGoal('newsletter_subscribed',{form:'exit_popup'});
                 setTimeout(function(){hideExitPopup(true);},2500);
             }else{
                 msg.style.display='block';

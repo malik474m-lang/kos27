@@ -177,6 +177,7 @@ document.getElementById('ty-subscribe-form').addEventListener('submit', function
         if (d.success || d.ok) {
             msg.className = 'text-sm mt-3 text-green-600';
             msg.textContent = '✅ Вы подписаны! Проверьте почту.';
+            if(typeof window.kzTrackGoal==='function')window.kzTrackGoal('newsletter_subscribed',{form:'thankyou'});
             document.getElementById('ty-email').value = '';
         } else {
             msg.className = 'text-sm mt-3 text-gray-600';

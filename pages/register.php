@@ -69,6 +69,7 @@ function regSubmit(e){
     })}).then(r=>r.json()).then(d=>{
         btn.disabled=false;btn.textContent='Зарегистрироваться';
         if(d.error){err.textContent=d.error;err.classList.remove('hidden');return;}
+        if(typeof window.kzTrackGoal==='function')window.kzTrackGoal('registration_started',{form:'register'});
         document.getElementById('reg-step-1').classList.add('hidden');
         document.getElementById('reg-step-2').classList.remove('hidden');
         document.getElementById('reg-sent-email').textContent=regEmail;
@@ -83,6 +84,7 @@ function verifyCode(){
     })}).then(r=>r.json()).then(d=>{
         btn.disabled=false;btn.textContent='Подтвердить';
         if(d.error){err.textContent=d.error;err.classList.remove('hidden');return;}
+        if(typeof window.kzTrackGoal==='function')window.kzTrackGoal('registration_completed',{form:'register'});
         location.href='/cabinet';
     }).catch(()=>{btn.disabled=false;btn.textContent='Подтвердить';err.textContent='Ошибка';err.classList.remove('hidden');});
 }
