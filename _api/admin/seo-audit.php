@@ -79,12 +79,12 @@ try {
     $totalCities = count(getCities());
     $categories = ['microloans', 'credits', 'credit_cards', 'debit_cards'];
     foreach ($categories as $cat) {
-        $generated = (int)$db->prepare("SELECT COUNT(*) as cnt FROM city_seo_texts WHERE category = ?")->execute([$cat]) ? $db->query("SELECT FOUND_ROWS()")->fetchColumn() : 0;
+        $generated = 0;
         try {
             $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM city_seo_texts WHERE category = ?");
             $stmt->execute([$cat]);
             $generated = (int)$stmt->fetch()['cnt'];
-        } catch (Exception $e) { $generated = 0; }
+        } catch (Exception $e) {}
         $catLabels = ['microloans'=>'Займы','credits'=>'Кредиты','credit_cards'=>'Кредитные карты','debit_cards'=>'Дебетовые карты'];
         if ($generated < $totalCities) {
             $missing = $totalCities - $generated;

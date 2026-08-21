@@ -171,6 +171,7 @@ function detectUrlType(string $path): string {
     if (str_starts_with((string)($path), '/offer/')) return 'offer';
     if (str_starts_with((string)($path), '/articles/')) return 'article';
     if (str_contains((string)($path), '/type/')) return 'category';
+    if (str_contains((string)($path), '/q/')) return 'category'; // допзапросы
     if (preg_match('#^/(zajmy|kredity|karty)/[a-z]#', $path)) return 'city';
     return 'static';
 }

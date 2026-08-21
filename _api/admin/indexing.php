@@ -78,13 +78,21 @@ function syncUrlsFromDb(): array {
         smartUpsertUrl(($catUrls[$t['category']] ?? '/zajmy')."/type/{$t['slug']}", 'category', $t['created_at'], 0.7, $t['slug'], $stats);
     }
 
+    // Допзапросы (подкатегории) /q/{slug} и /{city}/q/{slug}
+    $subcats = [];
+    try { $subcats = $db->query("SELECT slug, category, updated_at FROM subcategories WHERE is_active = 1")->fetchAll(); } catch (Exception $e) {}
+    foreach ($subcats as $sc) {
+        $base = $catUrls[$sc['category']] ?? '/zajmy';
+        smartUpsertUrl("{$base}/q/{$sc['slug']}", 'category', $sc['updated_at'], 0.7, 'subcat_' . $sc['category'] . '_' . $sc['slug'], $stats);
+    }
+
     $cities = getCities();
     foreach ($cities as $c) {
         // Для городских страниц используем дату последнего обновления офферов, а не NOW()
         $cityHash = $c['slug'] . '_' . substr($lastOfferUpdate, 0, 10);
         
         // Проверяем SEO-текст города для каждой категории
-        foreach (['microloans' => '/zajmy', 'credits' => '/kredity'] as $cat => $prefix) {
+        foreach (['microloans' => '/zajmy', 'credits' => '/kredity', 'credit_cards' => '/karty/kreditnye', 'debit_cards' => '/karty/debetovye'] as $cat => $prefix) {
             $citySeoDate = $lastOfferUpdate;
             try {
                 $stmt = $db->prepare("SELECT updated_at FROM city_seo_texts WHERE city_slug = ? AND category = ? LIMIT 1");
@@ -92,9 +100,16 @@ function syncUrlsFromDb(): array {
                 $seo = $stmt->fetch();
                 if ($seo) $citySeoDate = $seo['updated_at'];
             } catch (Exception $e) {}
-            smartUpsertUrl("{$prefix}/{$c['slug']}", 'city', $citySeoDate, $cat === 'microloans' ? 0.6 : 0.5, $c['slug'] . '_' . $cat, $stats);
+            $prio = ['microloans'=>0.6,'credits'=>0.5,'credit_cards'=>0.5,'debit_cards'=>0.5][$cat] ?? 0.5;
+            smartUpsertUrl("{$prefix}/{$c['slug']}", 'city', $citySeoDate, $prio, $c['slug'] . '_' . $cat, $stats);
         }
         smartUpsertUrl("/karty/{$c['slug']}", 'city', $lastOfferUpdate, 0.5, $c['slug'] . '_cards', $stats);
+
+        // Допзапросы по городам
+        foreach ($subcats as $sc) {
+            $base = $catUrls[$sc['category']] ?? '/zajmy';
+            smartUpsertUrl("{$base}/{$c['slug']}/q/{$sc['slug']}", 'city_tag', $sc['updated_at'], 0.6, 'subcat_' . $sc['category'] . '_' . $c['slug'] . '_' . $sc['slug'], $stats);
+        }
 
         foreach ($tags as $t) {
             $catUrl = $catUrls[$t['category']] ?? '/zajmy';
@@ -244,14 +259,21 @@ case 'seo-files':
     $offersCount = (int)$db->query("SELECT COUNT(*) as cnt FROM offers WHERE is_active = 1")->fetch()['cnt'];
     $articlesCount = (int)$db->query("SELECT COUNT(*) as cnt FROM articles WHERE is_published = 1")->fetch()['cnt'];
     $tagsCount = (int)$db->query("SELECT COUNT(*) as cnt FROM offer_tags WHERE is_active = 1")->fetch()['cnt'];
+    $subcatsCount = 0;
+    try { $subcatsCount = (int)$db->query("SELECT COUNT(*) as cnt FROM subcategories WHERE is_active = 1")->fetch()['cnt']; } catch (Exception $e) {}
+    $glossaryCount = 0;
+    try { require_once __DIR__ . '/../../data/glossary.php'; $glossaryCount = count($glossaryTerms); } catch (Exception $e) {}
     require_once __DIR__ . '/../../data/cities.php';
     $citiesCount = count(getCities());
     $cityTagPages = $citiesCount * $tagsCount;
-    $totalSitemapUrls = 15 + $offersCount + $articlesCount + $tagsCount + ($citiesCount * 3) + $cityTagPages;
+    $subcatCityPages = $citiesCount * $subcatsCount;
+    // Статические: /, zajmy, novye-mfo, kredity, кредитн.карты, дебетов.карты, calculator, compare, articles, faq, glossary, favorites, search, privacy, terms, disclaimer = 16
+    // Города: 4 категории + /karty/{city} = 5 на город
+    $totalSitemapUrls = 16 + $offersCount + $articlesCount + $tagsCount + $subcatsCount + $subcatCityPages + ($citiesCount * 5) + $cityTagPages + $glossaryCount;
     $lastOfferUpdate = $db->query("SELECT MAX(updated_at) as dt FROM offers WHERE is_active = 1")->fetch()['dt'];
     $lastArticleUpdate = $db->query("SELECT MAX(updated_at) as dt FROM articles WHERE is_published = 1")->fetch()['dt'];
     echo json_encode([
-        'sitemap' => ['url' => SITE_URL.'/sitemap.xml', 'total_urls' => $totalSitemapUrls, 'offers' => $offersCount, 'articles' => $articlesCount, 'tags' => $tagsCount, 'cities' => $citiesCount, 'city_tag_pages' => $cityTagPages],
+        'sitemap' => ['url' => SITE_URL.'/sitemap.xml', 'total_urls' => $totalSitemapUrls, 'offers' => $offersCount, 'articles' => $articlesCount, 'tags' => $tagsCount, 'cities' => $citiesCount, 'city_tag_pages' => $cityTagPages, 'subcats' => $subcatsCount, 'subcat_city_pages' => $subcatCityPages],
         'robots' => ['url' => SITE_URL.'/robots.txt'],
         'llms' => ['url' => SITE_URL.'/llms.txt', 'offers' => $offersCount, 'articles' => $articlesCount, 'tags' => $tagsCount, 'auto_generated' => true]
     ]);
