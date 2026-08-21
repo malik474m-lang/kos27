@@ -6,7 +6,7 @@
  */
 function syncUrlsFromDb(): array {
     global $db;
-    require_once __DIR__ . '/../../data/cities.php';
+    require_once __DIR__ . '/../data/cities.php';
     $stats = ['added' => 0, 'updated' => 0, 'unchanged' => 0];
     $catUrls = ['microloans'=>'/zajmy','credits'=>'/kredity','credit_cards'=>'/karty/kreditnye','debit_cards'=>'/karty/debetovye'];
 
