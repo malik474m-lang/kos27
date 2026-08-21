@@ -27,6 +27,12 @@ function ilog(string $msg): void {
     echo "[{$ts}] {$msg}\n";
 }
 
+function e_json($v): string {
+    $s = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (strlen($s) > 300) $s = substr($s, 0, 300) . '...';
+    return $s;
+}
+
 // Ограничение: не чаще 1 раза в час
 $lockFile = __DIR__ . '/../data/indexing-cron.lock';
 if (file_exists($lockFile) && (time() - filemtime($lockFile)) < 3600) {
@@ -92,6 +98,21 @@ try {
             $fullUrls = array_map(fn($u) => SITE_URL . $u, $pendingGoogle);
             $result = googleIndexBatch($fullUrls);
             ilog("Google: sent " . $result['total'] . ", success=" . $result['success'] . ", failed=" . $result['failed']);
+            if ($result['failed'] > 0) {
+                $statusHistogram = [];
+                $firstErr = '';
+                foreach ($result['results'] as $ri => $r) {
+                    if (!$r['success']) {
+                        $st = (string)($r['status'] ?? '?');
+                        $statusHistogram[$st] = ($statusHistogram[$st] ?? 0) + 1;
+                        if (!$firstErr) $firstErr = e_json($r);
+                    }
+                }
+                $histParts = [];
+                foreach ($statusHistogram as $st => $cnt) $histParts[] = "{$st}x{$cnt}";
+                ilog("Google: failed statuses: " . implode(', ', $histParts));
+                ilog("Google: first fail: " . $firstErr);
+            }
             
             // Обновляем submitted_google
             foreach ($result['results'] as $r) {
@@ -127,6 +148,21 @@ try {
             $fullUrls = array_map(fn($u) => SITE_URL . $u, $pendingYandex);
             $result = yandexSubmitBatch($fullUrls);
             ilog("Yandex: sent " . $result['total'] . ", success=" . $result['success'] . ", failed=" . $result['failed']);
+            if ($result['failed'] > 0) {
+                $statusHistogram = [];
+                $firstErr = '';
+                foreach ($result['results'] as $ri => $r) {
+                    if (!$r['success']) {
+                        $st = (string)($r['status'] ?? '?');
+                        $statusHistogram[$st] = ($statusHistogram[$st] ?? 0) + 1;
+                        if (!$firstErr) $firstErr = e_json($r);
+                    }
+                }
+                $histParts = [];
+                foreach ($statusHistogram as $st => $cnt) $histParts[] = "{$st}x{$cnt}";
+                ilog("Yandex: failed statuses: " . implode(', ', $histParts));
+                ilog("Yandex: first fail: " . $firstErr);
+            }
             
             // Обновляем submitted_yandex
             foreach ($result['results'] as $r) {
