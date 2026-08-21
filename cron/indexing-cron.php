@@ -6,6 +6,7 @@
  *   0 */2 * * * php ~/domains/kosmozaim.ru/cron/indexing-cron.php
  *
  * Что делает:
+ *   0. Синхронизирует трекер (раз в 12ч)
  *   1. Находит URL с last_modified > submitted_* (новые/обновлённые)
  *   2. Отправляет через IndexNow (Яндекс + Bing) — до 100 URL за раз
  *   3. Отправляет через Google Indexing API — до 50 URL за раз
@@ -44,6 +45,24 @@ try {
 } catch (Exception $e) {
     ilog("Table url_index_tracker not found, run sync first");
     exit;
+}
+
+// 0. Синхронизация URL из базы (добавление новых, обновление изменённых)
+// выполняется раз в 12 часов — файл-флаг чтобы не гонять городских subcats ��аждый час.
+ilog("--- Sync URLs ---");
+$syncFlag = __DIR__ . '/../data/indexing-sync.flag';
+if (!file_exists($syncFlag) || (time() - filemtime($syncFlag)) >= 43200) {
+    try {
+        require_once __DIR__ . '/../includes/indexing-sync.php';
+        @set_time_limit(600);
+        $sync = syncUrlsFromDb();
+        ilog("Sync: added={$sync['added']} updated={$sync['updated']} unchanged={$sync['unchanged']}");
+        @touch($syncFlag);
+    } catch (Exception $e) {
+        ilog("Sync error: " . $e->getMessage());
+    }
+} else {
+    ilog("Sync: skipped (ran < 12h ago)");
 }
 
 // 1. IndexNow — все ожидающие URL (Яндекс + Bing)
