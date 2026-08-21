@@ -3,7 +3,7 @@
  * Крон автоматической индексации
  *
  * Запуск каждые 2 часа:
- *   0 */2 * * * php ~/domains/kosmozaim.ru/cron/indexing-cron.php
+ *   каждые 2 часа: php ~/domains/kosmozaim.ru/cron/indexing-cron.php
  *
  * Что делает:
  *   0. Синхронизирует трекер (раз в 12ч)
