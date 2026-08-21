@@ -102,9 +102,13 @@ function indexNowSubmit(string $path): bool {
         'key' => $key,
     ]);
 
-    $result = @file_get_contents($url, false, stream_context_create([
+    $yandexOk = false;
+    @file_get_contents($url, false, stream_context_create([
         'http' => ['timeout' => 5, 'method' => 'GET', 'ignore_errors' => true]
     ]));
+    if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m) && (int)$m[1] >= 200 && (int)$m[1] < 300) {
+        $yandexOk = true;
+    }
 
     // Отправляем в Bing IndexNow
     @file_get_contents('https://www.bing.com/indexnow?' . http_build_query([
@@ -114,7 +118,15 @@ function indexNowSubmit(string $path): bool {
         'http' => ['timeout' => 5, 'method' => 'GET', 'ignore_errors' => true]
     ]));
 
-    return $result !== false;
+    // Записываем факт уведомления Яндекса в трекер — иначе URL навсегда «ожидает» 
+    if ($yandexOk) {
+        try {
+            $db = getDB();
+            $db->prepare("UPDATE url_index_tracker SET submitted_yandex = NOW() WHERE url = ?")->execute([$path]);
+        } catch (Exception $e) {}
+    }
+
+    return $yandexOk;
 }
 
 /**
@@ -148,7 +160,15 @@ function indexNowSubmitBatch(array $paths): array {
     $resp = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($code >= 200 && $code < 300) $success++;
+    if ($code >= 200 && $code < 300) {
+        $success++;
+        // Фиксируем уведомление Яндекса в трекере для всех URL батча
+        try {
+            $db = getDB();
+            $ph = str_repeat('?,', count($paths) - 1) . '?';
+            $db->prepare("UPDATE url_index_tracker SET submitted_yandex = NOW() WHERE url IN ({$ph})")->execute(array_slice($paths, 0, 10000));
+        } catch (Exception $e) {}
+    }
 
     // Bing IndexNow batch
     $ch = curl_init('https://www.bing.com/indexnow');
