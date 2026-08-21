@@ -9,7 +9,7 @@ if (!function_exists('isSearchBot')) {
         if ($cached !== null) return $cached;
         $ua = mb_strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
         if ($ua === '') return $cached = false;
-        $bots = ['yandex','googlebot','bingbot','baiduspider','duckduckbot','slurp','applebot','msnbot','petalbot','semrush','ahrefs','mj12','screaming','serpstat','mail.ru','vkshare','facebookexternal','twitterbot','telegrambot','whatsapp','discordbot','linkbot','crawler','spider','ia_archiver','dotbot','exabot','sogou','archive.org','uptimerobot','pingdom','statuscake','zabbix','headless','phantom'];
+        $bots = ['yandex','googlebot','bingbot','baiduspider','duckduckbot','slurp','applebot','msnbot','petalbot','semrush','ahrefs','mj12','screaming','serpstat','mail.ru','vkshare','facebookexternal','twitterbot','telegrambot','whatsapp','discordbot','linkbot','crawler','spider','ia_archiver','dotbot','exabot','sogou','archive.org','uptimerobot','pingdom','statuscake','zabbix','headless','phantom','seznambot','mojeekbot','linkdexbot','dataforseobot','megaindex','backlinkcrawler','domaincrawler','go-http-client'];
         foreach ($bots as $b) { if ($b !== '' && str_contains($ua, $b)) return $cached = true; }
         return $cached = false;
     }
