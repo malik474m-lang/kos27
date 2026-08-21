@@ -89,6 +89,15 @@ function getAbVariant(string $category = ''): ?array {
 
         if (!$test) { $variantsCache[$cacheKey] = false; return null; }
 
+        // Для поисковых ботов — всегда контрольный (первый) вариант,
+        // без куки и без записи показа в статистику A/B.
+        if (function_exists('isSearchBot') && isSearchBot()) {
+            $control = $all[0];
+            $variantsCache[$cacheKey] = $control;
+            return $control;
+        }
+
+
         $variants = $db->prepare("SELECT * FROM ab_variants WHERE test_id = ? ORDER BY id ASC");
         $variants->execute([$test['id']]);
         $all = $variants->fetchAll();

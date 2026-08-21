@@ -3,11 +3,22 @@
 $geoUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if (function_exists('isTestHost') && isTestHost()) return;
 if (str_starts_with((string)($geoUri),'/api/')||str_starts_with((string)($geoUri),'/admin')||str_starts_with((string)($geoUri),'/images/')||str_starts_with((string)($geoUri),'/css/')||str_starts_with((string)($geoUri),'/js/')||str_contains((string)($geoUri),'.')) return;
+if (!function_exists('isSearchBot')) {
+    function isSearchBot(): bool {
+        static $cached = null;
+        if ($cached !== null) return $cached;
+        $ua = mb_strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        if ($ua === '') return $cached = false;
+        $bots = ['yandex','googlebot','bingbot','baiduspider','duckduckbot','slurp','applebot','msnbot','petalbot','semrush','ahrefs','mj12','screaming','serpstat','mail.ru','vkshare','facebookexternal','twitterbot','telegrambot','whatsapp','discordbot','linkbot','crawler','spider','ia_archiver','dotbot','exabot','sogou','archive.org','uptimerobot','pingdom','statuscake','zabbix','headless','phantom'];
+        foreach ($bots as $b) { if ($b !== '' && str_contains($ua, $b)) return $cached = true; }
+        return $cached = false;
+    }
+}
+
 // Поисковые боты НЕ редиректим — робот должен индексировать контент.
 // Редирект бота = проблемы индексации (302 на сторонний домен).
-$ua = mb_strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
-$geoBots = ['yandex','googlebot','bingbot','baiduspider','duckduckbot','slurp','applebot','msnbot','petalbot','semrush','ahrefs','mj12','screaming','serpstat','mail.ru','vkshare','facebookexternal','twitterbot','telegrambot','whatsapp','discordbot','linkbot','crawler','spider','ia_archiver','dotbot','exabot','sogou','archive.org','uptimerobot','pingdom','statuscake','zabbix','headless','phantom'];
-foreach ($geoBots as $b) { if ($b !== '' && str_contains($ua, $b)) return; }
+if (isSearchBot()) return;
+
 
 $ip=$_SERVER['HTTP_X_FORWARDED_FOR']??$_SERVER['HTTP_X_REAL_IP']??$_SERVER['REMOTE_ADDR']??'127.0.0.1';
 $ip=trim(explode(',',$ip)[0]);
