@@ -32,6 +32,27 @@ function e_json($v): string {
     if (strlen($s) > 300) $s = substr($s, 0, 300) . '...';
     return $s;
 }
+/**
+ * Дневной счётчик попыток отправки в Google Indexing API.
+ * Квота: 200 URL_UPDATED/day на сайт, сброс в 00:00 Pacific Time.
+ * Считаем ПОПЫТКИ включая ошибки (429 тоже расходует попытки).
+ */
+function googleDailyCount(): int {
+    $f = __DIR__ . '/../data/google-indexing-daily.json';
+    if (!file_exists($f)) return 0;
+    $d = json_decode(file_get_contents($f), true);
+    if (!is_array($d)) return 0;
+    $today = (new DateTime('now', new DateTimeZone('America/Los_Angeles')))->format('Y-m-d');
+    return (($d['date'] ?? '') === $today) ? (int)($d['count'] ?? 0) : 0;
+}
+
+function googleDailyAdd(int $n): void {
+    $f = __DIR__ . '/../data/google-indexing-daily.json';
+    $today = (new DateTime('now', new DateTimeZone('America/Los_Angeles')))->format('Y-m-d');
+    $d = ['date' => $today, 'count' => googleDailyCount() + max(0, $n)];
+    @file_put_contents($f, json_encode($d));
+}
+
 
 // Ограничение: не чаще 1 раза в час
 $lockFile = __DIR__ . '/../data/indexing-cron.lock';
@@ -91,12 +112,18 @@ try {
 ilog("--- Google Indexing API ---");
 try {
     require_once __DIR__ . '/../includes/google-indexing.php';
-    if (googleIndexingAvailable()) {
-        $pendingGoogle = $db->query("SELECT url FROM url_index_tracker WHERE submitted_google IS NULL OR last_modified > submitted_google ORDER BY priority DESC LIMIT 50")->fetchAll(PDO::FETCH_COLUMN);
-        
-        if ($pendingGoogle) {
+    $GOOGLE_DAILY_LIMIT = 190; // буфер от 200
+    $dailyUsed = googleDailyCount();
+    if (googleIndexingAvailable() && $dailyUsed >= $GOOGLE_DAILY_LIMIT) {
+        ilog("Google: skipped — daily quota {$GOOGLE_DAILY_LIMIT}/day already used (429 safeguard)");
+    } elseif (googleIndexingAvailable()) {
+        $batchLimit = min(50, max(0, $GOOGLE_DAILY_LIMIT - $dailyUsed));
+        $pendingGoogle = $db->query("SELECT url FROM url_index_tracker WHERE submitted_google IS NULL OR last_modified > submitted_google ORDER BY priority DESC LIMIT {$batchLimit}")->fetchAll(PDO::FETCH_COLUMN);
+        ilog("Google: daily used {$dailyUsed}/{$GOOGLE_DAILY_LIMIT}, batch {$batchLimit}");        
+        if ($pendingGoogle && $batchLimit > 0) {
             $fullUrls = array_map(fn($u) => SITE_URL . $u, $pendingGoogle);
             $result = googleIndexBatch($fullUrls);
+            googleDailyAdd(count($fullUrls));
             ilog("Google: sent " . $result['total'] . ", success=" . $result['success'] . ", failed=" . $result['failed']);
             if ($result['failed'] > 0) {
                 $statusHistogram = [];
