@@ -30,13 +30,13 @@ function getAIProvidersConfig(): array {
         'odirouter_image_model' => 'free-nano-banana-2',
         
         // YandexGPT
-        'yandex_gpt_enabled' => true,
+        'yandex_gpt_enabled' => false,
         'yandex_gpt_api_key' => getenv('YANDEX_GPT_API_KEY') ?: '',
         'yandex_folder_id' => getenv('YANDEX_FOLDER_ID') ?: '',
         'yandex_gpt_model' => 'yandexgpt-lite',
         
         // YandexART
-        'yandex_art_enabled' => true,
+        'yandex_art_enabled' => false,
         
         // GigaChat
         'gigachat_enabled' => false,
