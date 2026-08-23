@@ -5,6 +5,7 @@
  * POST — добавить/удалить/переключить ключ
  */
 require_once __DIR__ . '/../../includes/odirouter-keys.php';
+require_once __DIR__ . '/../../includes/settings-storage.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -51,10 +52,10 @@ if ($method === 'POST') {
         if ($id === 'settings_main' || $id === 'settings_image') {
             $settingsFile = __DIR__ . '/../../data/site-settings.json';
             if (file_exists($settingsFile)) {
-                $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+                $settings = loadJsonSettingsSafe($settingsFile);
                 if ($id === 'settings_main') $settings['odirouter_api_key'] = '';
                 if ($id === 'settings_image') $settings['odirouter_image_api_key'] = '';
-                file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                saveJsonSettingsSafe($settingsFile, $settings);
             }
         }
         

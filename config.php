@@ -5,6 +5,7 @@ $GLOBALS['page_start_time'] = microtime(true);
 require_once __DIR__ . '/includes/error-logger.php';
 require_once __DIR__ . '/includes/breadcrumbs.php';
 require_once __DIR__ . '/includes/page-meta.php';
+require_once __DIR__ . '/includes/settings-storage.php';
 set_error_handler('kosmozaimErrorHandler');
 register_shutdown_function('kosmozaimShutdownHandler');
 
@@ -53,8 +54,8 @@ function getSiteSettings(): array {
         'gigachat_scope' => 'GIGACHAT_API_PERS',
     ];
     
-    if (file_exists($settingsFile)) {
-        $json = json_decode(file_get_contents($settingsFile), true);
+    if (file_exists($settingsFile) || file_exists($settingsFile . '.bak')) {
+        $json = loadJsonSettingsSafe($settingsFile);
         if ($json) {
             $settings = array_merge($settings, $json);
         }

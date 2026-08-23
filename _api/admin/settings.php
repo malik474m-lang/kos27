@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/settings-storage.php';
 /**
  * API настроек сайта
  * GET — получить настройки
@@ -52,8 +53,8 @@ function loadSettings(): array {
     $defaults['site_url'] = getenv('NEXT_PUBLIC_SITE_URL') ?: 'https://kosmozaim.ru';
     
     // Переопределяем из JSON если есть
-    if (file_exists($settingsFile)) {
-        $json = json_decode(file_get_contents($settingsFile), true);
+    if (file_exists($settingsFile) || file_exists($settingsFile . '.bak')) {
+        $json = loadJsonSettingsSafe($settingsFile);
         if ($json) {
             $defaults = array_merge($defaults, $json);
         }
@@ -119,7 +120,7 @@ if ($method === 'POST') {
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
             $settings = loadSettings();
             $settings['site_favicon'] = '/' . $filename;
-            file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            saveJsonSettingsSafe($settingsFile, $settings);
             echo json_encode(['success' => true, 'favicon' => '/' . $filename]);
         } else {
             http_response_code(500);
@@ -168,7 +169,7 @@ if ($method === 'POST') {
             }
             
             $settings['site_logo'] = '/images/' . $filename;
-            file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            saveJsonSettingsSafe($settingsFile, $settings);
             
             echo json_encode(['success' => true, 'logo' => $settings['site_logo']]);
         } else {
@@ -210,7 +211,7 @@ if ($method === 'POST') {
     $dataDir = dirname($settingsFile);
     if (!is_dir($dataDir)) @mkdir($dataDir, 0755, true);
     
-    if (file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+    if (saveJsonSettingsSafe($settingsFile, $settings)) {
         // Также обновляем .env для совместимости
         updateEnvFile($settings);
         echo json_encode(['success' => true]);
@@ -245,6 +246,10 @@ function updateEnvFile(array $settings): void {
             if (strpos($line, $key . '=') === 0) {
                 if ($value) {
                     $newLines[] = $key . '=' . $value;
+                    $updated[$key] = true;
+                } else {
+                    // Пустое значение из формы не должно удалять существующий секрет из .env.
+                    $newLines[] = $line;
                     $updated[$key] = true;
                 }
                 $found = true;

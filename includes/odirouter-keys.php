@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/settings-storage.php';
 /**
  * OdiRouter Key Rotation — автоматическое переключение API ключей
  * 
@@ -51,9 +52,7 @@ function odiNormalizeSavedKeys(): void {
 }
 
 function odiLoadKeys(): array {
-    if (!file_exists(ODIROUTER_KEYS_FILE)) return [];
-    $data = json_decode(file_get_contents(ODIROUTER_KEYS_FILE), true);
-    $keys = is_array($data) ? $data : [];
+    $keys = loadJsonSettingsSafe(ODIROUTER_KEYS_FILE);
     // авто-миграция типов ключей по их названиям
     $changed = false;
     foreach ($keys as &$k) {
@@ -64,14 +63,12 @@ function odiLoadKeys(): array {
         }
     }
     unset($k);
-    if ($changed) @file_put_contents(ODIROUTER_KEYS_FILE, json_encode($keys, JSON_PRETTY_PRINT));
+    if ($changed) saveJsonSettingsSafe(ODIROUTER_KEYS_FILE, $keys);
     return $keys;
 }
 
 function odiSaveKeys(array $keys): bool {
-    $dir = dirname(ODIROUTER_KEYS_FILE);
-    if (!is_dir($dir)) @mkdir($dir, 0755, true);
-    return file_put_contents(ODIROUTER_KEYS_FILE, json_encode($keys, JSON_PRETTY_PRINT)) !== false;
+    return saveJsonSettingsSafe(ODIROUTER_KEYS_FILE, array_values($keys));
 }
 
 function odiLoadUsage(): array {
@@ -315,8 +312,7 @@ function odiGetActiveKey(string $type = 'text', ?string $preferredAccount = null
 function odiGetKeysStats(): array {
     $keys = odiLoadKeys();
     $usage = odiLoadUsage();
-    $settings = file_exists(__DIR__ . '/../data/site-settings.json') 
-        ? json_decode(file_get_contents(__DIR__ . '/../data/site-settings.json'), true) : [];
+    $settings = loadJsonSettingsSafe(__DIR__ . '/../data/site-settings.json');
     
     $stats = [];
     

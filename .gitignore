@@ -2,3 +2,16 @@ node_modules/
 /assets/tailwind.css.map
 data/google-service-account.json
 data/yandex-webmaster.json
+
+# Runtime secrets and mutable state
+data/site-settings.json
+data/site-settings.json.bak
+data/site-settings.json.tmp.*
+data/odirouter-keys.json
+data/odirouter-keys.json.bak
+data/odirouter-keys.json.tmp.*
+data/odirouter-usage.json
+data/odirouter-cursor.json
+data/odirouter-cooldowns.json
+data/odirouter-disabled-accounts.json
+data/google-indexing-daily.json

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/page-cache.php';
+require_once __DIR__ . '/../../includes/settings-storage.php';
 /**
  * API для настроек виджета социального доказательства
  */
@@ -9,10 +10,7 @@ $settingsFile = __DIR__ . '/../../data/site-settings.json';
 
 // Получить настройки
 if ($method === 'GET') {
-    $settings = [];
-    if (file_exists($settingsFile)) {
-        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
-    }
+    $settings = loadJsonSettingsSafe($settingsFile);
     
     echo json_encode([
         'enabled' => (bool)($settings['social_proof_enabled'] ?? true),
@@ -29,10 +27,7 @@ if ($method === 'GET') {
 if ($method === 'POST' || $method === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
     
-    $settings = [];
-    if (file_exists($settingsFile)) {
-        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
-    }
+    $settings = loadJsonSettingsSafe($settingsFile);
     
     // Обновляем только social_proof поля
     if (is_array($data) && array_key_exists('enabled', $data)) {
@@ -56,8 +51,8 @@ if ($method === 'POST' || $method === 'PUT') {
             : 'bottom-left';
     }
     
-    $saved = file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    if ($saved === false) {
+    $saved = saveJsonSettingsSafe($settingsFile, $settings);
+    if (!$saved) {
         http_response_code(500);
         echo json_encode(['error' => 'Не удалось сохранить настройки виджета']);
         exit;

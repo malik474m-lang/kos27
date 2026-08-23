@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/odirouter-keys.php';
+require_once __DIR__ . '/settings-storage.php';
 
 // === Конфигурация провайдеров ===
 
@@ -18,7 +19,7 @@ function getAIProvidersConfig(): array {
     if ($config !== null) return $config;
     
     $settingsFile = __DIR__ . '/../data/site-settings.json';
-    $settings = file_exists($settingsFile) ? json_decode(file_get_contents($settingsFile), true) : [];
+    $settings = loadJsonSettingsSafe($settingsFile);
     
     // Дефолтные значения
     $defaults = [
@@ -58,11 +59,20 @@ function getAIProvidersConfig(): array {
 
 function saveAIProvidersConfig(array $newConfig): bool {
     $settingsFile = __DIR__ . '/../data/site-settings.json';
-    $current = file_exists($settingsFile) ? json_decode(file_get_contents($settingsFile), true) : [];
-    if (!is_array($current)) $current = [];
-    
+    $current = loadJsonSettingsSafe($settingsFile);
+    $secretFields = [
+        'odirouter_api_key', 'odirouter_image_api_key', 'yandex_gpt_api_key',
+        'gigachat_auth_key', 'stability_api_key', 'smtp_pass', 'leads_su_api_token'
+    ];
+    foreach ($secretFields as $field) {
+        if (!array_key_exists($field, $newConfig)) continue;
+        $value = $newConfig[$field];
+        if (!is_string($value) || trim($value) === '' || str_contains($value, '...')) {
+            unset($newConfig[$field]);
+        }
+    }
     $merged = array_merge($current, $newConfig);
-    return file_put_contents($settingsFile, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return saveJsonSettingsSafe($settingsFile, $merged);
 }
 
 // === Получение активного провайдера по приоритету ===
