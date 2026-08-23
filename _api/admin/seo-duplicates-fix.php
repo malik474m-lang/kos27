@@ -120,7 +120,10 @@ try {
         $prompt = "Напиши уникальное meta description до 160 символов. Страница: {$page['name']} (URL {$page['url']}). Текущее описание: " . mb_substr((string)$page['description'], 0, 200) . ". Одна строка, без markdown.";
         $ai = $aiText($prompt, 'Ты SEO-редактор. Отвечай только текстом description одной строкой.');
         if ($ai && mb_strlen($ai) >= 30) return mb_substr(trim($ai,'" '), 0, 160);
-        return mb_substr(trim(($page['description'] ?: ('Актуальные условия и подбор предложений для «' . $page['name'] . '».')) . ' На сайте ' . SITE_NAME . '.'), 0, 160);
+        // Fallback с гарантированной уникальностью: включаем slug страницы (у city_tag_seo он содержит город)
+        $base = $page['description'] ?: ('Актуальные условия и подбор предложений для «' . $page['name'] . '».');
+        $uniq = mb_substr(preg_replace('/\s+/', '-', str_replace('/', '-', $page['slug'])), 0, 50);
+        return mb_substr(trim($base . ' Раздел ' . $uniq . '. На сайте ' . SITE_NAME . '.'), 0, 160);
     };
 
     $updateMeta = function (array $page, ?string $metaTitle, ?string $metaDescription) use ($db, $hasCol) {

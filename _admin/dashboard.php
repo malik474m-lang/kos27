@@ -3525,8 +3525,8 @@ var pct=d.total>0?Math.round(d.processed/d.total*100):0;
 if(slot)slot.innerHTML='<div class="bg-blue-50 rounded-lg p-3"><div class="flex justify-between text-xs text-gray-600 mb-1"><span>Исправляем дубли… '+d.processed+' / '+d.total+'</span><span>'+pct+'%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full transition-all" style="width:'+pct+'%"></div></div><p class="text-xs text-gray-500 mt-1">Исправлено title: '+s.fixedT+', description: '+s.fixedD+(s.fails?(', ошибок: '+s.fails):'')+'</p></div>';
 setTimeout(seoDupStep,500);
 }else{
-if(slot)slot.innerHTML='<div class="bg-green-50 rounded-lg p-3"><p class="text-green-700 text-sm font-semibold">✅ Готово</p><p class="text-xs text-green-600 mt-1">Исправлено title: '+s.fixedT+', description: '+s.fixedD+(s.fails?(', ошибок: '+s.fails):'')+'. Всего групп: '+d.total+'.</p></div>';
-alert('✅ Готово! Исправлено title: '+s.fixedT+'; description: '+s.fixedD+(s.fails?('; ошибок: '+s.fails):''));
+if(slot)slot.innerHTML='<div class="bg-green-50 rounded-lg p-3"><p class="text-green-700 text-sm font-semibold">✅ Готово</p><p class="text-xs text-green-600 mt-1">Исправлено title: '+s.fixedT+', description: '+s.fixedD+(s.fails?(', ошибок: '+s.fails):'')+'. Всего групп: '+d.total+'.</p><p class="text-xs text-gray-500 mt-1">Обновляю список дублей…</p></div>';
+setTimeout(function(){ lSeoDuplicates(); }, 700);
 }
 })
 .catch(function(err){
