@@ -98,8 +98,8 @@ try {
                         ? $base . '/' . $row['city_slug'] . '/type/' . $row['tag_slug']
                         : $base . '/' . $row['city_slug'];
                     $pages[] = ['entity'=>$entity,'table'=>$seot,'id'=>(int)$row['id'],'name'=>$name,'slug'=>$name,'url'=>$url,
-                        'title'=>$row['meta_title'] ? mb_substr(trim((string)$row['meta_title']),0,250) : '',
-                        'description'=>$row['meta_description'] ? mb_substr(trim((string)$row['meta_description']),0,300) : '',
+                        'title'=>trim((string)($row['meta_title'] ?? '')),
+                        'description'=>trim((string)($row['meta_description'] ?? '')),
                         'category'=>$row['category'] ?? 'microloans'];
                 }
             } catch (Throwable $e) {}
@@ -133,7 +133,21 @@ try {
         if ($metaDescription !== null && $hasCol($table,'meta_description')) { $set[] = 'meta_description = ?'; $params[] = $metaDescription; }
         if (!$set) return false;
         $params[] = $page['id'];
-        return (bool)$db->prepare('UPDATE `' . $table . '` SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($params);
+        $ok = (bool)$db->prepare('UPDATE `' . $table . '` SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($params);
+        if (!$ok) return false;
+        // Перечитываем строку и сверяем, что значение реально записалось
+        try {
+            $cols = [];
+            if ($metaTitle !== null) $cols[] = 'meta_title';
+            if ($metaDescription !== null) $cols[] = 'meta_description';
+            $row = $db->prepare('SELECT ' . implode(',', $cols) . " FROM `{$table}` WHERE id = ?");
+            $row->execute([$page['id']]);
+            $fresh = $row->fetch(PDO::FETCH_ASSOC);
+            if (!$fresh) return false;
+            if ($metaTitle !== null && (string)($fresh['meta_title'] ?? '') !== (string)$metaTitle) return false;
+            if ($metaDescription !== null && (string)($fresh['meta_description'] ?? '') !== (string)$metaDescription) return false;
+        } catch (Throwable $e) { return false; }
+        return true;
     };
 
     $pages = $fetchPages();
@@ -185,14 +199,20 @@ try {
             $newTitle = $makeUniqueTitle($page, $task['siblings']);
             if ($newTitle && $newTitle !== $page['title'] && $updateMeta($page, $newTitle, null)) {
                 $fixedTitles++;
-                $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$newTitle];
-            } else { $failed++; }
+                $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$newTitle,'ok'=>true];
+            } else {
+                $failed++;
+                $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$page['title'],'ok'=>false,'reason'=>'update не применился'];
+            }
         } else {
             $newDesc = $makeUniqueDescription($page);
             if ($newDesc && $newDesc !== $page['description'] && $updateMeta($page, null, $newDesc)) {
                 $fixedDescriptions++;
-                $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr($newDesc,0,90).'…'];
-            } else { $failed++; }
+                $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr($newDesc,0,90).'…','ok'=>true];
+            } else {
+                $failed++;
+                $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr((string)$page['description'],0,90).'…','ok'=>false,'reason'=>'update не применился или текст идентичен'];
+            }
         }
     }
 
@@ -204,7 +224,7 @@ try {
         'batch_size'=>count($batch),'processed'=>$nextOffset,
         'remaining'=>max(0,$total-$nextOffset),
         'fixed'=>count($processed),'fixed_titles'=>$fixedTitles,'fixed_descriptions'=>$fixedDescriptions,
-        'failed'=>$failed,'items'=>array_slice($processed,0,5),
+        'failed'=>$failed,'items'=>$processed,
         'scope'=>$scope,'provider'=>'ai-pipeline',
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
