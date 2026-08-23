@@ -301,6 +301,22 @@ function odiMarkKeyExhausted(string $keyId): void {
     odiSaveUsage($usage);
 }
 
+
+/**
+ * Умная обработка HTTP 429 от OdiRouter:
+ * - если локальный счётчик >= дневного лимита → дневная квота исчерпана, исключаем до 00:00 UTC
+ * - иначе это временный rate-limit (RPM) → короткая пауза 60 сек, аккаунт снова в игре
+ */
+function odiHandle429(string $keyId): void {
+    $account = odiGetAccountForKey($keyId);
+    $used = odiGetAccountUsage($account);
+    if ($used >= ODIROUTER_DAILY_LIMIT) {
+        odiMarkKeyExhausted($keyId);
+    } else {
+        odiSetAccountCooldown($account, 60);
+    }
+}
+
 function odiGetActiveKey(string $type = 'text', ?string $preferredAccount = null): ?array {
     $keys = odiGetAvailableKeys($type, $preferredAccount);
     return $keys[0] ?? null;
