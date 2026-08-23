@@ -338,8 +338,8 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
                 odiMarkKeyExhausted($activeKey['id']);
             }
             if ($code === 429 && $keyAccount) {
-                $blockedAccounts[$keyAccount] = true; // блокируем все ключи этого аккаунта
-                odiSetAccountCooldown($keyAccount);
+                $blockedAccounts[$keyAccount] = true;
+                odiMarkKeyExhausted($activeKey['id']); // исчерпан на весь день
             }
             $errors[] = ($activeKey['name'] ?? 'key') . ($promptVariantIdx === 1 ? ' [simple]' : '') . ': HTTP ' . $code;
             continue;
@@ -378,7 +378,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
             if ($statusErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status cURL ' . $statusErr; break; }
             if (in_array($statusCode, [401,402,403,408,429,500,502,503,504], true)) {
                 if (in_array($statusCode, [402,403], true)) odiMarkKeyExhausted($activeKey['id']);
-                if ($statusCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiSetAccountCooldown($keyAccount); }
+                if ($statusCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiMarkKeyExhausted($activeKey['id']); }
                 $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': status HTTP ' . $statusCode; break;
             }
             if ($statusCode < 200 || $statusCode >= 300) continue;
@@ -408,7 +408,7 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
                 if ($resultErr) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response cURL ' . $resultErr; break; }
                 if (in_array($resultCode, [401,402,403,408,429,500,502,503,504], true)) {
                     if (in_array($resultCode, [402,403], true)) odiMarkKeyExhausted($activeKey['id']);
-                    if ($resultCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiSetAccountCooldown($keyAccount); }
+                    if ($resultCode === 429 && $keyAccount) { $blockedAccounts[$keyAccount] = true; odiMarkKeyExhausted($activeKey['id']); }
                     $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break;
                 }
                 if ($resultCode < 200 || $resultCode >= 300) { $taskFailed = true; $errors[] = ($activeKey['name'] ?? 'key') . ': response HTTP ' . $resultCode; break; }
