@@ -125,11 +125,45 @@ try {
         $prompt = "Напиши уникальное meta description до 160 символов. Страница: {$page['name']} (URL {$page['url']}). Текущее описание: " . mb_substr((string)$page['description'], 0, 200) . ". Одна строка, без markdown.";
         $ai = $aiText($prompt, 'Ты SEO-редактор. Отвечай только текстом description одной строкой.');
         if ($ai && mb_strlen($ai) >= 30) return mb_substr(trim($ai,'" '), 0, 160);
-        // Fallback: уникальный префикс в НАЧАЛЕ описания (конец обрезается → суффикс терялся)
+        // Fallback: читабельный текст с городом/тегом (правильный вывод в выдаче) —
+        // и гарантированная уникальность через slug в общем случае
         $base = $page['description'] ?: ('Актуальные условия и подбор предложений для «' . $page['name'] . '».');
+
+        if ($page['entity'] === 'city_tag_seo') {
+            try {
+                require_once __DIR__ . '/../../data/cities.php';
+                $parts = array_map('trim', explode(' / ', $page['name']));
+                $citySlug = $parts[0] ?? '';
+                $tagSlug = $parts[1] ?? '';
+                $city = $citySlug ? findCityBySlug($citySlug) : null;
+                $tagTitle = '';
+                if ($tagSlug) {
+                    $st = $db->prepare("SELECT title FROM offer_tags WHERE slug = ? LIMIT 1");
+                    $st->execute([$tagSlug]);
+                    $tagTitle = (string)($st->fetchColumn() ?: '');
+                }
+                if ($city && $tagTitle) {
+                    return mb_substr($tagTitle . ' — подборка для ' . $city['prep'] . ': сравните условия и требования к заёмщикам на ' . SITE_NAME . '.', 0, 160);
+                }
+                if ($city) {
+                    return mb_substr('Подборка предложений для ' . $city['prep'] . ' — сравните условия и требования на сайте ' . SITE_NAME . '.', 0, 160);
+                }
+            } catch (Throwable $e) {}
+        }
+
+        if ($page['entity'] === 'city_seo') {
+            try {
+                require_once __DIR__ . '/../../data/cities.php';
+                $city = findCityBySlug((string)$page['name']);
+                if ($city) {
+                    return mb_substr('Подборка предложений для ' . $city['prep'] . ' — сравните условия и требования на сайте ' . SITE_NAME . '.', 0, 160);
+                }
+            } catch (Throwable $e) {}
+        }
+
         $uniq = mb_substr(preg_replace('/\s+/', '-', str_replace('/', '-', $page['slug'])), 0, 40);
         $shortBase = mb_substr($base, 0, 105);
-        return mb_substr($uniq . ': ' . $shortBase, 0, 160);
+        return mb_substr(trim($shortBase) . ' | ' . $uniq, 0, 160);
     };
 
     $updateMeta = function (array $page, ?string $metaTitle, ?string $metaDescription) use ($db, $hasCol) {
