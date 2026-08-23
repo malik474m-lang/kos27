@@ -3505,15 +3505,34 @@ function goHealthFix(tab, itemType, itemId){
 
 /* ============ HEALTH CHECK ============ */
 function seoDupFix(scope){
-if(!confirm('Запустить автоисправление SEO дублей ('+scope+')? Будут обновлены meta title и/или description через YandexGPT или шаблонный fallback.')) return;
-fetch(A+'/seo-duplicates/fix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:scope})})
-.then(r=>r.json())
+if(!confirm('Запустить автоисправление SEO дублей ('+scope+')? Пакетами по 3 — несколько запросов подряд.')) return;
+var slot=document.getElementById('seo-dup-loading')||document.getElementById('seo-dup-result');
+if(slot)slot.innerHTML='<p class="text-gray-500 text-sm">⏳ Считаем дубли...</p>';
+_sdState={scope:scope,offset:0,fixedT:0,fixedD:0,fails:0};
+seoDupStep();
+}
+var _sdState=null;
+function seoDupStep(){
+var s=_sdState;
+fetch(A+'/seo-duplicates/fix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:s.scope,offset:s.offset,limit:3})})
+.then(function(r){return r.json();})
 .then(function(d){
-  if(d.error){ alert('Ошибка: '+d.error); return; }
-  alert('Готово! Исправлено title: '+(d.fixed_titles||0)+'; description: '+(d.fixed_descriptions||0)+'; режим: '+(d.scope||scope)+'; источник: '+(d.provider||'—'));
-  lHealth();
+var slot=document.getElementById('seo-dup-loading')||document.getElementById('seo-dup-result');
+if(d.error){if(slot)slot.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+e(d.error)+'</p>';return;}
+s.fixedT+=d.fixed_titles||0;s.fixedD+=d.fixed_descriptions||0;s.fails+=d.failed||0;s.offset=d.processed;
+if(!d.done){
+var pct=d.total>0?Math.round(d.processed/d.total*100):0;
+if(slot)slot.innerHTML='<div class="bg-blue-50 rounded-lg p-3"><div class="flex justify-between text-xs text-gray-600 mb-1"><span>Исправляем дубли… '+d.processed+' / '+d.total+'</span><span>'+pct+'%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full transition-all" style="width:'+pct+'%"></div></div><p class="text-xs text-gray-500 mt-1">Исправлено title: '+s.fixedT+', description: '+s.fixedD+(s.fails?(', ошибок: '+s.fails):'')+'</p></div>';
+setTimeout(seoDupStep,500);
+}else{
+if(slot)slot.innerHTML='<div class="bg-green-50 rounded-lg p-3"><p class="text-green-700 text-sm font-semibold">✅ Готово</p><p class="text-xs text-green-600 mt-1">Исправлено title: '+s.fixedT+', description: '+s.fixedD+(s.fails?(', ошибок: '+s.fails):'')+'. Всего групп: '+d.total+'.</p></div>';
+alert('✅ Готово! Исправлено title: '+s.fixedT+'; description: '+s.fixedD+(s.fails?('; ошибок: '+s.fails):''));
+}
 })
-.catch(function(err){ alert('Ошибка: '+(err&&err.message?err.message:'Неизвестная ошибка')); });
+.catch(function(err){
+var slot=document.getElementById('seo-dup-loading')||document.getElementById('seo-dup-result');
+if(slot)slot.innerHTML='<p class="text-red-500 text-sm">Ошибка: '+(err&&err.message?err.message:'network')+'</p>';
+});
 }
 
 function lSeoDuplicates(){
@@ -3524,7 +3543,7 @@ var shell='';
 shell+='<div id="seo-dup-shell" class="bg-white rounded-xl border p-6 mt-6">';
 shell+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><h3 class="text-lg font-bold">🔍 SEO: Дубли title и description</h3><div class="flex flex-wrap gap-2"><button type="button" onclick="seoDupFix(&#39;titles&#39;)" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-50">🤖 Исправить title</button><button type="button" onclick="seoDupFix(&#39;descriptions&#39;)" class="bg-white border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-50">🤖 Исправить description</button><button type="button" onclick="seoDupFix(&#39;all&#39;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700">🤖 Исправить всё</button></div></div>';
 shell+='<div class="text-xs text-gray-500 mb-4">Исправление использует YandexGPT, если API-ключ настроен. Иначе применяется шаблонный fallback для снятия дублей.</div>';
-shell+='<div id="seo-dup-loading"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div>';
+shell+='<div id="seo-dup-loading"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div><div id="seo-dup-result"></div>';
 shell+='</div>';
 slot.innerHTML=shell;
 ap('/seo-duplicates').then(function(d){
