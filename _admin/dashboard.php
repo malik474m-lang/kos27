@@ -1019,7 +1019,7 @@ h+='<button onclick="csClean(&#39;markdown&#39;)" class="bg-gray-600 text-white 
 h+='<button onclick="csClean(&#39;plain&#39;)" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-black">🧽 HTML</button>';
 h+='</div></div>';
 
-h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов. 🤖 YandexGPT — уникальные AI-тексты. Теперь список показывает и города без SEO, чтобы их было проще заполнить.</div>';
+h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-700"><strong>Как работает:</strong> ⚡ Шаблоны — мгновенная генерация из готовых текстов. 🤖 AI (OdiRouter / YandexGPT / GigaChat) — уникальные тексты по приоритету из AI-настроек.</div>';
 
 h+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">';
 h+='<p class="text-sm text-gray-500">Всего городов: <strong>'+scopedList.length+'</strong> • Показано: <strong>'+displayList.length+'</strong> • С SEO: <strong>'+generatedCount+'</strong> • Без SEO: <strong>'+missingCount+'</strong>'+( (_csCitySlugs&&_csCitySlugs.length)?' <span class="text-xs text-blue-600">(с учётом выбранных городов)</span>':'' )+'</p>';
@@ -1067,7 +1067,7 @@ lCS();
 }).catch(function(){btn.disabled=false;btn.textContent=oldText;alert('Ошибка');});}
 
 function csGenOne(citySlug,useGPT){
-var modeText=useGPT?'YandexGPT':'шаблон';
+var modeText=useGPT?'AI':'шаблон';
 if(!confirm('Сгенерировать SEO для города '+citySlug+' ('+modeText+')?')) return;
 ap('/city-seo/generate',{method:'POST',body:JSON.stringify({category:_csCat,useGPT:useGPT,overwrite:true,citySlug:citySlug})}).then(function(d){
 if(d.success) alert('Готово: '+d.generated+' из '+d.total);
@@ -1172,7 +1172,7 @@ h+='<tr class="border-t hover:bg-gray-50 cs-row" data-city="'+e(s.city_slug)+'">
 });
 h+='</tbody></table></div></div>';
 }else{
-h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет city+tag SEO-текстов для выбранных фильтров. Используйте ⚡ Шаблоны или 🤖 YandexGPT.</p></div>';
+h+='<div class="text-center py-12 bg-white rounded-xl border"><p class="text-gray-500">Нет city+tag SEO-текстов для выбранных фильтров. Используйте ⚡ Шаблоны или 🤖 AI (OdiRouter / YandexGPT / GigaChat).</p></div>';
 }
 return h;
 }
@@ -2883,7 +2883,7 @@ batchSelected={offers:[],articles:[],categories:[],tags:[]};
 var h='<h2 class="text-xl font-bold mb-6">🤖 Пакетная автогенерация текстов и SEO</h2>';
 
 h+='<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">';
-h+='<p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Выберите сущности и поля для генерации. Система использует YandexGPT для создания уникальных текстов. Генерация происходит последовательно с паузами, чтобы не превысить лимиты API.</p>';
+h+='<p class="text-blue-700 text-sm"><strong>ℹ️ Как работает:</strong> Выберите сущности и поля для генерации. Система использует AI провайдер (OdiRouter / YandexGPT / GigaChat) для создания уникальных текстов. Генерация происходит последовательно с паузами, чтобы не превысить лимиты API.</p>';
 h+='</div>';
 
 // Выбор типа сущности
@@ -3542,7 +3542,7 @@ if(!slot) return;
 var shell='';
 shell+='<div id="seo-dup-shell" class="bg-white rounded-xl border p-6 mt-6">';
 shell+='<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><h3 class="text-lg font-bold">🔍 SEO: Дубли title и description</h3><div class="flex flex-wrap gap-2"><button type="button" onclick="seoDupFix(&#39;titles&#39;)" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-50">🤖 Исправить title</button><button type="button" onclick="seoDupFix(&#39;descriptions&#39;)" class="bg-white border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-50">🤖 Исправить description</button><button type="button" onclick="seoDupFix(&#39;all&#39;)" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700">🤖 Исправить всё</button></div></div>';
-shell+='<div class="text-xs text-gray-500 mb-4">Исправление использует YandexGPT, если API-ключ настроен. Иначе применяется шаблонный fallback для снятия дублей.</div>';
+shell+='<div class="text-xs text-gray-500 mb-4">Исправление использует доступный AI провайдер (OdiRouter, YandexGPT или GigaChat) по приоритету из настроек. Если нейронка недоступна — применяется шаблонный fallback.</div>';
 shell+='<div id="seo-dup-loading"><p class="text-gray-500">⏳ Проверка SEO дублей...</p></div><div id="seo-dup-result"></div>';
 shell+='</div>';
 slot.innerHTML=shell;
