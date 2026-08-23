@@ -113,17 +113,23 @@ try {
         $ai = $aiText($prompt, 'Ты SEO-редактор. Отвечай только текстом title одной строкой.');
         if ($ai && mb_strlen($ai) >= 10) return mb_substr(trim($ai,'" '), 0, 70);
         $suffix = in_array($page['entity'], ['city_seo','city_tag_seo'], true) ? ' — региональная подборка' : ' — ' . $page['name'];
-        return mb_substr(trim(($page['title'] ?: $page['name']) . $suffix), 0, 70);
+        $shortBase = mb_substr($page['title'] ?: $page['name'], 0, 70 - mb_strlen($suffix));
+        $combined = $shortBase . $suffix;
+        if ($combined === ($page['title'] ?? '')) {
+            $combined = mb_substr($shortBase, 0, 60) . ' • ' . mb_substr($page['name'], 0, 40);
+        }
+        return mb_substr($combined, 0, 70);
     };
 
     $makeUniqueDescription = function (array $page) use ($aiText) {
         $prompt = "Напиши уникальное meta description до 160 символов. Страница: {$page['name']} (URL {$page['url']}). Текущее описание: " . mb_substr((string)$page['description'], 0, 200) . ". Одна строка, без markdown.";
         $ai = $aiText($prompt, 'Ты SEO-редактор. Отвечай только текстом description одной строкой.');
         if ($ai && mb_strlen($ai) >= 30) return mb_substr(trim($ai,'" '), 0, 160);
-        // Fallback с гарантированной уникальностью: включаем slug страницы (у city_tag_seo он содержит город)
+        // Fallback: уникальный префикс в НАЧАЛЕ описания (конец обрезается → суффикс терялся)
         $base = $page['description'] ?: ('Актуальные условия и подбор предложений для «' . $page['name'] . '».');
-        $uniq = mb_substr(preg_replace('/\s+/', '-', str_replace('/', '-', $page['slug'])), 0, 50);
-        return mb_substr(trim($base . ' Раздел ' . $uniq . '. На сайте ' . SITE_NAME . '.'), 0, 160);
+        $uniq = mb_substr(preg_replace('/\s+/', '-', str_replace('/', '-', $page['slug'])), 0, 40);
+        $shortBase = mb_substr($base, 0, 105);
+        return mb_substr($uniq . ': ' . $shortBase, 0, 160);
     };
 
     $updateMeta = function (array $page, ?string $metaTitle, ?string $metaDescription) use ($db, $hasCol) {
@@ -202,7 +208,8 @@ try {
                 $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$newTitle,'ok'=>true];
             } else {
                 $failed++;
-                $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$page['title'],'ok'=>false,'reason'=>'update не применился'];
+                $reason = ($newTitle === ($page['title'] ?? '')) ? 'сгенерированный title совпал с текущим' : 'запись в БД не применилась';
+                $processed[] = ['type'=>'title','url'=>$page['url'],'value'=>$page['title'],'ok'=>false,'reason'=>$reason];
             }
         } else {
             $newDesc = $makeUniqueDescription($page);
@@ -211,7 +218,8 @@ try {
                 $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr($newDesc,0,90).'…','ok'=>true];
             } else {
                 $failed++;
-                $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr((string)$page['description'],0,90).'…','ok'=>false,'reason'=>'update не применился или текст идентичен'];
+                $reason = ($newDesc === ($page['description'] ?? '')) ? 'сгенерированный текст совпал с текущим' : 'запись в БД не применилась';
+                $processed[] = ['type'=>'description','url'=>$page['url'],'value'=>mb_substr((string)$page['description'],0,90).'…','ok'=>false,'reason'=>$reason];
             }
         }
     }
