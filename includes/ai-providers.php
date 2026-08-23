@@ -227,7 +227,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
                 }
                 if ($code === 429 && $keyAccount) {
                     $blockedAccounts[$keyAccount] = true;
-                    odiSetAccountCooldown($keyAccount);
+                    odiMarkKeyExhausted($activeKey['id']);
                 }
                 if (in_array($code, [503,504], true)) {
                     $blockedModels[$tryModel] = true; // модель временно недоступна — не повторяем на других аккаунтах
