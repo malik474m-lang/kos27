@@ -183,7 +183,6 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         if ($accountsTried >= $maxAccountsPerCall) break;
         $accountsTried++;
         $apiKey = $activeKey['key'];
-        odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
         foreach ($fallbackModels as $tryModel) {
             if (isset($blockedModels[$tryModel])) continue;
             $payload = [
@@ -212,6 +211,11 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
             $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $err = curl_error($ch);
             curl_close($ch);
+
+            // Считаем только запросы, дошедшие до сервера: есть HTTP-ответ или таймаут после отправки.
+            if ($code > 0 || ($err && stripos($err, 'timed out') !== false)) {
+                odiTrackUsage($activeKey['id']);
+            }
 
             if ($err) {
                 if (stripos($err, 'timed out') !== false) {
@@ -301,7 +305,6 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
         $apiKey = $activeKey['key'];
 
         foreach ($promptsToTry as $promptVariantIdx => $promptToTry) {
-            odiTrackUsage($activeKey['id']); // считаем использование аккаунта ДО запроса
 
             $payload = [
                 'prompt' => $promptToTry,
@@ -327,6 +330,11 @@ function odiRouterGenerateImage(string $prompt, ?string $model = null, ?string $
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = curl_error($ch);
         curl_close($ch);
+
+        // Локальный учёт — только реально дошедшие до сервера запросы.
+        if (!$err || stripos($err, 'timed out') !== false) {
+            odiTrackUsage($activeKey['id']);
+        }
 
         if ($err) {
             $errors[] = ($activeKey['name'] ?? 'key') . ': cURL ' . $err;
