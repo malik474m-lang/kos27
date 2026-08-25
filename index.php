@@ -38,12 +38,12 @@ if (preg_match('#^/offer/([a-z0-9-]+)$#', $uri)) {
     } catch (Exception $e) {}
 }
 
-// Кэш страниц
-if (pageCacheStart()) exit;
-
-// Авто-расписание генерации отзывов/статей
+// Авто-расписание генерации отзывов/статей (до кэша — тикает при каждом запросе)
 require_once __DIR__ . '/includes/auto-scheduler.php';
 checkAutoScheduler();
+
+// Кэш страниц
+if (pageCacheStart()) exit;
 
 // API роуты
 if (str_starts_with((string)($uri), '/api/')) {
