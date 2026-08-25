@@ -319,14 +319,12 @@ function generateCityTagSeoGPT(array $city, array $tag, string $category = 'micr
         . "seo_text — 300-500 слов в HTML с абзацами и 2-3 подзаголовками. Без markdown. Без тройных кавычек. "
         . "Избегай дублей и канцелярита. Упомяни онлайн-оформление, сравнение условий и особенности запроса пользователя.";
 
-    $response = kosmozaimAIComplete('Ты SEO-редактор финансового сайта. Отвечаешь только валидным JSON без markdown.', $prompt);
-    if (!$response) return null;
-
-    $result = json_decode($response, true);
-    $text = trim((string)($result['result']['alternatives'][0]['message']['text'] ?? ''));
+    // kosmozaimAIComplete уже возвращает готовый текст от любого провайдера —
+    // парсить сырую Yandex-структуру больше не нужно
+    $text = kosmozaimAIComplete('Ты SEO-редактор финансового сайта. Отвечаешь только валидным JSON без markdown.', $prompt);
     if (!$text) return null;
 
-    $text = preg_replace('/^```\s*json\s*/i', '', $text);
+    $text = preg_replace('/^```\s*json\s*/i', '', trim((string)$text));
     $text = preg_replace('/```$/', '', $text);
     $parsed = json_decode(trim($text), true);
     if (!is_array($parsed) || empty($parsed['seo_h1'])) return null;
