@@ -103,24 +103,43 @@ if (!empty($aiResult['success']) && !empty($aiResult['text'])) {
     $text = trim((string)$aiResult['text']);
     $text = tag_clean_json_block($text);
     $parsed = json_decode($text, true);
+
     if (is_array($parsed)) {
         $queries = $parsed['searchQueries'] ?? [];
         if (is_string($queries)) {
-            $queries = preg_split('/\r\n|\r|\n|,/', $queries);
+            $queries = preg_split('/[\r\n,]+/', $queries);
         }
-        if (!is_array($queries)) $queries = [];
-        $queries = array_values(array_unique(array_filter(array_map(fn($q) => trim((string)$q), $queries))));
-        $providerName = trim((string)(($aiResult['provider'] ?? 'AI') . (!empty($aiResult['model']) ? ' (' . $aiResult['model'] . ')' : ''))));
-        echo json_encode([
+        if (!is_array($queries)) {
+            $queries = [];
+        }
+        $cleanQueries = [];
+        foreach ($queries as $q) {
+            $q = trim((string)$q);
+            if ($q !== '' && !in_array($q, $cleanQueries, true)) {
+                $cleanQueries[] = $q;
+            }
+        }
+
+        $providerName = 'AI';
+        if (!empty($aiResult['provider'])) {
+            $providerName = (string)$aiResult['provider'];
+        }
+        if (!empty($aiResult['model'])) {
+            $providerName .= ' (' . (string)$aiResult['model'] . ')';
+        }
+
+        $out = array(
             'success' => true,
             'h1' => tag_mb_limit(tag_as_text($parsed['h1'] ?? '') ?: $fallback['h1'], 120),
             'description' => tag_mb_limit(tag_as_text($parsed['description'] ?? '') ?: $fallback['description'], 220),
             'metaTitle' => tag_mb_limit(tag_as_text($parsed['metaTitle'] ?? '') ?: $fallback['metaTitle'], 70),
             'metaDescription' => tag_mb_limit(tag_as_text($parsed['metaDescription'] ?? '') ?: $fallback['metaDescription'], 160),
             'content' => cq_strip_markdown(tag_as_text($parsed['content'] ?? '') ?: $fallback['content']),
-            'searchQueries' => implode("\n", $queries ?: explode("\n", $fallback['searchQueries'])),
-            'provider' => $providerName !== '' ? $providerName : 'AI',
-        ]);
+            'searchQueries' => implode("\n", ($cleanQueries ?: explode("\n", $fallback['searchQueries']))),
+            'provider' => $providerName,
+        );
+
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
         exit;
     }
 }
