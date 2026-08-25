@@ -1,6 +1,6 @@
 <?php
 /**
- * Автогенерация отзывов через YandexGPT
+ * Автогенерация отзывов через настроенный AI провайдер
  * Запуск: php cron/review-cron.php [количество]
  * Пример: php cron/review-cron.php 3
  */
@@ -58,15 +58,6 @@ for ($i = 0; $i < $count; $i++) {
         $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
         $comment = trim($comment);
         if (mb_strlen($comment) < 20) $comment = null;
-    }
-                $comment = preg_replace('/^```\s*\w*\s*/i', '', $comment);
-                $comment = preg_replace('/```/', '', $comment);
-                $comment = preg_replace('/^#{1,6}\s+/m', '', $comment);
-                $comment = preg_replace('/^["«]|["»]$/', '', trim($comment));
-                $comment = trim($comment);
-                if (mb_strlen($comment) < 20) $comment = null;
-            }
-        }
     }
 
     if (!$comment) {
