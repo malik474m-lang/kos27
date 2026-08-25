@@ -4,6 +4,15 @@ require_once __DIR__ . '/../../includes/content-quality.php';
 header('Content-Type: application/json; charset=UTF-8');
 requireAdmin();
 
+// Всегда JSON — даже при fatal ошибке (иначе форма пишет "Ошибка генерации SEO" за смертью PHP-страницы HTML)
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_TYPE_ERROR, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (!headers_sent()) { header('Content-Type: application/json; charset=UTF-8'); http_response_code(500); }
+        echo json_encode(['error' => 'Fatal: ' . $err['message'] . ' @ ' . basename($err['file']) . ':' . $err['line']], JSON_UNESCAPED_UNICODE);
+    }
+});
+
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $title = trim((string)($data['title'] ?? ''));
 $category = trim((string)($data['category'] ?? 'microloans'));
@@ -22,6 +31,14 @@ $categoryLabels = [
     'debit_cards' => 'дебетовые карты',
 ];
 $categoryLabel = $categoryLabels[$category] ?? 'финансовые предложения';
+
+function tag_as_text($value): string {
+    if (is_array($value)) {
+        $value = reset($value) ?: '';
+        if (is_array($value)) $value = '';
+    }
+    return is_scalar($value) || $value === null ? (string)$value : '';
+}
 
 function tag_mb_limit(string $text, int $limit): string {
     $text = trim(preg_replace('/\s+/', ' ', $text));
@@ -96,11 +113,11 @@ if (!empty($aiResult['success']) && !empty($aiResult['text'])) {
         $providerName = trim((string)(($aiResult['provider'] ?? 'AI') . (!empty($aiResult['model']) ? ' (' . $aiResult['model'] . ')' : ''))));
         echo json_encode([
             'success' => true,
-            'h1' => tag_mb_limit((string)($parsed['h1'] ?? $fallback['h1']), 120),
-            'description' => tag_mb_limit((string)($parsed['description'] ?? $fallback['description']), 220),
-            'metaTitle' => tag_mb_limit((string)($parsed['metaTitle'] ?? $fallback['metaTitle']), 70),
-            'metaDescription' => tag_mb_limit((string)($parsed['metaDescription'] ?? $fallback['metaDescription']), 160),
-            'content' => cq_strip_markdown((string)($parsed['content'] ?? $fallback['content'])),
+            'h1' => tag_mb_limit(tag_as_text($parsed['h1'] ?? '') ?: $fallback['h1'], 120),
+            'description' => tag_mb_limit(tag_as_text($parsed['description'] ?? '') ?: $fallback['description'], 220),
+            'metaTitle' => tag_mb_limit(tag_as_text($parsed['metaTitle'] ?? '') ?: $fallback['metaTitle'], 70),
+            'metaDescription' => tag_mb_limit(tag_as_text($parsed['metaDescription'] ?? '') ?: $fallback['metaDescription'], 160),
+            'content' => cq_strip_markdown(tag_as_text($parsed['content'] ?? '') ?: $fallback['content']),
             'searchQueries' => implode("\n", $queries ?: explode("\n", $fallback['searchQueries'])),
             'provider' => $providerName !== '' ? $providerName : 'AI',
         ]);
