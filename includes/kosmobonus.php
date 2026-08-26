@@ -299,7 +299,7 @@ function renderKosmoBonusBadge(array $offer): string {
     if (!isKosmoBonusOffer($offer)) return '';
     $amount = (int)$offer['kosmobonus_amount'];
     ob_start(); ?>
-    <div class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-bold text-white shadow-sm">
+    <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white shadow-sm" style="display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 16px;font-size:14px;font-weight:700;color:#ffffff;background:linear-gradient(90deg,#f59e0b 0%,#f97316 100%);text-shadow:0 1px 1px rgba(124,45,18,.35);box-shadow:0 2px 6px rgba(249,115,22,.4)">
         <span>🎁</span>
         <span>КосмоБонус +<?= $amount ?> ₽</span>
     </div>
