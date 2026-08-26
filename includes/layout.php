@@ -57,10 +57,21 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta property="og:description" content="<?= e($metaDescription) ?>">
     <meta property="og:site_name" content="<?= SITE_NAME ?>">
     <meta property="og:type" content="website">
+    <meta property="og:determiner" content="">
     <meta property="og:locale" content="ru_RU">
-    <?php if ($ogImage): ?>
-    <meta property="og:image" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
-    <meta property="og:image:secure_url" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
+    <?php if ($ogImage):
+        $ogImageUrl = str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage;
+        // Стандартный размер для FB/LinkedIn (1200x630)
+        $ogW = 1200; $ogH = 630;
+        // Если это обложка статьи (16:9) — корректные размеры
+        if (str_contains((string)$ogImage, '/images/articles/')) { $ogW = 1344; $ogH = 768; }
+    ?>
+    <meta property="og:image" content="<?= e($ogImageUrl) ?>">
+    <meta property="og:image:secure_url" content="<?= e($ogImageUrl) ?>">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="<?= $ogW ?>">
+    <meta property="og:image:height" content="<?= $ogH ?>">
+    <meta property="og:image:alt" content="<?= e($pageTitle) ?>">
     <?php endif; ?>
     <?php if ($canonicalUrl): ?>
     <meta property="og:url" content="<?= e($canonicalUrl) ?>">
@@ -74,6 +85,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta name="twitter:description" content="<?= e($metaDescription) ?>">
     <?php if ($ogImage): ?>
     <meta name="twitter:image" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
+    <meta name="twitter:image:alt" content="<?= e($pageTitle) ?>">
     <?php endif; ?>
 
     <?php
