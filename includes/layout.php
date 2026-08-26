@@ -18,7 +18,12 @@ if (empty($canonicalUrl)) {
         $canonicalUrl = SITE_URL . $currentPath;
     }
 }
+// Дефолтная картинка для соцсетей (если страница не задала свою — например, обложку статьи)
 $ogImage = $ogImage ?? '';
+if (trim((string)$ogImage) === '') {
+    $defaultOgImage = '/images/kosmozaim01.jpg';
+    $ogImage = $defaultOgImage;
+}
 $jsonLdSchemas = $jsonLdSchemas ?? [];
 $pageHeadHtml = $pageHeadHtml ?? '';
 
@@ -55,6 +60,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
     <meta property="og:locale" content="ru_RU">
     <?php if ($ogImage): ?>
     <meta property="og:image" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
+    <meta property="og:image:secure_url" content="<?= e(str_starts_with((string)($ogImage), 'http') ? $ogImage : SITE_URL . $ogImage) ?>">
     <?php endif; ?>
     <?php if ($canonicalUrl): ?>
     <meta property="og:url" content="<?= e($canonicalUrl) ?>">
@@ -63,6 +69,7 @@ array_unshift($jsonLdSchemas, jsonLdOrganization(), jsonLdWebsite());
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@kosmozaim">
     <meta name="twitter:title" content="<?= e($pageTitle) ?>">
     <meta name="twitter:description" content="<?= e($metaDescription) ?>">
     <?php if ($ogImage): ?>
