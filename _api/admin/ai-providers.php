@@ -94,6 +94,7 @@ if ($method === 'POST') {
     // Сохранение настроек
     $allowedFields = [
         'odirouter_enabled', 'odirouter_api_key', 'odirouter_image_api_key', 'odirouter_text_model', 'odirouter_image_model',
+        'odirouter_text_fallback_models',
         'yandex_gpt_enabled', 'yandex_gpt_api_key', 'yandex_folder_id', 'yandex_gpt_model',
         'yandex_art_enabled',
         'gigachat_enabled', 'gigachat_auth_key', 'gigachat_scope',

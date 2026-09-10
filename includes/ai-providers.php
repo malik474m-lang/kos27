@@ -29,6 +29,8 @@ function getAIProvidersConfig(): array {
         'odirouter_image_api_key' => '',
         'odirouter_text_model' => 'free-gemini-2.5-flash',
         'odirouter_image_model' => 'free-nano-banana-2',
+        // Доп. резервные текстовые модели (через запятую) — идут после встроенной кросс-семейной цепочки
+        'odirouter_text_fallback_models' => '',
         
         // YandexGPT
         'yandex_gpt_enabled' => false,
@@ -150,14 +152,35 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         return ['success' => false, 'error' => 'OdiRouter: все ключи исчерпали дневной лимит (50/день). Добавьте ещё ключи в настройках.'];
     }
 
-    $fallbackModels = ['free-gemini-2.5-flash', 'free-gemini-3.5-flash'];
+    // Встроенная КРОСС-СЕМЕЙНАЯ цепочка резерва.
+    // Инцидент 10.09.2026: оба Gemini-роута упали одновременно (400 upstream_rejected + 503),
+    // резерв внутри одного семейства моделей не спас — апстримы падают семейством целиком.
+    // Поэтому семейства чередуются: Gemini → GPT → Gemini → Qwen → Grok → Claude → MiniMax → GPT.
+    $builtinFallbackModels = [
+        'free-gemini-2.5-flash',
+        'free-gpt-5.4-mini',
+        'free-gemini-3.5-flash',
+        'free-qwen3.7-plus',
+        'free-grok-4.5',
+        'free-claude-haiku-4.5',
+        'free-minimax-m2.7',
+        'free-gpt-5.6-terra',
+    ];
     $disabledSlowModels = ['free-gpt-5.6-luna'];
-    $deprioritizedModels = ['free-qwen3.7-plus', 'free-gpt-5.4-mini'];
-    if (in_array($model, $disabledSlowModels, true)) {
-        // полностью пропускаем слишком медленные модели в синхронных admin-вызовах
-    } elseif (in_array($model, $deprioritizedModels, true)) {
-        $fallbackModels[] = $model;
-    } else {
+
+    // Пользовательские резервные модели из настроек (через запятую) — дополняют встроенную цепочку
+    $extraFallbackModels = [];
+    $extraRaw = (string)($config['odirouter_text_fallback_models'] ?? '');
+    foreach ((preg_split('/[\s,;]+/', $extraRaw) ?: []) as $extraModel) {
+        $extraModel = trim($extraModel);
+        if ($extraModel !== '' && !in_array($extraModel, $disabledSlowModels, true)) {
+            $extraFallbackModels[] = $extraModel;
+        }
+    }
+
+    $fallbackModels = array_merge($builtinFallbackModels, $extraFallbackModels);
+    if (!in_array($model, $disabledSlowModels, true)) {
+        // Основная модель из настроек — всегда первая
         array_unshift($fallbackModels, $model);
     }
     $fallbackModels = array_values(array_unique($fallbackModels));
@@ -165,6 +188,13 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     $isLongFormRequest = (mb_strlen($prompt) + mb_strlen($systemPrompt)) > 1200 || stripos($prompt, 'Минимум 1500 слов') !== false || stripos($prompt, 'развёрнутую статью') !== false;
     $textTimeout = $isLongFormRequest ? 28 : 15;
     $connectTimeout = $isLongFormRequest ? 6 : 4;
+    // Для длинных текстов 2800 токенов мало: 1500 слов на русском ≈ 3.5–5k токенов — статьи обрезались.
+    // При HTTP 400 будет один повтор со сниженным лимитом (2800) — вдруг апстрим режет по max_tokens.
+    $maxTokens = $isLongFormRequest ? 6000 : 2800;
+    // Общий бюджет времени на весь вызов: длинная цепочка резервов не должна вешать админку/крон.
+    $callStartedAt = microtime(true);
+    $timeBudget = $isLongFormRequest ? 80 : 45;
+    $promptChars = mb_strlen($prompt) + mb_strlen($systemPrompt);
 
     $messages = [];
     if ($systemPrompt) {
@@ -177,6 +207,7 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
     $blockedModels = [];
     $accountsTried = 0;
     $maxAccountsPerCall = 2;
+    $errContext = ' [prompt=' . $promptChars . 'ch' . ($isLongFormRequest ? ',long' : '') . ']';
     foreach ($keys as $activeKey) {
         $keyAccount = $activeKey['account'] ?? '';
         if ($keyAccount && isset($blockedAccounts[$keyAccount])) continue;
@@ -185,82 +216,111 @@ function odiRouterGenerateText(string $prompt, string $systemPrompt = '', ?strin
         $apiKey = $activeKey['key'];
         foreach ($fallbackModels as $tryModel) {
             if (isset($blockedModels[$tryModel])) continue;
-            $payload = [
-                'model' => $tryModel,
-                'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 2800,
-            ];
-
-            $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => $textTimeout,
-                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => 0,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer ' . $apiKey,
-                ],
-                CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-            ]);
-
-            $response = curl_exec($ch);
-            $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            // Считаем только запросы, дошедшие до сервера: есть HTTP-ответ или таймаут после отправки.
-            if ($code > 0 || ($err && stripos($err, 'timed out') !== false)) {
-                odiTrackUsage($activeKey['id']);
+            if ((microtime(true) - $callStartedAt) > $timeBudget) {
+                $errors[] = 'вызов остановлен: исчерпан лимит времени ' . $timeBudget . 's';
+                break 2;
             }
 
-            if ($err) {
-                if (stripos($err, 'timed out') !== false) {
-                    $blockedModels[$tryModel] = true; // модель тормозит — не повторяем на других аккаунтах в этом вызове
+            $tryMaxTokens = $maxTokens;
+            $reducedRetryDone = false;
+            // Цикл попыток внутри одной модели: максимум 2 (обычная + повтор со сниженным max_tokens при 400)
+            while (true) {
+                $payload = [
+                    'model' => $tryModel,
+                    'messages' => $messages,
+                    'temperature' => 0.7,
+                    'max_tokens' => $tryMaxTokens,
+                ];
+
+                $ch = curl_init('https://api.odirouter.ai/v1/chat/completions');
+                curl_setopt_array($ch, [
+                    CURLOPT_POST => true,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => $textTimeout,
+                    CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_HTTPHEADER => [
+                        'Content-Type: application/json',
+                        'Authorization: Bearer ' . $apiKey,
+                    ],
+                    CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                ]);
+
+                $response = curl_exec($ch);
+                $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                // Считаем только запросы, дошедшие до сервера: есть HTTP-ответ или таймаут после отправки.
+                if ($code > 0 || ($err && stripos($err, 'timed out') !== false)) {
+                    odiTrackUsage($activeKey['id']);
                 }
-                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': cURL ' . $err;
-                continue; // пробуем следующую модель на том же ключе
-            }
 
-            if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
-                if (in_array($code, [402,403], true)) {
-                    odiMarkKeyExhausted($activeKey['id']);
+                if ($err) {
+                    if (stripos($err, 'timed out') !== false) {
+                        $blockedModels[$tryModel] = true; // модель тормозит — не повторяем на других аккаунтах в этом вызове
+                    }
+                    $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': cURL ' . $err . $errContext;
+                    break; // следующая модель
                 }
-                if ($code === 429 && $keyAccount) {
-                    $blockedAccounts[$keyAccount] = true;
-                    odiHandle429($activeKey['id']);
+
+                if (in_array($code, [401, 402, 403, 408, 429, 500, 502, 503, 504], true)) {
+                    if (in_array($code, [402,403], true)) {
+                        odiMarkKeyExhausted($activeKey['id']);
+                    }
+                    if ($code === 429 && $keyAccount) {
+                        $blockedAccounts[$keyAccount] = true;
+                        odiHandle429($activeKey['id']);
+                    }
+                    if (in_array($code, [503,504], true)) {
+                        $blockedModels[$tryModel] = true; // модель временно недоступна — не повторяем на других аккаунтах
+                    }
+                    $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code . $errContext;
+                    continue 3; // следующий ключ
                 }
-                if (in_array($code, [503,504], true)) {
-                    $blockedModels[$tryModel] = true; // модель временно недоступна — не повторяем на других аккаунтах
+
+                // HTTP 400 upstream_rejected: апстрим детерминированно отклоняет запрос.
+                // Если лимит max_tokens завышен относительно апстрима — помогает один повтор со сниженным лимитом.
+                if ($code === 400 && !$reducedRetryDone && $tryMaxTokens > 2800) {
+                    $reducedRetryDone = true;
+                    $tryMaxTokens = 2800;
+                    $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP 400, повтор с max_tokens=2800' . $errContext;
+                    continue;
                 }
-                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code;
-                continue 2; // следующий ключ
-            }
 
-            if ($code < 200 || $code >= 300) {
-                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code . ' ' . mb_substr(strip_tags((string)$response), 0, 200);
-                continue; // пробуем следующую модель на том же ключе
-            }
+                if ($code < 200 || $code >= 300) {
+                    // Любой другой не-2xx (400/404/413/422...) — детерминированный отказ модели:
+                    // нет смысла повторять её на других ключах, ответ будет тем же.
+                    $blockedModels[$tryModel] = true;
+                    $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': HTTP ' . $code . ' ' . mb_substr(strip_tags((string)$response), 0, 200) . $errContext;
+                    break; // следующая модель
+                }
 
-            $data = json_decode((string)$response, true);
-            $text = $data['choices'][0]['message']['content'] ?? '';
-            if (!$text) {
-                $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': empty response';
-                continue 2; // следующий ключ
-            }
+                $data = json_decode((string)$response, true);
+                $text = $data['choices'][0]['message']['content'] ?? '';
+                if (!$text) {
+                    $errors[] = ($activeKey['name'] ?? 'key') . ' / ' . $tryModel . ': empty response' . $errContext;
+                    continue 3; // следующий ключ
+                }
 
-            return [
-                'success' => true,
-                'text' => $text,
-                'provider' => 'odirouter',
-                'model' => $tryModel,
-                'usage' => $data['usage'] ?? null,
-                'key_name' => $activeKey['name'] ?? '',
-                'key_remaining' => ($activeKey['remaining'] ?? 0) - 1,
-            ];
+                $finishReason = (string)($data['choices'][0]['finish_reason'] ?? '');
+                $truncated = ($finishReason === 'length');
+                if ($truncated) {
+                    error_log("OdiRouter: ответ обрезан по max_tokens={$tryMaxTokens} (model={$tryModel}) — текст может быть неполным");
+                }
+
+                return [
+                    'success' => true,
+                    'text' => $text,
+                    'provider' => 'odirouter',
+                    'model' => $tryModel,
+                    'usage' => $data['usage'] ?? null,
+                    'key_name' => $activeKey['name'] ?? '',
+                    'key_remaining' => ($activeKey['remaining'] ?? 0) - 1,
+                    'truncated' => $truncated,
+                ];
+            }
         }
     }
 
