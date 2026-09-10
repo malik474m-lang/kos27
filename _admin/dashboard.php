@@ -5699,6 +5699,7 @@ function lAIP(){
         '<div class="grid md:grid-cols-2 gap-3 mb-4">'+
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель текста</label><select id="ai_odi_tm" class="sel-f">'+optSel(tModels.odirouter,cfg.odirouter_text_model)+'</select></div>'+
         '<div><label class="block text-sm font-medium text-gray-700 mb-1">Модель изображений</label><select id="ai_odi_im" class="sel-f">'+optSel(iModels.odirouter,cfg.odirouter_image_model)+'</select></div>'+
+        '<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Резервные модели текста <span class="text-gray-400 font-normal">(через запятую, необязательно)</span></label><input type="text" id="ai_odi_tfm" value="'+((cfg.odirouter_text_fallback_models||'').replace(/"/g,'&quot;'))+'" placeholder="пусто = встроенная цепочка из 8 моделей разных семейств" class="input-f"><p class="text-xs text-gray-400 mt-1">Перебор при сбое основной модели. Встроенный порядок: gemini-2.5 → gpt-5.4-mini → gemini-3.5 → qwen3.7 → grok-4.5 → claude-haiku → minimax-m2.7 → gpt-5.6-terra.</p></div>'+
         '</div>'+
         '<div class="flex flex-wrap gap-2 mb-4 items-end">'+
         '<div><label class="block text-xs font-medium text-gray-700 mb-1">Аккаунт для теста</label><select id="odi-test-account" class="sel-f text-sm" style="min-width:240px"><option value="">Авто: первый доступный аккаунт</option></select></div>'+
@@ -5739,6 +5740,7 @@ function aiSaveAll(){
         odirouter_enabled:document.getElementById('ai_odi_en')?.checked||false,
         
         odirouter_text_model:document.getElementById('ai_odi_tm')?.value||'',
+        odirouter_text_fallback_models:document.getElementById('ai_odi_tfm')?.value||'',
         odirouter_image_model:document.getElementById('ai_odi_im')?.value||'',
         yandex_gpt_enabled:document.getElementById('ai_ygpt_en')?.checked||false,
         yandex_gpt_api_key:document.getElementById('ai_ygpt_key')?.value||'',
